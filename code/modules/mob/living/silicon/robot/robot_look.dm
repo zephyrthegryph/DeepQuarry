@@ -4,12 +4,7 @@
 
 TRACKED(/mob/living/silicon/robot, opened)
 TRACKED(/mob/living/silicon/robot, wiresexposed)
-TRACKED(/mob/living/silicon/robot, lights_on)
-TRACKED(/mob/living/silicon/robot, glowy_enabled)
-TRACKED(/mob/living/silicon/robot, rest_style)
 TRACKED(/mob/living/silicon/robot, sprite_type)
-TRACKED(/mob/living/silicon/robot, module_active)
-TRACKED(/mob/living/silicon/robot, shell)
 TRACKED(/mob/living/silicon/robot, deployed)
 
 /mob/living/silicon/robot/draw(datum/look/look)

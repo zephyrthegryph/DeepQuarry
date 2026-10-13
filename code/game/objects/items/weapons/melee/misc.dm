@@ -52,7 +52,7 @@ CAPABILITIES(/obj/item/melee/umbrella)
 /obj/item/melee/umbrella/proc/toggle_umbrella()
 	set_open(!open)
 	icon_state = "umbrella_[open ? "open" : "closed"]"
-	addblends = icon_state + "_a"
+	set_addblends(icon_state + "_a")
 	item_state = icon_state
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc

@@ -8,7 +8,7 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(device.beacons), 0, "actual initialized device starts without linked beacons")
 	rel_set(beacon, nameof(beacon.tele_hand), device)
 	rel_add(device, nameof(device.beacons), beacon)
-	device.beacons_left--
+	device.set_beacons_left(device.beacons_left - 1)
 	var/deployed_capacity = device.beacons_left
 	TEST_ASSERT((beacon in device.beacons), "actual deployed fixture records exact original beacon through its relation")
 	TEST_ASSERT(user.put_in_active_hand(beacon), "the actor holds exact original linked beacon")

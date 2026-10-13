@@ -106,7 +106,6 @@
 TRACKED(/obj/item/melee/energy, colorable)
 TRACKED(/obj/item/melee/energy, active)
 TRACKED(/obj/item/melee/energy, lcolor)
-TRACKED(/obj/item/melee/energy, rainbow)
 
 CAPABILITIES(/obj/item/melee/energy)
 	configure(item_combat(sharp = FALSE, edge = FALSE, armor_penetration = 0))

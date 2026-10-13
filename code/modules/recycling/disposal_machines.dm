@@ -584,7 +584,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		AM.pipe_eject(0)
 	sync_occupied()
 
-TRACKED(/obj/machinery/disposal, flush)
 /// Whether anything is inside, kept for the look.
 /obj/machinery/disposal/var/occupied = FALSE
 TRACKED(/obj/machinery/disposal, occupied)

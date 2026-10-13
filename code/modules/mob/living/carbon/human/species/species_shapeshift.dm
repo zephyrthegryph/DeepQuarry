@@ -605,11 +605,11 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	var/datum/sprite_accessory/style = source[style_path]
 	switch(kind)
 		if("ears")
-			ear_style = style
+			set_ear_style(style)
 		if("tail")
-			tail_style = style
+			set_tail_style(style)
 		if("wings")
-			wing_style = style
+			set_wing_style(style)
 	var/static/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
 	for(var/key in suffixes)
 		var/new_color = colors[key]
@@ -649,7 +649,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/ask = A.request
-	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.value]]
+	set_ear_secondary_style(GLOB.ear_styles_list[ask.choices[ask.value]])
 	var/list/defaults = list()
 	if(ear_secondary_style)
 		for(var/channel in 1 to ear_secondary_style.get_color_channel_count())
@@ -700,9 +700,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_secondary_ear_colors_chosen(list/new_colors, alpha)
 	if(length(new_colors))
-		ear_secondary_colors = new_colors
+		set_ear_secondary_colors(new_colors)
 	if(alpha)
-		a_ears2 = clamp(alpha, 0, 255)
+		set_a_ears2(clamp(alpha, 0, 255))
 	update_hair()
 
 /mob/living/carbon/human/proc/shapeshifter_select_tail()
@@ -985,33 +985,33 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	var/b = rgb[3]
 	switch("[kind][slot]")
 		if("ears")
-			r_ears = r; g_ears = g; b_ears = b
+			set_r_ears(r); set_g_ears(g); set_b_ears(b)
 		if("ears2")
-			r_ears2 = r; g_ears2 = g; b_ears2 = b
+			set_r_ears2(r); set_g_ears2(g); set_b_ears2(b)
 		if("ears3")
-			r_ears3 = r; g_ears3 = g; b_ears3 = b
+			set_r_ears3(r); set_g_ears3(g); set_b_ears3(b)
 		if("tail")
-			r_tail = r; g_tail = g; b_tail = b
+			set_r_tail(r); set_g_tail(g); set_b_tail(b)
 		if("tail2")
-			r_tail2 = r; g_tail2 = g; b_tail2 = b
+			set_r_tail2(r); set_g_tail2(g); set_b_tail2(b)
 		if("tail3")
-			r_tail3 = r; g_tail3 = g; b_tail3 = b
+			set_r_tail3(r); set_g_tail3(g); set_b_tail3(b)
 		if("wings")
-			r_wing = r; g_wing = g; b_wing = b
+			set_r_wing(r); set_g_wing(g); set_b_wing(b)
 		if("wings2")
-			r_wing2 = r; g_wing2 = g; b_wing2 = b
+			set_r_wing2(r); set_g_wing2(g); set_b_wing2(b)
 		if("wings3")
-			r_wing3 = r; g_wing3 = g; b_wing3 = b
+			set_r_wing3(r); set_g_wing3(g); set_b_wing3(b)
 
 /// Sets an ears/tail/wings accessory's alpha.
 /mob/living/carbon/human/proc/set_accessory_alpha(kind, alpha)
 	switch(kind)
 		if("ears")
-			a_ears = alpha
+			set_a_ears(alpha)
 		if("tail")
-			a_tail = alpha
+			set_a_tail(alpha)
 		if("wings")
-			a_wing = alpha
+			set_a_wing(alpha)
 
 /datum/species/shapeshifter/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
 	. = ..()

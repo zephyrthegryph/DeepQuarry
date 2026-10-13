@@ -105,7 +105,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends the white cane.")), \
 			MSG_BLIND("You hear an ominous click."))
 		icon_state = "whitecane1out"
-		item_state_slots = list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane")
+		set_item_state_slots(list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane"))
 		set_w_class(ITEMSIZE_NORMAL)
 		set_force(5)
 		set_attack_verb(list("smacked", "struck", "cracked", "beaten"))
@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses the white cane.")), \
 			MSG_BLIND("You hear a click."))
 		icon_state = "whitecane1in"
-		item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
+		set_item_state_slots(list(slot_r_hand_str = null, slot_l_hand_str = null))
 		set_w_class(ITEMSIZE_SMALL)
 		set_force(3)
 		set_attack_verb(list("hit", "poked", "prodded"))

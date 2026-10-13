@@ -62,8 +62,8 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 			if(!lock_locked(src))
 				open()
 			else
-				req_access = list()
-				req_access += pick(SSaccess.get_all_station_access())
+				set_req_access(list())
+				add_req_access(pick(SSaccess.get_all_station_access()))
 
 /// An energy blade slices the lock of a shut locker open.
 /obj/structure/closet/secure_closet/proc/blade_sliced(datum/act/op/A)

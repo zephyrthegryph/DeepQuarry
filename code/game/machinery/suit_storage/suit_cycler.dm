@@ -273,7 +273,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 
 	set_emagged(1)
 	hold(src, STAT_SAFETIES, null, src) // the corrupted protocols keep the safeties off for good
-	req_access = list()
+	set_req_access(list())
 	return OP_OK
 
 /obj/machinery/suit_cycler/proc/interaction_use(datum/act/op/A)

@@ -18,7 +18,6 @@
 /// Reduced when exposed to high temperatures; 0 is dry. The rack's native draw
 /// reads this producer through its drying relation.
 /obj/item/stack/wetleather/var/wetness = 30
-TRACKED(/obj/item/stack/wetleather, wetness)
 
 /obj/item/stack/wetleather/examine(mob/user)
 	. = ..()

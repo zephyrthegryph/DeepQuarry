@@ -221,7 +221,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 		if(isnull(other_player) || !(other_player in view(get_turf(parent()))))
 			continue
 		// copies the main song info to target songs
-		other_instrument.lines = lines.Copy()
+		other_instrument.set_lines(lines.Copy())
 		other_instrument.max_repeats = max_repeats
 		other_instrument.tempo = tempo
 		other_instrument.start_playing(other_player)

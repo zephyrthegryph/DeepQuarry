@@ -435,44 +435,44 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 /// Ears, tail and wings with their colours.
 /mob/living/carbon/human/proc/copy_appendages_from(mob/living/carbon/human/character)
-	ear_style = character.ear_style
-	r_ears = character.r_ears
-	b_ears = character.b_ears
-	g_ears = character.g_ears
-	r_ears2 = character.r_ears2
-	b_ears2 = character.b_ears2
-	g_ears2 = character.g_ears2
-	r_ears3 = character.r_ears3
-	b_ears3 = character.b_ears3
-	g_ears3 = character.g_ears3
-	a_ears = character.a_ears
+	set_ear_style(character.ear_style)
+	set_r_ears(character.r_ears)
+	set_b_ears(character.b_ears)
+	set_g_ears(character.g_ears)
+	set_r_ears2(character.r_ears2)
+	set_b_ears2(character.b_ears2)
+	set_g_ears2(character.g_ears2)
+	set_r_ears3(character.r_ears3)
+	set_b_ears3(character.b_ears3)
+	set_g_ears3(character.g_ears3)
+	set_a_ears(character.a_ears)
 
-	ear_secondary_style = character.ear_secondary_style
-	ear_secondary_colors = character.ear_secondary_colors
+	set_ear_secondary_style(character.ear_secondary_style)
+	set_ear_secondary_colors(character.ear_secondary_colors)
 
-	tail_style = character.tail_style
-	r_tail = character.r_tail
-	b_tail = character.b_tail
-	g_tail = character.g_tail
-	r_tail2 = character.r_tail2
-	b_tail2 = character.b_tail2
-	g_tail2 = character.g_tail2
-	r_tail3 = character.r_tail3
-	b_tail3 = character.b_tail3
-	g_tail3 = character.g_tail3
-	a_tail = character.a_tail
+	set_tail_style(character.tail_style)
+	set_r_tail(character.r_tail)
+	set_b_tail(character.b_tail)
+	set_g_tail(character.g_tail)
+	set_r_tail2(character.r_tail2)
+	set_b_tail2(character.b_tail2)
+	set_g_tail2(character.g_tail2)
+	set_r_tail3(character.r_tail3)
+	set_b_tail3(character.b_tail3)
+	set_g_tail3(character.g_tail3)
+	set_a_tail(character.a_tail)
 
-	wing_style = character.wing_style
-	r_wing = character.r_wing
-	b_wing = character.b_wing
-	g_wing = character.g_wing
-	r_wing2 = character.r_wing2
-	b_wing2 = character.b_wing2
-	g_wing2 = character.g_wing2
-	r_wing3 = character.r_wing3
-	b_wing3 = character.b_wing3
-	g_wing3 = character.g_wing3
-	a_wing = character.a_wing
+	set_wing_style(character.wing_style)
+	set_r_wing(character.r_wing)
+	set_b_wing(character.b_wing)
+	set_g_wing(character.g_wing)
+	set_r_wing2(character.r_wing2)
+	set_b_wing2(character.b_wing2)
+	set_g_wing2(character.g_wing2)
+	set_r_wing3(character.r_wing3)
+	set_b_wing3(character.b_wing3)
+	set_g_wing3(character.g_wing3)
+	set_a_wing(character.a_wing)
 
 /// Robotize our limbs to match `character`'s: its prosthetic models, else the DSI body for
 /// `bodytype`. Parents go before children so a limb is never robotized under an organic parent.

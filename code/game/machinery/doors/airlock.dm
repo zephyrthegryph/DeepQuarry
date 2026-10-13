@@ -694,7 +694,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return density && operating <= 0 && !reinforcing
 
 /obj/machinery/door/airlock/proc/damaged(datum/act/A)
-	return get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+	return get_integrity() < max_integrity
 
 /// A simple mob's smash on a door that lost its power: through bolts or a weld it breaks into the internals (an op, so it takes its time),
 /// otherwise it forces the door open or shut at once.
@@ -1087,11 +1087,11 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	own_move(assembly_electronics, src, nameof(electronics)) // from the assembly to the door
 	secured_wires = electronics.secure
 	if(electronics.one_access)
-		req_access = null
-		req_one_access = electronics.conf_access
+		set_req_access(null)
+		set_req_one_access(electronics.conf_access)
 	else
-		req_one_access = null
-		req_access = electronics.conf_access
+		set_req_one_access(null)
+		set_req_access(electronics.conf_access)
 	name = assembly.created_name || "[istext(assembly.glass) ? "[assembly.glass] airlock" : assembly.base_name]"
 	set_dir(assembly.dir)
 

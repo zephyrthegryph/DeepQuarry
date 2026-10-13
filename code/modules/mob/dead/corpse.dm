@@ -56,69 +56,69 @@
 		M.set_species(species)
 	if(tail_type && tail_type.len)
 		if(tail_type[1] in GLOB.tail_styles_list)
-			M.tail_style = GLOB.tail_styles_list[tail_type[1]]
+			M.set_tail_style(GLOB.tail_styles_list[tail_type[1]])
 			if(tail_type.len > 1)
 				var/list/color_rgb_list = hex2rgb(tail_type[2])
-				M.r_tail = color_rgb_list[1]
-				M.g_tail = color_rgb_list[2]
-				M.b_tail = color_rgb_list[3]
+				M.set_r_tail(color_rgb_list[1])
+				M.set_g_tail(color_rgb_list[2])
+				M.set_b_tail(color_rgb_list[3])
 				if(tail_type.len > 2)
 					color_rgb_list = hex2rgb(tail_type[3])
-					M.r_tail2 = color_rgb_list[1]
-					M.g_tail2 = color_rgb_list[2]
-					M.b_tail2 = color_rgb_list[3]
+					M.set_r_tail2(color_rgb_list[1])
+					M.set_g_tail2(color_rgb_list[2])
+					M.set_b_tail2(color_rgb_list[3])
 					if(tail_type.len > 3)
 						color_rgb_list = hex2rgb(tail_type[4])
-						M.r_tail3 = color_rgb_list[1]
-						M.g_tail3 = color_rgb_list[2]
-						M.b_tail3 = color_rgb_list[3]
+						M.set_r_tail3(color_rgb_list[1])
+						M.set_g_tail3(color_rgb_list[2])
+						M.set_b_tail3(color_rgb_list[3])
 			M.update_tail_showing()
 	if(ear_type && ear_type.len)
 		if(ear_type[1] in GLOB.ear_styles_list)
-			M.ear_style = GLOB.ear_styles_list[ear_type[1]]
+			M.set_ear_style(GLOB.ear_styles_list[ear_type[1]])
 			if(ear_type.len > 1)
 				var/list/color_rgb_list = hex2rgb(ear_type[2])
-				M.r_ears = color_rgb_list[1]
-				M.g_ears = color_rgb_list[2]
-				M.b_ears = color_rgb_list[3]
+				M.set_r_ears(color_rgb_list[1])
+				M.set_g_ears(color_rgb_list[2])
+				M.set_b_ears(color_rgb_list[3])
 				if(ear_type.len > 2)
 					color_rgb_list = hex2rgb(ear_type[3])
-					M.r_ears2 = color_rgb_list[1]
-					M.g_ears2 = color_rgb_list[2]
-					M.b_ears2 = color_rgb_list[3]
+					M.set_r_ears2(color_rgb_list[1])
+					M.set_g_ears2(color_rgb_list[2])
+					M.set_b_ears2(color_rgb_list[3])
 					if(ear_type.len > 3)
 						color_rgb_list = hex2rgb(ear_type[4])
-						M.r_ears3 = color_rgb_list[1]
-						M.g_ears3 = color_rgb_list[2]
-						M.b_ears3 = color_rgb_list[3]
+						M.set_r_ears3(color_rgb_list[1])
+						M.set_g_ears3(color_rgb_list[2])
+						M.set_b_ears3(color_rgb_list[3])
 			M.update_hair()
 	if(hair)
 		M.looks.set_hair_style(hair)
 		M.update_hair()
 	// handle secondary ears
 	if(length(ear_secondary_type) && (ear_secondary_type[1] in GLOB.ear_styles_list))
-		M.ear_secondary_style = GLOB.ear_styles_list[ear_secondary_type[1]]
+		M.set_ear_secondary_style(GLOB.ear_styles_list[ear_secondary_type[1]])
 		if(length(ear_secondary_type) > 1)
-			M.ear_secondary_colors = ear_secondary_type.Copy(2, min(length(GLOB.fancy_sprite_accessory_color_channel_names), length(ear_secondary_type)) + 1)
+			M.set_ear_secondary_colors(ear_secondary_type.Copy(2, min(length(GLOB.fancy_sprite_accessory_color_channel_names), length(ear_secondary_type)) + 1))
 
 	if(wing_type && wing_type.len)
 		if(wing_type[1] in GLOB.wing_styles_list)
-			M.wing_style = GLOB.wing_styles_list[wing_type[1]]
+			M.set_wing_style(GLOB.wing_styles_list[wing_type[1]])
 			if(wing_type.len > 1)
 				var/list/color_rgb_list = hex2rgb(wing_type[2])
-				M.r_wing = color_rgb_list[1]
-				M.g_wing = color_rgb_list[2]
-				M.b_wing = color_rgb_list[3]
+				M.set_r_wing(color_rgb_list[1])
+				M.set_g_wing(color_rgb_list[2])
+				M.set_b_wing(color_rgb_list[3])
 				if(wing_type.len > 2)
 					color_rgb_list = hex2rgb(wing_type[3])
-					M.r_wing2 = color_rgb_list[1]
-					M.g_wing2 = color_rgb_list[2]
-					M.b_wing2 = color_rgb_list[3]
+					M.set_r_wing2(color_rgb_list[1])
+					M.set_g_wing2(color_rgb_list[2])
+					M.set_b_wing2(color_rgb_list[3])
 					if(wing_type.len > 3)
 						color_rgb_list = hex2rgb(wing_type[4])
-						M.r_wing3 = color_rgb_list[1]
-						M.g_wing3 = color_rgb_list[2]
-						M.b_wing3 = color_rgb_list[3]
+						M.set_r_wing3(color_rgb_list[1])
+						M.set_g_wing3(color_rgb_list[2])
+						M.set_b_wing3(color_rgb_list[3])
 			M.update_wing_showing()
 	M.set_real_name(generateCorpseName())
 	M.set_stat(DEAD) //Kills the new mob
@@ -171,9 +171,9 @@
 			W.icon_state = corpseidicon
 		if(src.corpseidaccess)
 			if(jobdatum)
-				W.access = jobdatum.get_access()
+				W.set_access(jobdatum.get_access())
 			else
-				W.access = list()
+				W.set_access(list())
 		if(corpseidjob)
 			W.assignment = corpseidjob
 		W.set_registered_name(M.real_name)

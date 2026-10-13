@@ -167,9 +167,9 @@ MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle curr
 		var/paste_label = "\the [NP]"
 		if(!consume(NP, user))
 			return OP_OK
-		nanomass_reserve += paste_gain
+		set_nanomass_reserve(nanomass_reserve + paste_gain)
 		if(nanomass_reserve > nanotank_max)
-			nanomass_reserve = nanotank_max
+			set_nanomass_reserve(nanotank_max)
 		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
 	return OP_DECLINE
 
@@ -227,7 +227,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 			play_sfx(src, SFX_MACHINES_BLENDER)
 		else
 			playsound(src, clicksound, 50, 1)
-		nanomass_reserve -= nanomass_required
+		set_nanomass_reserve(nanomass_reserve - nanomass_required)
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		after(src, base_cook_time, PROC_REF(reconstitute_begin))
 	return OP_OK
@@ -377,7 +377,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		if(protean_brain && protean_brain.loc != src)
 			protean_brain.forceMove(src)
 		spent(P)
-	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
+	set_nanomass_reserve(min(nanotank_max, nanomass_reserve + nanomass_required))
 	processing_revive = FALSE
 	changed(src)
 

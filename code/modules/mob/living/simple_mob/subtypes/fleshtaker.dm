@@ -19,8 +19,6 @@ Only physical attributes are copied.
 	var/flesh_mimic = FALSE //are we currently posing as something else?
 	var/mimic_icon = null //the icon file of what we pose as (null while we look like ourselves)
 
-TRACKED(/mob/living/simple_mob/fleshtaker, flesh_mimic)
-TRACKED(/mob/living/simple_mob/fleshtaker, mimic_icon)
 
 /// Our own look, or the icon file of what we are posing as (its living, dead and rest states are our tracked icon_living/icon_dead).
 /mob/living/simple_mob/fleshtaker/draw(datum/look/look)

@@ -199,7 +199,7 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	if(plating)
 		LAZYADD(accessories, "[shell_state]-shell-[plating]")
 	set_shell_accessories(accessories)
-	can_pick_shell = FALSE
+	set_can_pick_shell(FALSE)
 
 MSG_DEF_SELF(drone_ability/shell_picked, "you already selected a shell or this drone type isn't customizable")
 

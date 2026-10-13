@@ -72,19 +72,19 @@ TRACKED(/obj/dq_draw_watched, shown)
 	var/obj/dq_draw_watched/B = allocate(/obj/dq_draw_watched, T)
 	var/obj/dq_draw_watcher/A = allocate(/obj/dq_draw_watcher, T)
 	refresh_flush()
-	A.other = B
+	A.set_other(B)
 	changed(A)
 	refresh_flush()
 	TEST_ASSERT(("other-0" in A.rx?.look_overlays), "the draw read the other end: [json_encode(A.rx?.look_overlays)]")
 	B.set_shown(3)
 	refresh_flush()
 	TEST_ASSERT(("other-3" in A.rx?.look_overlays), "a change on the other end redraws this one: [json_encode(A.rx?.look_overlays)]")
-	A.other = null
+	A.set_other(null)
 	changed(A)
 	refresh_flush()
 	TEST_ASSERT(!length(B.rel_watchers), "a draw that stops reading the other end stops hearing it")
 	TEST_ASSERT(!length(cap_engine_state_of(A)?.look_watching), "and keeps no subscription of its own")
-	A.other = null
+	A.set_other(null)
 
 // ---- the look owns one emissive blocker ----
 

@@ -139,8 +139,6 @@ why aren't these accessories?
 		rel_set(src, nameof(partner_wearer), wearer)
 	set_partner_name(wearer?.name)
 
-TRACKED(/obj/item/remote_scene_tool, partner_live)
-TRACKED(/obj/item/remote_scene_tool, partner_name)
 
 /obj/item/remote_scene_tool/draw(datum/look/look)
 	..()

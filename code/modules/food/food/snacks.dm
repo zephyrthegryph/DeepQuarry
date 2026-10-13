@@ -180,11 +180,11 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 
 /// It is wrapped, and its own use in hand is not something else (a type with special_handling has a use of its own).
 /obj/item/reagent_containers/food/snacks/proc/is_wrapped(datum/act/op/A)
-	return package && !special_handling // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return package && !special_handling
 
 /// It is sealed in a can, and its own use in hand is not something else.
 /obj/item/reagent_containers/food/snacks/proc/is_sealed(datum/act/op/A)
-	return canned && !special_handling // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return canned && !special_handling
 
 /obj/item/reagent_containers/food/snacks/proc/unwrapped(datum/act/op/A)
 	unpackage(A.actor)
@@ -302,7 +302,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	return min(reagents_giveable(src), reagents_takeable(A.target))
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
-	package = FALSE
+	set_package(FALSE)
 	to_chat(user, span_notice("You unwrap [src]."))
 	balloon_alert(user, "unwrapped \the [src].")
 	playsound(user,opening_sound, 15, 1)
@@ -315,7 +315,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 			flick(package_opening_state, src)
 
 /obj/item/reagent_containers/food/snacks/proc/uncan(mob/user)
-	canned = FALSE
+	set_canned(FALSE)
 	to_chat(user, span_notice("You unseal \the [src] with a crack of metal."))
 	balloon_alert(user, "unsealed \the [src]")
 	playsound(loc,opening_sound, rand(10,50), 1)
@@ -1135,11 +1135,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket)
 MSG_DEF_SELF(snack/heat_spent, "The heating chemicals have already been spent.")
 
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/not_yet_heated(datum/act/op/A)
-	return (!has_been_heated) ? null : /datum/msg/snack/heat_spent // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return (!has_been_heated) ? null : /datum/msg/snack/heat_spent
 
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/crushed(datum/act/op/A)
 	var/mob/user = A.actor
-	has_been_heated = TRUE
+	set_has_been_heated(TRUE)
 	act_message(user, src, MSG_SELF("You crush %T% package and feel a comfortable heat build up. Now just to wait for it to be ready."), \
 		MSG_OTHERS(span_notice("%U% crushes %T% package.")))
 	after(src, 20 SECONDS, PROC_REF(self_heated), key = "self_heated", with = list(user))
@@ -1790,7 +1790,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	op("unwrap_cube", in_hand(), priority(OP_PRIORITY_PART), when(PROC_REF(cube_is_wrapped)), label("Unwrap it"), then(PROC_REF(cube_unwrapped)))
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_is_wrapped(datum/act/op/A)
-	return !!wrapped // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !!wrapped
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_unwrapped(datum/act/op/A)
 	Unwrap(A.actor)
@@ -1819,7 +1819,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	icon_state = "monkeycube"
 	desc = "Just add water!"
 	to_chat(user, "You unwrap the cube.")
-	wrapped = FALSE
+	set_wrapped(FALSE)
 	flags |= OPENCONTAINER
 	return
 
@@ -3830,9 +3830,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	var/pizza_type
 	var/list/boxes // If the boxes are stacked, they come here
 	var/boxtag = ""
-TRACKED(/obj/item/pizzabox, ismessy)
 TRACKED(/obj/item/pizzabox, open)
-TRACKED(/obj/item/pizzabox, boxtag)
 
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.

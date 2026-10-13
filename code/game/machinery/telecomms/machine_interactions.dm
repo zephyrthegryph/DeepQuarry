@@ -205,7 +205,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 
 /// needs: the machine is damaged.
 /obj/machinery/telecomms/proc/damaged(datum/act/op/A)
-	return (get_integrity() < max_integrity) ? null : MSG(tcomms/whole) // ALLOW(reads): the machine's integrity is asked when the paste is applied, never cached
+	return (get_integrity() < max_integrity) ? null : MSG(tcomms/whole)
 
 /// Nanopaste repairs 10 to 20 integrity.
 /obj/machinery/telecomms/proc/nanopaste_repair(datum/act/op/A)
@@ -244,7 +244,7 @@ CAPABILITIES(/obj/machinery/telecomms/relay)
 
 /// Locks the relay's signal onto the station, or back onto its own level.
 /obj/machinery/telecomms/relay/proc/ui_act_change_listening(datum/act/op/A)
-	listening_level = (listening_level == TCOMMS_STATION_Z) ? z : TCOMMS_STATION_Z
+	set_listening_level((listening_level == TCOMMS_STATION_Z) ? z : TCOMMS_STATION_Z)
 	report("-% [src]'s signal has been successfully changed.")
 	return OP_OK
 

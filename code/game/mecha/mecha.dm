@@ -183,7 +183,6 @@
 
 TRACKED(/obj/mecha, cabin_regulating)
 TRACKED(/obj/mecha, state)
-TRACKED(/obj/mecha, passenger_count)
 
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
@@ -488,7 +487,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
 /obj/mecha/var/current_processes = MECHA_PROC_INT_TEMP
-TRACKED(/obj/mecha, current_processes)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
 /// relation channels (the pilot slot's link).

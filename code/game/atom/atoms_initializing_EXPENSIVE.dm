@@ -89,7 +89,7 @@
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or OM is live once flagged. Most of the ~390 k map turfs take this path.
 			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
-				A.flags |= ATOM_MATERIALIZED
+				A.set_flags(A.flags | ATOM_MATERIALIZED)
 			else
 				A.materialize()
 		var/atom/location = A.loc

@@ -522,6 +522,15 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
             ctx.timed.entry(n.clone()).or_default().insert(p.clone());
         }
     }
+    // The vars read-driven tracking gives a generated setter (gens/auto_tracked.rs) are tracked as the TRACKED() lines they replace were.
+    if let Some(auto) = tree.get(crate::gens::auto_tracked::AUTO_REL) {
+        let line = crate::pat!(r"^TRACKED\(/[A-Za-z0-9_/]+, (\w+)\)");
+        for l in auto.raw().lines() {
+            if let Some(m) = line.captures(l) {
+                ctx.tracked.insert(m.s(1).to_string());
+            }
+        }
+    }
     // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/game/atom/_atom.dm), so a draw
     // reading `dir` (its own or a watched neighbour's) redraws.
     ctx.tracked.insert("dir".to_string());

@@ -10,7 +10,6 @@
 	var/wrapped = FALSE // a wrapped one has no slot_flags until unwrapped (each wrapped type sets slot_flags = null)
 	flags = NOREACT // so it doesn't react until you light it
 
-TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 
 
 /// TRUE while worn in the mask slot by a mob with a mouth.

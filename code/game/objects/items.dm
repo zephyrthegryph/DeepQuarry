@@ -104,8 +104,6 @@ TRACKED(/obj/item, canremove)
 	var/cleandesc
 	var/gurgled_color
 
-TRACKED(/obj/item, gurgled)
-TRACKED(/obj/item, gurgled_color)
 
 /obj/item/Initialize(mapload)
 	. = ..()

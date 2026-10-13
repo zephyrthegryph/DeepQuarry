@@ -7,7 +7,6 @@
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
 
-TRACKED(/obj/item/flame/candle, wax)
 
 /// 1 (fresh) to 3 (nearly gone) by remaining wax.
 /obj/item/flame/candle/proc/appearance_wax_stage()

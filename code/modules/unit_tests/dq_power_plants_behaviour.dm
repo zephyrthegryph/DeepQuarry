@@ -522,11 +522,11 @@
 /datum/unit_test/dq_pp/sing_generator_threshold/run_pp()
 	var/list/run = pp_run(1)
 	var/obj/machinery/the_singularitygen/G = allocate(/obj/machinery/the_singularitygen, run[1])
-	G.energy = 199
+	G.set_energy(199)
 	pp_step(G, PP_GEN_STEP)
 	TEST_ASSERT(!QDELETED(G), "199 energy is not enough")
 	TEST_ASSERT(!locate_on(run[1], /obj/singularity), "and no singularity formed")
-	G.energy = 200
+	G.set_energy(200)
 	pp_step(G, PP_GEN_STEP)
 	TEST_ASSERT(QDELETED(G), "200 energy collapses the generator")
 	var/obj/singularity/S = locate_on(run[1], /obj/singularity)
@@ -572,7 +572,7 @@
 	var/obj/machinery/field_generator/G = allocate(/obj/machinery/field_generator, T)
 	G.set_state(2)
 	G.set_anchored(TRUE)
-	G.power = power
+	G.set_power(power)
 	return G
 
 /// Power draw: a running generator pays half of 5500 W, plus 5500 per linked generator and 2000 per field, every step; its store is capped at
@@ -586,7 +586,7 @@
 	pp_step(G, PP_FG_STEP)
 	TEST_ASSERT_EQUAL(G.power, 100000 - 2750, "a lone generator pays 2750 a step")
 	TEST_ASSERT_EQUAL(G.active, 2, "and stays up")
-	G.power = 300000
+	G.set_power(300000)
 	pp_step(G, PP_FG_STEP)
 	TEST_ASSERT_EQUAL(G.power, 250000 - 2750, "its store is capped at 250000 before it pays")
 	G.set_active(0)
@@ -622,7 +622,7 @@
 		TEST_ASSERT_NOTNULL(locate_on(run[i], /obj/machinery/containment_field), "a field stands on tile [i]")
 	TEST_ASSERT_EQUAL(length(A.fields), 3, "A powers 3 fields")
 	TEST_ASSERT(B in A.connected_gens, "and is linked to B")
-	A.power = 100000
+	A.set_power(100000)
 	pp_step(A, PP_FG_STEP)
 	var/draw = round((5500 * 2 + 2000 * 3) / 2)
 	TEST_ASSERT_EQUAL(A.power, 100000 - draw, "a linked generator with 3 fields pays [draw] a step: [A.power]")
@@ -925,7 +925,7 @@
 	var/obj/machinery/power/port_gen/pacman/P = allocate(type, T)
 	P.set_anchored(TRUE)
 	power_test_join(net, P)
-	P.sheets = sheets
+	P.set_sheets(sheets)
 	return P
 
 /// PACMAN fuel use: a step burns power_output / time_per_sheet sheets (output 4 of a basic PACMAN: 4/96 a step, so a sheet lasts 24 steps),
@@ -993,7 +993,7 @@
 	TEST_ASSERT(P.overheating >= 1, "above 300 it overheats: [P.overheating]")
 	P.TogglePower()
 	P.temperature = 200
-	P.overheating = 0
+	P.set_overheating(0)
 	pp_step(P, PP_GEN_STEP_PROC)
 	TEST_ASSERT(pp_close(P.temperature, 200 - round((200 - 20) / 40, 1), 0.01), "off, it cools by (T - 20) / 40: [P.temperature]")
 	power_test_drop_grid(net)
@@ -1148,12 +1148,12 @@
 	TEST_ASSERT(P.set_control(C), "the panel links to its controller")
 	C.add_panel(P)
 	var/sun = SSsolars.get_solar_angle(get_turf(P))
-	P.adir = (sun + 60) % 360
+	P.set_adir((sun + 60) % 360)
 	P.obscured = 0
 	P.update_solar_exposure()
 	TEST_ASSERT(pp_close(P.sunfrac, 0.25, 0.001), "60 degrees off the sun is cos^2 60 = 0.25: [P.sunfrac]")
 	TEST_ASSERT(pp_close(P.get_power_supplied(), GLOB.solar_gen_rate * 0.25, 0.001), "and supplies a quarter of [GLOB.solar_gen_rate] W")
-	P.adir = (sun + 120) % 360
+	P.set_adir((sun + 120) % 360)
 	P.update_solar_exposure()
 	TEST_ASSERT_EQUAL(P.sunfrac, 0, "past 90 degrees it gets nothing")
 	P.sunfrac = 1

@@ -318,6 +318,32 @@ transitive write set of the same walk. `analyze sem closure [--write]` diffs the
 `doc/rewrite/reads_closure_newly_visible.md`; those sites are in no baseline, and switching a lint to the closed walk needs the
 baseline decision that file asks for.
 
+### Read-driven tracking (`gens/auto_tracked.rs`)
+
+A var that reactive code reads is tracked without a `TRACKED()` line (doc/rewrite/final_api.html section 7, "Reactive closure", mechanism 1).
+`gen auto_tracked` (stage 0) takes every `(declaring type, var)` the dependency analysis (`gens/deps`) finds a stat input, requirement, output or
+`draw()` reading off the holder, drops what a declaration already makes reactive (tracked, SETTER, relation, STAT, `derive_`), and writes
+`TRACKED(T, v)` for the rest into `code/engine/_generated/auto_tracked.dm`. Such a var gets the same generated setter as any other (the
+`TRACKED_UNCHANGED` compare, `tracked_changed()`), a list var gets the `tracked_lists` mutators, and the `tracked` lint holds every write to it.
+
+* Stable by construction: the inference reads the declarations a person wrote (`Decls::tracked_explicit`, which leaves out the file it writes) and
+  source-level facts (is the var written outside its own setter, is `set_v(` / `add_v(` called anywhere), never its own output, so `analyze gen`
+  converges and a fresh checkout generates the same file. A var stays while a `set_v(` call exists, so the calls `analyze fix` writes keep compiling.
+* Left alone (listed with `DQ_AUTO_REPORT=1 analyze gen auto_tracked`): built-in vars, `static`/`const` vars, non-/datum types, a type that already
+  has a `set_v` (or a list mutator) on its path, and `[lint.auto_tracked.lists] exclude` in `tools/ci/lint_scopes.toml`.
+* `analyze fix --drop-declared [--apply]` deletes the plain `TRACKED(T, v)` lines the inference now covers (a read, written outside the setter, no
+  other `set_v` on the path). `TRACKED_BRIDGED`, `TRACKED_DATA`, `SETTER`, the schema forms and test files keep theirs.
+* `analyze fix [--apply] [--tests]` also rewrites `v = x`, `src.v = x`, `O.v = x`, `v op= x` and `v++` statements (also after `if(...)`, `else`, or a
+  `;`, and over several lines) to `set_v(x)` / `set_v(v op (x))`; a list var's `+=`, `-=`, `|=` become `add_v` / `remove_v` / `include_v`. A write whose value
+  is used (`(v = x)`, a `for(...)` header) is listed for hand conversion. STAT vars have no setter and are never rewritten.
+* Construction is not a change: a write of the instance's own tracked var inside its `Initialize()` or `New()` is not an `outside_setter` hit
+  (`PRE_LIVE` in `lints/tracked.rs`). Nothing reads or watches an object still being built, so the write sets the var and publishes nothing, the same
+  as a type-level default. This also keeps the `tracked` and `init` lints from contradicting each other: the init ratchet fingerprints each imperative
+  line of an `Initialize()` body, so rewriting those lines to setter calls would have read as new init debt. A write to ANOTHER object's tracked var, and
+  any write in `on_holder_init()`, `after_init()` or another proc, is judged as anywhere else.
+* Known holes (the staleness checker is the cross-check): a write inside a macro (`EXPIRY_STAMP(src, v, clock)` expands to `src.v = ...`), a
+  `?.` write, and a write through a receiver the lint cannot type are not seen by the text-based `tracked` lint.
+
 ### Tracked lists (`gens/tracked_lists.rs`)
 
 A `TRACKED(T, v)` / `TRACKED_BRIDGED(T, v, CHANNEL)` on a `list` var gets, in `tracked_lists.dm`, the procs `add_v(x)`, `include_v(x)`

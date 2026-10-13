@@ -5,8 +5,8 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/sample/fibers/recipient = allocate(/obj/item/sample/fibers, T)
 	var/obj/item/sample/fibers/donor = allocate(/obj/item/sample/fibers, T)
-	recipient.evidence = list("recipient fiber")
-	donor.evidence = list("donor fiber")
+	recipient.set_evidence(list("recipient fiber"))
+	donor.set_evidence(list("donor fiber"))
 	var/recipient_name = recipient.name
 	var/donor_name = donor.name
 	TEST_ASSERT(user.put_in_active_hand(donor), "the original donor is genuinely held")

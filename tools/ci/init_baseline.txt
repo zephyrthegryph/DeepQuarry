@@ -3911,7 +3911,6 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(25))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_material_decorations = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/reagent_containers/syringe(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/reagent_containers/syringe/S = new_item
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	S.volume = 15
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	S.reagents?.maximum_volume = 15
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/additional_chems = 5 //5 random chems added to the syringe! 15u of RANDOM stuff! (I tried to keep this 30, but this was...Horribly bugged. There is no icon_state for 16-30, so the icon was invisible when filled.)

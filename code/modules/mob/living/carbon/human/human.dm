@@ -1481,7 +1481,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set_hunger_rate(src, species.hunger_factor)
 
 	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
-	default_pixel_y = initial(pixel_y) + species.pixel_offset_y
+	set_default_pixel_y(initial(pixel_y) + species.pixel_offset_y)
 	pixel_x = default_pixel_x
 	pixel_y = default_pixel_y
 	center_offset = species.center_offset

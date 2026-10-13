@@ -169,9 +169,9 @@ CAPABILITIES(/obj/item/shovel/wood)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/item/shovel/wood/proc/carve(_mat)
-	material_static = get_material_by_name(_mat || MAT_WOOD)
+	set_material_static(get_material_by_name(_mat || MAT_WOOD))
 	if(!istype(material(), /datum/material))
-		material_static = null
+		set_material_static(null)
 	else
 		name = "[material().display_name] shovel"
 		set_bulk_material(material().name, 50)

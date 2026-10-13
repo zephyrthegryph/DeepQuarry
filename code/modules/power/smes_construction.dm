@@ -117,8 +117,6 @@ TRACKED(/obj/machinery/power/smes/buildable, failing)
 TRACKED(/obj/machinery/power/smes/buildable, grounding)
 TRACKED(/obj/machinery/power/smes/buildable, RCon)
 TRACKED(/obj/machinery/power/smes/buildable, RCon_tag)
-TRACKED(/obj/machinery/power/smes/buildable, safeties_enabled)
-TRACKED(/obj/machinery/power/smes/buildable, cur_coils)
 
 MSG_DEF_SELF(smes/rcon_cut, "Connection error: Destination Unreachable.")
 MSG_DEF_SELF(smes/overloaded, "The indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea.")

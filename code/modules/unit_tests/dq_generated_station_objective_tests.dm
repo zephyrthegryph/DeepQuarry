@@ -21,7 +21,7 @@
 	site.station_simulation.set_integrity("security-1", 0)
 	for(var/obj/machinery/generated_station_department_control/control in site.station_controls)
 		if(control.department_id == "ai-1")
-			control.captured = TRUE
+			control.set_captured(TRUE)
 	for(var/datum/expedition_objective/objective in mission.objectives)
 		objective.check()
 	for(var/datum/expedition_objective/objective in mission.objectives)

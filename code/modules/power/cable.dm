@@ -68,8 +68,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
-TRACKED(/obj/structure/cable, d1)
-TRACKED(/obj/structure/cable, d2)
 
 /obj/structure/cable/proc/engineered_material() as /datum/material
 	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)

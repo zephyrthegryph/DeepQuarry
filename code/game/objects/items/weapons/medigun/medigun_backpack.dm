@@ -34,12 +34,6 @@
 	var/gridstatus = 0
 	var/chargecap = 1000
 
-TRACKED(/obj/item/medigun_backpack, brutevol)
-TRACKED(/obj/item/medigun_backpack, toxvol)
-TRACKED(/obj/item/medigun_backpack, burnvol)
-TRACKED(/obj/item/medigun_backpack, brutecharge)
-TRACKED(/obj/item/medigun_backpack, toxcharge)
-TRACKED(/obj/item/medigun_backpack, burncharge)
 
 CAPABILITIES(/obj/item/medigun_backpack)
 	configure(item_worn(slots = SLOT_BACK))

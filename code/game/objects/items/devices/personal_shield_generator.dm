@@ -72,7 +72,6 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 
 /// If the shield gen is active; it drains power while it is.
 /obj/item/personal_shield_generator/var/shield_active = 0
-TRACKED(/obj/item/personal_shield_generator, shield_active)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack

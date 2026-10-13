@@ -44,7 +44,6 @@ CAPABILITIES(/obj/item/taperecorder)
 	mytape = null
 
 /obj/item/taperecorder/var/recording = 0
-TRACKED(/obj/item/taperecorder, recording)
 TRACKED(/obj/item/taperecorder, emagged)
 TRACKED(/obj/item/taperecorder, playing)
 TRACKED(/obj/item/rectape, ruined)

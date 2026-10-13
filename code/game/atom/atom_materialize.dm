@@ -31,7 +31,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(flags & ATOM_MATERIALIZED)
 		return FALSE
-	flags |= ATOM_MATERIALIZED
+	set_flags(flags | ATOM_MATERIALIZED)
 	on_materialize()
 	// A ledger built while sandboxed skipped the latency sweep; join it now.
 	if(containment_ledger() && latent_contents_enabled())
@@ -52,7 +52,7 @@
 		for(var/atom/movable/content as anything in contents)
 			if(content.flags & ATOM_MATERIALIZED)
 				content.dematerialize()
-	flags &= ~ATOM_MATERIALIZED
+	set_flags(flags & (~ATOM_MATERIALIZED))
 	on_dematerialize()
 	dq_latency_sweep_unregister(src) // left the live world: no longer a sweep candidate
 	return TRUE

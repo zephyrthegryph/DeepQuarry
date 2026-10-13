@@ -29,8 +29,28 @@ pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "h
 
 /// Engine procs a consumer may call whose reads the runtime registers itself, so the opaque crossing hides nothing: the stat and capability-key
 /// readers resolve to inputs the stat layer indexes (stat_value of a literal id is a stat read; cap_key_get a capability key read).
-/// A draw's `..()` into the engine's base draw reads the base look the engine itself keeps current.
-pub const OPAQUE_SEEN: &[&str] = &["/::stat_value", "/::cap_key_get", "/::condition_holds", "/::condition_id_holds", "/atom::draw", "/datum::draw"];
+/// A draw's `..()` into the engine's base draw reads the base look the engine itself keeps current. tracked_changed() publishes a write (a setter's
+/// last line) and reads nothing. expiry_clock_now() reads a clock, as `world.time` does (a clock read never subscribes).
+pub const OPAQUE_SEEN: &[&str] = &["/::stat_value", "/::cap_key_get", "/::condition_holds", "/::condition_id_holds", "/atom::draw", "/datum::draw", "/::tracked_changed", "/::expiry_clock_now"];
+
+/// The `(declaring type, var)` pairs a read set reads off the holder.
+fn note_reads(set: &ReadSet, reads: &mut BTreeSet<(String, String)>) {
+    for r in &set.reads {
+        if r.kind == ReadKind::Var && r.root == "holder" && r.hop_ok && !r.owner.is_empty() {
+            reads.insert((r.owner.clone(), r.var.clone()));
+        }
+    }
+}
+
+/// A call to the setter `analyze gen auto_tracked` writes (`<type>::set_<var>`): it writes the var and publishes it, and reads nothing the graph
+/// must follow, so the walk's not entering its body (the engine's generated directory is opaque) hides no input.
+fn is_generated_setter(eng: &ReadsEngine, callee: &str) -> bool {
+    let Some((owner, name)) = callee.rsplit_once("::") else { return false };
+    if !name.starts_with("set_") {
+        return false;
+    }
+    eng.sem.proc_ref(owner, name).is_some_and(|p| eng.sem.file_of(p.get().location) == Some(super::auto_tracked::AUTO_REL))
+}
 
 /// One untracked read of a consumer: what it is, and where the read sits.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -58,7 +78,7 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> V
         }
     }
     for (callee, (rel, line)) in &set.opaque {
-        if OPAQUE_SEEN.contains(&callee.as_str()) {
+        if OPAQUE_SEEN.contains(&callee.as_str()) || is_generated_setter(eng, callee) {
             continue;
         }
         out.push(Untracked { what: format!("?opaque:{}", callee), rel: rel.clone(), line: *line });
@@ -162,6 +182,11 @@ pub struct DepsAnalysis {
     pub leaves: Vec<Leaf>,
     /// "<type>" -> the holder vars its own draw() reads.
     pub draw_reads: BTreeMap<String, BTreeSet<String>>,
+    /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
+    /// set `gens::auto_tracked` turns into tracked vars.
+    pub reads: BTreeSet<(String, String)>,
+    /// The reads of `reads` no declaration makes reactive (see `gens::auto_tracked::candidate`): the vars the inference tracks.
+    pub candidates: BTreeSet<(String, String)>,
 }
 
 pub fn analyzed(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAnalysis>> {
@@ -180,6 +205,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let ann = Annotations::get(&sem, &decls);
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed() } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let written = WriteIndex::build(&sem);
+    let set_calls = super::auto_tracked::set_calls(tree);
+    let outside_setters = super::auto_tracked::writes_outside_setters(&sem);
+    let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     if let Some(an) = handlers::analyzed(tree) {
         for a in &an.handlers {
@@ -189,8 +217,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             let Some(status_quo) = &a.set else { continue };
             consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
                 if closed {
-                    untracked_of(&eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path()), &eng, &written)
+                    let set = eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path());
+                    note_reads(&set, &mut reads);
+                    untracked_of(&set, &eng, &written)
                 } else {
+                    note_reads(status_quo, &mut reads);
                     untracked_of(status_quo, &eng, &written)
                 }
             });
@@ -207,6 +238,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             continue;
         }
         let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+        note_reads(&set, &mut reads);
         consumers.insert(id, untracked_of(&set, &eng, &written));
     }
     // STAT(T, v, FORMULA, formula = PROC_REF(f)): the formula is the stat's one input.
@@ -219,6 +251,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 continue;
             }
             let set = eng.analyze_handler(owner, name, "/datum/act/eval");
+            note_reads(&set, &mut reads);
             consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written));
         }
     }
@@ -233,6 +266,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             continue;
         }
         let set = eng.analyze(&d.owner, "draw");
+        note_reads(&set, &mut reads);
         let keys = draw_reads.entry(d.owner.clone()).or_default();
         for r in &set.reads {
             if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Var {
@@ -252,7 +286,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     }
     leaves.sort();
     leaves.dedup();
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads })
+    let candidates = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, reads, candidates })
 }
 
 struct Deps;
@@ -305,6 +340,17 @@ impl Generator for Deps {
             out.diag("deepquarry.dme", 1, "the semantic model could not be built; stat and draw dependencies cannot be generated");
             return;
         };
+        if std::env::var("DQ_AUTO_REPORT").is_ok() {
+            let mut hist: BTreeMap<&str, usize> = BTreeMap::new();
+            for u in an.consumers.values().flatten() {
+                *hist.entry(u.what.as_str()).or_default() += 1;
+            }
+            let mut rows: Vec<_> = hist.into_iter().collect();
+            rows.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+            for (what, n) in rows {
+                eprintln!("untracked-read {:5} {}", n, what);
+            }
+        }
         out.doc("\"<type>::<proc>\" -> what a stat input, condition, requirement, output or draw reads that nothing publishes: an untracked var");
         out.doc("(\"power_area.x\"), ?<rule> for a read the analysis could not resolve, ?opaque:<type>::<proc> for an engine body it does not enter.");
         out.doc("A stat with such an input recomputes on every read instead of caching (stat_value(), code/engine/stats/recompute.dm).");

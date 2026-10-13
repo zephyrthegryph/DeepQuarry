@@ -54,8 +54,8 @@
 	TEST_ASSERT(H.put_in_active_hand(T), "the operator holds the multitool")
 	var/obj/machinery/atmospherics/unary/vent_pump/first = mach(/obj/machinery/atmospherics/unary/vent_pump, tile(3, 3))
 	var/obj/machinery/atmospherics/unary/vent_pump/second = mach(/obj/machinery/atmospherics/unary/vent_pump, tile(4, 3))
-	first.id_tag = "round3-old-outlet"
-	second.id_tag = "round3-new-outlet"
+	first.set_id_tag("round3-old-outlet")
+	second.set_id_tag("round3-new-outlet")
 	rel_set(T, nameof(T.connectable), first)
 	test_click(H, C, T)
 	request_answer(H, "Outlet")

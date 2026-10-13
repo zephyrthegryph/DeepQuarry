@@ -256,7 +256,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		pixel_x = tail_style.mob_offset_x
 		pixel_y = tail_style.mob_offset_y
 		default_pixel_x = tail_style.mob_offset_x
-		default_pixel_y = tail_style.mob_offset_y
+		set_default_pixel_y(tail_style.mob_offset_y)
 	return list(icon_key, wholeicontransparent)
 
 /// One visible part's share of the body icon key: species, colours, markings, polish and

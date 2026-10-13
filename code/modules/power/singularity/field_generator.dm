@@ -50,8 +50,6 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 	/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
 	var/warming_up = 0
 
-TRACKED(/obj/machinery/field_generator, Varedit_start)
-TRACKED(/obj/machinery/field_generator, warming_up)
 
 CAPABILITIES(/obj/machinery/field_generator)
 	configure(light_glow(color = "#5BA8FF"))
@@ -90,7 +88,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 		if(active == 0)
 			set_active(1)
 			set_state(FLOOR_WELD_WELDED)
-			power = FIELD_GEN_MAX_POWER
+			set_power(FIELD_GEN_MAX_POWER)
 			set_anchored(TRUE)
 			set_warming_up(3)
 			start_fields()
@@ -109,7 +107,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 /obj/machinery/field_generator/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
-		power += Proj.damage * EMITTER_DAMAGE_POWER_TRANSFER
+		set_power(power + (Proj.damage * EMITTER_DAMAGE_POWER_TRANSFER))
 		changed(src)
 		return 0
 	return ..()
@@ -154,7 +152,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 	changed(src)
 	if(src.power > FIELD_GEN_MAX_POWER)
-		src.power = FIELD_GEN_MAX_POWER
+		set_power(FIELD_GEN_MAX_POWER)
 
 	var/power_draw = gen_power_draw
 	power_draw += gen_power_draw * length(connected_gens)
@@ -170,7 +168,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 		turn_off()
 		log_game("FIELDGEN([x],[y],[z]) Lost power and was ON.")
 		investigate_log("ran out of power and " + span_red("deactivated"),"singulo")
-		src.power = 0
+		set_power(0)
 		return 0
 
 //Tries to draw the needed power from our own power reserve, or connected generators if we can. Returns the amount of power we were able to get.
@@ -178,12 +176,12 @@ CAPABILITIES(/obj/machinery/field_generator)
 	flood_list += src
 
 	if(src.power >= draw)//We have enough power
-		src.power -= draw
+		set_power(src.power - draw)
 		return draw
 
 	//Need more power
 	var/actual_draw = src.power	//already checked that power < draw
-	src.power = 0
+	set_power(0)
 
 	for(var/obj/machinery/field_generator/FG as anything in connected_gens?.Copy())
 		if (FG in flood_list)

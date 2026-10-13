@@ -119,7 +119,7 @@ CAPABILITIES(/loot/unit_test/parent/child)
 	TEST_ASSERT_EQUAL(I.dir, NORTH, "the mapped dir is honoured")
 	TEST_ASSERT_EQUAL(I.color, "#123456", "the mapped colour is honoured")
 	T.cut_overlay(I)
-	T.decals = old_decals
+	T.set_decals(old_decals)
 
 /// A coordinate-only landmark becomes a registry row; one that stays is left to be made normally.
 /datum/unit_test/dq_sys_resolver_landmark

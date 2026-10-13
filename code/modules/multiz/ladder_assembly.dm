@@ -107,21 +107,21 @@ MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed
 
 	if(below)
 		var/obj/structure/ladder/L = new(get_turf(below))
-		L.allowed_directions = UP
+		L.set_allowed_directions(UP)
 		if(below.created_name) L.name = below.created_name
 		L.attempt_connection()
 		spent(below, user)
 
 	if(me)
 		var/obj/structure/ladder/L = new(get_turf(me))
-		L.allowed_directions = (below ? DOWN : 0) | (above ? UP : 0)
+		L.set_allowed_directions((below ? DOWN : 0) | (above ? UP : 0))
 		if(me.created_name) L.name = me.created_name
 		L.attempt_connection()
 		spent(me, user)
 
 	if(above)
 		var/obj/structure/ladder/L = new(get_turf(above))
-		L.allowed_directions = DOWN
+		L.set_allowed_directions(DOWN)
 		if(above.created_name) L.name = above.created_name
 		L.attempt_connection()
 		spent(above, user)

@@ -93,41 +93,41 @@
 	var/obj/item/clothing/suit/barding/B = allocate(/obj/item/clothing/suit/barding, H.loc)
 	var/datum/sprite_accessory/tail/taur/drake/drake = allocate(/datum/sprite_accessory/tail/taur/drake)
 	var/datum/sprite_accessory/tail/taur/horse/horse = allocate(/datum/sprite_accessory/tail/taur/horse)
-	H.tail_style = null // Actual old untracked selector; feature migration must route its real setter later.
+	H.set_tail_style(null) // Actual old untracked selector; feature migration must route its real setter later.
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "you need a drake-taur half to wear this", "Clientless real human is refused by drake fit")
-	H.tail_style = drake
+	H.set_tail_style(drake)
 	TEST_ASSERT_NULL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "Real drake accessory shape allows drake cloak")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "you need a horse-taur half to wear this", "Other real taur shape stays refused")
-	H.tail_style = horse
+	H.set_tail_style(horse)
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "Real horse shape permits barding")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "you need a drake-taur half to wear this", "Changing real selector invalidates earlier allowed shape")
 
 /datum/unit_test/dq_acceptance_final24_boundary/saddlebag_effect/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/storage/backpack/saddlebag_common/B = allocate(/obj/item/storage/backpack/saddlebag_common, H.loc)
-	H.tail_style = null
+	H.set_tail_style(null)
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), lowertext(B.no_message), "Exact old dynamic lowercase rejection")
 	var/datum/sprite_accessory/tail/taur/horse/T = allocate(/datum/sprite_accessory/tail/taur/horse)
-	H.tail_style = T
+	H.set_tail_style(T)
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "Actual taur permits common saddlebag")
 	TEST_ASSERT_EQUAL(B.item_state, "[B.icon_base]_[T.icon_sprite_tag]", "Old query effect recorded honestly before draw relocation")
 
 /datum/unit_test/dq_acceptance_final24_boundary/avida_effect/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/clothing/head/fluff/avida/I = allocate(/obj/item/clothing/head/fluff/avida, H.loc)
-	H.ear_style = null
-	H.ear_secondary_style = null
+	H.set_ear_style(null)
+	H.set_ear_secondary_style(null)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Ear clause always permits admission")
 	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Old query changes no-ear appearance; native requirement must not retain this effect")
 	var/datum/sprite_accessory/ears/bnnuy/E = allocate(/datum/sprite_accessory/ears/bnnuy)
-	H.ear_style = E
+	H.set_ear_style(E)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Real allowed primary ear retains admission")
 	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "Old query restores original look for actual Bnnuy ears")
-	H.ear_style = null
-	H.ear_secondary_style = E
+	H.set_ear_style(null)
+	H.set_ear_secondary_style(E)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Real secondary ear also retains admission")
 	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "Actual secondary ear picks original look")
-	H.ear_secondary_style = null
+	H.set_ear_secondary_style(null)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "No-ear recovery still admits")
 	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Real selector clearing restores old no-ear effect")
 

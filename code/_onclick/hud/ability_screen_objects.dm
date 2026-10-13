@@ -82,7 +82,6 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-TRACKED(/atom/movable/screen/movable/ability_master, showing)
 
 /// The master shows the open or closed button, and is hidden while it holds no abilities.
 /atom/movable/screen/movable/ability_master/draw(datum/look/look)
@@ -154,7 +153,6 @@ TRACKED(/atom/movable/screen/movable/ability_master, showing)
 
 
 TRACKED(/atom/movable/screen/ability, background_base_state)
-TRACKED(/atom/movable/screen/ability, ability_icon_state)
 
 /atom/movable/screen/ability/draw(datum/look/look)
 	..()

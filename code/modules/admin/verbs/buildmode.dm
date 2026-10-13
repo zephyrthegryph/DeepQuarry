@@ -963,7 +963,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 					T.flags |= ADMIN_SPAWNED
 				else
 					var/atom/new_thing = new wall_type(T) //wall_type can be ANY /obj, /mob, /turf, etc
-					new_thing.flags |= ADMIN_SPAWNED
+					new_thing.set_flags(new_thing.flags | ADMIN_SPAWNED)
 
 			else
 				if(T.x == origin_x && T.y == origin_y) //Get the middle of the square.
@@ -973,7 +973,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 					T.flags |= ADMIN_SPAWNED
 				else
 					var/atom/new_thing = new floor_type(T)
-					new_thing.flags |= ADMIN_SPAWNED
+					new_thing.set_flags(new_thing.flags | ADMIN_SPAWNED)
 
 	if(area_enabled) //Let's try not to make a new area unless you got walls and a floor.
 		create_buildmode_area(area_name, origin) //Generates a new area.

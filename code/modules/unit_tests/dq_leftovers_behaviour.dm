@@ -44,7 +44,7 @@
 /datum/unit_test/dq_leftovers/organ_butchery_takes_ten_seconds/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/organ/internal/heart/heart = allocate(/obj/item/organ/internal/heart, tile(2, 2))
-	heart.meat_type = /obj/item/reagent_containers/food/snacks/meat
+	heart.set_meat_type(/obj/item/reagent_containers/food/snacks/meat)
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife, tile(2, 1))
 	knife.set_toolspeed(1)
 	dq_lo_click(H, heart, knife)
@@ -62,7 +62,7 @@
 /datum/unit_test/dq_leftovers/organ_peridaxon_revives/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/organ/internal/heart/heart = allocate(/obj/item/organ/internal/heart, tile(2, 2))
-	heart.butcherable = FALSE
+	heart.set_butcherable(FALSE)
 	heart.set_status(heart.status | ORGAN_DEAD)
 	var/obj/item/reagent_containers/glass/beaker/beaker = allocate(/obj/item/reagent_containers/glass/beaker, tile(2, 1))
 	beaker.reagents.add_reagent(REAGENT_ID_PERIDAXON, 10)

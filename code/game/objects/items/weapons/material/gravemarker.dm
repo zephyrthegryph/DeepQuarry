@@ -29,9 +29,9 @@
 		return OP_OK
 	act_message(A.actor, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
 	if(carving_1)
-		grave_name += carving_1
+		set_grave_name(grave_name + carving_1)
 	if(carving_2)
-		epitaph += carving_2
+		set_epitaph(epitaph + carving_2)
 	return OP_OK
 
 /obj/item/material/gravemarker/proc/wrench_started(datum/act/op/A)

@@ -63,7 +63,7 @@ CAPABILITIES(/datum/spawn_menu)
 	else
 		for(var/i in 1 to amount)
 			var/atom/spawned = new path(target_turf)
-			spawned.flags |= ADMIN_SPAWNED
+			spawned.set_flags(spawned.flags | ADMIN_SPAWNED)
 
 	log_admin("[key_name(user)] spawned [amount] x [path] at [AREACOORD(user)]")
 	SStgui.close_uis(src)

@@ -279,7 +279,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	pixel_x = chassis_data.pixel_x
 	default_pixel_x = pixel_x
 	pixel_y = chassis_data.pixel_y
-	default_pixel_y = pixel_y
+	set_default_pixel_y(pixel_y)
 	vis_height = chassis_data.vis_height
 
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
@@ -569,11 +569,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-TRACKED(/mob/living/silicon/pai, chassis_name)
-TRACKED(/mob/living/silicon/pai, eye_glow)
-TRACKED(/mob/living/silicon/pai, hide_glow)
 TRACKED(/mob/living/silicon/pai, eye_color)
-TRACKED(/mob/living/silicon/pai, holo_icon_south)
 
 /mob/living/silicon/pai/draw(datum/look/look)
 	..()
@@ -674,4 +670,3 @@ TRACKED(/mob/living/silicon/pai, holo_icon_south)
 	if(stat != DEAD)
 		close_up()
 
-TRACKED(/mob/living/silicon/pai, idaccessible)

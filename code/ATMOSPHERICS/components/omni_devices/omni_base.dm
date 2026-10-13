@@ -27,7 +27,6 @@
 	/// The device's four ports, in GLOB.cardinal order (owned: rel_add in Initialize()).
 	var/list/datum/omni_port/ports
 
-TRACKED(/obj/machinery/atmospherics/omni, configuring)
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)
 	owns_many(nameof(ports), /datum/omni_port)
@@ -96,11 +95,11 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 
 	//directional icons are layers 1-4, with the core icon on layer 5
 	if(core_icon)
-		overlays_off[5] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon)
-		overlays_on[5] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon + "_glow")
+		set_overlays_off_at(5, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon))
+		set_overlays_on_at(5, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon + "_glow"))
 
-		overlays_error[1] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon)
-		overlays_error[2] = GLOB.icon_manager.get_atmos_icon("omni", , , "error")
+		set_overlays_error_at(1, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon))
+		set_overlays_error_at(2, GLOB.icon_manager.get_atmos_icon("omni", , , "error"))
 
 /obj/machinery/atmospherics/omni/proc/update_port_icons()
 	for(var/datum/omni_port/P in ports)
@@ -125,12 +124,12 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 					underlays_current[ref_layer] = port_icons["pipe_icon"]
 				else
 					underlays_current[ref_layer] = null
-				overlays_off[ref_layer] = port_icons["off_icon"]
-				overlays_on[ref_layer] = port_icons["on_icon"]
+				set_overlays_off_at(ref_layer, port_icons["off_icon"])
+				set_overlays_on_at(ref_layer, port_icons["on_icon"])
 			else
 				underlays_current[ref_layer] = null
-				overlays_off[ref_layer] = null
-				overlays_on[ref_layer] = null
+				set_overlays_off_at(ref_layer, null)
+				set_overlays_on_at(ref_layer, null)
 
 	underlays = underlays_current // the pipe stubs under its ports (a look has no underlays)
 	changed(src)

@@ -108,7 +108,6 @@ CAPABILITIES(/obj/item/flame/match)
 
 /// Smokes (smokable_step) every 2 s while lit.
 /obj/item/clothing/mask/smokable/var/lit = 0
-TRACKED(/obj/item/clothing/mask/smokable, max_smoketime)
 
 /// Lighting or putting it out changes what it looks like worn and held: the in-hand and worn state follow it (a draw never writes them).
 /obj/item/clothing/mask/smokable/proc/set_lit(value)

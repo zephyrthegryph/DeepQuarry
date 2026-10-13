@@ -10,7 +10,6 @@
 	var/visor_state = "Neutral" //Separating this from lstat so that it could potentially be used for an override system or something
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
 
-TRACKED(/obj/item/clothing/mask/synthfacemask, visor_state)
 
 /// The wearer it is installed on (a relation view); the visor follows their state while set.
 /obj/item/clothing/mask/synthfacemask/var/mob/living/carbon/maskmaster

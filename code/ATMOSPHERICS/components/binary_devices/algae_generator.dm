@@ -141,7 +141,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	set_recent_moles_transferred(converted_moles)
 	ui_error = null // Success!
 
-TRACKED(/obj/machinery/atmospherics/binary/algae_farm, recent_moles_transferred)
 
 /obj/machinery/atmospherics/binary/algae_farm/draw(datum/look/look)
 	..()

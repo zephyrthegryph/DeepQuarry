@@ -91,7 +91,7 @@
 	new_value = max(0, new_value)
 	if(atom_integrity == new_value)
 		return
-	atom_integrity = new_value
+	set_atom_integrity(new_value)
 	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
 	on_update_integrity(old_value, new_value)
 	dq_rules_publish(src, RULE_KEY_INTEGRITY)
@@ -100,7 +100,7 @@
 
 /// Returns the atom's current integrity. Use this instead of reading atom_integrity (which is private).
 /atom/proc/get_integrity()
-	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
+	return atom_integrity
 
 /// How much integrity the atom is missing (0 when intact). A condition may read it: it stands for ATOM_INTEGRITY_KEY.
 /atom/proc/get_integrity_damage()

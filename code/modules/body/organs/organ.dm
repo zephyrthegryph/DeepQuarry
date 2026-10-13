@@ -58,7 +58,6 @@ TRACKED(/obj/item/organ, parent_organ)
 TRACKED(/obj/item/organ, status)
 TRACKED(/obj/item/organ, damage)
 TRACKED(/obj/item/organ, max_damage)
-TRACKED(/obj/item/organ, robotic)
 
 
 // afflictions on the organ are cured; organ mods removed.
@@ -110,16 +109,16 @@ TRACKED(/obj/item/organ, robotic)
 		if(!meat_type)
 			// D25: the part's own biology decides what it's made of, not the owner's.
 			if(is_robotic())
-				meat_type = /obj/item/stack/material/steel
+				set_meat_type(/obj/item/stack/material/steel)
 			else if(ishuman(owner))
 				var/mob/living/carbon/human/H = owner
-				meat_type = H?.species?.meat_type
+				set_meat_type(H?.species?.meat_type)
 
 			if(!meat_type)
 				if(owner.meat_type)
-					meat_type = owner.meat_type
+					set_meat_type(owner.meat_type)
 				else
-					meat_type = /obj/item/reagent_containers/food/snacks/meat
+					set_meat_type(/obj/item/reagent_containers/food/snacks/meat)
 
 /obj/item/organ/proc/set_dna(datum/dna/new_dna)
 	if(new_dna)
@@ -448,7 +447,7 @@ TRACKED(/obj/item/organ, robotic)
 	set_robotic(ORGAN_ASSISTED)
 	min_bruised_damage = 15
 	min_broken_damage = 60 // Flat doubling of all min_broken_damage
-	butcherable = FALSE
+	set_butcherable(FALSE)
 
 /obj/item/organ/proc/digitize() //Used to make the circuit-brain. On this level in the event more circuit-organs are added/tweaks are wanted.
 	robotize()
@@ -632,7 +631,7 @@ CAPABILITIES(/obj/item/organ)
 	to_chat(user, "You use the [container] to revive \the [src]")
 
 /obj/item/organ/proc/can_butcher(obj/item/O, mob/living/user)
-	if(butcherable && meat_type) // ALLOW(reads): the organ's meat is read when the butchery is tried, never from a cached menu
+	if(butcherable && meat_type)
 
 		if(istype(O, /obj/machinery/gibber))	// The great equalizer.
 			return TRUE

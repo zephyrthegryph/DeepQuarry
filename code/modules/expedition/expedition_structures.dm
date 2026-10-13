@@ -35,7 +35,6 @@ CAPABILITIES(/obj/item/expedition_artifact)
 	anchored = TRUE
 	/// Set TRUE once a scanner logs its data; the survey objective polls this.
 	var/scanned = FALSE
-TRACKED(/obj/structure/expedition_survey_beacon, scanned)
 
 MSG_DEF(survey_beacon/logging, span_notice("You begin logging %T%'s readings with %I%..."), span_notice("%U% sweeps %I% across %T%."))
 MSG_DEF_SELF(survey_beacon/logged, span_warning("%T% has already been logged."))

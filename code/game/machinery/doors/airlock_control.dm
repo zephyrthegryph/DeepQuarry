@@ -252,7 +252,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 
 		previousPressure = pressure
 
-		alert = (pressure < ONE_ATMOSPHERE*0.8)
+		set_alert((pressure < ONE_ATMOSPHERE*0.8))
 
 		changed(src)
 	register_gas_dependencies()

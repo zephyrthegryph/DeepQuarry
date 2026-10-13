@@ -193,7 +193,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 /// The save question's second step: a recipe of that name exists already.
 /obj/machinery/chemical_dispenser/proc/recipe_name_taken(datum/act/op/A)
-	return !!LAZYACCESS(saved_recipes, A.step_value("a2")) // ALLOW(reads): the saved recipes are read when the name is answered, never cached
+	return !!LAZYACCESS(saved_recipes, A.step_value("a2"))
 
 /obj/machinery/chemical_dispenser/proc/recipe_overwrite_question(datum/act/op/A)
 	return "\"[A.step_value("a2")]\" already exists, do you want to overwrite it?"
@@ -253,7 +253,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 				if(istext(steps["id"]) && isnum(steps["amount"]))
 					new_recipes[key] += list(list("id" = steps["id"], "amount" = steps["amount"]))
 	if(length(new_recipes))
-		saved_recipes = new_recipes
+		set_saved_recipes(new_recipes)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_record_recipe(datum/act/op/A)
@@ -272,7 +272,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(A.step_value("a1") == "Yes")
-		saved_recipes = list()
+		set_saved_recipes(list())
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_save_recording(datum/act/op/A)
@@ -290,7 +290,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 				to_chat(user, span_warning("[src] cannot find <b>[label]</b>!"))
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 				return
-		LAZYSET(saved_recipes, name, recording_recipe)
+		set_saved_recipes_at(name, recording_recipe)
 		recording_recipe = null
 		. = TRUE
 
@@ -333,7 +333,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 /obj/machinery/chemical_dispenser/proc/ui_act_remove_recipe(datum/act/op/A, recipe)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	LAZYREMOVE(saved_recipes, recipe)
+	remove_saved_recipes(recipe)
 	. = TRUE
 
 // Label -> installed cartridge (in contents); they go with the machine.

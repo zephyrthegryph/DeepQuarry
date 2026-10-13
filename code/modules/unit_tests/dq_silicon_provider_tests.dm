@@ -152,7 +152,7 @@
 	var/mob/living/silicon/robot/R = make_borg(T)
 	var/obj/item/lightreplacer/dogborg/replacer = allocate(/obj/item/lightreplacer/dogborg, T)
 	replacer.glass = new /datum/matter_synth(1000)
-	replacer.uses = 5
+	replacer.set_uses(5)
 	var/datum/op_result/asked = test_click(R, replacer, replacer, GESTURE_SELF)
 	TEST_ASSERT_EQUAL(asked?.key, "choose", "using it in the hand asks")
 	test_answer(R, "Color")

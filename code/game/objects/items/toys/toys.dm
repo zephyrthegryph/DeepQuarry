@@ -1801,7 +1801,7 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
 	var/turf/T = get_turf(src)
 	if(!T.AdjacentQuick(user)) // So people aren't messing with these from across the room
 		return TRUE
-	lights_glowing = !lights_glowing
+	set_lights_glowing(!lights_glowing)
 	to_chat(user, span_notice("You turn the [src]'s glow-fabric [lights_glowing ? "on" : "off"]."))
 	return TRUE
 

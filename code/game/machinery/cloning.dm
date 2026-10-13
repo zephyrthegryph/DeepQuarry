@@ -59,7 +59,6 @@
 
 	var/speed_coeff
 	var/efficiency
-TRACKED(/obj/machinery/clonepod, mess)
 
 // its containers drop out and the growing clone is ejected.
 

@@ -9,8 +9,8 @@
 /obj/item/rig/proc/security_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
 	if(N.mended)
-		req_access = initial(req_access)
-		req_one_access = initial(req_one_access)
+		set_req_access(initial(req_access))
+		set_req_one_access(initial(req_one_access))
 
 /obj/item/rig/proc/security_wire_pulsed(datum/act/A)
 	security_check_enabled = !security_check_enabled

@@ -18,7 +18,6 @@
 	RED: You are currently being watched by the AI.<br>\
 	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
 	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."
-TRACKED(/obj/item/multitool/ai_detector, detect_state)
 
 /// TRUE while it is carried by a mob: the slow sensing step runs only then.
 /obj/item/multitool/ai_detector/var/tmp/sensing = FALSE

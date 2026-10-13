@@ -108,7 +108,7 @@
 		if(QDELETED(created_atom))
 			return
 
-		created_atom.flags |= ADMIN_SPAWNED
+		created_atom.set_flags(created_atom.flags | ADMIN_SPAWNED)
 
 		if(spawn_params["apply_icon_override"])
 			if(spawn_params["selected_atom_icon"])
@@ -120,7 +120,7 @@
 		if(spawn_params["atom_icon_size"])
 			if(ismob(created_atom))
 				var/mob/living/created_mob = created_atom
-				created_mob.size_multiplier = spawn_params["atom_icon_size"] / 100
+				created_mob.set_size_multiplier(spawn_params["atom_icon_size"] / 100)
 
 		if(atom_dir)
 			created_atom.set_dir(atom_dir)

@@ -229,10 +229,10 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	var/login_type = login_type_arg
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
-			authenticated = scan.registered_name
+			set_authenticated(scan.registered_name)
 			rank = scan.assignment
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
-		authenticated = A.actor.name
+		set_authenticated(A.actor.name)
 		rank = A.actor.records_login_rank()
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
 		rel_take(src, nameof(src.scan))
-	authenticated = null
+	set_authenticated(null)
 	screen = null
 	rel_clear(src, nameof(src.active1))
 	rel_clear(src, nameof(src.active2))
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 
 /// The operator is logged in (the old handlers each refused without it).
 /obj/machinery/computer/secure_data/proc/records_authenticated(datum/act/op/A)
-	return (!!authenticated) ? null : MSG(records/not_authenticated) // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+	return (!!authenticated) ? null : MSG(records/not_authenticated)
 
 /obj/machinery/computer/secure_data/proc/ui_act_d_rec(datum/act/op/A, d_rec)
 	. = TRUE

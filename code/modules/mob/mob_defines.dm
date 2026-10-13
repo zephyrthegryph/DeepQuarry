@@ -327,8 +327,6 @@ CAPABILITIES(/mob)
 TRACKED(/mob, stat)
 TRACKED(/mob, seedarkness)
 TRACKED(/mob, transforming)
-TRACKED(/mob, resting)
-TRACKED(/mob, status_flags)
 TRACKED(/mob, real_name)
 
 

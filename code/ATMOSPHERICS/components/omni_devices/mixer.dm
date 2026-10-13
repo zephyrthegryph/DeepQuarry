@@ -208,7 +208,7 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 /obj/machinery/atmospherics/omni/mixer/proc/share_free(datum/act/op/A)
 	var/port = dir_flag(A.args["dir"])
 	for(var/datum/omni_port/P in inputs)
-		if(P.dir != port && !P.con_lock) // ALLOW(reads): the ports are asked when the button is pressed, never from a cached menu or look
+		if(P.dir != port && !P.con_lock)
 			return null
 	return /datum/msg/req_silent
 
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 /obj/machinery/atmospherics/omni/mixer/proc/con_lock(port = NORTH)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
-			P.con_lock = !P.con_lock
+			P.set_con_lock(!P.con_lock)
 
 /// The Southern Cross atmospherics mixer: draws 7500 W while mixing (the map edit `active_power_usage = 7500` it carried before the draw
 /// became the uses_power() trait; a compiled map cannot name a var that left the type).

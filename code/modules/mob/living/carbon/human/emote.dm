@@ -469,7 +469,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 	var/new_wagging = isnull(setting) ? !wagging : setting
 	if(new_wagging != wagging)
-		wagging = new_wagging
+		set_wagging(new_wagging)
 		update_tail_showing()
 	return 1
 
@@ -481,7 +481,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 	var/new_flapping = isnull(setting) ? !flapping : setting
 	if(new_flapping != flapping)
-		flapping = new_flapping
+		set_flapping(new_flapping)
 		update_wing_showing()
 	return 1
 
@@ -560,7 +560,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set name = "Show/Hide wings"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Hide your wings, or show them if you already hid them."
-	wings_hidden = !wings_hidden
+	set_wings_hidden(!wings_hidden)
 	update_wing_showing()
 	var/message = ""
 	if(!wings_hidden)
@@ -584,7 +584,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	if(species.tail) //If they're using this verb, they already have a custom tail. This prevents their species tail from showing.
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.tail = null //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
-	tail_hidden = !tail_hidden
+	set_tail_hidden(!tail_hidden)
 	update_tail_showing()
 	var/message = ""
 	if(!tail_hidden)

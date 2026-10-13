@@ -33,8 +33,8 @@ GLOBAL_LIST(construction_frame_floor)
 	if(!istype(source))
 		return value
 	var/datum/frame/frame_types/copy = new source.type
-	copy.icon_override = source.icon_override
-	copy.name = source.name
+	copy.set_icon_override(source.icon_override)
+	copy.set_name(source.name)
 	copy.frame_size = source.frame_size
 	copy.frame_class = source.frame_class
 	copy.circuit = source.circuit

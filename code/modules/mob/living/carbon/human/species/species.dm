@@ -1085,4 +1085,3 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		return TRUE
 	return FALSE
 
-TRACKED(/datum/species, base_species)

@@ -64,7 +64,6 @@
 TRACKED(/obj/item/lightreplacer, emagged)
 TRACKED(/obj/item/lightreplacer, uses)
 TRACKED(/obj/item/lightreplacer, max_uses)
-TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer)
 	configure(item_worn(slots = SLOT_BELT))

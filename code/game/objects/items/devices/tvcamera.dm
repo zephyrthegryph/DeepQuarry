@@ -11,7 +11,6 @@
 	var/showing_name
 	/// The camera streams: what the drone shows (its camera's status, which publishes nothing, mirrored here when it is toggled).
 	var/streaming = FALSE
-TRACKED(/obj/item/tvcamera, streaming)
 
 /// Relation view: the atom being broadcast; the feed follows it while set.
 /obj/item/tvcamera/var/atom/showing
@@ -232,7 +231,6 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-TRACKED(/obj/item/TVAssembly, buildstep)
 
 CAPABILITIES(/obj/item/TVAssembly)
 	// the old attackby: the construction steps (a camera module or tape recorder must be free to take)

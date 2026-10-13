@@ -407,7 +407,7 @@
 
 	if(prefix)
 		name = "[prefix] [name]"
-	seed_name = name
+	set_seed_name(name)
 	display_name = name
 
 //Creates a random seed. MAKE SURE THE LINE HAS DIVERGED BEFORE THIS IS CALLED.
@@ -548,7 +548,7 @@
 
 	if(prob(5))
 		if(prob(30))
-			has_mob_product = pickweight(GLOB.plant_mob_products)
+			set_has_mob_product(pickweight(GLOB.plant_mob_products))
 		else
 			has_item_product = pickweight(GLOB.plant_item_products)
 
@@ -716,7 +716,7 @@
 			consume_gasses |= new_gasses
 			gene.values["[TRAIT_CONSUME_GASSES]"] = null
 		if(GENE_METABOLISM)
-			has_mob_product = gene.values["mob_product"]
+			set_has_mob_product(gene.values["mob_product"])
 			has_item_product = gene.values["item_product"]
 			gene.values["mob_product"] = null
 
@@ -876,7 +876,7 @@
 	new_seed.can_self_harvest = can_self_harvest
 	new_seed.kitchen_tag =      kitchen_tag
 	new_seed.trash_type =       trash_type
-	new_seed.has_mob_product =  has_mob_product
+	new_seed.set_has_mob_product(has_mob_product)
 	new_seed.has_item_product = has_item_product
 
 	//Copy over everything else.
@@ -885,7 +885,7 @@
 	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
 	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
 
-	new_seed.seed_name =            "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]"
+	new_seed.set_seed_name("[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]")
 	new_seed.display_name =         "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][display_name]"
 	new_seed.seed_noun =            seed_noun
 	new_seed.traits = traits.Copy()
@@ -902,13 +902,13 @@
 	new_seed.can_self_harvest = can_self_harvest
 	new_seed.kitchen_tag =      kitchen_tag
 	new_seed.trash_type =       trash_type
-	new_seed.has_mob_product =  has_mob_product
+	new_seed.set_has_mob_product(has_mob_product)
 	new_seed.has_item_product = has_item_product
 	if(mutants)        new_seed.mutants = mutants.Copy()
 	if(chems)          new_seed.chems = chems.Copy()
 	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
 	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
-	new_seed.seed_name =    seed_name
+	new_seed.set_seed_name(seed_name)
 	new_seed.display_name = display_name
 	new_seed.seed_noun =    seed_noun
 	new_seed.traits = traits.Copy()
@@ -935,6 +935,6 @@
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))
-		growth_stages = SSplants.plant_sprites[get_trait(TRAIT_PLANT_ICON)]
+		set_growth_stages(SSplants.plant_sprites[get_trait(TRAIT_PLANT_ICON)])
 	else
-		growth_stages = 0
+		set_growth_stages(0)

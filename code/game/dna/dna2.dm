@@ -315,63 +315,63 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	// Ears
 	var/ears = GetUIValueRange(DNA_UI_EAR_STYLE, GLOB.ear_styles_list.len + 1) - 1
 	if(ears < 1)
-		H.ear_style = null
+		H.set_ear_style(null)
 	else if((0 < ears) && (ears <= GLOB.ear_styles_list.len))
-		H.ear_style = GLOB.ear_styles_list[GLOB.ear_styles_list[ears]]
+		H.set_ear_style(GLOB.ear_styles_list[GLOB.ear_styles_list[ears]])
 	var/ears_secondary = GetUIValueRange(DNA_UI_EAR_SECONDARY_STYLE, GLOB.ear_styles_list.len + 1) - 1
 	if(ears_secondary < 1)
-		H.ear_secondary_style = null
+		H.set_ear_secondary_style(null)
 	else if((0 < ears_secondary) && (ears_secondary <= GLOB.ear_styles_list.len))
-		H.ear_secondary_style = GLOB.ear_styles_list[GLOB.ear_styles_list[ears_secondary]]
+		H.set_ear_secondary_style(GLOB.ear_styles_list[GLOB.ear_styles_list[ears_secondary]])
 
 	// Ear Color
-	H.r_ears  = GetUIValueRange(DNA_UI_EARS_R,    255)
-	H.g_ears  = GetUIValueRange(DNA_UI_EARS_G,    255)
-	H.b_ears  = GetUIValueRange(DNA_UI_EARS_B, 	  255)
-	H.r_ears2 = GetUIValueRange(DNA_UI_EARS2_R,   255)
-	H.g_ears2 = GetUIValueRange(DNA_UI_EARS2_G,   255)
-	H.b_ears2 = GetUIValueRange(DNA_UI_EARS2_B,	  255)
-	H.r_ears3 = GetUIValueRange(DNA_UI_EARS3_R,   255)
-	H.g_ears3 = GetUIValueRange(DNA_UI_EARS3_G,   255)
-	H.b_ears3 = GetUIValueRange(DNA_UI_EARS3_B,	  255)
-	H.a_ears = GetUIValueRange(DNA_UI_EARS_ALPHA, 255)
-	H.a_ears2 = GetUIValueRange(DNA_UI_EARS_SECONDARY_ALPHA, 255)
+	H.set_r_ears(GetUIValueRange(DNA_UI_EARS_R,    255))
+	H.set_g_ears(GetUIValueRange(DNA_UI_EARS_G,    255))
+	H.set_b_ears(GetUIValueRange(DNA_UI_EARS_B, 	  255))
+	H.set_r_ears2(GetUIValueRange(DNA_UI_EARS2_R,   255))
+	H.set_g_ears2(GetUIValueRange(DNA_UI_EARS2_G,   255))
+	H.set_b_ears2(GetUIValueRange(DNA_UI_EARS2_B,	  255))
+	H.set_r_ears3(GetUIValueRange(DNA_UI_EARS3_R,   255))
+	H.set_g_ears3(GetUIValueRange(DNA_UI_EARS3_G,   255))
+	H.set_b_ears3(GetUIValueRange(DNA_UI_EARS3_B,	  255))
+	H.set_a_ears(GetUIValueRange(DNA_UI_EARS_ALPHA, 255))
+	H.set_a_ears2(GetUIValueRange(DNA_UI_EARS_SECONDARY_ALPHA, 255))
 
 	LAZYINITLIST(H.ear_secondary_colors)
 	H.ear_secondary_colors.len = max(length(H.ear_secondary_colors), DNA_UI_EARS_SECONDARY_COLOR_CHANNEL_COUNT)
 	for(var/channel in 1 to DNA_UI_EARS_SECONDARY_COLOR_CHANNEL_COUNT)
 		var/offset = DNA_UI_EARS_SECONDARY_START + (channel - 1) * 3
-		H.ear_secondary_colors[channel] = rgb(
+		H.set_ear_secondary_colors_at(channel, rgb(
 			GetUIValueRange(offset, 255),
 			GetUIValueRange(offset + 1, 255),
 			GetUIValueRange(offset + 2, 255),
-		)
+		))
 
 	//Tail
 	var/tail = GetUIValueRange(DNA_UI_TAIL_STYLE, GLOB.tail_styles_list.len + 1) - 1
 	if(tail < 1)
-		H.tail_style = null
+		H.set_tail_style(null)
 	else if((0 < tail) && (tail <= GLOB.tail_styles_list.len))
-		H.tail_style = GLOB.tail_styles_list[GLOB.tail_styles_list[tail]]
+		H.set_tail_style(GLOB.tail_styles_list[GLOB.tail_styles_list[tail]])
 
 	//Wing
 	var/wing = GetUIValueRange(DNA_UI_WING_STYLE, GLOB.wing_styles_list.len + 1) - 1
 	if(wing < 1)
-		H.wing_style = null
+		H.set_wing_style(null)
 	else if((0 < wing) && (wing <= GLOB.wing_styles_list.len))
-		H.wing_style = GLOB.wing_styles_list[GLOB.wing_styles_list[wing]]
+		H.set_wing_style(GLOB.wing_styles_list[GLOB.wing_styles_list[wing]])
 
 	//Wing Color
-	H.r_wing   = GetUIValueRange(DNA_UI_WING_R,     255)
-	H.g_wing   = GetUIValueRange(DNA_UI_WING_G,     255)
-	H.b_wing   = GetUIValueRange(DNA_UI_WING_B,     255)
-	H.r_wing2  = GetUIValueRange(DNA_UI_WING2_R,    255)
-	H.g_wing2  = GetUIValueRange(DNA_UI_WING2_G,    255)
-	H.b_wing2  = GetUIValueRange(DNA_UI_WING2_B,    255)
-	H.r_wing3  = GetUIValueRange(DNA_UI_WING3_R,    255)
-	H.g_wing3  = GetUIValueRange(DNA_UI_WING3_G,    255)
-	H.b_wing3  = GetUIValueRange(DNA_UI_WING3_B,    255)
-	H.a_wing = GetUIValueRange(DNA_UI_WING_ALPHA,	255)
+	H.set_r_wing(GetUIValueRange(DNA_UI_WING_R,     255))
+	H.set_g_wing(GetUIValueRange(DNA_UI_WING_G,     255))
+	H.set_b_wing(GetUIValueRange(DNA_UI_WING_B,     255))
+	H.set_r_wing2(GetUIValueRange(DNA_UI_WING2_R,    255))
+	H.set_g_wing2(GetUIValueRange(DNA_UI_WING2_G,    255))
+	H.set_b_wing2(GetUIValueRange(DNA_UI_WING2_B,    255))
+	H.set_r_wing3(GetUIValueRange(DNA_UI_WING3_R,    255))
+	H.set_g_wing3(GetUIValueRange(DNA_UI_WING3_G,    255))
+	H.set_b_wing3(GetUIValueRange(DNA_UI_WING3_B,    255))
+	H.set_a_wing(GetUIValueRange(DNA_UI_WING_ALPHA,	255))
 
 	// Playerscale
 	var/size = GetUIValueRange(DNA_UI_PLAYERSCALE, GLOB.player_sizes_list.len)
@@ -379,16 +379,16 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 		H.resize(GLOB.player_sizes_list[GLOB.player_sizes_list[size]], TRUE, ignore_prefs = TRUE)
 
 	// Tail/Taur Color
-	H.r_tail   = GetUIValueRange(DNA_UI_TAIL_R,    255)
-	H.g_tail   = GetUIValueRange(DNA_UI_TAIL_G,    255)
-	H.b_tail   = GetUIValueRange(DNA_UI_TAIL_B,    255)
-	H.r_tail2  = GetUIValueRange(DNA_UI_TAIL2_R,   255)
-	H.g_tail2  = GetUIValueRange(DNA_UI_TAIL2_G,   255)
-	H.b_tail2  = GetUIValueRange(DNA_UI_TAIL2_B,   255)
-	H.r_tail3  = GetUIValueRange(DNA_UI_TAIL3_R,   255)
-	H.g_tail3  = GetUIValueRange(DNA_UI_TAIL3_G,   255)
-	H.b_tail3  = GetUIValueRange(DNA_UI_TAIL3_B,   255)
-	H.a_tail = GetUIValueRange(DNA_UI_TAIL_ALPHA,  255)
+	H.set_r_tail(GetUIValueRange(DNA_UI_TAIL_R,    255))
+	H.set_g_tail(GetUIValueRange(DNA_UI_TAIL_G,    255))
+	H.set_b_tail(GetUIValueRange(DNA_UI_TAIL_B,    255))
+	H.set_r_tail2(GetUIValueRange(DNA_UI_TAIL2_R,   255))
+	H.set_g_tail2(GetUIValueRange(DNA_UI_TAIL2_G,   255))
+	H.set_b_tail2(GetUIValueRange(DNA_UI_TAIL2_B,   255))
+	H.set_r_tail3(GetUIValueRange(DNA_UI_TAIL3_R,   255))
+	H.set_g_tail3(GetUIValueRange(DNA_UI_TAIL3_G,   255))
+	H.set_b_tail3(GetUIValueRange(DNA_UI_TAIL3_B,   255))
+	H.set_a_tail(GetUIValueRange(DNA_UI_TAIL_ALPHA,  255))
 
 	// Hair gradiant
 	var/grad = GetUIValueRange(DNA_UI_GRAD_STYLE,GLOB.hair_gradients.len)

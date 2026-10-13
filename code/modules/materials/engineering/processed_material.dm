@@ -30,7 +30,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(!new_material)
 		return FALSE
 	default_type = material_name
-	material = new_material
+	set_material(new_material)
 	recipes = material.get_recipes()
 	stacktype = material.stack_type
 	if(apply_colour || pass_color)
@@ -431,7 +431,7 @@ TRACKED(/obj/item/stack/material/processed_alloy, hot)
 	if(!istype(new_material, /datum/material/processed_alloy))
 		return FALSE
 	default_type = material_name
-	material = new_material
+	set_material(new_material)
 	recipes = material.get_recipes()
 	stacktype = material.stack_type
 	color = material.icon_colour

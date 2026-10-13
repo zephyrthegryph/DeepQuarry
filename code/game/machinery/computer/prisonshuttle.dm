@@ -36,7 +36,6 @@ TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHIN
  * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
 TRACKED(/obj/machinery/computer/prison_shuttle, hacked)
-TRACKED(/obj/machinery/computer/prison_shuttle, prison_break)
 
 /// Requirement: null, or why the console can't be used.
 /obj/machinery/computer/prison_shuttle/proc/can_open_console(datum/act/op/A)
