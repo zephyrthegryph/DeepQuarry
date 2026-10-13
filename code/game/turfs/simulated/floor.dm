@@ -73,7 +73,7 @@ TRACKED(/turf/simulated/floor, broken)
 /turf/simulated/floor/proc/install_flooring(datum/decl/flooring/newflooring, initializing)
 	if(is_plating() && !initializing) // Plating -> Flooring
 		swap_with_old_decals()
-	set_flooring(newflooring)
+	rel_set(src, nameof(flooring), newflooring)
 	set_plating_exposed(FALSE)
 	set_scorch_state(null)
 	if(flooring?.has_base_range && !flooring_override)
@@ -100,7 +100,7 @@ TRACKED(/turf/simulated/floor, broken)
 		if(newtype) // Has a custom plating type to become
 			install_flooring(get_flooring_data(newtype))
 		else
-			set_flooring(null)
+			rel_set(src, nameof(flooring), null)
 			set_plating_exposed(TRUE)
 
 	set_glow(src, GLOW(0, null, null))

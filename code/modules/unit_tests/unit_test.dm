@@ -941,6 +941,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
+	staleness_test_begin()
 	log_world("::group::([current_index]/[total_tests]) [test_path]")
 	log_test("Running [current_index]/[total_tests]: [test_path]")
 
@@ -1367,6 +1368,7 @@ GLOBAL_VAR(boot_unclean)
 		WRITE_FILE(file("[GLOB.log_directory]/boot_profile.json"), boot_profile_json)
 		world.Profile(PROFILE_STOP)
 		log_test("Boot profile written to [GLOB.log_directory]/boot_profile.json")
+	staleness_suite_begin()
 	unit_test_boot_gate()
 
 	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
