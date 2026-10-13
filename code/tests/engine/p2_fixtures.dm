@@ -232,7 +232,7 @@ CAPABILITIES(/obj/p2_asker)
 	op("ask", ui_act(), asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), then(PROC_REF(asked_done)))
 
 /obj/p2_asker/proc/ask_wanted(datum/act/op/A)
-	return want // ALLOW(reads): a test fixture's plain flag, read when the step is reached
+	return want
 
 /obj/p2_asker/proc/asked_done(datum/act/op/A)
 	ran++
@@ -298,7 +298,7 @@ CAPABILITIES(/obj/p2_silent)
 	op("press_loud", ui_act(), needs(req(PROC_REF(is_open))), then(PROC_REF(was_pressed)))
 
 /obj/p2_silent/proc/is_open(datum/act/op/A)
-	return open ? null : MSG(p2_silent/closed) // ALLOW(reads): a test fixture's plain flag, read when the press arrives
+	return open ? null : MSG(p2_silent/closed)
 
 /obj/p2_silent/proc/was_pressed(datum/act/op/A)
 	pressed++

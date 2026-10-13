@@ -150,6 +150,7 @@
 	return length(when_entry.children) ? when_entry.children[1] : null
 
 /// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF.
+PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/condition_holds(datum/holder, cond)
 	if(islist(cond))
 		var/list/L = cond

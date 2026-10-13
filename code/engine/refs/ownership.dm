@@ -300,6 +300,7 @@
 	return value
 
 /// List or values shape: detaches one member (a value, or the value under a key) and returns it unowned.
+PROC_SUMMARY(/proc/own_take_member) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/own_take_member(datum/holder, var_name, value_or_key)
 	var/list/L = holder.vars[var_name]
 	if(!islist(L))
@@ -395,6 +396,7 @@
 /// null, as the LAZY* macros leave it: an empty list is truthy, so `if(component_parts)`-style
 /// "not built yet" checks and "dropped everything" checks (isnull) read it wrong. A list declared
 /// `= list()` stays an empty list for code that reads its length.
+PROC_SUMMARY(/proc/own_list_emptied) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/own_list_emptied(datum/holder, var_name)
 	if(isnull(initial(holder.vars[var_name])))
 		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name

@@ -17,6 +17,7 @@ ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requi
 
 // Generated callback rows carry the root and relation hops separately. Resolve them
 // against this invocation, not the declarer: replacement membership is itself watched.
+PROC_SUMMARY(/proc/op_query_read_pairs) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/op_query_read_pairs(datum/act/admission_query/A, proc_name)
 	. = list()
 	var/path = A.holder.type
