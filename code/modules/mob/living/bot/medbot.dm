@@ -204,7 +204,6 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 MSG_DEF(medbot/tipping, span_warning("You begin tipping over %T%..."), span_danger("%U% begins tipping over %T%."))
 MSG_DEF(medbot/righting, span_notice("You begin righting %T%..."), span_notice("%U% begins righting %T%."))
 
-TRACKED(/mob/living/bot/medbot, is_tipped)
 
 /mob/living/bot/medbot/proc/can_tip(datum/act/op/A)
 	return !is_tipped
@@ -508,11 +507,11 @@ CAPABILITIES(/obj/item/storage/firstaid)
 	var/obj/item/S = A.held
 	var/obj/item/firstaid_arm_assembly/assembly = new /obj/item/firstaid_arm_assembly
 	if(istype(src, /obj/item/storage/firstaid/fire))
-		assembly.skin = "ointment"
+		assembly.set_skin("ointment")
 	else if(istype(src, /obj/item/storage/firstaid/toxin))
-		assembly.skin = "tox"
+		assembly.set_skin("tox")
 	else if(istype(src, /obj/item/storage/firstaid/o2))
-		assembly.skin = "o2"
+		assembly.set_skin("o2")
 
 	consume(S, user)
 	user.put_in_hands(assembly)

@@ -179,9 +179,9 @@
 		F.install_flooring(p2_flooring)
 	p2_area.set_requires_power(p2_area_requires)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2_area.power_light = p2_area_light
-	p2_area.power_equip = p2_area_equip
-	p2_area.power_environ = p2_area_environ
+	p2_area.set_power_light(p2_area_light)
+	p2_area.set_power_equip(p2_area_equip)
+	p2_area.set_power_environ(p2_area_environ)
 	test_driver_end()
 
 /datum/unit_test/dq_p2_apc/proc/run_gate()
@@ -247,12 +247,12 @@
 /// An ID card with engineering access (or none).
 /datum/unit_test/dq_p2_apc/proc/id_card(has_access = TRUE)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, run_loc_floor_bottom_left)
-	card.access = has_access ? list(ACCESS_ENGINE_EQUIP) : list()
+	card.set_access(has_access ? list(ACCESS_ENGINE_EQUIP) : list())
 	return card
 
 /// Opens the cover of a finished APC: the cover lock off, then the crowbar.
 /datum/unit_test/dq_p2_apc/proc/open_cover(mob/living/carbon/human/H, obj/machinery/power/apc/A)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	touch(H, A, tool(/obj/item/tool/crowbar))
 
 /// The wire panel open (the screwdriver, with the cover shut).
@@ -432,7 +432,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	touch(H, A, bar)
 	TEST_ASSERT(p2_apc_cover_open(A), "with the cover lock off a charged cell does not hold it")
 	touch(H, A, null)
@@ -448,7 +448,7 @@
 /datum/unit_test/dq_p2_apc/broken_apc_cover_stays_shut/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	A.take_damage(A.max_integrity * 0.75)
 	p2_settle()
 	TEST_ASSERT(A.broken_now(), "three quarters of its integrity gone: broken")
@@ -494,7 +494,7 @@
 	bat.set_w_class(ITEMSIZE_NORMAL)
 	var/obj/item/frame/apc/frame = allocate(/obj/item/frame/apc, run_loc_floor_bottom_left)
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	touch(H, A, bar)
 	touch(H, A, null)
 	TEST_ASSERT_NULL(A.cell, "the cell is out")
@@ -1501,6 +1501,7 @@
 	var/was_night = SSnightshift.nightshift_active
 	if(!(A.z in using_map.station_levels))
 		using_map.station_levels += A.z
+	A.update_station_night() // the test map's levels changed under the APC: it reads them where it stands
 	p2_apc_station_night(FALSE)
 	p2_settle()
 	TEST_ASSERT(!A.area.lights_nightshift, "by day the area is bright")
@@ -1521,5 +1522,6 @@
 	TEST_ASSERT(A.area.lights_nightshift, "an APC set to always dims it by day")
 	A.set_nightshift_setting(NIGHTSHIFT_AUTO)
 	using_map.station_levels = levels
+	A.update_station_night()
 	p2_apc_station_night(was_night)
 	p2_settle()

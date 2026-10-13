@@ -1461,7 +1461,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/nyctophobia/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= NYCTOPHOBIA
+	H.set_phobias(H.phobias | NYCTOPHOBIA)
 
 /datum/trait/neutral/arachnophobia
 	name = "Phobia: Arachnophobia"
@@ -1471,7 +1471,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/arachnophobia/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= ARACHNOPHOBIA
+	H.set_phobias(H.phobias | ARACHNOPHOBIA)
 
 /datum/trait/neutral/hemophobia
 	name = "Phobia: Hemophobia"
@@ -1481,7 +1481,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/hemophobia/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= HEMOPHOBIA
+	H.set_phobias(H.phobias | HEMOPHOBIA)
 
 /datum/trait/neutral/thalassophobia
 	name = "Phobia: Thalassophobia"
@@ -1491,7 +1491,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/thalassophobia/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= THALASSOPHOBIA
+	H.set_phobias(H.phobias | THALASSOPHOBIA)
 
 /datum/trait/neutral/clasutrophobia_minor
 	name = "Phobia: Claustrophobia (non-vore)"
@@ -1501,7 +1501,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/clasutrophobia_minor/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= CLAUSTROPHOBIA_MINOR
+	H.set_phobias(H.phobias | CLAUSTROPHOBIA_MINOR)
 
 /datum/trait/neutral/clasutrophobia_major
 	name = "Phobia: Claustrophobia (vore)"
@@ -1511,7 +1511,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/clasutrophobia_major/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= CLAUSTROPHOBIA_MAJOR
+	H.set_phobias(H.phobias | CLAUSTROPHOBIA_MAJOR)
 
 /datum/trait/neutral/anatidaephobia
 	name = "Phobia: Anatidaephobia"
@@ -1521,7 +1521,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/anatidaephobia/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= ANATIDAEPHOBIA
+	H.set_phobias(H.phobias | ANATIDAEPHOBIA)
 
 /datum/trait/neutral/agraviaphobia
 	name = "Phobia: Agraviaphobia"
@@ -1531,7 +1531,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 
 /datum/trait/neutral/agraviaphobia/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	..()
-	H.phobias |= AGRAVIAPHOBIA
+	H.set_phobias(H.phobias | AGRAVIAPHOBIA)
 
 /datum/trait/neutral/gargoyle
 	name = "Gargoyle (Adjustable)"

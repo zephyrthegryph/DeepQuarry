@@ -64,8 +64,6 @@
 	if(victim() && !Adjacent(victim()))
 		rel_clear(src, nameof(victim))
 		set_use_power(USE_POWER_IDLE)
-	if(victim())
-		update_icon()
 	if(beep && victim() && victim().pulse)
 		play_sfx(src, SFX_MACHINES_QUIET_BEEP, volume = 0)
 

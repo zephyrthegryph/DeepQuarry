@@ -418,7 +418,7 @@
 		if(C.set_powered(new_state))
 			changed = TRUE
 	if(new_state != has_power)
-		has_power = new_state
+		set_has_power(new_state)
 		changed = TRUE
 		if(!has_power)
 			to_chat(src, span_red("You are now running on emergency backup power."))
@@ -458,7 +458,7 @@
 		camera.set_status(camera_on ? 1 : 0)
 	if(radio)
 		radio.on = is_component_functioning(ROBOT_SLOT_RADIO) ? 1 : 0
-	var/sees = stat != DEAD && !has_status(STAT_PARALYZED) && !has_status(STAT_BLINDED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
+	var/sees = stat != DEAD && !has_status(STAT_PARALYZED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
 	set_blinded(!sees)
 	if(stat == DEAD)
 		return
@@ -483,7 +483,7 @@
 
 /mob/living/silicon/robot/life_light(datum/seq_frame/life/F)
 	if(src.lights_on)
-		src.set_light(src.integrated_light_power, 1, src.robot_light_col)
+		set_glow(src, GLOW(src.integrated_light_power, 1, src.robot_light_col))
 		return TRUE
 	return ..()
 
@@ -523,7 +523,7 @@
 // --- Naming ------------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/SetName(pickedName as text)
-	custom_name = pickedName
+	set_custom_name(pickedName)
 	updatename()
 
 /mob/living/silicon/robot/proc/sync()
@@ -590,7 +590,7 @@
 	else
 		changed_name = "[modtype] [braintype]-[num2text(ident)]"
 
-	real_name = changed_name
+	set_real_name(changed_name)
 	name = real_name
 
 	// if we've changed our name, we also need to update the display name for our PDA
@@ -1070,7 +1070,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	module.reset_module(src)
 	icon_selected = FALSE
 	updatename("Default")
-	has_recoloured = FALSE
+	set_has_recoloured(FALSE)
 	robotact?.update_static_data_for_all_viewers()
 	vore_capacity_ex = list()
 	set_vore_fullness_ex(list())
@@ -1570,8 +1570,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 	H.desc = "An all-access ID-card, shaped like a robot!"
 	H.icon_state = "[sprite_name]"
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
 	return H
 
 /mob/living/silicon/robot/onTransitZ(old_z, new_z)

@@ -136,7 +136,6 @@
 	hci_click(H, E, E)
 	settle()
 	TEST_ASSERT(E.active, "using it switches it on")
-	E.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(E.icon_state, E.icon_on, "the look follows")
 	TEST_ASSERT(H.equip_to_slot_if_possible(E, SLOT_ID_MASK), "worn")
@@ -180,7 +179,7 @@
 /datum/unit_test/dq_hc_items/b_wrapped_chewable_unwraps_in_the_hand/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/clothing/mask/chewable/tobacco/W = allocate(/obj/item/clothing/mask/chewable/tobacco, tile(2, 2))
-	W.wrapped = TRUE
+	W.set_wrapped(TRUE)
 	hci_click(H, W, W)
 	settle()
 	TEST_ASSERT(!W.wrapped, "using a wrapped chewable unwraps it")
@@ -222,7 +221,6 @@
 	var/start = C.smoketime
 	test_time(6 SECONDS)
 	TEST_ASSERT(C.smoketime < start, "a lit cigarette burns with the clock")
-	C.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(C.icon_state, "cig_on", "it looks lit")
 	C.quench()

@@ -4,49 +4,29 @@ robot|none menu: Touch vomit
 robot|none click: Click: Touch vomit
 @obj.effect ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/tool/wrench
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/multitool
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/weldingtool
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+3 menu: Touch vomit
-+4 click: Click: Touch vomit
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+2 menu: Touch vomit
-+3 click: Click: Touch vomit
-@obj human|/obj/item/card/id
--click: nothing
-+3 menu: Touch vomit
-+4 click: Click: Touch vomit
+human|/obj/item/tool/screwdriver menu: Touch vomit
+human|/obj/item/tool/screwdriver click: Click: Touch vomit
+human|/obj/item/tool/crowbar menu: Touch vomit
+human|/obj/item/tool/crowbar click: Click: Touch vomit
+human|/obj/item/tool/wrench menu: Touch vomit
+human|/obj/item/tool/wrench click: Click: Touch vomit
+human|/obj/item/tool/wirecutters menu: Touch vomit
+human|/obj/item/tool/wirecutters click: Click: Touch vomit
+human|/obj/item/multitool menu: Touch vomit
+human|/obj/item/multitool click: Click: Touch vomit
+human|/obj/item/weldingtool menu: Touch vomit
+human|/obj/item/weldingtool click: Click: Touch vomit
+human|/obj/item/stack/cable_coil menu: Touch vomit
+human|/obj/item/stack/cable_coil click: Click: Touch vomit
+human|/obj/item/stack/material/steel menu: Touch vomit
+human|/obj/item/stack/material/steel click: Click: Touch vomit
+human|/obj/item/card/id menu: Touch vomit
+human|/obj/item/card/id click: Click: Touch vomit
 @obj human|/obj/item/mop_deploy
 +1 menu: Mop
-+4 menu: Touch vomit
-@obj human|/obj/item/soap
--menu: Clean
--click: Click: Insert a soap
-+2 menu: Scrub out
-+4 menu: Touch vomit
-+5 click: Click: Scrub out
++2 menu: Touch vomit
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Scrub out
+human|/obj/item/soap menu: Touch vomit
+human|/obj/item/soap click: Click: Scrub out
 keys: drag_buckle, pass_insert, pass_insert_2, touch_vomit

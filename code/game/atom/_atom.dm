@@ -310,14 +310,13 @@ SETTER(/atom, dir)
 /atom/look_set_dir(new_dir)
 	set_dir(new_dir)
 
-/// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers
-/// and, as a bridge, raises the channel the type's declared field names (machinery_fields.dm).
+/// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers.
 /atom/proc/set_density(new_density)
 	new_density = !!new_density // Sanitize to be strictly 0 or 1
 	if(density == new_density)
 		return FALSE
 	density = new_density
-	tracked_bridged_changed(src, nameof(density))
+	tracked_changed(src, nameof(density))
 	return TRUE
 SETTER(/atom, density)
 
@@ -365,12 +364,6 @@ SETTER(/atom, density)
 
 /atom/proc/melt()
 	return
-
-// Previously this was defined both on /obj/ and /turf/ seperately.  And that's bad.
-/atom/proc/update_icon()
-	// A DECLARE_APPEARANCE type needs no override (code/datums/lifecycle/declarations.dm).
-	decl_appearance_apply()
-
 
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	PUBLISH_LEGACY(src, /datum/notice/hitby, source, throwingdatum)

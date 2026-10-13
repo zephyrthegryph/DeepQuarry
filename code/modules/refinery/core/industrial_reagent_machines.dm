@@ -135,7 +135,7 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	var/mob/user = A.actor
 	var/N = A.step_value("amount")
 	if(N && Adjacent(user))
-		amount_per_transfer_from_this = N
+		set_amount_per_transfer_from_this(N)
 	return OP_OK
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Staleness checker: test builds recompute every cached stat, applied draw, derive() value and keyed image and fail the test on a difference; known findings are logged (doc/rewrite/staleness_findings.md). STALENESS_SAMPLE enables a log-only 1-in-N mode on live servers"
+  - refactor: "final_api section 7 gains the reactive-closure design (read closure, write closure, runtime cross-check) and its migration sequence"

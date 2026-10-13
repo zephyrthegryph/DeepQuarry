@@ -17,6 +17,7 @@ MATERIAL_MIX(/obj/item/airlock_electronics, list(MAT_STEEL = 50,MAT_GLASS = 50))
 	var/emagged = 0
 
 TRACKED(/obj/item/airlock_electronics, locked)
+TRACKED(/obj/item/airlock_electronics, conf_access)
 TRACKED(/obj/item/airlock_electronics, one_access)
 TRACKED(/obj/item/airlock_electronics, last_configurator)
 
@@ -50,7 +51,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	return (!locked) ? null : MSG(airlock_electronics/logged_out)
 
 /obj/item/airlock_electronics/proc/not_hardened(datum/act/A)
-	return (!secure) ? null : MSG(airlock_electronics/hardened) // ALLOW(reads): the hardened kind is a different type; the flag never changes
+	return (!secure) ? null : MSG(airlock_electronics/hardened)
 
 /// A cryptographic sequencer removes the access restrictions (a hardened device cannot be bypassed).
 /obj/item/airlock_electronics/proc/emag_effect(datum/act/op/A)
@@ -109,8 +110,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	// Clears all access requirements; only allow users who may program any access.
 	var/list/available = get_available_accesses(A.actor)
 	if(length(available) && length(available) >= length(SSaccess.get_all_station_access()))
-		conf_access = null
-		changed(src)
+		set_conf_access(null)
 	return OP_OK
 
 /obj/item/airlock_electronics/proc/ui_access(datum/act/op/A, access)
@@ -129,8 +129,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 		access -= req
 		if (!access.len)
 			access = null
-	conf_access = access
-	changed(src)
+	set_conf_access(access)
 
 /obj/item/airlock_electronics/proc/get_available_accesses(mob/user)
 	var/obj/item/card/id/id

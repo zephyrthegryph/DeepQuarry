@@ -43,7 +43,6 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	var/carpeted_type = /obj/item/stack/tile/carpet
 
 TRACKED(/obj/structure/table, flipped)
-TRACKED(/obj/structure/table, carpeted)
 
 STAGE_DEF(table, frame)
 STAGE_DEF(table, plated)
@@ -237,7 +236,7 @@ CAPABILITIES(/obj/structure/table)
 	return OP_OK
 
 /obj/structure/table/proc/is_damaged(datum/act/A)
-	return get_integrity() < max_integrity // ALLOW(reads): a table's strength is read when a repair is tried; the click asks again before anything runs
+	return get_integrity() < max_integrity
 
 /obj/structure/table/proc/repaired(datum/act/op/A)
 	repair_damage(max_integrity / 5)

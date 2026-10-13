@@ -1,18 +1,85 @@
 @obj.machinery.photocopier human|none
 @obj.machinery.photocopier robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.photocopier ghost|none
-@obj.machinery.photocopier human|/obj/item/tool/screwdriver
-@obj.machinery.photocopier human|/obj/item/tool/crowbar
-@obj.machinery.photocopier human|/obj/item/tool/wrench
-@obj.machinery.photocopier human|/obj/item/tool/wirecutters
-@obj.machinery.photocopier human|/obj/item/multitool
-@obj.machinery.photocopier human|/obj/item/weldingtool
-@obj.machinery.photocopier human|/obj/item/stack/cable_coil
-@obj.machinery.photocopier human|/obj/item/stack/material/steel
-@obj.machinery.photocopier human|/obj/item/card/id
-@obj.machinery.photocopier human|/obj/item
-@obj.machinery.photocopier human|/obj/item/paper
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/tool/screwdriver menu: Staff Request Form
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/tool/crowbar menu: Staff Request Form
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/tool/wrench menu: Staff Request Form
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/tool/wirecutters menu: Staff Request Form
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/multitool menu: Set department (refused: )
+human|/obj/item/multitool menu: Staff Request Form
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Set department
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/weldingtool menu: Staff Request Form
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/stack/cable_coil menu: Staff Request Form
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/stack/material/steel menu: Staff Request Form
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Insert ID
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/card/id menu: Staff Request Form
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Insert ID
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item menu: Staff Request Form
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
+human|/obj/item/paper menu: Insert
+human|/obj/item/paper menu: Move To Top
+human|/obj/item/paper menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/paper menu: Rename paper (refused: You can't do that.)
+human|/obj/item/paper menu: Staff Request Form
+human|/obj/item/paper menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paper menu: Use
+human|/obj/item/paper click: Click: Insert
 @obj.machinery.photocopier human|/obj/item/photo
 @obj.machinery.photocopier human|/obj/item/paper_bundle
 @obj human|/obj/item/toner

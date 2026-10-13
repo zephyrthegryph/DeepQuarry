@@ -18,7 +18,6 @@
 	max_integrity = 70
 	var/interactable = FALSE
 	var/icon_modifier = ""
-TRACKED(/obj/structure/railing, icon_modifier)
 
 /obj/structure/railing/grey
 	name = "grey railing"

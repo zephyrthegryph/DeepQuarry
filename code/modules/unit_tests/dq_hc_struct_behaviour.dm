@@ -207,7 +207,7 @@
 	TEST_ASSERT_EQUAL(length(data["contents"]), 1, "the window lists what is inside")
 	press(H, S, "retrieve", list("ref" = "\ref[P]"))
 	TEST_ASSERT_EQUAL(P.loc, S, "a closed safe keeps it")
-	S.open = TRUE
+	S.set_open(TRUE)
 	press(H, S, "retrieve", list("ref" = "\ref[P]"))
 	TEST_ASSERT_EQUAL(P.loc, H, "an open one hands it over")
 	TEST_ASSERT_EQUAL(S.space, 0, "and has the room back")
@@ -233,7 +233,7 @@
 	var/obj/structure/undies_wardrobe/W = allocate(/obj/structure/undies_wardrobe, tile(3, 2))
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories[1]
 	var/datum/category_item/underwear/UWI = UWC.items[1]
-	LAZYSET(H.all_underwear, UWC.name, UWI)
+	H.set_all_underwear_at(UWC.name, UWI)
 	var/list/data = hc_data(W, H)
 	TEST_ASSERT(length(data["categories"]) > 0, "the window lists the underwear categories")
 	press(H, W, "remove_underwear", list("category" = UWC.name))
@@ -290,7 +290,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/bonfire/B = allocate(/obj/structure/bonfire, tile(3, 2))
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, tile(2, 2))
-	R.amount = 3
+	R.set_amount(3)
 	hci_click(H, B, R)
 	hci_answer(H, "Grill")
 	settle()
@@ -305,7 +305,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/bonfire/B = allocate(/obj/structure/bonfire, tile(3, 2))
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, tile(2, 2))
-	R.amount = 3
+	R.set_amount(3)
 	hci_click(H, B, R)
 	H.drop_item()
 	hci_answer(H, "Grill")
@@ -361,7 +361,7 @@
 /datum/unit_test/dq_hc_struct/locked_reflector_asks_nothing/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
-	R.finished = TRUE
+	R.set_finished(TRUE)
 	var/angle = R.rotation_angle
 	R.can_rotate = FALSE
 	R.rotate(H)
@@ -422,7 +422,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/button/windowtint/B = allocate(/obj/machinery/button/windowtint, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, tile(2, 2))
-	B.id = null
+	B.set_id(null)
 	hci_click(H, B, M)
 	hci_answer(H, "tintA")
 	settle()
@@ -482,7 +482,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/toilet/teleplumbed/T = allocate(/obj/structure/toilet/teleplumbed, tile(3, 2))
 	T.set_cistern(TRUE)
-	T.open = FALSE
+	T.set_open(FALSE)
 	var/obj/item/bluespace_crystal/crystal = T.teleplumb_crystal
 	TEST_ASSERT_NOTNULL(crystal, "it has a crystal")
 	hci_click(H, T, null)
@@ -522,7 +522,7 @@
 /datum/unit_test/dq_hc_struct/reflector_angle_is_asked_and_set/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
-	R.finished = TRUE
+	R.set_finished(TRUE)
 	R.rotate(H)
 	TEST_ASSERT(asked(H), "an unlocked reflector asks for an angle")
 	hci_answer(H, 90)
@@ -560,7 +560,7 @@
 	TEST_ASSERT(C.used, "and marks the canvas as used")
 	var/list/data = hc_data(C, H)
 	TEST_ASSERT_EQUAL(data["grid"], C.grid, "the window shows the grid")
-	C.finalized = TRUE
+	C.set_finalized(TRUE)
 	B.selected_color = "#654321"
 	press(H, C, "paint", list("x" = 4, "y" = 4))
 	TEST_ASSERT_NOTEQUAL(C.grid[4][4], "#654321", "a finished painting takes no more strokes")

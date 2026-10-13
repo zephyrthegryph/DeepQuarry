@@ -7,35 +7,59 @@ robot|none click: Click: Kick
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Use screwdriver
 +6 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/tool/wrench
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Use wirecutter
 +6 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/weldingtool
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/stack/cable_coil
 +1 menu: Kick
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/stack/material/steel
 -click: Click: Use
 +1 menu: Kick
++2 menu: Move To Top
 +3 menu: Place a window (refused: )
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 click: Click: Place a window
 @obj.structure human|/obj/item/card/id
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item
 +1 menu: Kick
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/stack/material
 -click: Click: Use
 +1 menu: Kick
++2 menu: Move To Top
 +3 menu: Place a window (refused: )
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 click: Click: Place a window
 keys: drag_buckle, hand, item, melee_hit, place_window, use_screwdriver, use_wirecutter

@@ -15,7 +15,6 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	icon_keyboard = "teleport_key"
 	icon_screen = "helm"
 	COOLDOWN_DECLARE(map_refresh_cd)
-	light_color = "#7faaff"
 	circuit = /obj/item/circuitboard/helm
 	var/list/known_sectors
 	var/dx		//desitnation
@@ -26,6 +25,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	ai_control = FALSE // AI/Borgs shouldn't really be flying off in ships without crew help
 
 CAPABILITIES(/obj/machinery/computer/ship/helm)
+	configure(light_glow(color = "#7faaff"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(autopilot), cond_not(nameof(autopilot_disabled))), wakes_on = list(nameof(autopilot), nameof(autopilot_disabled)))
 	owns_many(nameof(known_sectors))
 	// The helm's buttons (its window is the overmap console's, opened by the console's own interactions). A navigation entry's name and
@@ -60,7 +60,9 @@ TRACKED(/obj/machinery/computer/ship/helm, autopilot_disabled)
 	icon_keyboard = null
 	icon_state = "adv_helm"
 	icon_screen = "adv_helm_screen"
-	light_color = "#70ffa0"
+
+CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
+	configure(light_glow(color = "#70ffa0"))
 
 /obj/machinery/computer/ship/helm/Initialize(mapload)
 	. = ..()

@@ -72,7 +72,6 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	if(size_set_to < RESIZE_MINIMUM || size_set_to > RESIZE_MAXIMUM)
 		to_chat(user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 
-TRACKED(/obj/item/gun/energy/sizegun, size_set_to)
 
 /// The look: shrink or grow by the set size, with the charge step; the hands follow the mode.
 /obj/item/gun/energy/sizegun/draw_charge_state(datum/look/look)

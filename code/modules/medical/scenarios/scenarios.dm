@@ -209,7 +209,7 @@
 	if(!T)
 		return
 	var/mob/living/carbon/human/dummy = new /mob/living/carbon/human(T)
-	dummy.real_name = "Scenario Patient #[rand(1000, 9999)]"
+	dummy.set_real_name("Scenario Patient #[rand(1000, 9999)]")
 	dummy.name = dummy.real_name
 	dummy.status_at_least(STAT_SLEEPING, 60 SECONDS)
 	var/datum/dq_medical_scenario/S = dq_proto(scenario_path)

@@ -164,7 +164,6 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 
 	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 	if(redgate_restricted)

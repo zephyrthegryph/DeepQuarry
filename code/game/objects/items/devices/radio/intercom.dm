@@ -9,8 +9,6 @@
 	w_class = ITEMSIZE_LARGE
 	canhear_range = 7
 	flags = NOBLOODY | WALL_ITEM
-	light_color = "#00ff00"
-	light_power = 0.25
 	blocks_emissive = NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/circuit = /obj/item/circuitboard/intercom
@@ -33,6 +31,7 @@ TRACKED(/obj/item/radio/intercom, wiresexposed)
 	set_on(A?.powered(EQUIP))
 
 CAPABILITIES(/obj/item/radio/intercom)
+	configure(light_glow(color = "#00ff00", power = 0.25))
 	owns_one(nameof(circuit), starts = nameof(circuit))
 	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel
 	op("remote_microphone", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the microphone"),
@@ -75,14 +74,18 @@ CAPABILITIES(/obj/item/radio/intercom)
 /obj/item/radio/intercom/department/medbay
 	name = "station intercom (Medbay)"
 	icon_state = "medintercom"
-	light_color = "#00aaff"
 	frequency = MED_I_FREQ
+
+CAPABILITIES(/obj/item/radio/intercom/department/medbay)
+	configure(light_glow(color = "#00aaff"))
 
 /obj/item/radio/intercom/department/security
 	name = "station intercom (Security)"
 	icon_state = "secintercom"
-	light_color = "#ff0000"
 	frequency = SEC_I_FREQ
+
+CAPABILITIES(/obj/item/radio/intercom/department/security)
+	configure(light_glow(color = "#ff0000"))
 
 /obj/item/radio/intercom/entertainment
 	name = "entertainment intercom"
@@ -200,7 +203,7 @@ CAPABILITIES(/obj/item/radio/intercom/omni)
 	else
 		look.overlay(mutable_appearance(icon, "[stem]_ov"))
 		look.overlay(emissive_appearance(icon, "[stem]_ov"))
-		look.glow(2, initial(light_power), initial(light_color))
+		look.glow(2, glow_of_type(type).power, glow_of_type(type).color)
 
 /obj/item/radio/intercom/proc/remote_microphone(datum/act/op/A)
 	var/mob/user = A.actor

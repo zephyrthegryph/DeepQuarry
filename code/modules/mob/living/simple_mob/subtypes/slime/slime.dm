@@ -123,7 +123,6 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
-TRACKED(/mob/living/simple_mob/slime, mood)
 
 /mob/living/simple_mob/slime/draw(datum/look/look)
 	..()
@@ -170,9 +169,6 @@ TRACKED(/mob/living/simple_mob/slime, mood)
 	// The other stuff was already checked in parent proc, and the . variable will implicitly return the correct value.
 
 // Slimes regenerate passively.
-/mob/living/simple_mob/slime/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/life_special(datum/seq_frame/life/F)
 	src.mend(TREAT_OXYGENATION, 1)
 	src.mend(TREAT_ANTITOXIN, 1)

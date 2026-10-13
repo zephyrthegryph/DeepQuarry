@@ -113,6 +113,12 @@ pub struct Apc {
     pub autoflag: u8,
     #[vg(state, default = false)]
     pub alarm: bool,
+    /// What the APC last told DM (`laws::apc_report_key`: its channels,
+    /// charging, alarm, external status and charge percent, packed), or 0
+    /// before its first report. `ApcTick` emits [`ApcEvent::Report`] only
+    /// when the key moves: a settled APC sends nothing.
+    #[vg(state, default = 0)]
+    pub reported: u32,
     #[vg(config, unit = "W", range = 0.0..=1000000.0, default = [0.0, 0.0, 0.0], on_invalid = clamp)]
     pub static_load: [f64; 3],
     #[vg(config, unit = "W", range = 0.0..=1000000.0, default = [0.0, 0.0, 0.0], on_invalid = clamp)]
@@ -129,6 +135,24 @@ pub struct Apc {
     pub policy_min_allow: [u8; 3],
     #[vg(config, default = [0, 0, 0])]
     pub policy_neutral_allow: [u8; 3],
+}
+
+/// What an APC tells DM (`ApcTick`): its shown state crossed a band -- a
+/// channel, the charging lamp, the alarm or the external power status
+/// changed, or the cell charge crossed a whole percent. DM applies it to the
+/// APC and its area (`on_apc_report()`); nothing polls the APC.
+#[vg::events(Apc)]
+pub enum ApcEvent {
+    Report {
+        equipment: u8,
+        lighting: u8,
+        environ: u8,
+        charging: u8,
+        alarm: bool,
+        status: u8,
+        #[vg(unit = "J")]
+        charge: f64,
+    },
 }
 
 /// A SMES's storage, bound to the unit entity (not itself a network node --

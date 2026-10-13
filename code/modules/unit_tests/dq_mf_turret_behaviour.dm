@@ -47,7 +47,7 @@
 /proc/mft_area_power(area/A, on)
 	A.set_requires_power(TRUE)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = on
+	A.set_power_equip(on)
 	for(var/obj/machinery/M in A)
 		M.power_change()
 
@@ -65,11 +65,11 @@
 	mft_equip = mft_area.power_equip
 	mft_area.set_requires_power(FALSE)
 	mft_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	mft_area.power_equip = TRUE
+	mft_area.set_power_equip(TRUE)
 	..()
 	mft_area.set_requires_power(mft_requires)
 	mft_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	mft_area.power_equip = mft_equip
+	mft_area.set_power_equip(mft_equip)
 
 /// A turret placed and working.
 /datum/unit_test/dq_hc_struct/mft/proc/turret(type = /obj/machinery/porta_turret, turf/T)
@@ -78,7 +78,7 @@
 /// A card with `access` in `H`'s hand (and nothing worn).
 /datum/unit_test/dq_hc_struct/mft/proc/card_in_hand(mob/living/carbon/human/H, list/access)
 	var/obj/item/card/id/C = allocate(/obj/item/card/id, get_turf(H))
-	C.access = access ? access.Copy() : list()
+	C.set_access(access ? access.Copy() : list())
 	H.drop_item()
 	H.put_in_active_hand(C)
 	return C
@@ -86,7 +86,7 @@
 /// A card with `access` worn on `H`.
 /datum/unit_test/dq_hc_struct/mft/proc/card_worn(mob/living/carbon/human/H, list/access)
 	var/obj/item/card/id/C = allocate(/obj/item/card/id, get_turf(H))
-	C.access = access ? access.Copy() : list()
+	C.set_access(access ? access.Copy() : list())
 	if(!H.get_equipped_item(SLOT_ID_UNIFORM))
 		H.equip_to_slot_or_del(allocate(/obj/item/clothing/under/color/grey, get_turf(H)), SLOT_ID_UNIFORM)
 	H.equip_to_slot_or_del(C, SLOT_ID_ID)

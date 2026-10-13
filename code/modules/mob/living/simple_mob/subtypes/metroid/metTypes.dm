@@ -332,10 +332,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	faction = "metroids"
 	max_nutrition = 2200
 
-CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
-	configure(mob_movement(makes_dirt = TRUE))
-
-
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
 
@@ -359,6 +355,9 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	evo_point = 1200
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/zeta
 	arrival_sound = SFX_METROID_METROIDZETA
@@ -433,11 +432,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	max_n2 = 0
 	unsuitable_atoms_damage = 0
 
-CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
-	configure(mob_movement(makes_dirt = TRUE))
-
-
-
 	old_x = -16
 	old_y = 0
 	default_pixel_x = -16
@@ -448,6 +442,9 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 	next = "/mob/living/simple_mob/metroid/juvenile/queen"
 
 	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/omega
 	arrival_sound = SFX_METROID_METROIDOMEGA

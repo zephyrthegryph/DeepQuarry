@@ -4,8 +4,9 @@
 	name = "lantern"
 	icon_state = "lantern"
 	desc = "A mining lantern."
-	light_range = 6			// luminosity when on
-	light_color = "FF9933" // A slight yellow/orange color.
+
+CAPABILITIES(/obj/item/flashlight/lantern)
+	configure(light_glow(range = 6, color = "FF9933"))
 
 /*****************************Pickaxe********************************/
 
@@ -168,9 +169,9 @@ CAPABILITIES(/obj/item/shovel/wood)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/item/shovel/wood/proc/carve(_mat)
-	material_static = get_material_by_name(_mat || MAT_WOOD)
+	set_material_static(get_material_by_name(_mat || MAT_WOOD))
 	if(!istype(material(), /datum/material))
-		material_static = null
+		set_material_static(null)
 	else
 		name = "[material().display_name] shovel"
 		set_bulk_material(material().name, 50)
@@ -388,7 +389,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 
 /obj/structure/trailblazer/proc/set_color()
 	icon_state = "redtrail_light_on"
-	set_light(2, 2, "#FF0000")
+	set_glow(src, GLOW(2, 2, "#FF0000"))
 
 /obj/structure/trailblazer/proc/knock_down_done(datum/act/op/A)
 	var/mob/user = A.actor
@@ -409,7 +410,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 
 /obj/structure/trailblazer/blue/set_color()
 	icon_state = "bluetrail_light_on"
-	set_light(2, 2, "#C4FFFF")
+	set_glow(src, GLOW(2, 2, "#C4FFFF"))
 
 /obj/structure/trailblazer/yellow
 	name = "trail blazer"
@@ -419,7 +420,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 
 /obj/structure/trailblazer/yellow/set_color()
 	icon_state = "yellowtrail_light_on"
-	set_light(2, 2, "#ffea00")
+	set_glow(src, GLOW(2, 2, "#ffea00"))
 
 /// Accessor for a shared definition.
 /obj/item/shovel/wood/proc/material() as /datum/material

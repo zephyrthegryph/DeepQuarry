@@ -78,10 +78,9 @@
 		)
 
 TRACKED(/obj/machinery/chemical_synthesizer, busy)
-TRACKED(/obj/machinery/chemical_synthesizer, finishing)
 
 /obj/machinery/chemical_synthesizer/var/_recharge_reagents = TRUE
-TRACKED_BRIDGED(/obj/machinery/chemical_synthesizer, _recharge_reagents, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/chemical_synthesizer, _recharge_reagents)
 /// Refills its cartridges while it recharges at all (full, it sleeps until a cartridge is drawn or added).
 // The reagents datum acts as the machine's reaction vessel.
 

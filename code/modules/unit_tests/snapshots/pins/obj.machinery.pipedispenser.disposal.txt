@@ -1,23 +1,39 @@
-@obj.machinery.pipedispenser human|none
-@obj.machinery.pipedispenser robot|none
-@obj ai|none
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
 @obj ghost|none
-@obj.machinery.pipedispenser human|/obj/item/tool/screwdriver
-@obj.machinery.pipedispenser human|/obj/item/tool/crowbar
-@obj.machinery.pipedispenser human|/obj/item/tool/wrench
-@obj.machinery.pipedispenser human|/obj/item/tool/wirecutters
-@obj.machinery.pipedispenser human|/obj/item/multitool
-@obj.machinery.pipedispenser human|/obj/item/weldingtool
-@obj.machinery.pipedispenser human|/obj/item/stack/cable_coil
-@obj.machinery.pipedispenser human|/obj/item/stack/material/steel
-@obj.machinery.pipedispenser human|/obj/item/card/id
-@obj.machinery.pipedispenser human|/obj/item
-@obj human|/obj/item/pipe
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-@obj human|/obj/item/pipe_meter
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Wrench
+human|/obj/item/tool/wrench click: Click: Wrench
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/pipe menu: Open controls
+human|/obj/item/pipe menu: Put back
+human|/obj/item/pipe click: Click: Put back
+human|/obj/item/pipe_meter menu: Open controls
+human|/obj/item/pipe_meter menu: Put back
+human|/obj/item/pipe_meter click: Click: Put back
 keys: anchor, dispense_pipe, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, put_back, put_back_meter, p_layer, robot_remote_blocked, shove_back, silicon_hand, ui_open

@@ -59,8 +59,8 @@ CAPABILITIES(/obj/machinery/microwave)
 	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), when(cond_not(nameof(panel_open))), begins(PROC_REF(secure_begins)), wait(PROC_REF(secure_time)), on_interrupt(PROC_REF(secure_interrupted)), then(PROC_REF(secure_done)))
 	op("clean", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Clean"), when(req(PROC_REF(can_clean))), begins(MSG(microwave/clean_begins)), wait(2 SECONDS), then(PROC_REF(clean_done)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), label("Fix"), when(PROC_REF(kinda_broken)), starts(PROC_REF(repair_started)), begins(PROC_REF(repair_begins)), wait(2 SECONDS), then(PROC_REF(fully_repaired)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), label("Fix"), when(PROC_REF(really_broken)), starts(PROC_REF(repair_started)), begins(PROC_REF(repair_begins)), wait(2 SECONDS), then(PROC_REF(partly_repaired)))
 	op("microwave_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(microwave_interaction_item)))
 	op("microwave_interaction_eject_pai", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Eject pAI"), then(PROC_REF(microwave_interaction_eject_pai)))
 	op("microwave_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(microwave_interaction_hand)))
@@ -178,9 +178,26 @@ TRACKED(/obj/machinery/microwave, broken)
 	to_chat(user, span_warning("It's broken!"))
 	return TRUE
 
-/obj/machinery/microwave/proc/do_repair_step(mob/user, obj/item/tool, full_repair = FALSE)
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start to fix part of \the [src].", start_others = "\The [user] starts to fix part of \the [src].", receiver = src, on_done = PROC_REF(do_repair_step_tool_done), done_args = list(user, full_repair))
-	return TRUE
+/// The screwdriver fixes a really broken microwave halfway, the wrench a half-broken one fully.
+/obj/machinery/microwave/proc/really_broken(datum/act/op/A)
+	return read_once(broken) == REALLY_BROKEN
+
+/obj/machinery/microwave/proc/kinda_broken(datum/act/op/A)
+	return read_once(broken) == KINDA_BROKEN
+
+/obj/machinery/microwave/proc/repair_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/microwave/proc/repair_begins(datum/act/op/A)
+	return msg_text("You start to fix part of \the [src].", "\The [A.actor] starts to fix part of \the [src].")
+
+/obj/machinery/microwave/proc/partly_repaired(datum/act/op/A)
+	do_repair_step_tool_done(A.actor, FALSE)
+	return OP_OK
+
+/obj/machinery/microwave/proc/fully_repaired(datum/act/op/A)
+	do_repair_step_tool_done(A.actor, TRUE)
+	return OP_OK
 
 /obj/machinery/microwave/proc/do_repair_step_tool_done(mob/user, full_repair)
 
@@ -267,22 +284,6 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 		after(src, 1 SECOND, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers))
 		return TRUE
 	return FALSE
-
-/obj/machinery/microwave/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(broken == REALLY_BROKEN)
-		do_repair_step(user, tool, FALSE)
-		return OP_OK
-	return OP_DECLINE
-
-/obj/machinery/microwave/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(broken == KINDA_BROKEN)
-		do_repair_step(user, tool, TRUE)
-		return OP_OK
-	return OP_DECLINE
 
 /// How long securing or unsecuring takes: two seconds, shorter with a faster crowbar.
 /obj/machinery/microwave/proc/secure_time(datum/act/op/A)
@@ -437,7 +438,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 
 /// A cook loop is running: cook_loop() every loop_wait until its cycles run out.
 /obj/machinery/microwave/var/loop_running = FALSE
-TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/microwave, loop_running)
 
 /// The cook loop's cadence.
 /obj/machinery/microwave/proc/loop_delay(datum/act/A)

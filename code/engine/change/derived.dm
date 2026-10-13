@@ -333,7 +333,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		var/label = derived_entry_label(E)
 		for(var/read in E.reads)
 			if(istext(read))
-				if(!(read in D.vars))
+				if(!(read in D.vars) && !lookup_read_declared(D, read))
 					derived_error(D, "[label] reads [read], which is not a var of the type")
 					continue
 				T.by_var[read] = (T.by_var[read] || 0) | bit
@@ -371,6 +371,13 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 				GLOB.derived_factor_watch |= F.id
 			else
 				derived_error(D, "[label] reads [read], which is not a var name, rel(), rel_each() or factor_dep()")
+	// The draw's generated reads (code/engine/_generated/deps.dm, from the draw() body and the parent draws it calls): a change of any of them
+	// redraws, whatever derived() lists, so an exact type's look follows every var its draw reads with no hand-written drawn_from().
+	if(T.exact)
+		for(var/read in derived_generated_draw_reads(D))
+			if(read in D.vars)
+				T.by_var[read] = (T.by_var[read] || 0) | DEP_DRAW
+				GLOB.derived_read_vars[read] = TRUE
 	// Values that read other values run after them.
 	var/list/todo = list()
 	for(var/name in dvars)
@@ -398,6 +405,20 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		T.derived_by_name = dvars
 	return T.exact ? T : null
 
+/// The holder vars the draw() D's type runs reads, as the build generated them: the nearest type (D's own or an ancestor) that defines a draw.
+/proc/derived_generated_draw_reads(datum/D)
+	var/list/table = GLOB.generated_draw_reads
+	if(!length(table))
+		return null
+	var/path = D.type
+	while(path)
+		var/list/reads = table["[path]"]
+		if(reads)
+			return reads
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return null
+
 // ---- attach: the first instance's catch-up ----
 
 /**
@@ -407,6 +428,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
  * New() (and state_changed(src) for its first refresh).
  */
 /proc/derived_attach(datum/D)
+	lookup_reads_prepare(D)
 	var/datum/derived_table/T = derived_table_of(D)
 	if(!T)
 		return

@@ -78,7 +78,6 @@ dx_raw_overlays	code/game/machinery/gear_dispenser.dm	cut_overlay("fullsuit")
 dx_raw_overlays	code/game/machinery/gear_dispenser.dm	cut_overlay("light2")
 dx_raw_overlays	code/game/machinery/nuclear_bomb.dm	add_overlay("npanel_open")
 dx_raw_overlays	code/game/machinery/nuclear_bomb.dm	cut_overlay("npanel_open")
-dx_raw_overlays	code/game/machinery/nuclear_bomb.dm	cut_overlay("npanel_open")
 dx_raw_overlays	code/game/machinery/robot_fabricator.dm	add_overlay("fab-load-metal")
 dx_raw_overlays	code/game/machinery/robot_fabricator.dm	cut_overlay("fab-load-metal")
 dx_raw_overlays	code/game/machinery/robot_fabricator.dm	add_overlay("fab-active")
@@ -162,7 +161,6 @@ dx_raw_overlays	code/game/objects/structures/electricchair.dm	add_overlay(image(
 dx_raw_overlays	code/game/objects/structures/flora/moretrees.dm	cut_overlays()
 dx_raw_overlays	code/game/objects/structures/flora/trees.dm	cut_overlays() // For the Sif tree and other future glowy trees.
 dx_raw_overlays	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
-dx_raw_overlays	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
 dx_raw_overlays	code/game/objects/structures/gargoyle.dm	cut_overlay(tail_image)
 dx_raw_overlays	code/game/objects/structures/gargoyle.dm	add_overlay(tail_image)
 dx_raw_overlays	code/game/objects/structures/holoplant.dm	cut_overlays()
@@ -310,7 +308,6 @@ dx_raw_overlays	code/modules/mining/fulton.dm	add_overlay(fulton_balloon("fulton
 dx_raw_overlays	code/modules/mining/fulton.dm	cut_overlays()
 dx_raw_overlays	code/modules/mining/fulton.dm	add_overlay(fulton_balloon("fulton_retract"))
 dx_raw_overlays	code/modules/mining/fulton.dm	cut_overlays()
-dx_raw_overlays	code/modules/mob/dead/observer/observer.dm	add_overlay(H.overlays_standing) // ALLOW(decl): copies the body's overlays
 dx_raw_overlays	code/modules/mob/dead/observer/observer.dm	cut_overlays()
 dx_raw_overlays	code/modules/mob/dead/observer/observer.dm	PP.cut_overlays()
 dx_raw_overlays	code/modules/mob/dead/observer/observer.dm	PP.add_overlay("pai-ghostalert")
@@ -330,28 +327,7 @@ dx_raw_overlays	code/modules/mob/living/carbon/human/life.dm	healths_ma.add_over
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	src.overlays += coolanimation
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	overlays -= coolanimation
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	thing.overlays += coolanimation
-dx_raw_overlays	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	H.cut_overlays()
-dx_raw_overlays	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	H.add_overlay(form_overlays)
-dx_raw_overlays	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	H.cut_overlay(form_overlays)
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/station/traits/states/drippy.dm	drop.add_overlay(drips)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	add_overlay(.)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	cut_overlay(I)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	standing_image.add_overlay(DI)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	both.add_overlay(bloodsies)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	both.add_overlay(bloodsies)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	semifinal.overlays += em_block_ears // Leaving this as overlays +=
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	standing.overlays += "lasereyes_s" // Leaving this as overlays +=
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	both.add_overlay(standing)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	both.add_overlay(standing)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	both.add_overlay(standing)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	both.add_overlay(standing)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	effects.overlays += I
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	total.overlays += I // Leaving this as overlays +=
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	working.overlays += em_block_image_generic(working) // Leaving this as overlays +=
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	working.overlays += em_block_image_generic(working) // Leaving this as overlays +=
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	working.overlays += em_block_image_generic(working) // Leaving this as overlays +=
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	working.overlays += em_block_image_generic(working)
-dx_raw_overlays	code/modules/mob/living/carbon/human/update_icons.dm	working.overlays += em_block_image_generic(working)
 dx_raw_overlays	code/modules/mob/living/living.dm	add_overlay(.)
 dx_raw_overlays	code/modules/mob/living/living.dm	cut_overlay(I)
 dx_raw_overlays	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679

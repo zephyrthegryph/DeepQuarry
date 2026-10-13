@@ -72,10 +72,10 @@ CAPABILITIES(/datum/prompt/text/mob_type)
 
 	if( istext(new_name) )
 		M.name = new_name
-		M.real_name = new_name
+		M.set_real_name(new_name)
 	else
 		M.name = src.name
-		M.real_name = src.real_name
+		M.set_real_name(src.real_name)
 
 	if(src.dna)
 		own_clear(M, nameof(M.dna), OWN_DELETE)

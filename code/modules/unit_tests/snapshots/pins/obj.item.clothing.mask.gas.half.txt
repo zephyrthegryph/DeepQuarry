@@ -1,6 +1,6 @@
 @obj.item.clothing human|none
 @obj.item.clothing robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.clothing human|/obj/item/tool/screwdriver
 -click: Click: Use
@@ -29,7 +29,7 @@
 @obj.item.clothing human|/obj/item/stack/cable_coil
 -click: Click: Use
 +1 menu: Half mask add hailer item
-+6 click: Click: Half mask add hailer item
++5 click: Click: Half mask add hailer item
 @obj.item.clothing human|/obj/item/stack/material/steel
 -click: Click: Use
 +1 menu: Half mask add hailer item
@@ -37,14 +37,14 @@
 @obj.item.clothing human|/obj/item/card/id
 -click: Click: Use
 +1 menu: Half mask add hailer item
-+6 click: Click: Half mask add hailer item
++5 click: Click: Half mask add hailer item
 @obj.item.clothing human|/obj/item/kit
 +2 menu: Half mask add hailer item
 @obj.item.clothing human|/obj/item/storage
 -click: Click: Collect
 +2 menu: Half mask add hailer item
 +6 click: Click: Half mask add hailer item
-@obj.item human|/obj/item
+@obj human|/obj/item
 -click: Click: Use
 +1 menu: Half mask add hailer item
 +5 click: Click: Half mask add hailer item

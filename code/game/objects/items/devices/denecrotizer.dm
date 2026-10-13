@@ -48,7 +48,6 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 /mob/living/simple_mob/animal/giant_spider/carrier //or the ones who fart babies when they die
 	ic_revivable = FALSE
 
-TRACKED(/mob/living/simple_mob, ghostjoin)
 
 /// Requirement: this ghost may inhabit us (not banned, nobody in us yet, preferences that allow a captured mob).
 /mob/living/simple_mob/proc/can_ghost_join(datum/act/op/A)

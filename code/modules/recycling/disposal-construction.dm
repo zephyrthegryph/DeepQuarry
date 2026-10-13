@@ -25,7 +25,7 @@ CAPABILITIES(/obj/structure/disposalconstruct)
 	param(nameof(subtype_at_make), pos = 4)
 	op("flip", menu(), label("Flip Pipe"), needs(req_adjacent(), req_capable(), req_is(nameof(anchored), FALSE, because = MSG(disposalconstruct/unfasten_first))), then(PROC_REF(disposalconstruct_verb_flip)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), label("Weld in place"), needs(req(PROC_REF(weld_refusal))), starts(PROC_REF(weld_started)), begins(PROC_REF(weld_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
 
 MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe before flipping it")
 
@@ -130,7 +130,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
 /obj/structure/disposalconstruct/hide(intact)
-	invisibility = (intact && level==1) ? INVISIBILITY_ABSTRACT: INVISIBILITY_NONE	// hide if floor is intact
+	hide_under_floor(src, intact && level == 1)	// hide if floor is intact
 	update()
 
 /// Old Flip Pipe verb.
@@ -274,32 +274,32 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 	update()
 	return OP_OK
 
-/obj/structure/disposalconstruct/proc/welder_used(datum/act/op/A)
+/// A segment is welded only on bare plating, and only once it is fastened to it.
+/obj/structure/disposalconstruct/proc/weld_refusal(datum/act/op/A)
+	var/turf/T = read_once(loc)
+	if(!istype(T) || !read_once(T.is_plating()))
+		return "you can only attach the [read_once(construction_name())] if the floor plating is removed"
+	if(!read_once(anchored))
+		return "you need to attach it to the plating first"
+
+/obj/structure/disposalconstruct/proc/weld_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, sounds_of(A.held).use, 100, TRUE)
+
+/obj/structure/disposalconstruct/proc/weld_begins(datum/act/op/A)
+	return msg_text("Welding the [construction_name()] in place.")
+
+/obj/structure/disposalconstruct/proc/welder_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/I = A.held
 	var/nicetype = construction_name()
 	var/ispipe = is_pipe()
-	add_fingerprint(user)
-	var/turf/T = src.loc
-	if(!T.is_plating())
-		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
-		return OP_OK
-	if(!anchored)
-		to_chat(user, "You need to attach it to the plating first!")
-		return OP_OK
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "Welding the [nicetype] in place.", receiver = src, job_type = /datum/task/timed/tool_job/disposal_weld, job_params = list("nicetype" = nicetype, "ispipe" = ispipe))
-	return OP_OK
-
-/obj/structure/disposalconstruct/proc/welder_act_tool_done(mob/user, nicetype, ispipe)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "The [nicetype] has been welded in place!")
 	update()
 	if(ispipe)
 		var/pipetype = dpipetype()
 		var/obj/structure/disposalpipe/P = new pipetype(src.loc)
 		transfer_fingerprints_to(P)
-		P.base_icon_state = base_state
+		P.set_base_icon_state(base_state)
 		P.set_dir(dir)
 		P.dpdir = dpdir
 		if(ptype == DISPOSAL_PIPE_SORTER || ptype == DISPOSAL_PIPE_SORTER_FLIPPED)
@@ -321,7 +321,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		transfer_fingerprints_to(P)
 		P.set_dir(dir)
 	destroyed(src, user, "deconstructed")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/disposalconstruct/hides_under_flooring()
 	if(anchored)

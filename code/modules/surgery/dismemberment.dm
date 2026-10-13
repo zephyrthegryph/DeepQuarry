@@ -27,5 +27,4 @@
 	var/obj/item/organ/O = new limb_path(src)
 	organ_data["descriptor"] = O.name
 
-	update_icons_body()
 	return TRUE

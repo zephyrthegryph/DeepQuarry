@@ -632,11 +632,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			M.slot_clear(SLOT_ID_SHOES)
 		if(istype(M.get_equipped_item(SLOT_ID_GLOVES), glove_type))
 			M.slot_clear(SLOT_ID_GLOVES)
-		M.update_inv_wear_suit()
-		M.update_inv_head()
-		M.update_hair()
-		M.update_inv_shoes()
-		M.update_inv_gloves()
 		return TRUE
 
 	var/obj/item/clothing/suit/A = new armor_type(M)
@@ -660,11 +655,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	M.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
 
 	play_sfx(M, SFX_EFFECTS_BLOBATTACK)
-	M.update_inv_wear_suit()
-	M.update_inv_head()
-	M.update_hair()
-	M.update_inv_shoes()
-	M.update_inv_gloves()
 	return TRUE
 
 ///Equips armor and melee weapon. If we succeed, returns TRUE. FALSE if we fail.

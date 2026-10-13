@@ -4,126 +4,126 @@
 
 /obj/effect/projectile/muzzle/emitter
 	icon_state = "muzzle_emitter"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00CC33"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/emitter)
+	configure(light_glow(range = 2, power = 0.5, color = "#00CC33"))
 
 /obj/effect/projectile/muzzle/laser_pulse
 	icon_state = "muzzle_u_laser"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/laser_pulse)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/muzzle/pulse
 	icon_state = "muzzle_pulse"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/pulse)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/muzzle/stun
 	icon_state = "muzzle_stun"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/stun)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/effect/projectile/muzzle/bullet
 	icon_state = "muzzle_bullet"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/bullet)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/effect/projectile/muzzle/laser_heavy
 	icon_state = "muzzle_beam_heavy"
-	light_range = 3
-	light_power = 1
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/laser_heavy)
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
 
 /obj/effect/projectile/muzzle/laser_em
 	icon_state = "muzzle_em_laser"
-	light_range = 3
-	light_power = 1
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/laser_em)
+	configure(light_glow(range = 3, power = 1, color = "#00C6FF"))
 
 /obj/effect/projectile/muzzle/lightning
 	icon_state = "muzzle_lightning"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/lightning)
+	configure(light_glow(range = 2, power = 0.5, color = "#00C6FF"))
 
 /obj/effect/projectile/muzzle/darkmatterstun
 	icon_state = "muzzle_darkt"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#8837A3"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/darkmatterstun)
+	configure(light_glow(range = 2, power = 0.5, color = "#8837A3"))
 
 /obj/effect/projectile/muzzle/laser_blue
 	icon_state = "muzzle_blue"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/laser_blue)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/muzzle/darkmatter
 	icon_state = "muzzle_darkb"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#8837A3"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/darkmatter)
+	configure(light_glow(range = 2, power = 0.5, color = "#8837A3"))
 
 /obj/effect/projectile/muzzle/precursor // add Precursor muzzle
 	icon = 'icons/obj/projectiles_ch.dmi' // Fix path + replace missing file
 	icon_state = "muzzle_prec"
-	light_range = 2
-	light_power = 0.7
-	light_color = "#FF0099"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/precursor)
+	configure(light_glow(range = 2, power = 0.7, color = "#FF0099"))
 
 /obj/effect/projectile/muzzle/inversion
 	icon_state = "muzzle_invert"
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
 
 /obj/effect/projectile/muzzle/xray
 	icon_state = "muzzle_xray"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00CC33"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/xray)
+	configure(light_glow(range = 2, power = 0.5, color = "#00CC33"))
 
 /obj/effect/projectile/muzzle/laser_omni
 	icon_state = "muzzle_omni"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/laser_omni)
+	configure(light_glow(range = 2, power = 0.5, color = "#00C6FF"))
 
 /obj/effect/projectile/muzzle/laser
 	icon_state = "muzzle_laser"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/laser)
+	configure(light_glow(range = 2, power = 0.5, color = "#FF0D00"))
 
 /obj/effect/projectile/muzzle/tungsten
 	icon_state = "muzzle_mhd_laser"
-	light_range = 4
-	light_power = 3
-	light_color = "#3300ff"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/tungsten)
+	configure(light_glow(range = 4, power = 3, color = "#3300ff"))
 
 // medigun
 /obj/effect/projectile/muzzle/medigun
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "muzzle_medbeam"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#80F5FF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/medigun)
+	configure(light_glow(range = 2, power = 0.5, color = "#80F5FF"))
 // ends
 /obj/effect/projectile/muzzle/pointdefense
 	icon_state = "muzzle_pointdef"
 
 /obj/effect/projectile/muzzle/rainbow
 	icon_state = "muzzle_rainbow"
-	light_range = 3
-	light_power = 1
-	light_color = "#ffffff"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/rainbow)
+	configure(light_glow(range = 3, power = 1, color = "#ffffff"))
 
 /obj/effect/projectile/muzzle/coildefense
 	icon_state = "muzzle_coildef"
-	light_range = 3
-	light_power = 1
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/coildefense)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))

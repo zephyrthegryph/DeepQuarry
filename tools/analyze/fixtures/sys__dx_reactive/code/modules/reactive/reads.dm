@@ -12,7 +12,7 @@
 
 REL_ONE(/obj/machinery/gadget, partner_rel, WATCH_ALWAYS)
 REL_MANY(/obj/machinery/gadget, plain_rel2, 0)
-TRACKED_BRIDGED(/obj/machinery/other, zing)
+TRACKED(/obj/machinery/other, zing)
 
 /obj/machinery/gadget/proc/watch_setup()
 	rel(nameof(foo_rel), src, watch = TRUE)

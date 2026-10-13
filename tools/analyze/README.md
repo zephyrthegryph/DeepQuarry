@@ -303,8 +303,56 @@ every read as `(root, hops, var, owning type, kind)`, context fields read throug
 relations (list relations read `name[]`); procs of the same type and of a hop's type, and `..()`; global helpers through
 `READS_FROM`; `READS_AS` accessors (not followed); `native("x")`; system accessors; `A.actor/held/target` as typed hops (root
 `actor`, ...). A static over-approximation: every read in the body counts, whichever branch it sits in. Not followed, by
-design: engine-internal dirs (`handlers::OPAQUE_DIRS`: dispatchers that read `vars[]`), a subtype's override of a proc, anything
-behind a hop that is not a declared relation (the read of the far var is kept, flagged `hop_ok = false`).
+design: anything behind a hop that is not a declared relation (the read of the far var is kept, flagged `hop_ok = false`).
+
+Two walks. The lints (`sem/reads`, `untracked_inputs`) use the lints' walk: it skips the engine-internal dirs
+(`handlers::OPAQUE_DIRS`) and follows a call on the receiver's static type only, because their baselines were taken that way. The
+generated subscriptions (`reads.dm`) use the **closed walk** (`ReadsEngine::closed()`): engine bodies are entered, and a call on a
+typed receiver is the union of that proc and every override in the receiver's subtypes (recursion ends on the visited set, which is
+keyed by proc, root, hops and argument roots). A proc the walk cannot enter carries `PROC_SUMMARY(/type/proc/name, reads = list(nameof(v)),
+writes = list(nameof(w)))` (`code/__defines/engine/markers.dm`; a global proc applies it to its first tracked argument): the walk takes
+the summary in place of the body. A Verdigris FFI call (`code/__defines/verdigris/`) is reported as `ffi_call` until it has one. What
+the closed walk cannot resolve is a diagnostic flagged `closed_only` when it sits in an engine body or in an override only a virtual
+call reaches; those never fail `analyze gen` (they are the engine's, or not yet judged by a baseline). `ReadSet::writes()` is the
+transitive write set of the same walk. `analyze sem closure [--write]` diffs the two walks' untracked inputs and writes
+`doc/rewrite/reads_closure_newly_visible.md`; those sites are in no baseline, and switching a lint to the closed walk needs the
+baseline decision that file asks for.
+
+### Read-driven tracking (`gens/auto_tracked.rs`)
+
+A var that reactive code reads is tracked without a `TRACKED()` line (doc/rewrite/final_api.html section 7, "Reactive closure", mechanism 1).
+`gen auto_tracked` (stage 0) takes every `(declaring type, var)` the dependency analysis (`gens/deps`) finds a stat input, requirement, output or
+`draw()` reading off the holder, drops what a declaration already makes reactive (tracked, SETTER, relation, STAT, `derive_`), and writes
+`TRACKED(T, v)` for the rest into `code/engine/_generated/auto_tracked.dm`. Such a var gets the same generated setter as any other (the
+`TRACKED_UNCHANGED` compare, `tracked_changed()`), a list var gets the `tracked_lists` mutators, and the `tracked` lint holds every write to it.
+
+* Stable by construction: the inference reads the declarations a person wrote (`Decls::tracked_explicit`, which leaves out the file it writes) and
+  source-level facts (is the var written outside its own setter, is `set_v(` / `add_v(` called anywhere), never its own output, so `analyze gen`
+  converges and a fresh checkout generates the same file. A var stays while a `set_v(` call exists, so the calls `analyze fix` writes keep compiling.
+* Left alone (listed with `DQ_AUTO_REPORT=1 analyze gen auto_tracked`): built-in vars, `static`/`const` vars, non-/datum types, a type that already
+  has a `set_v` (or a list mutator) on its path, and `[lint.auto_tracked.lists] exclude` in `tools/ci/lint_scopes.toml`.
+* `analyze fix --drop-declared [--apply]` deletes the plain `TRACKED(T, v)` lines the inference now covers (a read, written outside the setter, no
+  other `set_v` on the path). `TRACKED_BRIDGED`, `TRACKED_DATA`, `SETTER`, the schema forms and test files keep theirs.
+* `analyze fix [--apply] [--tests]` also rewrites `v = x`, `src.v = x`, `O.v = x`, `v op= x` and `v++` statements (also after `if(...)`, `else`, or a
+  `;`, and over several lines) to `set_v(x)` / `set_v(v op (x))`; a list var's `+=`, `-=`, `|=` become `add_v` / `remove_v` / `include_v`. A write whose value
+  is used (`(v = x)`, a `for(...)` header) is listed for hand conversion. STAT vars have no setter and are never rewritten.
+* Construction is not a change: a write of the instance's own tracked var inside its `Initialize()` or `New()` is not an `outside_setter` hit
+  (`PRE_LIVE` in `lints/tracked.rs`). Nothing reads or watches an object still being built, so the write sets the var and publishes nothing, the same
+  as a type-level default. This also keeps the `tracked` and `init` lints from contradicting each other: the init ratchet fingerprints each imperative
+  line of an `Initialize()` body, so rewriting those lines to setter calls would have read as new init debt. A write to ANOTHER object's tracked var, and
+  any write in `on_holder_init()`, `after_init()` or another proc, is judged as anywhere else.
+* Known holes (the staleness checker is the cross-check): a write inside a macro (`EXPIRY_STAMP(src, v, clock)` expands to `src.v = ...`), a
+  `?.` write, and a write through a receiver the lint cannot type are not seen by the text-based `tracked` lint.
+
+### Tracked lists (`gens/tracked_lists.rs`)
+
+A `TRACKED(T, v)` on a `list` var gets, in `tracked_lists.dm`, the procs `add_v(x)`, `include_v(x)`
+(add when absent), `remove_v(x)`, `set_v_at(i, x)`, `clear_v()`, `insert_v(i, x)`, `swap_v(a, b)`, `cut_v(from, to)` and a `v_version`
+counter. Each publishes through the setter's path, bumps the version, and returns TRUE when the list changed. The `tracked` lint's
+`list_mutation` rule bans `LAZYADD/LAZYREMOVE/LAZYOR/LAZYDISTINCTADD/LAZYSET/LAZYCLEARLIST/LAZYNULL`, `v.Add/Remove/Cut/
+Insert/Swap(...)` and `v[i] = x` on such a var outside the generated procs (`+=`, `-=`, `|=`, `&=` are already `outside_setter`).
+`analyze fix [--apply] [--tests] [--path PREFIX]` rewrites the statement-level forms and lists the rest; a nested element edit
+(`v[i]["k"] = x`) is not a change of the list and is not matched.
 
 Diagnostics (rules of `sem/reads`): `unknown_read` (a var that is not tracked, a relation, a stat, derived or constant),
 `unannotated_global`, `dynamic_read` (`vars[]`, `call()`), `hop_not_relation`, `unknown_field`, `condition_cycle` (same-entity

@@ -2,14 +2,49 @@
 @obj.structure.fence robot|none
 @obj.structure ai|none
 @obj.structure.fence ghost|none
-@obj.structure.fence human|/obj/item/tool/screwdriver
-@obj.structure.fence human|/obj/item/tool/crowbar
-@obj.structure.fence human|/obj/item/tool/wrench
-@obj.structure.fence human|/obj/item/tool/wirecutters
-@obj.structure.fence human|/obj/item/multitool
-@obj.structure.fence human|/obj/item/weldingtool
-@obj.structure.fence human|/obj/item/stack/cable_coil
-@obj.structure.fence human|/obj/item/stack/material/steel
-@obj.structure.fence human|/obj/item/card/id
-@obj.structure.fence human|/obj/item
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wrench
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++1 menu: Cut through (refused: this section of the fence can't be cut)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 click: Click: Cut through
+@obj.structure human|/obj/item/multitool
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/weldingtool
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/card/id
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 keys: climb.climb, climb.climb_menu, door_hand, door_item, drag_buckle, melee_hit, silicon_hand, use_wirecutter

@@ -9,7 +9,6 @@
 	desc = "Used to view, edit and maintain security records"
 	icon_keyboard = "security_key"
 	icon_screen = "security"
-	light_color = "#a91515"
 	req_one_access = list(ACCESS_SECURITY, ACCESS_FORENSICS_LOCKERS, ACCESS_LAWYER)
 	circuit = /obj/item/circuitboard/secure_data
 	var/obj/item/card/id/scan = null
@@ -81,6 +80,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/secure_data, sec_field_choices, list(
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
+	configure(light_glow(color = "#a91515"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active2), /datum/data/record)
@@ -229,10 +229,10 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	var/login_type = login_type_arg
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
-			authenticated = scan.registered_name
+			set_authenticated(scan.registered_name)
 			rank = scan.assignment
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
-		authenticated = A.actor.name
+		set_authenticated(A.actor.name)
 		rank = A.actor.records_login_rank()
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
 		rel_take(src, nameof(src.scan))
-	authenticated = null
+	set_authenticated(null)
 	screen = null
 	rel_clear(src, nameof(src.active1))
 	rel_clear(src, nameof(src.active2))
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 
 /// The operator is logged in (the old handlers each refused without it).
 /obj/machinery/computer/secure_data/proc/records_authenticated(datum/act/op/A)
-	return (!!authenticated) ? null : MSG(records/not_authenticated) // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+	return (!!authenticated) ? null : MSG(records/not_authenticated)
 
 /obj/machinery/computer/secure_data/proc/ui_act_d_rec(datum/act/op/A, d_rec)
 	. = TRUE

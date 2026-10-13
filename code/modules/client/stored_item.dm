@@ -8,7 +8,6 @@
 	var/busy_bank = FALSE
 	var/static/list/item_takers = list()
 
-TRACKED(/obj/machinery/item_bank, busy_bank)
 
 /obj/machinery/item_bank/proc/persist_item_savefile_path(mob/user)
 	return "data/player_saves/[copytext(user.ckey, 1, 2)]/[user.ckey]/persist_item.sav"

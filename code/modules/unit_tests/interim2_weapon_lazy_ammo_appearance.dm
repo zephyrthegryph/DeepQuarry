@@ -24,7 +24,6 @@
 	TEST_ASSERT_EQUAL(gun.ammo_magazine, magazine, "The exact empty magazine must remain installed")
 	TEST_ASSERT_EQUAL(owner_of(magazine), gun, "The original empty magazine must retain its gun owner")
 	TEST_ASSERT_EQUAL(gun.appearance_mag_state(), "-0", "The real appearance helper must handle the emptied native list")
-	gun.update_icon()
 	// The drawn state is the look's (draw sweep): appearance_mag_state() above is what it declares; icon_state stays the mapped sprite.
 	TEST_ASSERT_EQUAL(control.appearance_mag_state(), "-20", "The independent gun must remain visibly full")
 	for(var/i in 1 to 20)

@@ -11,7 +11,7 @@ GLOBAL_VAR(bomb_set)
 	var/deployable = 0.0
 	var/extended = 0.0
 	var/lighthack = 0
-	var/opened = 0.0
+	var/opened = 0
 	var/timeleft = 60.0
 	var/timing = 0.0
 	var/r_code = "ADMIN"
@@ -62,7 +62,6 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return PROCESS_KILL
 
-TRACKED(/obj/machinery/nuclearbomb, extended)
 
 /obj/machinery/nuclearbomb/proc/is_extended(datum/act/op/A)
 	if(extended)
@@ -84,28 +83,25 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 	rel_set(src, nameof(auth), disk)
 	return TRUE
 
-/obj/machinery/nuclearbomb/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 50, 1)
-	add_fingerprint(user)
-	if(auth())
-		if(opened == 0)
-			opened = 1
-			add_overlay("npanel_open")
-			to_chat(user, "You unscrew the control panel of [src].")
+/// Without the authentication disk in, the panel stays locked in (and buzzes).
+/obj/machinery/nuclearbomb/proc/panel_auth_refusal(datum/act/op/A)
+	if(read_once(auth()))
+		return null
+	return "\the [src] emits a buzzing noise, the panel staying locked in"
 
-		else
-			opened = 0
-			cut_overlay("npanel_open")
-			to_chat(user, "You screw the control panel of [src] back on.")
-	else
-		if(opened == 0)
-			to_chat(user, "The [src] emits a buzzing noise, the panel staying locked in.")
-		if(opened == 1)
-			opened = 0
-			cut_overlay("npanel_open")
-			to_chat(user, "You screw the control panel of [src] back on.")
+/obj/machinery/nuclearbomb/proc/panel_opened(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	add_fingerprint(A.actor)
+	add_overlay("npanel_open")
+	to_chat(A.actor, "You unscrew the control panel of [src].")
+	return OP_OK
+
+/obj/machinery/nuclearbomb/proc/panel_closed(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	add_fingerprint(A.actor)
+	cut_overlay("npanel_open")
+	to_chat(A.actor, "You screw the control panel of [src] back on.")
+	if(!auth())
 		flick("nuclearbombc", src)
 	return OP_OK
 
@@ -116,76 +112,33 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 		nukehack_win(A.actor)
 	return OP_OK
 
-/obj/machinery/nuclearbomb/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
+/// Each removal step leaves the worker's prints on the bomb.
+/obj/machinery/nuclearbomb/proc/removal_started(datum/act/op/A)
+	add_fingerprint(A.actor)
 	var/obj/item/tool = A.held
-	add_fingerprint(user)
-	if(!anchored)
-		return OP_DECLINE
-	switch(removal_stage)
-		if(0)
-			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, start_self = "You start cutting loose the anchoring bolt covers with [tool]...", start_others = "[user] starts cutting loose the anchoring bolt covers on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-			return OP_OK
-		if(2)
-			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start cutting apart the anchoring system's sealant with [tool]...", start_others = "[user] starts cutting apart the anchoring system sealant on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
-			return OP_OK
+	if(tool && sounds_of(tool).use)
+		playsound(src, sounds_of(tool).use, 50, 1)
 	return OP_OK
 
-/obj/machinery/nuclearbomb/proc/welder_act_tool_done(mob/user)
-	if(!src || !user)
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF("You cut through the bolt cover."), MSG_OTHERS("%U% cuts through the bolt covers on %T%."))
-	removal_stage = 1
-/obj/machinery/nuclearbomb/proc/welder_act_tool_done2(mob/user)
-	if(!src || !user)
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF("You cut apart the anchoring system's sealant."), MSG_OTHERS("%U% cuts apart the anchoring system sealant on %T%."))
-	removal_stage = 3
+/obj/machinery/nuclearbomb/proc/covers_cut_begins(datum/act/op/A)
+	return msg_text("You start cutting loose the anchoring bolt covers with %I%...", "%U% starts cutting loose the anchoring bolt covers on %T%.")
 
-/obj/machinery/nuclearbomb/proc/crowbar_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	add_fingerprint(user)
-	if(!anchored)
-		return OP_DECLINE
-	switch(removal_stage)
-		if(1)
-			use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, start_self = "You start forcing open the anchoring bolt covers with [tool]...", start_others = "[user] starts forcing open the bolt covers on [src].", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-			return OP_OK
-		if(4)
-			use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, start_self = "You begin lifting the device off the anchors...", start_others = "[user] begins lifting [src] off of the anchors.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done2), done_args = list(user))
-			return OP_OK
-	return OP_OK
+/obj/machinery/nuclearbomb/proc/covers_forced_begins(datum/act/op/A)
+	return msg_text("You start forcing open the anchoring bolt covers with %I%...", "%U% starts forcing open the bolt covers on %T%.")
 
-/obj/machinery/nuclearbomb/proc/crowbar_act_tool_done(mob/user)
-	if(!src || !user)
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF("You force open the bolt covers."), MSG_OTHERS("%U% forces open the bolt covers on %T%."))
-	removal_stage = 2
-/obj/machinery/nuclearbomb/proc/crowbar_act_tool_done2(mob/user)
-	if(!src || !user)
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF("You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!"), \
-		MSG_OTHERS("%U% crowbars %T% off of the anchors. It can now be moved."))
+/obj/machinery/nuclearbomb/proc/sealant_cut_begins(datum/act/op/A)
+	return msg_text("You start cutting apart the anchoring system's sealant with %I%...", "%U% starts cutting apart the anchoring system sealant on %T%.")
+
+/obj/machinery/nuclearbomb/proc/bolts_unwrenched_begins(datum/act/op/A)
+	return msg_text("You begin unwrenching the anchoring bolts...", "%U% begins unwrenching the anchoring bolts on %T%.")
+
+/obj/machinery/nuclearbomb/proc/lift_begins(datum/act/op/A)
+	return msg_text("You begin lifting the device off the anchors...", "%U% begins lifting %T% off of the anchors.")
+
+/// Lifted off its anchors, the bomb can be moved.
+/obj/machinery/nuclearbomb/proc/lifted_off(datum/act/op/A)
 	set_anchored(FALSE)
-	removal_stage = 5
-
-/obj/machinery/nuclearbomb/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	add_fingerprint(user)
-	if(!anchored)
-		return OP_DECLINE
-	if(removal_stage != 3)
-		return OP_OK
-	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, start_self = "You begin unwrenching the anchoring bolts...", start_others = "[user] begins unwrenching the anchoring bolts on [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return OP_OK
-
-/obj/machinery/nuclearbomb/proc/wrench_act_tool_done(mob/user)
-	if(!src || !user)
-		return ITEM_INTERACT_SUCCESS
-	act_message(user, src, MSG_SELF("You unwrench the anchoring bolts."), MSG_OTHERS("%U% unwrenches the anchoring bolts on %T%."))
-	removal_stage = 4
 
 // TGUI migration. attack_hand opens the main control view
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
@@ -212,6 +165,9 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 		set_extended(1)
 	return TRUE
 
+TRACKED(/obj/machinery/nuclearbomb, removal_stage)
+TRACKED(/obj/machinery/nuclearbomb, opened)
+
 CAPABILITIES(/obj/machinery/nuclearbomb)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("NuclearBomb", title = "Nuclear Fission Explosive")
@@ -225,16 +181,28 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
 	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	// taking an anchored bomb off the floor: cut the bolt covers, force them open, cut the sealant, unwrench the bolts, lift it off
+	stages(nameof(removal_stage),
+		stage_step(0, 1, lit_welder(fuel = 5), label("Cut the bolt covers"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(covers_cut_begins)), wait(4 SECONDS), says(MSG(nuclearbomb/covers_cut))),
+		stage_step(1, 2, tool(TOOL_CROWBAR), label("Force the bolt covers open"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(covers_forced_begins)), wait(1.5 SECONDS), says(MSG(nuclearbomb/covers_forced))),
+		stage_step(2, 3, lit_welder(fuel = 5), label("Cut the anchoring sealant"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(sealant_cut_begins)), wait(4 SECONDS), says(MSG(nuclearbomb/sealant_cut))),
+		stage_step(3, 4, tool(TOOL_WRENCH), label("Unwrench the anchoring bolts"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(bolts_unwrenched_begins)), wait(5 SECONDS), says(MSG(nuclearbomb/bolts_unwrenched))),
+		stage_step(4, 5, tool(TOOL_CROWBAR), label("Lift it off the anchors"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(lift_begins)), wait(8 SECONDS), says(MSG(nuclearbomb/lifted)), then(PROC_REF(lifted_off))))
+	// the control panel: an authorised screwdriver unscrews it (the wires behind it are then reachable); any screwdriver screws it back on
+	stages(nameof(opened),
+		stage_step(0, 1, tool(TOOL_SCREWDRIVER), label("Unscrew the control panel"), needs(req(PROC_REF(panel_auth_refusal))), wait(0), then(PROC_REF(panel_opened)), key = "open_panel"),
+		stage_step(1, 0, tool(TOOL_SCREWDRIVER), label("Screw the control panel on"), wait(0), then(PROC_REF(panel_closed)), key = "close_panel"))
 	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended))), then(PROC_REF(interaction_insert_disk)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act)), req(PROC_REF(can_make_deployable))), then(PROC_REF(interaction_make_deployable)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
+MSG_DEF(nuclearbomb/covers_cut, "You cut through the bolt cover.", "%U% cuts through the bolt covers on %T%.")
+MSG_DEF(nuclearbomb/covers_forced, "You force open the bolt covers.", "%U% forces open the bolt covers on %T%.")
+MSG_DEF(nuclearbomb/sealant_cut, "You cut apart the anchoring system's sealant.", "%U% cuts apart the anchoring system sealant on %T%.")
+MSG_DEF(nuclearbomb/bolts_unwrenched, "You unwrench the anchoring bolts.", "%U% unwrenches the anchoring bolts on %T%.")
+MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!", "%U% crowbars %T% off of the anchors. It can now be moved.")
 
 /// The panel answers someone who can move and act and stands next to the bomb (a remote link, an AI's, works it from anywhere).
 /obj/machinery/nuclearbomb/proc/bomb_reachable(datum/act/op/A)

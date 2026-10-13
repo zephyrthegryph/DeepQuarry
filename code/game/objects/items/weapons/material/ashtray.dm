@@ -32,8 +32,6 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 /obj/item/material/ashtray/var/butts = 0
 /// The dish itself, in its material's colour (made once the material is known).
 /obj/item/material/ashtray/var/image/base_overlay
-TRACKED(/obj/item/material/ashtray, base_overlay)
-TRACKED(/obj/item/material/ashtray, max_butts)
 
 /// The fill changes what it says about itself.
 /obj/item/material/ashtray/proc/set_butts(value)
@@ -105,8 +103,7 @@ CAPABILITIES(/obj/item/material/ashtray)
 				to_chat(user, "You place [cig] in [src] without even smoking it. Why would you do that?")
 
 		act_message(user, src, others = "%U% places [W] in %T%.")
-		user.update_inv_l_hand()
-		user.update_inv_r_hand()
+		changed(src)
 		add_fingerprint(user)
 		sync_butts()
 	else

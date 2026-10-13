@@ -96,12 +96,12 @@ TRACKED(/datum/dq_site_listener, blocking)
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/visible = H.get_visible_name()
 	TEST_ASSERT(visible != "Something", "in realspace the name is the mob's own")
-	SK.in_phase = TRUE
-	SK.hide_voice_in_phase = TRUE
+	SK.set_in_phase(TRUE)
+	SK.set_hide_voice_in_phase(TRUE)
 	TEST_ASSERT_EQUAL(H.GetVoice(), "Something", "in phase the voice is hidden")
 	TEST_ASSERT_EQUAL(H.get_visible_name(), "Something", "and so is the visible name")
 	TEST_ASSERT_EQUAL(H.GetAltName(), "", "and there is no alt name")
-	SK.hide_voice_in_phase = FALSE
+	SK.set_hide_voice_in_phase(FALSE)
 	TEST_ASSERT(H.GetVoice() != "Something", "a shadekin who does not hide its voice speaks as itself")
 	TEST_ASSERT_EQUAL(H.get_visible_name(), visible, "and is named as itself")
 	for(var/obj/effect/temp_visual/V in get_turf(H))

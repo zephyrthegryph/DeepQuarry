@@ -50,9 +50,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/sound_env = STANDARD_STATION
 	var/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
 	VAR_PROTECTED/color_grading = null // Color blending for clients that enter this area
-TRACKED(/area, eject)
-TRACKED(/area, fire)
-TRACKED(/area, party)
 
 /area/New()
 	// Used by the maploader, this must be done in New, not init
@@ -234,7 +231,7 @@ TRACKED(/area, party)
 	look.state("") // in game an area shows nothing (its map sprite marks it in the editor) but an alarm
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.
 		if(fire && !eject && !party)
-			look.state(null) // Let lights take care of it
+			look.state("") // Let lights take care of it
 		/*else if(atmosalm && !fire && !eject && !party)
 			look.state("bluenew")*/
 		else if(!fire && eject && !party)
@@ -245,17 +242,12 @@ TRACKED(/area, party)
 			look.state("blue-red")
 	else
 	//	new lighting behaviour with obj lights
-		look.state(null)
+		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
 
-TRACKED(/area, power_equip)
-TRACKED(/area, power_light)
-TRACKED(/area, power_environ)
-TRACKED(/area, requires_power)
-TRACKED(/area, always_unpowered)
 
 /// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
-/// machines in the area learn of a flip through power_change() (unless `notify` is FALSE: the caller runs it itself); the vars are tracked, so
-/// what reads them as a stat input hears the write. Returns TRUE when a channel flipped.
+/// vars are tracked: every machine's has_power reads them (generated deps), so a flip reaches the machines through that stat's on_change hook,
+/// and `notify` publishes the area's own observer_apc notice. Returns TRUE when a channel flipped.
 /area/proc/set_channels(equip_on, light_on, environ_on, notify = TRUE)
 	var/flipped = FALSE
 	if(set_power_equip(!!equip_on))
@@ -265,7 +257,7 @@ TRACKED(/area, always_unpowered)
 	if(set_power_environ(!!environ_on))
 		flipped = TRUE
 	if(flipped && notify)
-		power_change()
+		PUBLISH_LEGACY(src, /datum/notice/observer_apc)
 	return flipped
 
 /area/proc/powered(chan)		// return true if the area has power to given channel
@@ -284,24 +276,16 @@ TRACKED(/area, always_unpowered)
 
 	return 0
 
-/// The machines standing in this area: the other end of their power_area relation. Each contributes its draw to the demand stats and is told
-/// about the channel changes (power_subscriber).
+/// The machines standing in this area: the other end of their power_area relation. Each contributes its draw to the demand stats, and its
+/// has_power reads this area's channels.
 /area/var/list/power_machines
 
-// Called once per area channel change (the APC's Rust power event). Lights and
-// other reactor subscribers hear the key; subscribed machines re-check their
-// power, and the base power_change() emits machinery_power_lost or
-// machinery_power_restored when it flips.
+/// Every machine in the area re-reads its power now (power_change(): it acts only on a flip). Not the path of a channel change, which reaches
+/// the machines through their has_power stat (its on_change hook); this is the area's first sync after the map load and a light switch's use
+/// (a light's own power reads the switch).
 /area/proc/power_change()
-	// The machines' has_power is a read of this area's channels (area_gives_power()): settle it now, whatever wrote the channel vars (the tracked
-	// writer marks the same stat for a later drain, which then finds it unchanged), so power_change() below acts on a current reading.
-	var/datum/stat_def/power_def = stat_def_of(STAT_HAS_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
-		if(M.power_subscriber)
-			stat_settle_def(M, power_def)
-	for(var/obj/machinery/M as anything in power_machines)
-		if(M.power_subscriber)
-			M.power_change()
+		M.power_change()
 
 /// Watts the area's machines ask of `chan` (the standing draw, the sum of their contributions) plus the one-off draws booked since the last
 /// power step. `include_static` FALSE leaves the standing draw out.
@@ -428,6 +412,7 @@ TRACKED(/area, always_unpowered)
 			thunk(M)
 		M.update_floating( M.Check_Dense_Object() )
 		M.update_gravity(get_gravity())
+		PUBLISH_CHANGE(M, MOB_KEY_GROUND)
 
 /area/proc/thunk(mob)
 	if(istype(get_turf(mob), /turf/space)) // Can't fall onto nothing.

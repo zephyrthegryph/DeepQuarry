@@ -69,10 +69,6 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	blood.color = colour
 	return blood
 
-/// An effect of a clothing look: whoever holds or wears it redraws that slot (the worn overlay stays the mob's own path).
-/obj/item/clothing/proc/look_effect_redraw_worn()
-	look_redraw_worn(src)
-
 /// add_blood() and the gurgle code leave the stains to the look.
 /obj/item/clothing/stains_in_look()
 	return TRUE
@@ -275,7 +271,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 /obj/item/clothing/ears/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_ears()
+		changed(src)
 
 /obj/item/clothing/ears/drop_with_actor(mob/user, obj/over_object)
 	if(ishuman(user))
@@ -367,7 +363,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 /obj/item/clothing/gloves/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_gloves()
+		changed(src)
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
 /obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT, mob/user)
@@ -484,7 +480,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/mob/user = A.actor
 	if(special_handling)
 		return OP_DECLINE
-	if(light_range)
+	if(glow_of(src).range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
 			return OP_DECLINE
@@ -542,13 +538,12 @@ CAPABILITIES(/obj/item/clothing/head)
 	..()
 	if(light_on)
 		look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
-	look.effect(PROC_REF(look_effect_redraw_worn))
 
 
 /obj/item/clothing/head/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_head()
+		changed(src)
 
 ///////////////////////////////////////////////////////////////////////
 //Mask
@@ -591,7 +586,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 /obj/item/clothing/mask/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_mask()
+		changed(src)
 
 /obj/item/clothing/mask/proc/filter_air(datum/gas_mixture/air)
 	return
@@ -630,7 +625,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 		SPECIES_WEREBEAST = 'icons/inventory/feet/mob_werebeast.dmi'
 		)
 
-	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/feet/mob_digi.dmi'
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
 
@@ -718,7 +713,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	var/drawn_state = look.state_so_far(src)
 	if(holding)
 		look.overlay("[drawn_state]_knife")
-	look.effect(PROC_REF(look_effect_redraw_worn))
 
 /obj/item/clothing/shoes/wash()
 	. = ..()
@@ -834,7 +828,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 /obj/item/clothing/shoes/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_shoes()
+		changed(src)
 
 /// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
 /obj/item/clothing/shoes/proc/shoes_shake_out_self(datum/act/op/A)
@@ -933,10 +927,8 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
-	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/suit/mob_digi.dmi'
 
-TRACKED(/obj/item/clothing/suit, hood_up)
-TRACKED(/obj/item/clothing/suit, toggleicon)
 
 CAPABILITIES(/obj/item/clothing/suit)
 	acceptance("equip", req_acceptance_limb_clearance(), mode = ACCEPTANCE_APPEND)
@@ -988,7 +980,7 @@ CAPABILITIES(/obj/item/clothing/suit)
 		if(ishuman(hood.loc))
 			var/mob/living/carbon/H = hood.loc
 			H.unEquip(hood, 1)
-			H.update_inv_wear_suit()
+			changed(src)
 		hood.forceMove(src)
 
 /obj/item/clothing/suit/proc/ToggleHood()
@@ -1011,19 +1003,19 @@ CAPABILITIES(/obj/item/clothing/suit)
 			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
 			set_hood_up(TRUE)
 			hood.set_canremove(FALSE)
-			H.update_inv_wear_suit()
+			changed(src)
 ///Hood stuff end.
 
 /obj/item/clothing/suit/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 /obj/item/clothing/suit/proc/taurize(mob/living/carbon/human/taur, has_taur_tail = FALSE)
 	if(has_taur_tail)
 		var/datum/sprite_accessory/tail/taur/taurtail = taur.tail_style
 		if(taurtail.suit_sprites && (icon_exists(taurtail.suit_sprites, get_worn_icon_state(slot_wear_suit_str))))
-			icon_override = taurtail.suit_sprites
+			set_icon_override(taurtail.suit_sprites)
 			taurized = TRUE
 	// means that if a taur puts on an already taurized suit without a taur sprite
 	// for their taur type, but the previous taur type had a sprite, it stays
@@ -1032,7 +1024,7 @@ CAPABILITIES(/obj/item/clothing/suit)
 		taurized = FALSE
 
 	if(!taurized)
-		icon_override = initial(icon_override)
+		set_icon_override(initial(icon_override))
 		taurized = FALSE
 
 // Taur suits need to be shifted so its centered on their taur half.
@@ -1113,7 +1105,7 @@ CAPABILITIES(/obj/item/clothing/suit)
 	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // an icon file resource ('*.dmi'), not an object reference
 	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // an icon file resource ('*.dmi'), not an object reference
 
-	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/uniform/mob_digi.dmi'
 
 MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
@@ -1239,7 +1231,7 @@ CAPABILITIES(/obj/item/clothing/under)
 /obj/item/clothing/under/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_w_uniform()
+		changed(src)
 
 	set_clothing_index()
 
@@ -1352,10 +1344,10 @@ CAPABILITIES(/obj/item/clothing/under)
 		protection_of(src).heat_parts &= ~(UPPER_TORSO|ARMS)
 		protection_of(src).cold_parts &= ~(UPPER_TORSO|ARMS)
 		if(icon_exists(rolled_down_icon, worn_state))
-			icon_override = rolled_down_icon
-			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(rolled_down_icon)
+			set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		else
-			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_d")
+			set_item_state_slots_at(slot_w_uniform_str, "[worn_state]_d")
 
 		to_chat(user, span_notice("You roll down your [src]."))
 	else
@@ -1363,8 +1355,8 @@ CAPABILITIES(/obj/item/clothing/under)
 		set_heat_protection(protection_of_type(type).heat_parts)
 		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_icon)
-			icon_override = initial(icon_override)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(initial(icon_override))
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll up your [src]."))
 	update_clothing_icon()
 	worn_protection_changed()
@@ -1389,18 +1381,18 @@ CAPABILITIES(/obj/item/clothing/under)
 		protection_of(src).heat_parts &= ~(ARMS)
 		protection_of(src).cold_parts &= ~(ARMS)
 		if(icon_exists(rolled_down_sleeves_icon, worn_state))
-			icon_override = rolled_down_sleeves_icon
-			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(rolled_down_sleeves_icon)
+			set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		else
-			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_r")
+			set_item_state_slots_at(slot_w_uniform_str, "[worn_state]_r")
 		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
 		set_body_parts_covered(worn_of_type(type).covers)
 		set_heat_protection(protection_of_type(type).heat_parts)
 		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_sleeves_icon)
-			icon_override = initial(icon_override)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(initial(icon_override))
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
 	worn_protection_changed()

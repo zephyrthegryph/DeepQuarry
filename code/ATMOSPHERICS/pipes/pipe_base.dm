@@ -101,14 +101,14 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	return TRUE
 
 /obj/machinery/atmospherics/pipe/material_environment_repaired()
-	damaged_leak = FALSE
+	set_damaged_leak(FALSE)
 	set_leaking(FALSE)
 	return ..()
 
 /obj/machinery/atmospherics/pipe/material_environment_begin_leak()
 	..()
 	if(!damaged_leak)
-		damaged_leak = TRUE
+		set_damaged_leak(TRUE)
 		set_leaking(TRUE)
 		visible_message(span_warning("Gas begins hissing from a fatigue crack in \the [src]."))
 		play_sfx(src, SFX_EFFECTS_SPRAY2, 0.35, extrarange = 0)
@@ -250,7 +250,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /// Its floor does not cover it.
 /obj/machinery/atmospherics/pipe/proc/floor_clear(datum/act/A)
 	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe stays where it was built
-	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(pipe/plating) // ALLOW(reads): a pipe's level is fixed by where it was built; asked when the wrench is used
+	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(pipe/plating)
 
 /// What it holds above the room, kPa.
 /obj/machinery/atmospherics/pipe/proc/overpressure()
@@ -271,10 +271,10 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	return OP_OK
 
 /obj/machinery/atmospherics/pipe/proc/cracked(datum/act/A)
-	return (damaged_leak) ? null : MSG(pipe/not_cracked) // ALLOW(reads): asked when the welder is used, never from a cached menu
+	return (damaged_leak) ? null : MSG(pipe/not_cracked)
 
 /obj/machinery/atmospherics/pipe/proc/crack_sealed(datum/act/op/A)
-	damaged_leak = FALSE
+	set_damaged_leak(FALSE)
 	handle_leaking()
 	return OP_OK
 
@@ -301,4 +301,4 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 
 /obj/machinery/atmospherics/pipe/hide(i)
 	if(istype(loc, /turf/simulated))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+		hide_under_floor(src, i)

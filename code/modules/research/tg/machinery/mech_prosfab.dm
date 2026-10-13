@@ -151,16 +151,16 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 			O.data.setup_from_dna()
 
 			// Skincolor weirdness.
-			O.s_col[1] = 0
-			O.s_col[2] = 0
-			O.s_col[3] = 0
+			O.set_s_col_at(1, 0)
+			O.set_s_col_at(2, 0)
+			O.set_s_col_at(3, 0)
 
 		// Resetting the UI does strange things for the skin of a non-human robot, which should be controlled by a whole different thing.
 		H.looks.set_skin_color(rgb(0, 0, 0))
 		H.dna.ResetUIFrom(H)
 
 		H.vore_prefs.allow_spontaneous_tf = TRUE// Allows vore customization of synthmorphs
-		H.real_name = "Synthmorph #[rand(100,999)]"
+		H.set_real_name("Synthmorph #[rand(100,999)]")
 		H.name = H.real_name
 		H.set_dir(2)
 		H.add_language(LANGUAGE_EAL)

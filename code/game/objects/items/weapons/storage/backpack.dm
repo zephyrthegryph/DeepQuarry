@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 		icon_state = "[icon_state]_tilted"
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
-	user.update_inv_back()
+	changed(src)
 	return OP_OK
 
 CAPABILITIES(/obj/item/storage/backpack/holding)
@@ -206,7 +206,7 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 		icon_state = "[icon_state]_tilted"
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
-	user.update_inv_back()
+	changed(src)
 	return OP_OK
 
 /obj/item/storage/backpack/dufflebag/syndie
@@ -499,7 +499,6 @@ CAPABILITIES(/obj/item/storage/backpack/purse)
 	/// Packed and ready to open (movement reads the same fact through dq_get_parachute()).
 	var/packed = FALSE
 
-TRACKED(/obj/item/storage/backpack/parachute, packed)
 
 /obj/item/storage/backpack/parachute/examine(mob/user)
 	. = ..()

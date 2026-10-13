@@ -131,7 +131,6 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/sheet_left = 0		//How much is left of the current sheet
 	var/temperature = 0		//The current temperature
 	var/overheating = 0		//if this gets high enough the generator explodes
-TRACKED(/obj/machinery/power/port_gen/pacman, overheating)
 
 TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
 TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
@@ -225,7 +224,6 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 		overheat()
 	else if (overheating > 0)
 		set_overheating(overheating - 1)
-		changed(src) //Port RS PR #484
 
 /// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
 /obj/machinery/power/port_gen/pacman/proc/cooling_temperature()
@@ -259,7 +257,6 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 
 	if(overheating)
 		set_overheating(overheating - 1)
-		changed(src) //Port RS PR #484
 	return temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
@@ -999,9 +996,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 	layer = ABOVE_MOB_LAYER
 
 /obj/machinery/power/rtg/antimatter_core
-	light_range = 3
-	light_power = 6
-	light_color = "#66FFFF"
 	light_on = TRUE
 
 /obj/machinery/power/rtg/antimatter_core/proc/asplod()
@@ -1021,6 +1015,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 		new /obj/effect/bhole(T)
 
 CAPABILITIES(/obj/machinery/power/rtg/antimatter_core)
+	configure(light_glow(range = 3, power = 6, color = "#66FFFF"))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_shrugged))))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(antimatter_core_blast))))
 

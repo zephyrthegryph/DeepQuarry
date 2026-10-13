@@ -4,40 +4,80 @@
 @obj.machinery.computer robot|none
 +2 menu: Insert data card (refused: needs a data card)
 +3 menu: Set teleporter ID
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 +1 menu: Insert data card (refused: needs a data card)
 +2 menu: Set teleporter ID (refused: You can't reach that.)
 @obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use screwdriver
 +2 menu: Insert data card (refused: needs a data card)
++3 menu: Move To Top
 +4 menu: Set teleporter ID
++5 menu: Toggle Digestable (refused: You can't do that.)
++7 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use crowbar
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use wrench
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use wirecutters
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/multitool
+-menu: Use multitool
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use welding tool
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use cable coil
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
 +4 menu: Set teleporter ID
++5 menu: Toggle Digestable (refused: You can't do that.)
++7 menu: Use item
 @obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use steel sheet
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/card/id
+-menu: Use identification card
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
 +4 menu: Set teleporter ID
++5 menu: Toggle Digestable (refused: You can't do that.)
++7 menu: Use item
 @obj.machinery.computer human|/obj/item
 +1 menu: Insert data card (refused: needs a data card)
++2 menu: Move To Top
 +3 menu: Set teleporter ID
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/gripper
 @obj human|/obj/item/card/data
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, teleporter_computer_insert_card, teleporter_computer_set_id, teleporter_computer_use, teleporter_silicon_use, use_gripper, use_item

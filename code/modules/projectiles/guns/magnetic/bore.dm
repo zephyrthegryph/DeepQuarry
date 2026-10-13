@@ -9,11 +9,9 @@
 	var/rating_modifier = 0 // rating of installed capacitor + manipulator
 	var/loading = FALSE
 
-TRACKED(/obj/item/gun/magnetic/matfed, mat_storage)
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
-	op("matfed_interaction_hand", hand(), then(PROC_REF(matfed_interaction_hand)))
 	// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
 	op("load_sheets", ai(), wait(1.5 SECONDS, repeats = PROC_REF(sheets_more), after_step = PROC_REF(sheet_loaded)), on_interrupt(PROC_REF(sheets_done)), then(PROC_REF(sheets_done)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
@@ -42,23 +40,6 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 /obj/item/gun/magnetic/matfed/draw(datum/look/look)
 	..()
 	look.overlay("[initial(icon_state)]_loaded", when = mat_storage)
-
-/// Old attack_hand.
-/obj/item/gun/magnetic/matfed/proc/matfed_interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(user.get_inactive_hand() == src)
-		var/obj/item/removing
-
-		if(cell && removable_components)
-			removing = cell
-			rel_take(src, nameof(cell))
-
-		if(removing)
-			user.put_in_hands(removing)
-			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
-			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
-			return TRUE
-	return OP_DECLINE
 
 /obj/item/gun/magnetic/matfed/check_ammo()
 	if(mat_storage - mat_cost >= 0)

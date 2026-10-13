@@ -467,13 +467,18 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		if(timer_flags & OM_TIMER_OWNER_FIRST)
 			captured = captured ? list(E) + captured : list(E)
 		CHURN_COUNT(timers, "[E.type] [proc_ref]")
+		GLOB.timer_fire_quiet = FALSE
 		try
 			deferred_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)
 			dq_report_caught(e, "om timer [proc_ref] on [E]")
 		// A timer is a dispatched call: its owner may have state_changed (dx_conventions.md §1). Its derived procs
-		// re-run; no channel is raised (refresh_dispatched()).
-		if(!istype(E, /datum/timer_owner))
+		// re-run; no channel is raised (refresh_dispatched()). A fire that ran nothing of the owner's (an every() whose gate
+		// skipped the run, or that only queued it: timer_fire_quiet) changed nothing to redraw: a polling every() on an idle or
+		// unpowered machine redrew it on every interval.
+		var/quiet = GLOB.timer_fire_quiet
+		GLOB.timer_fire_quiet = FALSE
+		if(!quiet && !istype(E, /datum/timer_owner))
 			refresh_dispatched(E)
 	timers_reschedule(rec)
 
@@ -583,3 +588,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// The timer owner is extensible so downstream compatibility-owned relations survive.
 /datum/time_scheduler/proc/make_timer_owner()
 	return new /datum/timer_owner
+
+/// Set by an every() fire that ran none of its holder's work (its gate skipped the run, or it only queued it): the timer that fired it does not
+/// redraw the holder (refresh_dispatched()). Cleared around each timer call.
+GLOBAL_VAR_INIT(timer_fire_quiet, FALSE)

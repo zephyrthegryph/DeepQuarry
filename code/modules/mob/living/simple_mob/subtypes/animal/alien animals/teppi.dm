@@ -557,7 +557,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 		set_item_type("collar")
 		set_item_color(C.color)
 		name = C.given_name
-		real_name = C.given_name
+		set_real_name(C.given_name)
 		consume(C, user)
 		fully_replace_character_name(real_name,C.given_name)
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
@@ -644,15 +644,8 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, marking_color)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, horn_color)
 TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, eye_color)
 TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, skin_color)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, item_type)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, item_color)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, marking_type)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, horn_type)
-TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_wool)
 TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/life_type_post_due()
@@ -942,7 +935,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 	inherit_allergen = TRUE
 	dir = teppi_data["dir"]
 	name = teppi_data["name"]
-	real_name = teppi_data["real_name"]
+	set_real_name(teppi_data["real_name"])
 	faction = teppi_data["faction"]
 	affinity = teppi_data["affinity"]
 	affection_factor = teppi_data["affection_factor"]

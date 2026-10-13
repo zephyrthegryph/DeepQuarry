@@ -147,8 +147,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	shock_wire(stat = STAT_ELECTRIFIED)
 	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(electrify_wire_cut), pulse = PROC_REF(electrify_wire_pulsed))
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
-	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_changed_look)))
-	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_changed_look)))
 	on_wire(WIRE_IDSCAN, pulse = PROC_REF(idscan_wire_pulsed)) // and the deny light flashes
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
 	on_wire(WIRE_MAIN_POWER2, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
@@ -167,7 +165,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	on_change(nameof(bolted), ANY, then(PROC_REF(bolts_moved)))
 	on_change(nameof(main_power_out), ANY, then(PROC_REF(main_power_changed)))
 	on_change(nameof(backup_power_out), ANY, then(PROC_REF(power_changed)))
-	on_change(nameof(electrified), ANY, then(PROC_REF(publish_door_mode)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(airlock_emp)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
 	every(1 SECOND, then(PROC_REF(command_step)), when = nameof(cur_command))
@@ -223,13 +220,13 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("idscan_toggle", ui_act("idscan-toggle"), needs(req_wire(WIRE_IDSCAN, because = MSG(airlock/idscan_wire_cut))),
 		toggles_hold(STAT_AIDISABLEDIDSCANNER, source = SRC_AI_CONTROL))
 	op("emergency_toggle", ui_act("emergency-toggle"), toggles(DOOR_EMERGENCY_ENGAGED), says(PROC_REF(emergency_message)), logs(LOG_GAME))
-	op("bolt_toggle", ui_act("bolt-toggle"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
+	op("bolt_toggle", ui_act("bolt-toggle"), label("Toggle bolts"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
 		req_is(nameof(operating), FALSE, because = MSG(airlock/swinging)), req(PROC_REF(actor_may_move_bolts))),
 		toggles_hold(STAT_BOLTED, source = ON_ACTOR), says(PROC_REF(bolts_message)), logs(LOG_GAME))
 	op("light_toggle", ui_act("light-toggle"), needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	op("safe_toggle", ui_act("safe-toggle"), needs(req_wire(WIRE_SAFETY, because = MSG(airlock/safety_wire_cut))), then(PROC_REF(safeties_toggled)))
 	op("speed_toggle", ui_act("speed-toggle"), needs(req_wire(WIRE_SPEED, because = MSG(airlock/timing_wire_cut))), toggles(nameof(normalspeed)))
-	op("open_close", ui_act("open-close"), needs(req_is(nameof(frozen), FALSE, because = MSG(airlock/frozen)),
+	op("open_close", ui_act("open-close"), label("Open or close"), needs(req_is(nameof(frozen), FALSE, because = MSG(airlock/frozen)),
 		req_is(WELD_SHUT_WELDED, FALSE, because = MSG(airlock/welded)), req_is(STAT_BOLTED, FALSE, because = MSG(airlock/bolted)),
 		req(PROC_REF(not_held_by_another))), then(PROC_REF(ui_open_close)))
 	// a silicon's gestures over its link: shift opens or closes it, ctrl bolts it, alt electrifies it, middle switches the bolt lights (the AI's: a
@@ -292,17 +289,12 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	if(electrified && all_power_lost())
 		release(src, STAT_ELECTRIFIED, SRC_ALL)
 	resume_autoclose_if_possible()
-	publish_door_mode()
 
 /obj/machinery/door/airlock/power_change() //putting this is obj/machinery/door itself makes non-airlock doors turn invisible for some reason
 	. = ..()
 	if(power_lost())
 		release(src, STAT_ELECTRIFIED, SRC_ALL) // the door lights run on an internal battery; the current does not
 	resume_autoclose_if_possible()
-
-/// Raises CHANGE_MACHINE_MODE for whatever watches this door (bolts, power, electrification).
-/obj/machinery/door/airlock/proc/publish_door_mode(datum/act/A)
-	changed(src, CHANGE_MACHINE_MODE)
 
 // ---- electrification ----
 
@@ -415,7 +407,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 			autoclose_cancel()
 	else
 		resume_autoclose_if_possible()
-	publish_door_mode()
 
 /// The bolt button: raising this actor's own hold needs power (dropping one never does).
 /obj/machinery/door/airlock/proc/actor_may_move_bolts(datum/act/op/A)
@@ -694,7 +685,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return density && operating <= 0 && !reinforcing
 
 /obj/machinery/door/airlock/proc/damaged(datum/act/A)
-	return get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+	return get_integrity() < max_integrity
 
 /// A simple mob's smash on a door that lost its power: through bolts or a weld it breaks into the internals (an op, so it takes its time),
 /// otherwise it forces the door open or shut at once.
@@ -1087,11 +1078,11 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	own_move(assembly_electronics, src, nameof(electronics)) // from the assembly to the door
 	secured_wires = electronics.secure
 	if(electronics.one_access)
-		req_access = null
-		req_one_access = electronics.conf_access
+		set_req_access(null)
+		set_req_one_access(electronics.conf_access)
 	else
-		req_one_access = null
-		req_access = electronics.conf_access
+		set_req_one_access(null)
+		set_req_access(electronics.conf_access)
 	name = assembly.created_name || "[istext(assembly.glass) ? "[assembly.glass] airlock" : assembly.base_name]"
 	set_dir(assembly.dir)
 
@@ -1131,9 +1122,9 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 		rel_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))
-		electronics.conf_access = req_access
+		electronics.set_conf_access(req_access)
 	else if (LAZYLEN(req_one_access))
-		electronics.conf_access = req_one_access
+		electronics.set_conf_access(req_one_access)
 		electronics.set_one_access(1)
 
 /// hold open (a relation view: it reads null once the target is deleted).
@@ -1316,10 +1307,6 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 	if(!issilicon(T.user) && electrified && shock(T.user, 100)) // ALLOW(silicon_entry): moved from the deleted airlock wire datum unchanged: a silicon reaches the wires window with no hand on a live wire
 		return OP_REFUSED
 	return HOOK_DECLINE
-
-/// Any wire moved: the door's look and panel follow it.
-/obj/machinery/door/airlock/proc/wire_changed_look(datum/act/A)
-	changed(src)
 
 /// The ID wire pulsed flashes the red light (with power, while shut).
 /obj/machinery/door/airlock/proc/idscan_wire_pulsed(datum/act/A)

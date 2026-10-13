@@ -183,6 +183,7 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 
 /// The link of `holder` (at end `end` of E's pair) to `other` goes: both ends cleared, the watch stopped, the holds released, then the declared hooks (A
 /// end's first), then the delete-the-holder policy of the end whose far end is `deleting`. Nothing holds it already: FALSE.
+PROC_SUMMARY(/proc/link_unmake) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/link_unmake(datum/entry/E, end, datum/holder, datum/other, datum/deleting, reason)
 	var/far = end == "a" ? "b" : "a"
 	var/key = E.args["[end]_var"]

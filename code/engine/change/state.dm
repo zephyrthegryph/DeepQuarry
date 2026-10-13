@@ -85,18 +85,10 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	return hooks_watching(E, key) // an on_change() hook of the engine (code/engine/actions/change.dm)
 
 /// The tracked var `var_name` of E state_changed (TRACKED setters, a hand-written SETTER): its key is published when
-/// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No OM channel is raised:
-/// TRACKED_BRIDGED() raises one for a var an OM stage or entity_watch() still reads by channel.
+/// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No OM channel is raised.
 /proc/tracked_changed(datum/E, var_name)
 	READS_FROM()
 	state_changed(E, 0, var_name)
-
-/// BRIDGE (removed with S4): tracked_changed() for a hand-written setter of a var an OM stage still reads by channel.
-/// The channel is the one E's type declares for the var (OM_FIELD_SETTER in machinery_fields.dm: a machine's anchored
-/// raises CHANGE_MACHINE_ANCHORED, any other atom none), so the setter needs no istype().
-/proc/tracked_bridged_changed(datum/E, var_name)
-	var/list/fields = definition_registry().fields_of(E.type)
-	state_changed(E, fields[var_name] || 0, var_name)
 
 /// A pending operation watching (E, key) counts as a dynamic reader of it while it waits (delta +1 / -1), so
 /// publish_change() is called for it and reaches op_reads_changed(). Same table observe() counts in.
@@ -123,6 +115,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /proc/publish_change(datum/E, key)
 	if(!E || QDELING(E) || !islist(GLOB?.rx_tables))
 		return
+	lookup_reads_published(E, key)
 	var/datum/rx_table/T = GLOB.rx_tables[E.type]
 	if(isnull(T))
 		T = rx_table_build(E)
@@ -365,6 +358,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
 /// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
 /proc/rx_teardown(datum/D)
+	lookup_reads_source_gone(D)
 	var/datum/type_table/engine_table = type_table_cache()[D.type]
 	if(engine_table?.hook_flags & ENGINE_HOOK_DESTROY)
 		engine_holder_destroy(D)
@@ -387,6 +381,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
 	GLOB.rx_pending -= D
+	if(S.lookup_scope)
+		rel_clear(S, nameof(S.lookup_scope))
 	if(S.containment_ledger)
 		rel_clear(S, nameof(S.containment_ledger))
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation

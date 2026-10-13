@@ -9,6 +9,13 @@ the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV ro
 cannot name such a var, so the Southern Cross atmospherics omni mixer is `/obj/machinery/atmospherics/omni/mixer/high_power`, restoring
 its 7500 W active draw lost when `uses_power()` landed. `smoothing_junction` (write-only) and `original_atom` (never filled) are deleted.
 
+**Light is the light_glow() trait (lane bv-traits).** `light_range`, `light_power` and `light_color` leave `/atom`: a type's light is
+`configure(light_glow(...))`, `set_light()` is `set_glow(A, GLOW(r, p, c))` and the light system reads `glow_of()`. A light still casts only
+while `light_on`. Southern Cross's `/obj/machinery/light` map edits of `light_color = "#DDFFD3"` are dropped: a fixture's light colour comes
+from its bulb (`refresh_light()`), so they never showed. A runtime-loaded map naming `light_*` goes through `set_trait()`. `fancy_shuttle`
+walls refuse any light (`accepts_glow()`), as their empty `set_light()` did. `/mob/living` `last_glow_*` are gone: Life compares the glow it
+wants with `glow_of()`.
+
 ## Chargers (cell charger, recharger, wall recharger)
 
 Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).
@@ -4721,6 +4728,9 @@ mapper can notice:
 * **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
 * **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
 
+### stages()/use_tool_wait merge (2026-10-11)
+
+Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).
 ## Acceptance prerequisite pin refresh (2026-10-11)
 
 The robot and robot/platform conversion-pin key rows now include the eight `robot_utility.*` ops declared by master `8b3e4f9ed9`. Platform also includes `platform_cargo.eject_cargo`, declared by master `babfc5a10a`. Only these two key rows changed; clicks and menu rows are unchanged. The pin comparison discards random default Cyborg serials only in VR-capsule refusal text and numeric source locations only in constructor traceback segments, retaining the complete refusal/fault text and source paths. These are capture stability repairs, not gameplay changes.
@@ -4742,6 +4752,8 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 * **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+Also re-blessed for master commits that landed without their pins: the pipe, cannon frame, pipe dispenser and smoletrack rotation ops, and the food reagent fills in `dq_reagents_start_snapshot`.
+The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reaches the VR sleeper refusal rows, and `rand(1, 999)` at init made them follow how much RNG earlier tests drew.
 
 ### Acceptance predicate dispatch (codex/acceptance-consumers-1011)
 
@@ -4754,6 +4766,7 @@ The paper look-tree pin drops only the four inherited `/obj/item/paper/cap_fixtu
 `stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
+Constructor runtime rows in the pins keep the runtime's message and drop its `%//%` source locations, which moved with unrelated edits (the holder rows' `params.dm`/`holder.dm` lines).
 
 ## Live mob state into its domains (base_vars lane B, bv-hud)
 
@@ -4790,3 +4803,97 @@ welding behavior remains conditional on a real space-suit chest. Real cape
 custody/deletion and ordinary RIG impact-threshold tests are added; no pin change
 is presented as proof of constructor validity. This is a bug correction, not a
 snapshot stability change.
+### rf-toolact lanes (2026-10-11): tool ops, stages(), timed ops
+
+- **Tool `_act` procs are ops.** Each `<quality>_act()` override is an `op("use_<quality>", tool(TOOL_X), ...)`; the pins' click rows now name
+  the tool op (`Click: Use screwdriver`, `Remove the DNA lock`, `Lock the assembly`) where they used to show the op the old hook pre-empted.
+  Hooks that blocked a click with a message are requirements: the refusal text is the engine's (`refused: ...` in the menu).
+- **A gun's screwdriver** answers its DNA lock op ahead of the gun's other ops, as the hook did; removing the lock is a 2.5 s timed op.
+- **The nuke's anchor removal** is five timed `stages()` steps that a welder, crowbar or wrench click reaches (the tool ops sat below the window
+  op, so a click opened the panel instead).
+- **The AI core frame's** stage checks compare exactly (`req_stage()`): `req_is(state, 1)` matched any nonzero stage, so the frame offered its
+  unanchor at every stage.
+- **Timed tool work** (`use_tool()`, now deleted) is the op's `wait()`: the progress, the interruption and the start messages are the op's.
+  A power sink detached from its cable is also unfastened (it stayed anchored when detached before it was switched on).
+- **Questions** (camera networks and name, noticeboard offset, disposal outlet range) are `asks()` steps of their tool op: the op keeps the
+  tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
+rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
+rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.
+# Numeric power-grid dependency contract (Codex, 2026-10-11)
+
+Power-grid fields move from indexed rows to domain-owned tracked records with
+the same Rust numeric IDs. The registry publishes exact identity changes; each
+field setter publishes its real field once. Declared lookup dependencies follow
+the argument, registry identity and selected grid rather than an arbitrary
+machine or the entire backing list. This repairs stale cached requirements,
+menus and outputs after retargeting, deletion, recreation or native field changes.
+
+Bindings are prepared outside pure providers and scoped to their actual holder,
+menu, pending operation or window lifetime. Uncached positive regions are adopted
+at the system write boundary only when a real Rust ledger exists. Pure reads
+retain their native nonzero fallback; absent negative test regions stay absent.
+Unsupported virtual argument aliases are rejected explicitly. No snapshot rows
+have been blessed for this change; runtime verification is still pending.
+
+acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combination with rf-toolact4's grenade stages (the locked manhack grenade and chem grenade rows come back unfactored, the camera assembly loses its Alternate use row, the sechailer's wirecutter click) and the protoblob holder row without source lines.
+
+### fix-constraints: master's constraint sweeps (October 2026)
+
+* **Nikki's RIG owns its cape.** `/obj/item/rig/nikki` sets `chest_type` to `/obj/item/clothing/suit/fluff/nikki` but inherited `owns_one(chest, /obj/item/clothing/suit/space/rig)`, so it could not be created. It declares its own chest (the cape); the rig's `chest` field is a `/obj/item/clothing/suit`, and the two space-suit-only uses (welder patching, the breach threshold in module damage) check for a space suit. A cape has no breach protection. Its conversion pin now records the constructed rig, not the old OWN refusal.
+* **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
+* **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
+* **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
+
+## Requirement pins after master menu fixes (2026-10-12)
+
+Master `f5007aa10f` (2026-10-12 01:18 CDT, integrated by `f208564b45`)
+changed the menu producer. Its specialized requirement goldens were only
+re-factored, leaving the old behavior rows. The generated-plan lane refreshes
+29 fresh requirement captures from run `20261012T072134_264b48922c` only:
+
+| Cause class | Source on master | Result |
+|---|---|---|
+| Generated window label | `code/engine/parts/part.dm`, `f5007aa10f` | `Ui open` becomes `Open controls`, including click labels. |
+| Held item's self-menu filtering | `code/engine/parts/resolve.dm`, `f5007aa10f` | Held-item own-menu rows no longer appear in the target menu. |
+| Drag-only input filtering | `code/engine/parts/resolve.dm`, `f5007aa10f` | Drag actions such as recharger insertion no longer appear as plain-menu actions. |
+| Silent refusals and duplicate labels | `code/engine/parts/resolve.dm`, `f5007aa10f` | Suppressed or duplicate rows disappear, preserving the current producer's ordered result. |
+| Unlabelled catch-all presentation | `code/engine/parts/resolve.dm`, `f5007aa10f` | Internal item operation names use the current `Use held item` label. |
+| Existing VR-sleeper serial stabilization | `dq_pin_stable_rows`, `9b8f69f7e7` (2026-10-11) | Four literal serial rows use the already-existing canonical placeholder; gameplay refusal text is unchanged. |
+
+The audit expands inherited rows before comparing them: 285 diagnostic groups,
+1,154 removed and 418 added expanded semantic rows, zero unproved differences.
+Capture timestamps and both file hashes were checked before promotion. Every
+non-target file rewritten by factoring preserves its exact expanded rows.
+`dq_conversion_pin` passed and its captures were excluded. No resolver or
+interface production code was changed by this lane.
+
+Affected requirement-pin classes:
+- `/obj/item/floor_light`
+- `/obj/machinery/bomb_tester`
+- `/obj/machinery/cablelayer`
+- `/obj/machinery/camera`
+- `/obj/machinery/computer/aifixer`
+- `/obj/machinery/computer/aiupload`
+- `/obj/machinery/computer/arcade/clawmachine`
+- `/obj/machinery/computer/borgupload`
+- `/obj/machinery/computer/guestpass`
+- `/obj/machinery/computer/pandemic`
+- `/obj/machinery/computer/pod/old/syndicate`
+- `/obj/machinery/computer/prison_shuttle`
+- `/obj/machinery/computer/skills`
+- `/obj/machinery/computer/supplycomp`
+- `/obj/machinery/cryopod`
+- `/obj/machinery/floor_light`
+- `/obj/machinery/food_replicator`
+- `/obj/machinery/gear_painter`
+- `/obj/machinery/nuclearbomb`
+- `/obj/machinery/organ_printer`
+- `/obj/machinery/particle_smasher`
+- `/obj/machinery/partslathe`
+- `/obj/machinery/recharge_station`
+- `/obj/machinery/robotic_fabricator`
+- `/obj/machinery/suit_cycler`
+- `/obj/machinery/suit_storage_unit`
+- `/obj/machinery/vr_sleeper/alien`
+- `/obj/machinery/vr_sleeper`
+- `/obj/structure/frame`

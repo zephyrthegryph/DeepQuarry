@@ -127,3 +127,35 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 /obj/machinery/embedded_controller/radio/airlock/access_controller/draw(datum/look/look)
 	..()
 	look.hide("airlock_control_open")
+
+// Each controller's window picks its console by internalTemplateName (tgui/packages/tgui/interfaces/EmbeddedController/index.tsx throws
+// without one) and reads its program's state. The UI_DATA conversion (8039c1eb9f) dropped these three overrides, so every station airlock
+// controller's window opened blank; dq_ops_menu_airlock_controller_window pins them.
+
+/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_data(datum/act/eval/A)
+	. = ..()
+	var/list/memory = program?.memory
+	.["chamber_pressure"] = round(memory?["chamber_sensor_pressure"])
+	.["external_pressure"] = round(memory?["external_sensor_pressure"])
+	.["internal_pressure"] = round(memory?["internal_sensor_pressure"])
+	.["processing"] = memory?["processing"]
+	.["purge"] = memory?["purge"]
+	.["secure"] = memory?["secure"]
+	.["internalTemplateName"] = "AirlockConsoleAdvanced"
+
+/obj/machinery/embedded_controller/radio/airlock/airlock_controller/ui_data(datum/act/eval/A)
+	. = ..()
+	var/list/memory = program?.memory
+	.["chamber_pressure"] = round(memory?["chamber_sensor_pressure"])
+	.["exterior_status"] = memory?["exterior_status"]
+	.["interior_status"] = memory?["interior_status"]
+	.["processing"] = memory?["processing"]
+	.["internalTemplateName"] = "AirlockConsoleSimple"
+
+/obj/machinery/embedded_controller/radio/airlock/access_controller/ui_data(datum/act/eval/A)
+	. = ..()
+	var/list/memory = program?.memory
+	.["exterior_status"] = memory?["exterior_status"]
+	.["interior_status"] = memory?["interior_status"]
+	.["processing"] = memory?["processing"]
+	.["internalTemplateName"] = "DoorAccessConsole"

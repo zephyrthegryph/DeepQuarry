@@ -113,8 +113,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			for(var/datum/affliction/wound/W as anything in E.get_wounds())
 				W.run_bleed(cycles, W.bleeding())
 		E.update_damages()
-		if(E.update_damage_state())
-			UpdateDamageIcon(1)
+		E.update_damage_state()
 
 /// TRUE when wounds on this limb close on their own: not on a prosthesis or an undead limb.
 /obj/item/organ/external/proc/wounds_heal()
@@ -147,8 +146,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 		return
 	E.remove_wound(W)
 	E.update_damages()
-	if(E.update_damage_state())
-		UpdateDamageIcon(1)
+	E.update_damage_state()
 
 // --- Blood --------------------------------------------------------------------------------
 
@@ -164,7 +162,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(blood_volume_raw < species.blood_volume)
 		var/datum/reagent/blood/B = own_blood()
 		if(B)
-			B.volume += (BLOOD_REGEN_PER_CYCLE + factor(BF_BLOOD_REGEN)) * cycles
+			B.set_volume(B.volume + ((BLOOD_REGEN_PER_CYCLE + factor(BF_BLOOD_REGEN)) * cycles))
 
 	// DQ medical owns blood-loss presentation (internal_hemorrhage / hypovolemic_shock symptoms) and the physiology owns
 	// its consequence (low perfusion -> oxygen debt). Here: the pale sprite cue, and the fatal collapse below the
@@ -172,11 +170,9 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(blood_volume_raw >= species.blood_volume * species.blood_level_safe)
 		if(pale)
 			pale = 0
-			update_icons_body()
 	else
 		if(!pale)
 			pale = 1
-			update_icons_body()
 		if(blood_volume_raw < species.blood_volume * species.blood_level_fatal)
 			status_at_least(STAT_PARALYZED, 3)
 			status_at_least(STAT_SLEEPING, 3)

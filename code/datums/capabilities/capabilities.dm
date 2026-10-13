@@ -31,7 +31,7 @@
 	if(was == now)
 		return FALSE
 	capability_runtime(A).bits = now
-	changed(A, CHANGE_CAPABILITY)
+	state_changed(A) // a capability's state is drawn, examined and shown in windows: every output re-derives
 	// Waiting operations watch cap_state through their requirements' reads (operations/op_ctx.dm).
 	engine_key_changed(A, OP_KEY_CAP_STATE)
 	return TRUE
@@ -105,8 +105,7 @@
 	if(rx_type_enrols(holder))
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
 	if(flags || holder.periodic_cadence || holder.periodic_interval)
-		// The first refresh is queued, nothing changed: changed() would raise CHANGE_EXPLICIT, which every machine's
-		// pipeline wakes on (wake_all), so declaring a capability or a membership woke its holder at init.
+		// The first refresh is queued, nothing changed: state_changed() would publish a change that did not happen.
 		refresh_mark(holder, DEP_ALL)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().

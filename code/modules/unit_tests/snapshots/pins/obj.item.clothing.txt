@@ -8,7 +8,7 @@
 +0 menu: Alternate use
 +5 menu: Use
 +6 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -43,8 +43,8 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alternate use
-+4 menu: Use
-+5 click: Click: Use
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alternate use
@@ -53,13 +53,13 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alternate use
-+4 menu: Use
-+5 click: Click: Use
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/kit
 +0 menu: Alternate use
 +4 menu: Use
 @obj human|/obj/item/storage
 +0 menu: Alternate use
 +4 menu: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

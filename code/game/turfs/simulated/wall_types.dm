@@ -118,13 +118,11 @@ TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG)
 	icon = 'icons/turf/shuttle_alien.dmi'
 	icon_state = "alien"
 	base_state = "alien"
-	light_range = 3
-	light_power = 0.75
-	light_color = "#ff0066" // Pink-ish
 	light_on = TRUE
 	block_tele = TRUE // Will be used for dungeons so this is needed to stop cheesing with handteles.
 
 CAPABILITIES(/turf/simulated/shuttle/wall/alien)
+	configure(light_glow(range = 3, power = 0.75, color = "#ff0066"))
 	after_init(0, then(PROC_REF(init_alien_light)))
 
 /turf/simulated/shuttle/wall/alien/proc/init_alien_light(datum/act/timer/A)
@@ -450,7 +448,9 @@ CAPABILITIES(/obj/structure/hull_corner)
 	name = "hybrid wall"
 	desc = "Seems slightly more friendly than if the wall were ominous purple."
 	icon = 'icons/turf/shuttle_alien_blue.dmi'
-	light_color = "#1fdbf4" // Cyan-ish
+
+CAPABILITIES(/turf/simulated/shuttle/wall/alien/blue)
+	configure(light_glow(color = "#1fdbf4"))
 
 /turf/simulated/shuttle/wall/alien/blue/hard_corner
 	name = "hybrid wall"

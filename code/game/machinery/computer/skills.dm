@@ -14,7 +14,6 @@
 	icon_screen = "pcu_generic"
 	icon_state = "pcu"
 	icon_keyboard = "pcu_key"
-	light_color = "#5284e7"
 	req_one_access = list(ACCESS_HEADS)
 	circuit = /obj/item/circuitboard/skills/pcu
 	density = FALSE
@@ -237,6 +236,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/skills)
+	configure(light_glow(color = "#5284e7"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active1), /datum/data/record)
@@ -510,10 +510,10 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	var/login_type = login_type_arg
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
-			authenticated = scan.registered_name
+			set_authenticated(scan.registered_name)
 			rank = scan.assignment
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
-		authenticated = A.actor.name
+		set_authenticated(A.actor.name)
 		rank = A.actor.records_login_rank()
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
@@ -529,7 +529,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		if(ishuman(A.actor) && !A.actor.get_active_hand())
 			A.actor.put_in_hands(scan)
 		rel_take(src, nameof(src.scan))
-	authenticated = null
+	set_authenticated(null)
 	screen = null
 	rel_clear(src, nameof(src.active1))
 
@@ -754,7 +754,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 /// The operator is logged in (the old handlers each refused without it).
 /obj/machinery/computer/skills/proc/records_authenticated(datum/act/op/A)
-	return (!!authenticated) ? null : MSG(records/not_authenticated) // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
+	return (!!authenticated) ? null : MSG(records/not_authenticated)
 
 /obj/machinery/computer/skills/proc/ui_act_del_r(datum/act/op/A)
 	. = TRUE

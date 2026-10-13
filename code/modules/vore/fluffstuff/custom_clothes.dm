@@ -392,7 +392,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 		item_state = "[initial(item_state)]_open"
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	user.update_inv_wear_suit()
+	changed(src)
 
 	//Variants
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedblue
@@ -904,7 +904,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/fluff/molenar)
 
 
 	w_class = ITEMSIZE_SMALL
-	light_range = 5
 	light_overlay = null
 	light_system = MOVABLE_LIGHT
 
@@ -919,6 +918,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/fluff/molenar)
 
 // The inherited head-light and circuit self-uses step aside for special_handling, so this runs alone.
 CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
+	configure(light_glow(range = 5))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	op("pompom_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle light"), then(PROC_REF(pompom_light_self)))
 
@@ -936,10 +936,6 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 	//update_light(user) -- old code
 	update_flashlight(user)
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		if(H.get_equipped_item(SLOT_ID_HEAD) == src)
-			H.update_inv_head()
 	return OP_OK
 //Viveret:Keturah
 /obj/item/clothing/under/dress/maid
@@ -1238,7 +1234,7 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()
 
 //Vorrarkul: Theodora Lindt
@@ -1536,7 +1532,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 		icon_state = "[initial(icon_state)]_open"
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	user.update_inv_wear_suit()
+	changed(src)
 
 /obj/item/clothing/suit/storage/fluff/jacket/field //Just here so it can be seen and easily recognized under /spawn.
 	name = "Field Jacket"
@@ -2031,12 +2027,12 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip)
 	..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
-		icon_override = 'icons/vore/custom_clothes_mob.dmi'
+		set_icon_override('icons/vore/custom_clothes_mob.dmi')
 	update_clothing_icon()
 
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = 'icons/vore/custom_clothes_mob.dmi'
+	set_icon_override('icons/vore/custom_clothes_mob.dmi')
 
 //CappyCat:Cappy Fuzzlyfeathers
 /obj/item/clothing/accessory/watch/custom
@@ -2473,7 +2469,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 		item_state = initial(item_state)
 		to_chat(user, span_info("The coat's eyes close."))
 	COOLDOWN_START(src, toggle_cooldown, 6 SECONDS)
-	user.update_inv_wear_suit()
+	changed(src)
 
 /obj/item/clothing/head/hood/purple_robes
 	name = "purple hood"

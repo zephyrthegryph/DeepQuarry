@@ -212,6 +212,7 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
+TRACKED(/mob, incorporeal_move)
 
 CAPABILITIES(/mob)
 	// Who the character says they are (profile_records.dm).
@@ -325,11 +326,9 @@ CAPABILITIES(/mob)
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 /// A mob's stat: set_stat() is its setter (always use it, never write the var) and publishes the stat key on a real change.
 TRACKED(/mob, stat)
-TRACKED(/mob, blinded)
 TRACKED(/mob, seedarkness)
 TRACKED(/mob, transforming)
-TRACKED(/mob, resting)
-TRACKED(/mob, status_flags)
+TRACKED(/mob, real_name)
 
 
 /mob/proc/set_mob_size(value)

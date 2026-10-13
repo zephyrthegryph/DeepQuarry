@@ -4,7 +4,7 @@
 	return isnull(acceptance_reason(A))
 
 /datum/entry/part/req/acceptance_leaf/refusal(datum/act/op/A)
-	if(!isnull(src.args["because"]))
+	if(!isnull(arg_value("because")))
 		return ..()
 	return acceptance_reason(A)
 

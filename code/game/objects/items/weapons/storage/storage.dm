@@ -122,7 +122,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	return empty ? null : starts_with
 
 /obj/item/storage/latent_generator_clear()
-	starts_with = null
+	set_starts_with(null)
 
 /// Latent only for plain spawns: a variant needs apply_variant(), so it is made now.
 /obj/item/storage/latent_spawn_ok(path, value)
@@ -318,7 +318,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	// A worn storage shows what is in it on the wearer's sprite.
 	if(ismob(loc))
 		var/mob/wearer = loc
-		wearer.update_inv_belt()
+		changed(src)
 
 // ---- Gather and empty ----
 
@@ -792,6 +792,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 CAPABILITIES(/atom/movable/storage_slot)
 	param(nameof(held_item), pos = 1, apply = PROC_REF(name_for))
+	click_on(PROC_REF(slot_click))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The slot is named for the item it holds.
 /atom/movable/storage_slot/proc/name_for(obj/item/item)
@@ -803,11 +804,12 @@ CAPABILITIES(/atom/movable/storage_slot)
 	ASSERT(islist(somethings))
 	overlays = somethings
 
-/atom/movable/storage_slot/Click()
+/// The native Click's actor, handed over by the engine (click_on()): clicking a slot is clicking the stored item, through the clicker's input inbox.
+/atom/movable/storage_slot/proc/slot_click(datum/act/input/A)
 	var/obj/item/I = held_item
 	if(I)
-		usr.ClickOn(I)
-	return 1
+		input_submit(new /datum/input_event/click(A.actor, I))
+	return TRUE
 
 // ---- Sizes ----
 

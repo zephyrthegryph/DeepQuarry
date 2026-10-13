@@ -1,8 +1,11 @@
 @obj.machinery.computer.shuttle_control human|none
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/screwdriver
+-menu: Disconnect
+-click: Click: Disconnect
++2 click: Click: Use item
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/crowbar
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/wrench
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/wirecutters
@@ -14,5 +17,7 @@
 @obj.machinery.computer.shuttle_control human|/obj/item
 @obj human|/obj/item/gripper
 @obj.machinery human|/obj/item/card/emag
-@obj human|/obj/item/clothing/head/pilot
+human|/obj/item/clothing/head/pilot menu: Climb
+human|/obj/item/clothing/head/pilot menu: Use pilot helmet
+human|/obj/item/clothing/head/pilot click: Click: Use item
 keys: cancel, climb.climb, climb.climb_menu, disconnect, dock_command, drag_buckle, emag.subvert, emag.use, force, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move, register_helmet, rename_command, robot_remote_blocked, set_codes, silicon_hand, toggle_autopilot, toggle_cloaking, traverse, undock_command, use_gripper, use_item

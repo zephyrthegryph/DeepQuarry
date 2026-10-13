@@ -11,7 +11,6 @@
 	density = TRUE
 	anchored = TRUE
 	animate_movement=1
-	light_range = 3
 
 	can_buckle = TRUE
 	buckle_movable = 1
@@ -55,6 +54,7 @@ TRACKED(/obj/vehicle, paint_color)
 STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/vehicle)
+	configure(light_glow(range = 3))
 	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine, starts = /datum/looping_sound/idle_carengine)
 	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))
 	emp_disable(PROC_REF(emp_outage))
@@ -76,14 +76,14 @@ CAPABILITIES(/obj/vehicle)
 
 /obj/vehicle/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
 	. = ..()
-	M.update_water()
+	M.refresh_submersion()
 	if(riding_datum)
 		rel_set(riding_datum, nameof(riding_datum.ridden), src)
 		riding_datum.handle_vehicle_offsets()
 
 /obj/vehicle/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	. = ..(buckled_mob, force)
-	buckled_mob?.update_water()
+	buckled_mob?.refresh_submersion()
 	if(riding_datum)
 		riding_datum.restore_position(buckled_mob)
 		riding_datum.handle_vehicle_offsets() // So the person in back goes to the front.
@@ -219,7 +219,7 @@ CAPABILITIES(/obj/vehicle)
 	set_on(1)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_IGNITION_CAR) // New sound effects.
 	soundloop.start()
-	set_light(initial(light_range))
+	set_glow(src, GLOW(glow_of_type(type).range, null, null))
 	return TRUE
 
 /obj/vehicle/proc/turn_off()
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/vehicle)
 	set_on(0)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_ENGINE_OFF) // New sound effects.
 	soundloop.stop()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 /obj/vehicle/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

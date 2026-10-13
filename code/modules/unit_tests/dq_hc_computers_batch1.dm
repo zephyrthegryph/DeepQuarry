@@ -193,7 +193,7 @@
 /datum/unit_test/dq_hc_computers/robotics_cyborg_cannot_control_others
 /datum/unit_test/dq_hc_computers/robotics_cyborg_cannot_control_others/run_gate()
 	var/obj/machinery/computer/robotics/C = hc_console(/obj/machinery/computer/robotics)
-	C.req_access = list()
+	C.set_req_access(list())
 	var/mob/living/silicon/robot/user = allocate(/mob/living/silicon/robot, hc_side())
 	var/mob/living/silicon/robot/other = allocate(/mob/living/silicon/robot, get_step(hc_spot(), NORTH))
 	press(user, C, "stopbot", list("ref" = "[REF(other)]"))

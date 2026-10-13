@@ -4,7 +4,6 @@
 	desc = "A computer used to control the stationary scrubbers and pumps in the area."
 	icon_keyboard = "atmos_key"
 	icon_screen = "area_atmos"
-	light_color = "#e6ffff"
 	circuit = /obj/item/circuitboard/area_atmos
 
 	/// Scrubbers found by the last scan (a relation view: dead ones leave by themselves).
@@ -17,6 +16,7 @@
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
 CAPABILITIES(/obj/machinery/computer/area_atmos)
+	configure(light_glow(color = "#e6ffff"))
 	op("allon", ui_act("allon"), then(PROC_REF(ui_act_allon)))
 	op("alloff", ui_act("alloff"), then(PROC_REF(ui_act_alloff)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))

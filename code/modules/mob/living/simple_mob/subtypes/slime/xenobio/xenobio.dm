@@ -47,7 +47,6 @@
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	return
-TRACKED(/mob/living/simple_mob/slime/xenobio, is_adult)
 // TRUE while it is feeding on something.
 /mob/living/simple_mob/slime/xenobio
 	var/consuming = FALSE
@@ -70,9 +69,6 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 	// The base drew from icon_living, which the reaction above refreshes; the names are derived here too so the draw never trails it.
 	var/dead_state = slime_dead_state()
 	look.life_state(src, slime_living_state(), dead_state, dead_state)
-
-/mob/living/simple_mob/slime/xenobio/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
@@ -127,7 +123,7 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 	if(harmless) // Docile slimes are generally named, so we shouldn't mess with it.
 		return
 	name = "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
-	real_name = name
+	set_real_name(name)
 
 //body lives in code/modules/combat_ai/ports/slime_mob_overrides.dm where it
 // reads /datum/slime_state instead of the deleted ai_holder.

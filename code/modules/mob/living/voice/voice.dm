@@ -22,7 +22,7 @@
 		if(speaker.client && speaker.client.prefs)
 			var/datum/preferences/p = speaker.client.prefs
 			name = p.read_preference(/datum/preference/name/real_name)
-			real_name = name
+			set_real_name(name)
 			gender = p.read_preference(/datum/preference/choiced/gender/identifying)
 
 			for(var/language in p.read_preference(/datum/preference/alternate_languages)) // migrated
@@ -86,9 +86,6 @@
 // Proc: Life()
 // Parameters: None
 // Description: Checks the active variable on the Exonet node, and kills the mob if it goes down or stops existing.
-/mob/living/voice/life_type_pre_due()
-	return TRUE
-
 /mob/living/voice/life_type_pre(datum/seq_frame/life/F)
 	if(src.comm)
 		if(!src.comm.node || !src.comm.node.on || !src.comm.node.allow_external_communicators)

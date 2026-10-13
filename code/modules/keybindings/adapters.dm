@@ -73,7 +73,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		if(INPUT_ACTION_USE)
 			return use(user, target, modifiers, params)
 		if(INPUT_ACTION_MENU)
-			return open_interaction_menu(user, target)
+			return open_interaction_menu(user, target, params)
 		if(INPUT_ACTION_ALTERNATE)
 			if(try_interaction(user, target, user.get_active_hand(), INPUT_ACTION_ALTERNATE))
 				return TRUE
@@ -210,7 +210,6 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	if(!currently_restrained && W == A)
 		self_use(user, W, modifiers)
 		user.trigger_aiming(TARGET_CAN_CLICK)
-		user.update_inv_active_hand(0)
 		return TRUE
 
 	// Atoms on your person: A is your location but not a turf; or on you (backpack);

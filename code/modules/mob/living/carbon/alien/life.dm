@@ -1,7 +1,4 @@
 // Alien larva are quite simple.
-/mob/living/carbon/alien/life_type_pre_due()
-	return TRUE
-
 /mob/living/carbon/alien/life_type_pre(datum/seq_frame/life/F)
 	if (src.transforming)	return F.abort()
 	if(!src.loc)			return F.abort()
@@ -12,8 +9,6 @@
 	if (src.stat != DEAD) //still breathing
 		// GROW!
 		src.update_progression()
-
-	src.set_blinded(null)
 
 	//Status updates, death etc.
 	src.update_icons()
@@ -53,20 +48,18 @@
 	if(src.stat != DEAD)
 		src.body?.life_tick()
 
+	src.set_blinded(src.stat == DEAD)
 	if(src.stat == DEAD)
-		src.set_blinded(1)
 		src.status_set(STAT_MUTED, 0)
 		src.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
 		if(src.has_status(STAT_PARALYZED))
-			src.set_blinded(1)
 			src.set_stat(UNCONSCIOUS)
 
 		if(src.has_status(STAT_SLEEPING))
 			// Sleep wears off only while a player is home; an empty body stays asleep.
 			if(!src.mind?.active || !src.client)
 				src.status_at_least(STAT_SLEEPING, 1)
-			src.set_blinded(1)
 			src.set_stat(UNCONSCIOUS)
 		else if(!src.resting)
 			src.set_stat(CONSCIOUS)
@@ -74,10 +67,7 @@
 		// Eyes and blindness. Temporary blindness and blur wear off on their own.
 		if(!src.has_eyes())
 			src.status_set(STAT_BLINDED, 1)
-			src.set_blinded(1)
 			src.status_set(STAT_BLURRY, 1)
-		else if(src.has_status(STAT_BLINDED))
-			src.set_blinded(1)
 
 		src.update_icons()
 
@@ -114,7 +104,7 @@
 	src.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
 
 	if ( src.stat != 2)
-		if ((src.blinded))
+		if(src.has_status(STAT_BLINDED))
 			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
 			src.clear_fullscreen("blind")

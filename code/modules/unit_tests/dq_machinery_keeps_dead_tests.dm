@@ -38,7 +38,7 @@
 /datum/unit_test/machinery_keeps_dead/food_print/run_cleanup()
 	var/obj/machinery/food_replicator/M = allocate(/obj/machinery/food_replicator, test_floor())
 	var/obj/item/reagent_containers/glass/beaker/item = allocate(/obj/item/reagent_containers/glass/beaker, M)
-	M.printing = TRUE
+	M.set_printing(TRUE)
 	M.set_use_power(USE_POWER_ACTIVE)
 	after(M, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/food_replicator, print_done), key = "j6_food", with = list(item), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(M, "j6_food"), "the real printing completion is pending")
@@ -129,7 +129,7 @@
 	rel_set(M, nameof(M.protean_brain), allocate(/obj/item/mmi/digital/posibrain/nano, M))
 	rel_set(M, nameof(M.protean_orchestrator), allocate(/obj/item/organ/internal/nano/orchestrator, M))
 	rel_set(M, nameof(M.protean_refactory), allocate(/obj/item/organ/internal/nano/refactory, M))
-	M.processing_revive = TRUE
+	M.set_processing_revive(TRUE)
 	M.per_organ_delay = 0.1 SECONDS
 	M.reconstitute_begin()
 	var/mob/living/carbon/human/protean/P = locate(/mob/living/carbon/human/protean) in M
@@ -146,7 +146,7 @@
 	var/mob/living/carbon/human/protean/P = allocate(/mob/living/carbon/human/protean, M)
 	var/obj/item/organ/internal/nano/orchestrator/O = allocate(/obj/item/organ/internal/nano/orchestrator, M)
 	rel_set(M, nameof(M.protean_orchestrator), O)
-	M.processing_revive = TRUE
+	M.set_processing_revive(TRUE)
 	M.per_organ_delay = 0.1 SECONDS
 	M.reconstitute_organ(P, list(O_ORCH, O_FACT), 1)
 	TEST_ASSERT_EQUAL(P.organ_in(O_ORCH), O, "the real first organ step installs the supplied orchestrator before scheduling its successor")

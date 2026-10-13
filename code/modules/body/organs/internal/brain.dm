@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/organ/internal/brain)
 	if(owner?.mind)
 		var/datum/mind_host/host = get_mind_host(src)
 		var/mob/living/carbon/brain/view = host.receive_mind(owner.mind, "brain removed from [owner]")
-		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just  [initial(name)]."))
+		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just \a [initial(name)]."))
 
 	..()
 	sync_defib_window() // re-anchor on the loose brain's clock
@@ -262,7 +262,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	H.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 	H.sync_organ_dna()
 	H.initialize_vessel()
-	H.real_name = identity.real_name || H.dna.real_name || "promethean ([rand(0,999)])"
+	H.set_real_name(identity.real_name || H.dna.real_name || "promethean ([rand(0,999)])")
 
 	H.set_nutrition(260) //Enough to try to regenerate ONCE.
 	H.injure(INJURY_BLUNT, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
@@ -274,7 +274,6 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 			E.removed()
 			dissolved(E) // the limb melts away to regrow
 			E = null
-	H.regenerate_icons()
 	host.release_mind(H, "promethean core revival")
 	for(var/effect_type in identity.genetic_effects)
 		H.apply_body_effect(effect_type)

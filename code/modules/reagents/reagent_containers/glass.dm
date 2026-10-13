@@ -22,7 +22,6 @@
 	/// Reagents to fill the container with at the start, formatted as "reagentID" = quantity
 	var/list/prefill = null
 
-TRACKED(/obj/item/reagent_containers/glass, label_text)
 
 // What anything made of glass takes from a hand: a pen labels it, a small thing is dipped into it (in a hostile, disarm or grab stance), and a hot
 // thing tests the blood in it.

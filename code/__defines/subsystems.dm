@@ -48,10 +48,12 @@
 /// Number of BATCH_WORK_* kinds (length of a batch's work list).
 #define BATCH_WORK_KINDS 2
 
-///type and all subtypes should always immediately call Initialize in New()
+///type and all subtypes should always immediately call Initialize in New(). The compiled-in map can place such an atom before any system set
+///up, so the static entries (type traits, map resolvers) its materialize reads are set up first (static_entries_setup_early()).
 #define INITIALIZE_IMMEDIATE(X) ##X/New(loc, ...){\
 	..();\
 	if(!(flags & ATOM_INITIALIZED)) {\
+		static_entries_setup_early();\
 		var/previous_initialized_value = SSatoms.initialized;\
 		SSatoms.initialized = INITIALIZATION_INNEW_MAPLOAD;\
 		args[1] = TRUE;\

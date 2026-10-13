@@ -140,9 +140,6 @@ CAPABILITIES(/obj/item/daredevice)
 //
 /obj/item/projectile/beam/sizelaser/chaos //The Defintiely not advanced sizeguns laser.
 	name = "chaos size beam"
-	light_color = "#FF0000"
-	light_range = 3
-	light_power = 9 //should be plenty visible.
 	var/static/list/chaos_colors = list(
 					"#FF0000",
 					"#00FF00",
@@ -156,8 +153,11 @@ CAPABILITIES(/obj/item/daredevice)
 					"#0F0F0F",
 					)
 
+CAPABILITIES(/obj/item/projectile/beam/sizelaser/chaos)
+	configure(light_glow(color = "#FF0000", range = 3, power = 9))
+
 /obj/item/projectile/beam/sizelaser/chaos/on_hit(atom/target)
-	light_color = pick(chaos_colors)
+	set_light_color(pick(chaos_colors))
 	var/chaos = rand(25,200)
 	var/mob/living/M = target
 	if(ishuman(target))

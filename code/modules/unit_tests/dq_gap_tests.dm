@@ -211,7 +211,7 @@
 /datum/unit_test/dq_gap/converted_draw_follows_its_tracked_var/run_gap()
 	var/obj/item/multitool/ai_detector/D = allocate(/obj/item/multitool/ai_detector, run_loc_floor_bottom_left)
 	var/base = initial(D.icon_state)
-	D.update_icon()
+	refresh_flush()
 	TEST_ASSERT_EQUAL(D.icon_state, "[base]", "no detection: the base state")
 	D.set_detect_state("_red")
 	test_time(2)
@@ -770,7 +770,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = person(T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, get_step(T, EAST))
-	other.real_name = "Mimic Target"
+	other.set_real_name("Mimic Target")
 	other.name = "Mimic Target"
 	var/obj/item/glamour_face/face = allocate(/obj/item/glamour_face, T)
 	hci_click(H, face, face)

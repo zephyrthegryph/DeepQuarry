@@ -233,21 +233,21 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	//var/old_light_flags = light_flags
 	// Disable frozen lights for now, so we can actually modify it
 	switch(var_name)
-		if(NAMEOF(src, light_range))
+		if("light_range", "@light_glow.range")
 			if(light_system == STATIC_LIGHT)
-				set_light(l_range = var_value)
+				set_glow(src, GLOW(var_value, null, null))
 			else
 				set_light_range(var_value)
 			. =  TRUE
-		if(NAMEOF(src, light_power))
+		if("light_power", "@light_glow.power")
 			if(light_system == STATIC_LIGHT)
-				set_light(l_power = var_value)
+				set_glow(src, GLOW(null, var_value, null))
 			else
 				set_light_power(var_value)
 			. =  TRUE
-		if(NAMEOF(src, light_color))
+		if("light_color", "@light_glow.color")
 			if(light_system == STATIC_LIGHT)
-				set_light(l_color = var_value)
+				set_glow(src, GLOW(null, null, var_value))
 			else
 				set_light_color(var_value)
 			. =  TRUE
@@ -271,7 +271,6 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	switch(var_name)
 		if(NAMEOF(src, color))
 			add_atom_colour(color, ADMIN_COLOUR_PRIORITY)
-			update_icon()
 
 /proc/vv_auto_rename(atom/target, newname)
 	if(istype(target, /obj/item/clothing/gloves))

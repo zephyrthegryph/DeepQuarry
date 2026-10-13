@@ -28,8 +28,5 @@
 /atom/receive_containment_damage(datum/damage_packet/packet)
 	return receive_damage(packet)
 
-/atom/movable/containment_redraw()
-	return update_icon()
-
 /atom/movable/containment_fire(temperature, volume)
 	return fire_act(temperature, volume)

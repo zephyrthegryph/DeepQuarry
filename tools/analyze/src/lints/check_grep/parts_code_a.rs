@@ -27,6 +27,15 @@ pub fn parts() -> Vec<Part> {
             line(r#"holder_call\([^,()]+,\s*""#),
         )
         .allow(Allow::Strict),
+        // Slot ids became text in e1b3101d42 (C3): `slot > SLOT_ID_POCKET_R` compares spellings, which hid the wrong inventory slots.
+        Part::new(
+            "slot_id_no_ordinal_comparison",
+            "slot id: no ordinal comparison",
+            "an ordinal comparison or range (<, >, <=, >=, `to`) on a SLOT_ID_* id. Slot ids are text, so this orders their spellings. Test membership in a list of slots (`slot in GLOB.hud_toggled_slots`) or equality.",
+            Files::Code,
+            line(r"(^|[^<>])[<>]=?[[:space:]]*SLOT_ID_|SLOT_ID_[A-Z0-9_]+[[:space:]]*[<>]=?[[:space:]]*[^<>=[:space:]]|SLOT_ID_[A-Z0-9_]+[[:space:]]+to[[:space:]]"),
+        )
+        .allow(Allow::Strict),
         // R10: the two checks that read their names from the generated bindings are dynamic (scan_tree).
         Part::new(
             "r10_bindings_init_seeds_referenced_outside_a_var_edit",

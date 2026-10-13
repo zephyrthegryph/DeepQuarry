@@ -269,7 +269,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
 
 
 TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate)
-TRACKED(/obj/machinery/atmospherics/binary/volume_pump, overclocked)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/volume_pump/derived()

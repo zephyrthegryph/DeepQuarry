@@ -101,7 +101,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /// The sheets repairing `E` takes (integrity is the damage system's, read whole).
 /proc/emitter_repair_sheets(obj/machinery/power/emitter/E)
 	READS_FROM(E)
-	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1) // ALLOW(reads): an emitter's max_integrity is its type's constant
+	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1)
 
 /// The stack in hand holds `n` (a stack's count is its own business, read whole).
 /proc/emitter_stack_holds(obj/item/stack/S, n)
@@ -148,7 +148,6 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		message_admins("Emitter turned on by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 		log_game("EMITTER([x],[y],[z]) ON by [key_name(user)]")
 		investigate_log("turned " + span_green("on") + " by [user?.key]","singulo")
-	changed(src)
 
 /// The ladder moved: welded, it joins the cable network on its tile; loose or bolted, it leaves it. The sprite flicks between the rungs.
 /obj/machinery/power/emitter/proc/rung_moved(datum/act/op/A)
@@ -315,7 +314,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	anchored = TRUE
 	state = FLOOR_WELD_WELDED
 
-TRACKED_BRIDGED(/obj/machinery/power/emitter, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/emitter, state)
 
 /obj/machinery/power/emitter/floor_weld_state()
 	return state

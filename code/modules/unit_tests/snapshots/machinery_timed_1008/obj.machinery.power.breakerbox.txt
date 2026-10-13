@@ -4,56 +4,41 @@ human|none click: Click: Toggle
 @obj.machinery robot|none
 -click: Click: Use
 +1 menu: Toggle
-+3 menu: Use (refused: needs an item)
-+4 click: Click: Toggle
-@obj ai|none
++3 click: Click: Toggle
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Toggle
 +2 click: Click: Toggle
 @obj ghost|none
 +0 menu: Use (refused: needs an item)
 @obj.machinery.power human|/obj/item/tool/screwdriver
-+2 menu: Toggle
-+4 menu: Use
++1 menu: Toggle
++2 menu: Use
 @obj.machinery.power human|/obj/item/tool/crowbar
-+2 menu: Toggle
-+4 menu: Use
-@obj human|/obj/item/tool/wrench
--click: nothing
 +1 menu: Toggle
-+3 menu: Use
-+4 click: Click: Use
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+1 menu: Toggle
-+3 menu: Use
-+4 click: Click: Use
-@obj human|/obj/item/multitool
--click: nothing
-+1 menu: Toggle
-+3 menu: Use
-+4 click: Click: Use
-@obj human|/obj/item/weldingtool
--click: nothing
-+1 menu: Toggle
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wirecutters menu: Toggle
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Toggle
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
 @obj.machinery.power human|/obj/item/stack/cable_coil
-+3 menu: Toggle
-+5 menu: Use
-@obj human|/obj/item/stack/material/steel
--click: nothing
 +1 menu: Toggle
-+3 menu: Use
-+4 click: Click: Use
-@obj human|/obj/item/card/id
--click: nothing
-+2 menu: Toggle
-+4 menu: Use
-+5 click: Click: Use
-@obj human|/obj/item
--click: nothing
-+1 menu: Toggle
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
+human|/obj/item/stack/material/steel menu: Toggle
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Toggle
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: breakerbox_silicon_toggle, breakerbox_toggle, breakerbox_use, cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

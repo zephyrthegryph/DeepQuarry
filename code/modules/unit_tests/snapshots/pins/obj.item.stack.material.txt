@@ -1,6 +1,6 @@
 @obj.item.stack human|none
 @obj.item.stack robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.stack human|/obj/item/tool/screwdriver
 +3 menu: Use
@@ -14,11 +14,11 @@
 +3 menu: Use
 @obj.item.stack human|/obj/item/weldingtool
 @obj.item.stack human|/obj/item/stack/cable_coil
-+5 menu: Use
++4 menu: Use
 @obj.item.stack human|/obj/item/stack/material/steel
 +4 menu: Use
 @obj.item.stack human|/obj/item/card/id
-+4 menu: Use
++3 menu: Use
 @obj.item.stack human|/obj/item/kit
 +4 menu: Use
 @obj.item.stack human|/obj/item/storage

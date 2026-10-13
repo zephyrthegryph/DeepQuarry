@@ -2,18 +2,16 @@
 @obj.effect robot|none
 @obj.effect ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
-@obj human|/obj/item/tool/crowbar
-@obj human|/obj/item/tool/wrench
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+2 menu: Use wirecutter
-+3 click: Click: Use wirecutter
-@obj human|/obj/item/multitool
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
+@obj.effect human|/obj/item/tool/screwdriver
+@obj.effect human|/obj/item/tool/crowbar
+@obj.effect human|/obj/item/tool/wrench
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
+@obj.effect human|/obj/item/multitool
+@obj.effect human|/obj/item/weldingtool
+@obj.effect human|/obj/item/stack/cable_coil
+@obj.effect human|/obj/item/stack/material/steel
+@obj.effect human|/obj/item/card/id
 @obj human|/obj/item/mop_deploy
 @obj human|/obj/item/soap
 keys: drag_buckle, pass_insert, pass_insert_2, use_wirecutter

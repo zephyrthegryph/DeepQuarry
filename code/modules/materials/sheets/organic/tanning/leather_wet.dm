@@ -15,10 +15,9 @@
 
 	var/dry_type = /obj/item/stack/material/leather
 
-/// Reduced when exposed to high temperatures; 0 is dry. A tanning rack reads it through its
-/// "drying.wetness" derived input.
+/// Reduced when exposed to high temperatures; 0 is dry. The rack's native draw
+/// reads this producer through its drying relation.
 /obj/item/stack/wetleather/var/wetness = 30
-TRACKED_BRIDGED(/obj/item/stack/wetleather, wetness, CHANGE_EXPLICIT)
 
 /obj/item/stack/wetleather/examine(mob/user)
 	. = ..()

@@ -2,43 +2,39 @@
 -menu: Use
 +1 menu: Use (refused: access denied)
 @obj.machinery.computer robot|none
-+3 menu: Use (refused: access denied)
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
-@obj.machinery.computer human|/obj/item/tool/screwdriver
--menu: Disconnect
--menu: Use
--click: Click: Disconnect
-+3 menu: Use (refused: access denied)
-+5 click: Click: Use item
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Use (refused: access denied)
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use item
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/tool/wrench
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/tool/wirecutters
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/stack/cable_coil
 -menu: Use
-+4 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/stack/material/steel
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item/card/id
 -menu: Use
-+4 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj.machinery.computer human|/obj/item
 -menu: Use
-+3 menu: Use (refused: access denied)
++1 menu: Use (refused: access denied)
 @obj human|/obj/item/gripper
 @obj.machinery human|/obj/item/card/emag
-+4 menu: Use (refused: access denied)
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, robot_remote_blocked, send_to_dock, send_to_station, silicon_hand, use_gripper, use_item

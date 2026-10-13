@@ -92,7 +92,7 @@ the artifact triggers the rage.
 	L.status_set(STAT_STUNNED, 0)
 	L.status_set(STAT_WEAKENED, 0)
 	L.mend(TREAT_ANALGESIC, 200) // Rage drowns out the pain.
-	L.lying = 0
+	L.set_lying(0)
 	L.update_canmove()
 
 	// Temporarily end pain.

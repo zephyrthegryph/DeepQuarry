@@ -183,7 +183,6 @@
 
 TRACKED(/obj/mecha, cabin_regulating)
 TRACKED(/obj/mecha, state)
-TRACKED(/obj/mecha, passenger_count)
 
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
@@ -488,7 +487,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
 /obj/mecha/var/current_processes = MECHA_PROC_INT_TEMP
-TRACKED(/obj/mecha, current_processes)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
 /// relation channels (the pilot slot's link).
@@ -715,9 +713,9 @@ TRACKED(/obj/mecha, current_processes)
 		if("Toggle Light")
 			lights = !lights
 			if(lights)
-				set_light(light_range + lights_power)
+				set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
 			else
-				set_light(light_range - lights_power)
+				set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 			occupant_message("Toggled lights [lights?"on":"off"].")
 			src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 			play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
@@ -1517,7 +1515,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		user.drop_from_inventory(mmi_as_oc)
 		var/mob/brainmob = mmi_occupant
 		// Through the pilot slot (C8 step 2), so it gets the automatic
-		// om_link (occupant, etc.) the same way a human pilot does.
+		// link (occupant, etc.) the same way a human pilot does.
 		if(!move_into(src, MECHA_SLOT_PILOT, brainmob))
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
@@ -1693,8 +1691,8 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user!=occupant)	return
 	lights = !lights
-	if(lights)	set_light(light_range + lights_power)
-	else		set_light(light_range - lights_power)
+	if(lights)	set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
+	else		set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 	src.occupant_message("Toggled lights [lights?"on":"off"].")
 	src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 	play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
@@ -2223,7 +2221,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/a = id
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
-		operation_req_access += a
+		add_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_del(datum/act/op/A, id)
@@ -2231,7 +2229,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		return FALSE
 	var/a = id
 	if(a in operation_req_access)
-		operation_req_access -= a
+		remove_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_finish(datum/act/op/A)

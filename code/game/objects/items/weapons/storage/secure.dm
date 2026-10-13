@@ -35,7 +35,6 @@ TRACKED(/obj/item/storage/secure, l_set)
 TRACKED(/obj/item/storage/secure, l_setshort)
 TRACKED(/obj/item/storage/secure, emagged)
 TRACKED(/obj/item/storage/secure, open)
-TRACKED(/obj/item/storage/secure, sparking)
 
 MSG_DEF_SELF(secure/locked, "It is locked and cannot be opened!")
 

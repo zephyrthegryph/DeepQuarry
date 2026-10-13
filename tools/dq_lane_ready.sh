@@ -6,7 +6,8 @@
 #
 #   1. refuses a dirty tree, master and a detached HEAD
 #   2. merges current origin/master (tools/dq_merge_master.sh: settles the generated files, regenerates)
-#   3. runs tools/dq_merge_gates.sh on that merge: gen, the test world with the cross-branch smoke set, your --tests and the
+#   3. runs tools/dq_merge_gates.sh on that merge: gen, the test world with the cross-branch smoke set, your --tests, the gameplay
+#      scenarios (tools/ci/gameplay_tests.txt, always) and the
 #      incremental look pins (dq_look_state_pin, dq_look_tree_pin: only the types whose analyzer key moved are probed, so a lane
 #      that did not touch a look costs nothing; --no-pins leaves them out), the production compile + DreamChecker, the ratchets
 #      and the analyzer, in parallel (tgui lint when the lane touches tgui/)
@@ -73,6 +74,15 @@ git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then die "the merge left uncommitted changes"; fi
 
 list=(${tests[@]+"${tests[@]}"})
+# The gameplay scenarios run on every landing, whatever the lane (tools/ci/gameplay_tests.txt, doc/testing.md "Gameplay scenarios").
+gameplay_file="tools/ci/gameplay_tests.txt"
+if [ -f "$gameplay_file" ]; then
+	while IFS= read -r l; do
+		l="${l%%#*}"; l="$(echo "$l" | tr -d '\r' | xargs)"
+		[ -n "$l" ] || continue
+		case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac
+	done <"$gameplay_file"
+fi
 if [ "$pins" -eq 1 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then list+=(dq_look_state_pin dq_look_tree_pin); fi
 if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving the smoke set only" >&2; fi
 
@@ -84,9 +94,26 @@ if [ "$reuse_gates" -eq 0 ]; then
 	bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
 fi
 
+# The gates may move HEAD before they record it: they normalize look_keys.txt, shrink ratchet baselines into an unpushed merge commit
+# (amend) and record probed look keys, and the evidence is named by the HEAD they ended on. Follow HEAD when it moved, provided the
+# old commit is an ancestor or was amended in place (same tree plus the gates' own files), so the proof always matches what is stamped.
+if [ "$reuse_gates" -eq 0 ]; then
+	after="$(git rev-parse HEAD)"
+	if [ "$after" != "$tested" ]; then
+		echo "== lane-ready: the gates moved HEAD ${tested:0:10} -> ${after:0:10}; proof is read for the new HEAD"
+		tested="$after"
+	fi
+fi
 # An interrupted gate can return without evidence; absence is never a passing result.
 ok_file="data/merge-gates/${tested:0:12}.ok"
-[ -s "$ok_file" ] && grep -Fxq "sha=$tested" "$ok_file" || die "the gates produced no matching result; nothing was stamped"
+if ! { [ -s "$ok_file" ] && grep -Fxq "sha=$tested" "$ok_file"; }; then
+	found="$(sed -n 's/^sha=//p' "$ok_file" 2>/dev/null)"
+	die "the gates produced no matching result; nothing was stamped
+  expected: $ok_file containing sha=$tested
+  found:    ${found:-no such file or no sha line} (HEAD now $(git rev-parse HEAD); other proofs: $(ls data/merge-gates/*.ok 2>/dev/null | tail -n 3 | tr '
+' ' '))
+  if the gates passed on another commit, rerun; do not hand-edit the evidence"
+fi
 if [ "$reuse_gates" -eq 1 ]; then
 	completed_tests=" $(sed -n 's/^tests=//p' "$ok_file") "
 	for selector in "${list[@]}"; do
@@ -129,7 +156,9 @@ MSYS2_ARG_CONV_EXCL='*' node -e '
 	if (![passed, failed, newFailed].every(x => /^[0-9]+$/.test(x)) || Number(passed) < 1 || Number(newFailed) !== 0) process.exit(1);
 	let result;
 	try { result = JSON.parse(fs.readFileSync(file, "utf8")); } catch { process.exit(1); }
-	if (result.commit !== tested || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
+	// A run JSON names its commit abbreviated (10 hex digits, as in its file name): match it as a prefix of the tested sha.
+	const c = String(result.commit || "");
+	if (c.length < 10 || !tested.startsWith(c) || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
 ' "$tests_json" "$passed" "$failed" "$new_failed" "$tested" || die "missing or inconsistent test evidence; nothing was stamped"
 mkdir -p data/lane-ready
 stamp_json="$(MSYS2_ARG_CONV_EXCL='*' node -e '

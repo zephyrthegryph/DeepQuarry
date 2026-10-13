@@ -40,7 +40,7 @@
 /turf/simulated/floor/water/underwater/Entered(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(oldloc, /turf/simulated/floor/water/underwater))
@@ -51,7 +51,7 @@
 /turf/simulated/floor/water/underwater/Exited(atom/movable/AM, atom/newloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(newloc, /turf/simulated/floor/water/underwater))

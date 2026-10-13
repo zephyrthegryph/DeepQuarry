@@ -65,7 +65,6 @@ MSG_DEF_SELF(sniper/removing_barrel, span_warning("You begin removing %T%'s barr
 	. = ..()
 	rel_set(src, nameof(trigger_group), src)
 
-TRACKED(/obj/item/sniper_rifle_part, part_count)
 MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 
 CAPABILITIES(/obj/item/sniper_rifle_part)

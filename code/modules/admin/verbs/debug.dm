@@ -146,7 +146,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	var/turf/target_turf = get_turf(user.mob)
 	var/obj/item/paicard/typeb/card = new(target_turf)
 	var/mob/living/silicon/pai/pai = new(card)
-	pai.real_name = pai.name
+	pai.set_real_name(pai.name)
 	pai.set_key(choice.key)
 	card.setPersonality(pai)
 	// The new pAI answers these in its own time.
@@ -287,11 +287,10 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 		var/obj/item/card/id/id = new/obj/item/card/id(H);
 		id.icon_state = "gold"
 		id.access = SSaccess.get_all_accesses().Copy()
-		id.registered_name = H.real_name
+		id.set_registered_name(H.real_name)
 		id.assignment = JOB_SITE_MANAGER
 		id.name = "[id.registered_name]'s ID Card ([id.assignment])"
 		H.equip_to_slot_or_del(id, SLOT_ID_ID)
-		H.update_inv_wear_id()
 	feedback_add_details("admin_verb","GFA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(user)] has granted [H.key] full access.")
 	message_admins(span_blue("[key_name_admin(user)] has granted [H.key] full access."))

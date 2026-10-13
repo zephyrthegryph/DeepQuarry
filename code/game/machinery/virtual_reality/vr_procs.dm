@@ -88,7 +88,6 @@
 
 	PUBLISH_LEGACY(avatar, /datum/notice/human_dna_finalized)
 
-	avatar.regenerate_icons()
 	avatar.update_transform()
 	SSjob.equip_rank(avatar,JOB_VR, 1, FALSE)
 	grant(avatar, granted_verb(/mob/living/carbon/human/proc/fake_exit_vr), avatar)
@@ -106,7 +105,7 @@
 	if(!A.answer)
 		return
 	if(A.answer.value)
-		real_name = A.answer.value
+		set_real_name(A.answer.value)
 		name = A.answer.value
 
 /mob/living/carbon/human/proc/vr_transform_granted(datum/act/op/A)

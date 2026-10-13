@@ -16,7 +16,6 @@ ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTIO
 			continue
 		dropee.drop_from_inventory(W)
 
-	dropee.regenerate_icons()
 
 	log_admin("[key_name(user)] made [key_name(dropee)] drop everything!")
 	var/msg = "[key_name_admin(user)] made [ADMIN_LOOKUPFLW(dropee)] drop everything!"
@@ -838,7 +837,6 @@ CAPABILITIES(/datum/respawn_review)
 		GLOB.data_core.manifest_inject(new_character)
 
 	//A redraw for good measure
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 
@@ -1491,7 +1489,7 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 
 	if(name)
 		var/spawner_name = picked_client.prefs.read_preference(/datum/preference/name/real_name)
-		new_mob.real_name = spawner_name
+		new_mob.set_real_name(spawner_name)
 		new_mob.name = spawner_name
 
 

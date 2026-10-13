@@ -347,10 +347,10 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 /obj/item/melee/robotic/blade/refresh_light(clear)
 	if(active)
 		if(clear)
-			set_light(0)
-		set_light(2, 2, lcolor)
+			set_glow(src, GLOW(0, null, null))
+		set_glow(src, GLOW(2, 2, lcolor))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 /// Old click_alt.
 /obj/item/melee/robotic/blade/proc/interaction_alt(datum/act/op/A)
@@ -456,10 +456,10 @@ CAPABILITIES(/obj/item/melee/robotic/blade/ionic/lance)
 /obj/item/melee/robotic/baton/refresh_light(clear)
 	if(status)
 		if(clear)
-			set_light(0)
-		set_light(2, 1, lightcolor)
+			set_glow(src, GLOW(0, null, null))
+		set_glow(src, GLOW(2, 1, lightcolor))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 TRACKED(/obj/item/melee/robotic/baton, status)
 

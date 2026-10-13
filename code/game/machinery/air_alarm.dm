@@ -63,7 +63,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	clicksound = SFX_BUTTON
 	clickvol = 30
 	blocks_emissive = NONE
-	light_power = 0.25
 	flags = WALL_ITEM
 	circuit = /obj/item/circuitboard/airalarm
 	mode = AALARM_MODE_SCRUBBING
@@ -123,17 +122,14 @@ STAT(/obj/machinery/alarm, aidisabled, ANY)
 /// The power wire shorts the alarm: cut, until mended; pulsed, for twenty minutes (power_wires()).
 STAT(/obj/machinery/alarm, shorted, ANY)
 
-TRACKED(/obj/machinery/alarm, danger_level)
 TRACKED(/obj/machinery/alarm, regulating_temperature)
-TRACKED(/obj/machinery/alarm, is_main)
-TRACKED(/obj/machinery/alarm, main_down)
-TRACKED(/obj/machinery/alarm, area_alert)
 TRACKED(/obj/machinery/alarm, scanning)
 TRACKED(/obj/machinery/alarm, target_temperature)
 TRACKED(/obj/machinery/alarm, rcon_setting)
 TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
+	configure(light_glow(power = 0.25))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 80, active = 1000, channel = ENVIRON))
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)
@@ -784,7 +780,7 @@ CAPABILITIES(/obj/machinery/alarm)
 
 /// The threshold button names a band the alarm has.
 /obj/machinery/alarm/proc/threshold_known(datum/act/op/A)
-	return (islist(TLV[A.args?["env"]])) ? null : MSG(alarm/no_such_threshold) // ALLOW(reads): asked when the threshold button is pressed, never from a cached menu
+	return (islist(TLV[A.args?["env"]])) ? null : MSG(alarm/no_such_threshold)
 
 /obj/machinery/alarm/proc/threshold_title(datum/act/op/A)
 	return "[A.args?["var"]]"
@@ -805,7 +801,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	band[index] = R.value < 0 ? -1 : round(R.value, 0.01)
 	clamp_tlv_values(env, index)
 	for(var/obj/machinery/alarm/AA as anything in alarm_area.air_alarms)
-		AA.TLV[env] = band.Copy()
+		AA.set_TLV_at(env, band.Copy())
 		AA.rescan()
 	return OP_OK
 

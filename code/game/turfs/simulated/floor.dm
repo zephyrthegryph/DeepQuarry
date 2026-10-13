@@ -33,14 +33,8 @@
 	thermal_conductivity = 0.040
 	heat_capacity = FLOOR_HEAT_CAPACITY
 
-TRACKED(/turf/simulated/floor, flooring)
-TRACKED(/turf/simulated/floor, flooring_override)
-TRACKED(/turf/simulated/floor, plating_damage_state)
-TRACKED(/turf/simulated/floor, plating_exposed)
-TRACKED(/turf/simulated/floor, scorch_state)
 
 TRACKED(/turf/simulated/floor, broken)
-TRACKED(/turf/simulated/floor, burnt)
 
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
@@ -63,7 +57,7 @@ TRACKED(/turf/simulated/floor, burnt)
 /turf/simulated/floor/runtime_after_init()
 	return !!flooring
 
-/turf/simulated/floor/proc/swap_decals()
+/turf/simulated/floor/proc/swap_with_old_decals()
 	var/current_decals = decals
 	set_decals(old_decals)
 	old_decals = current_decals
@@ -78,7 +72,7 @@ TRACKED(/turf/simulated/floor, burnt)
 /// Lays `newflooring` on the tile (its tracked flooring, the variant it rolls and the decals that go with the surface). The draw follows by itself.
 /turf/simulated/floor/proc/install_flooring(datum/decl/flooring/newflooring, initializing)
 	if(is_plating() && !initializing) // Plating -> Flooring
-		swap_decals()
+		swap_with_old_decals()
 	set_flooring(newflooring)
 	set_plating_exposed(FALSE)
 	set_scorch_state(null)
@@ -99,7 +93,7 @@ TRACKED(/turf/simulated/floor, burnt)
 	color = null
 
 	if(!is_plating()) // Flooring -> Plating
-		swap_decals()
+		swap_with_old_decals()
 		if(flooring.build_type && place_product)
 			new flooring.build_type(src, flooring.build_cost)
 		var/newtype = flooring.get_plating_type()
@@ -109,7 +103,7 @@ TRACKED(/turf/simulated/floor, burnt)
 			set_flooring(null)
 			set_plating_exposed(TRUE)
 
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_broken(null)
 	set_burnt(null)
 	set_flooring_override(null)

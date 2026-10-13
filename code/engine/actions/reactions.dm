@@ -85,6 +85,7 @@
 	return R
 
 /// Calls reaction R's handler on holder E with the contract's args: on the capability for a cap_rx() reaction.
+PROC_SUMMARY(/proc/rx_call_reaction) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/rx_call_reaction(datum/E, datum/reaction/R, ...)
 	var/list/rest = length(args) > 2 ? args.Copy(3) : list()
 	if(R.cap)
@@ -208,7 +209,7 @@
 /datum/proc/generated_reads()
 	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
-	return list()
+	return generated_lookup_output_reads()
 
 // ---------------------------------------------------------------- the composed table
 
@@ -256,6 +257,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 	return T
 
 /// Builds and caches D's type table. Null (cached as 0) when the type declares nothing.
+PROC_SUMMARY(/proc/rx_table_build) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/rx_table_build(datum/D)
 	RETURN_TYPE(/datum/rx_table)
 	if(!islist(GLOB?.rx_tables))

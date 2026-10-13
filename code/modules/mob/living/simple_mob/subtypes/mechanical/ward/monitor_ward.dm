@@ -70,9 +70,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
 		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
 	..()
 
-/mob/living/simple_mob/mechanical/ward/monitor/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/mechanical/ward/monitor/life_special(datum/seq_frame/life/F)
 	src.detect_mobs()
 

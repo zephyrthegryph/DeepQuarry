@@ -6,8 +6,6 @@
 	var/iscopy = 0
 
 
-TRACKED(/obj/item/paper/carbon, copied)
-TRACKED(/obj/item/paper/carbon, iscopy)
 
 /obj/item/paper/carbon/look_parts(datum/look/look)
 	if(iscopy)

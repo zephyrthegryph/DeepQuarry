@@ -5,7 +5,6 @@
 	icon_state = "vortex"
 	density = FALSE
 	anchored = TRUE
-	light_range = 3
 
 	var/obj/item/assembly/signaler/anomaly/anomaly_core = /obj/item/assembly/signaler/anomaly
 	var/area/impact_area
@@ -27,6 +26,7 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	configure(light_glow(range = 3))
 	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
 	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
 	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly, starts = PROC_REF(make_core))

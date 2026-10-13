@@ -80,8 +80,6 @@
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
 	grant(H, granted_verb(/mob/living/carbon/human/proc/trait_tutorial), src)
-	if(H)
-		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)
 		rel_add(S, nameof(S.env_traits), src)
 	if(added_component_path && !species_state_has(H, added_component_path))
@@ -135,8 +133,6 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 		H.disabilities &= ~disability // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
-	if(H)
-		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)
 		rel_remove(S, nameof(S.env_traits), src)
 	if(added_capability && H)

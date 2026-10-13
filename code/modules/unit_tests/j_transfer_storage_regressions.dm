@@ -244,7 +244,7 @@ TRACKED(/obj/item/dq_live_budget_box/unbounded, forbid_cost)
 	var/obj/item/storage/backpack/B = allocate(/obj/item/storage/backpack, T)
 	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "Real garment is equipped on actual wearer")
 	var/size_before = H.size_multiplier
-	U.original_size = size_before + 0.25
+	U.set_original_size(size_before + 0.25)
 	var/restore = U.original_size
 	var/taken = GLOB.act_taken
 	var/notices = GLOB.notice_taken

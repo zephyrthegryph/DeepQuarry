@@ -47,8 +47,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/park_after = 2
 	/// A member below this relevance (STAT_RELEVANCE) is out of the sweep. RELEVANCE_NONE: always relevant.
 	var/min_relevance = RELEVANCE_NONE
-	/// Change channels that wake every step (state_changed()).
-	var/wake_all = 0
 	/// Change keys (PUBLISH_CHANGE, tracked var names) that wake every step.
 	var/list/wake_keys
 	/// The proc name (PROC_REF) of the table proc, on the entity and on contributors: returns seq_step()s.
@@ -621,7 +619,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		E.seq_states.len = seq.idx
 	E.seq_states[seq.idx] = state
 	state.relevant = seq.relevant(E)
-	seq_listen(E)
 	seq_sync(E, state)
 	return state
 
@@ -682,18 +679,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		else
 			member_leave(seq.parked_key, E, SEQ_SOURCE)
 
-/// E's listen mask includes every channel its sequences wake on (state_changed() reaches seq_channels()).
-/proc/seq_listen(datum/E)
-	E.om_listen |= seq_listen_mask(E)
-
-/// The channels E's sequences listen to: what their steps read, and wake_all.
-/proc/seq_listen_mask(datum/E)
-	. = 0
-	for(var/datum/seq_state/state as anything in E.seq_states)
-		if(!state)
-			continue
-		. |= state.table.chan_union | state.seq.wake_all
-
 /// Adds `contributor` (a datum defining the sequence's table proc: a trait state, a component) to E's table on
 /// `path`: its steps run on it with (entity, frame). One contributor per type. Every step wakes (a new table).
 /// The caller removes it (seq_extra_remove()) before the contributor goes.
@@ -748,7 +733,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	state.snaps = null
 #endif
-	seq_listen(E)
 	if(state.parked)
 		seq_unpark(E, state, "a new table")
 	return TRUE
@@ -860,31 +844,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 				woke = TRUE
 		if(woke)
 			seq_woke(E, state, "[key]")
-
-/// state_changed() / entity_dispatch_change() hook: channels `bits` of `E` changed. Wakes every step of E's sequences that
-/// reads one of them,.
-/proc/seq_channels(datum/E, bits)
-	for(var/datum/seq_state/state as anything in E.seq_states)
-		if(!state)
-			continue
-		if((!state.asleep && !state.running) || !(bits & state.table.chan_union))
-			continue
-		var/woke = FALSE
-		var/list/steps = state.table.steps
-		var/list/sleep_bits = state.bits
-		for(var/w in 1 to length(sleep_bits))
-			var/word = sleep_bits[w]
-			if(!word)
-				continue
-			var/base = (w - 1) << 4
-			for(var/b in 0 to 15)
-				if(!(word & (1 << b)))
-					continue
-				var/datum/seq_step/S = steps[base + b + 1]
-				if((S.chan_mask & bits) && seq_wake_pos(state, base + b + 1, !S.once))
-					woke = TRUE
-		if(woke)
-			seq_woke(E, state, "channels [bits]")
 
 /// Wakes every step of `E` on sequence `path` (the explicit wake).
 /proc/seq_wake(datum/E, path)
@@ -1093,6 +1052,17 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 			break
 	F.release()
 
+/// A step's woken_by as text: a list reads "key: producers; ...", text as itself.
+/proc/seq_woken_by_text(woken_by)
+	if(!woken_by)
+		return "undeclared"
+	if(!islist(woken_by))
+		return "[woken_by]"
+	var/list/parts = list()
+	for(var/key in woken_by)
+		parts += "[key]: [woken_by[key]]"
+	return jointext(parts, "; ")
+
 /// Logs a missed wake, fails the unit test run (unless `expected`), and wakes the step. Returns the message.
 /datum/sequence/proc/report_missed(datum/E, datum/seq_step/S, expected = FALSE)
 	var/datum/seq_state/state = SEQ_STATE_OF(E, idx)
@@ -1102,7 +1072,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	changed = seq_snapshot_diff(E, state, S)
 #endif
 	var/where = state.parked ? "parked since [DisplayTimeText(world.time - state.parked_at)] ago" : "awake, some steps asleep"
-	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [where]: step [S.key] has work but slept.[changed ? " Changed without a publish: [changed]." : ""] Woken by: [S.woken_by || "undeclared"]. A producer changed what it reads without publishing it (publish_change() / state_changed())."
+	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [where]: step [S.key] has work but slept.[changed ? " Changed without a publish: [changed]." : ""] Woken by: [seq_woken_by_text(S.woken_by)]. A producer changed what it reads without publishing it (publish_change() / state_changed())."
 	log_runtime(message)
 	log_world(message)
 #if defined(UNIT_TESTS)
@@ -1155,6 +1125,10 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Tests: the values of the reads of `S` that are vars of `E`, when it falls asleep.
 /proc/seq_snapshot_note(datum/E, datum/seq_state/state, datum/seq_step/S)
+	// A step earlier in this frame can replan E onto another table; the rest of the frame still walks the old one, and
+	// its positions index a table that no longer exists. Those sleeps are void (the new table starts all awake).
+	if(S.pos > state.table.n || state.table.steps[S.pos] != S)
+		return
 	var/list/snap
 	for(var/key in S.keys)
 		if(!(key in E.vars))

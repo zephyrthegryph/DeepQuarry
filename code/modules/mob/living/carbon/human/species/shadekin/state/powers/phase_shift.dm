@@ -169,7 +169,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 		// change
 		canmove = FALSE
-		SK.in_phase = FALSE
+		SK.set_in_phase(FALSE)
 		SK.doing_phase = TRUE
 		throwpass = FALSE
 		name = get_visible_name()
@@ -178,7 +178,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
-		incorporeal_move = initial(incorporeal_move)
+		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
 		set_can_pull_size(movement_of_type(type).pull_size)
 		set_can_pull_mobs(movement_of_type(type).pull_mobs)
@@ -279,7 +279,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		canmove = FALSE
 
 		// change
-		SK.in_phase = TRUE
+		SK.set_in_phase(TRUE)
 		SK.doing_phase = TRUE
 		throwpass = TRUE
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
@@ -287,7 +287,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		if(real_name) //If we a real name, perfect, let's just set our name to our newfound visible name.
 			name = get_visible_name()
 		else //If we don't, let's put our real_name as our initial name.
-			real_name = initial(name)
+			set_real_name(initial(name))
 			name = get_visible_name()
 
 		for(var/obj/belly/B as anything in vore_organs)
@@ -311,7 +311,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 	alpha = 127
 
 	canmove = original_canmove
-	incorporeal_move = TRUE
+	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	if(SK)
 		SK.doing_phase = FALSE

@@ -332,14 +332,13 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	var/sound_eject = SFX_WEAPONS_BALLISTICS_PISTOL_EJECT
 	var/sound_chamber = SFX_WEAPONS_BALLISTICS_PISTOL_CHAMBER
 	special_handling = TRUE
-TRACKED(/obj/item/gun/projectile, bolt_open)
 
 /obj/item/gun/projectile/handle_post_fire(mob/user, atom/target, pointblank=0, reflex=0)
 	if(fire_anim)
 		flick(fire_anim, src)
 
 	if(muzzle_flash)
-		set_light(muzzle_flash)
+		set_glow(src, GLOW(muzzle_flash, null, null))
 
 	if(one_handed_penalty)
 		if(!src.is_held_twohanded(user))

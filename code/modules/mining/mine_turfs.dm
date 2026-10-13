@@ -214,7 +214,6 @@ CAPABILITIES(/turf/simulated/mineral)
 /// The sides of this tile that are open (a neighbour that is not dense), that face open space (not the cracked asteroid) and that face rock, written by
 /// the adjacency index.
 /turf/simulated/mineral/var/rock_edges = 0
-TRACKED(/turf/simulated/mineral, rock_edges)
 
 /turf/simulated/mineral/edges_changed(mask)
 	..()
@@ -232,11 +231,6 @@ TRACKED(/turf/simulated/mineral, rock_edges)
 	set_rock_edges(edges)
 	log_edge_trace("[type] at [x],[y],[z]: rock edges [rock_edges]")
 
-TRACKED(/turf/simulated/mineral, sand_dug)
-TRACKED(/turf/simulated/mineral, overlay_detail)
-TRACKED(/turf/simulated/mineral, archaeo_overlay)
-TRACKED(/turf/simulated/mineral, excav_overlay)
-TRACKED(/turf/simulated/mineral, mineral_static)
 
 /// Rock is drilled out by a blast rather than losing integrity.
 // ALLOW(sys_entry_override): the blast sink of rock: it is drilled out (GetDrilled) instead of losing integrity (damage.md D-turf), so this is where the hit lands, not a reaction to it

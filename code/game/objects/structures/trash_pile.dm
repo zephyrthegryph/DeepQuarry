@@ -32,7 +32,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	var/obj/item/W = A.held
 	var/w_type = W.type
 	if(w_type in GLOB.allocated_gamma_loot)
-		to_chat(user,span_notice("You feel 	he [W] slip from your hand, and disappear into the trash pile."))
+		to_chat(user,span_notice("You feel \the [W] slip from your hand, and disappear into the trash pile."))
 		user.unEquip(W)
 		W.forceMove(src)
 		restore_gamma_loot(w_type)
@@ -138,7 +138,7 @@ MSG_DEF(trash_pile/searching, "You search through %T%.", "%U% searches through %
 	to_chat(hider(),span_danger("You've been discovered!"))
 	hider().forceMove(get_turf(src))
 	rel_clear(src, nameof(hider))
-	to_chat(user,span_danger("Some sort of creature leaps out of 	he [src]!"))
+	to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
 	return TRUE
 
 /obj/structure/mob_spawner/mouse_nest

@@ -110,9 +110,6 @@
 	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
-TRACKED(/obj/item/gun, dna_lock)
-TRACKED(/obj/item/gun, silenced)
-TRACKED(/obj/item/gun, mode_name)
 CAPABILITIES(/obj/item/gun)
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_thrown(force = 5))
@@ -148,10 +145,10 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 /obj/item/gun/proc/toggle_flashlight()
 	if(gun_light)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		gun_light = FALSE
 	else
-		set_light(light_brightness)
+		set_glow(src, GLOW(light_brightness, null, null))
 		gun_light = TRUE
 
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
@@ -185,11 +182,11 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		var/mob/living/M = loc
 		if(istype(M))
 			if(M.can_wield_item(src) && src.is_held_twohanded(M))
-				LAZYSET(item_state_slots, slot_l_hand_str, wielded_item_state)
-				LAZYSET(item_state_slots, slot_r_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_l_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_r_hand_str, wielded_item_state)
 			else
-				LAZYSET(item_state_slots, slot_l_hand_str, initial(item_state))
-				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_l_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_r_hand_str, initial(item_state))
 	..()
 
 //Checks whether a given mob can use the gun
@@ -435,9 +432,9 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		COOLDOWN_START(src, next_fire_time, fire_delay)
 		if(muzzle_flash)
 			if(gun_light)
-				set_light(light_brightness)
+				set_glow(src, GLOW(light_brightness, null, null))
 			else
-				set_light(0)
+				set_glow(src, GLOW(0, null, null))
 
 	if(ticker <= burst)
 		var/obj/projectile = consume_next_projectile(user)
@@ -496,9 +493,9 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 				COOLDOWN_START(src, next_fire_time, fire_delay)
 				if(muzzle_flash)
 					if(gun_light)
-						after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), with = list(light_brightness))
+						after(src, burst_delay, PROC_REF(muzzle_glow), with = list(light_brightness))
 					else
-						after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), with = list(0))
+						after(src, burst_delay, PROC_REF(muzzle_glow), with = list(0))
 
 // Similar to the above proc, but does not require a user, which is ideal for things like turrets.
 /obj/item/gun/proc/Fire_userless(atom/target)
@@ -527,7 +524,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	if(recursive)
 		COOLDOWN_START(src, next_fire_time, fire_delay)
 		if(muzzle_flash)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 	if(ticker <= burst)
 		var/obj/item/projectile/P = consume_next_projectile()
@@ -554,7 +551,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 			play_fire_sound()
 
 			if(muzzle_flash)
-				set_light(muzzle_flash)
+				set_glow(src, GLOW(muzzle_flash, null, null))
 
 			if(!(target && target.loc))
 				target = targloc
@@ -618,7 +615,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		flick(fire_anim, src)
 
 	if(muzzle_flash)
-		set_light(muzzle_flash)
+		set_glow(src, GLOW(muzzle_flash, null, null))
 
 	if(one_handed_penalty)
 		if(!src.is_held_twohanded(user))
@@ -895,3 +892,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 /obj/item/gun/proc/note_shot()
 	for(var/obj/item/ammo_magazine/smart/M in contents)
 		COOLDOWN_START(M, gun_fired_cooldown, M.production_delay)
+
+/// The gun's light after a burst: `range` 0 is dark (what set_glow(src, GLOW(range, null, null)) did).
+/obj/item/gun/proc/muzzle_glow(range)
+	set_glow(src, GLOW(range, null, null))

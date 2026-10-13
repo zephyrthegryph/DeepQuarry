@@ -34,8 +34,8 @@
 CAPABILITIES(/obj/structure/disposaloutlet)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), needs(req(PROC_REF(config_refusal))), then(PROC_REF(multitool_used)))
+	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(welder_refusal), silent = TRUE)), starts(PROC_REF(welder_started)), begins(PROC_REF(welder_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
+	op("use_multitool", tool(TOOL_MULTITOOL), label("Set ejection strength"), wait(0), needs(req(PROC_REF(config_refusal))), asks(/datum/prompt/number/disposal_outlet_range, fields = list("default" = computed(PROC_REF(range_default))), step = "range"), then(PROC_REF(range_set)))
 
 /// Old attackby.
 /obj/structure/disposaloutlet/proc/interaction_item(datum/act/op/A)
@@ -56,17 +56,20 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	playsound(src, sounds_of(I).use, 50, 1)
 	return OP_OK
 
-/obj/structure/disposaloutlet/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(mode != OUTLET_UNSCREWED)
-		return OP_OK
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal outlet.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return OP_OK
+/// When the welder does nothing (the click is used up, nothing is said).
+/obj/structure/disposaloutlet/proc/welder_refusal(datum/act/op/A)
+	return read_once(mode != OUTLET_UNSCREWED) ? "no" : null
 
-/obj/structure/disposaloutlet/proc/welder_act_tool_done(mob/user)
+/obj/structure/disposaloutlet/proc/welder_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 100, TRUE)
+
+/obj/structure/disposaloutlet/proc/welder_begins(datum/act/op/A)
+	return msg_text("You start slicing the floorweld off the disposal outlet.", null)
+
+/obj/structure/disposaloutlet/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!src)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, "You sliced the floorweld off the disposal outlet.")
 	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	var/obj/structure/disposalconstruct/C = new(src.loc)
@@ -82,15 +85,17 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 /obj/structure/disposaloutlet/proc/config_refusal(datum/act/op/A)
 	return read_once(mode) == OUTLET_SCREWED ? "its panel is closed" : null
 
-/obj/structure/disposaloutlet/proc/multitool_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	ask_outlet_range(user, I)
-	return OP_OK
+/obj/structure/disposaloutlet/proc/range_default(datum/act/op/A)
+	return eject_range
 
-/// Asks for the ejection range; the answer is refused if the outlet was closed or the tool went away (outlet_range_answered()).
-/obj/structure/disposaloutlet/proc/ask_outlet_range(mob/user, obj/item/I)
-	open_request(src, /datum/prompt/number/disposal_outlet_range, PROC_REF(outlet_range_answered), answerer = user, subject = I, tool_expected = !isnull(I))
+/// The answered range is set (refused, as config_refusal says, once the panel was closed meanwhile).
+/obj/structure/disposaloutlet/proc/range_set(datum/act/op/A)
+	var/new_range = A.step_value("range")
+	if(isnull(new_range))
+		return OP_OK
+	SStgui.update_uis(src)
+	apply_outlet_range(A.actor, new_range)
+	return OP_OK
 
 /datum/prompt/number/disposal_outlet_range
 	question = "Input a new ejection distance"
@@ -99,25 +104,9 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	min_value = 1
 	max_value = 5
 	timeout = 0
-	recheck_on_open = TRUE
-	var/tool_expected = FALSE
 
 /datum/prompt/number/disposal_outlet_range/normalize(given)
 	return isnum(given) ? given : null
-
-/datum/prompt/number/disposal_outlet_range/recheck_extra()
-	if(QDELETED(owner) || QDELETED(answerer) || (tool_expected && (!subject || QDELETED(subject))))
-		return "gone"
-	var/obj/structure/disposaloutlet/outlet = owner
-	if(outlet.mode == OUTLET_SCREWED)
-		return "closed"
-
-/obj/structure/disposaloutlet/proc/outlet_range_answered(datum/act/request/context)
-	if(isnull(context.request.value) || context.request.last_error == "gone")
-		return
-	SStgui.update_uis(src)
-	if(context.answer)
-		apply_outlet_range(context.request.answerer, context.answer.value)
 
 /obj/structure/disposaloutlet/proc/apply_outlet_range(mob/user, new_range)
 	eject_range = new_range

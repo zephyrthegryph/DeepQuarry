@@ -156,7 +156,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 			src.melee_damage_lower = 50
 			src.melee_damage_upper = 100
 			src.set_mob_size(MOB_HUGE)
-			src.child_om_marker.set_light(5, 1, "#ff8df5")
+			set_glow(src.child_om_marker, GLOW(5, 1, "#ff8df5"))
 			src.movement_cooldown = 5
 
 	else if(src.invisibility)
@@ -166,7 +166,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 		src.melee_damage_lower = 1
 		src.melee_damage_upper = 5
 		src.set_mob_size(MOB_SMALL)
-		src.child_om_marker.set_light(0)
+		set_glow(src.child_om_marker, GLOW(0, null, null))
 		src.movement_cooldown = 0
 
 /mob/living/simple_mob/vore/overmap/stardog/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
@@ -179,7 +179,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	return
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/stardog_light_ready(datum/act/timer/A)
-	child_om_marker?.set_light(5, 1, "#ff8df5")
+	set_glow(child_om_marker, GLOW(5, 1, "#ff8df5"))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -449,30 +449,14 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
 	if(ishuman(AM))
-		var/mob/living/carbon/human/L = AM
-		L.fur_submerge()
+		var/mob/living/carbon/human/sunk = AM
+		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
 /turf/simulated/floor/outdoors/fur/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(ishuman(AM))
-		var/mob/living/carbon/human/L = AM
-		L.fur_submerge()
-
-/mob/living/carbon/human/proc/fur_submerge()
-	if(QDESTROYING(src))
-		return
-
-	remove_layer(MOB_WATER_LAYER)
-
-	if(!istype(loc,/turf/simulated/floor/outdoors/fur) || lying)
-		return
-
-	var/atom/A = loc
-	var/image/I = image(icon = 'icons/turf/fur.dmi', icon_state = "submerged", layer = BODY_LAYER+MOB_WATER_LAYER)
-	I.color = A.color
-	overlays_standing[MOB_WATER_LAYER] = I
-
-	apply_layer(MOB_WATER_LAYER)
+		var/mob/living/carbon/human/sunk = AM
+		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
 // ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)
@@ -895,7 +879,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	log_admin("[host.ckey] has taken contol of \the [host].")
 	icon_state = "control_node1"
 	plane = ABOVE_MOB_PLANE
-	set_light(5, 0.75, "#f94bff")
+	set_glow(src, GLOW(5, 0.75, "#f94bff"))
 
 /obj/structure/control_pod/proc/control_failed(datum/act/op/A)
 	act_message_t(A.actor, src, /datum/msg/control_pod/pulls_back)
@@ -908,7 +892,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	log_admin("[controller.ckey] is no longer controlling [host], they have been returned to their body, [controller].")
 	icon_state = "control_node0"
 	plane = OBJ_PLANE
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	var/our_x = rand(-5,5) + x
 	var/our_y = rand(-5,5) + y
 
@@ -1207,9 +1191,6 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	id = "mouth_b"
 
 /obj/effect/dog_teleporter/exit
-	light_range = 5	//♪♫Blinded by the light♪♫
-	light_power = 1
-	light_color = "#ffffff"
 	light_on = TRUE
 	name = "exit"
 	desc = "You can see the light at the end of the tunnel!"
@@ -1220,10 +1201,10 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	check_keys = TRUE
 	check_prefs = FALSE	//We don't have to worry about it on the way out
 
+CAPABILITIES(/obj/effect/dog_teleporter/exit)
+	configure(light_glow(range = 5, power = 1, color = "#ffffff"))
+
 /obj/effect/dog_teleporter/mouth_return
-	light_range = 5	//♪♫Blinded by the light♪♫
-	light_power = 1
-	light_color = "#ffffff"
 	light_on = TRUE
 	name = "light"
 	desc = "You can see the light shining in from above!"
@@ -1233,6 +1214,9 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	pixel_y = -16
 	check_keys = TRUE
 	check_prefs = FALSE	//We don't have to worry about it on the way out
+
+CAPABILITIES(/obj/effect/dog_teleporter/mouth_return)
+	configure(light_glow(range = 5, power = 1, color = "#ffffff"))
 
 /obj/effect/dog_teleporter/reciever/exit	//tee hee
 	name = "exit"
@@ -1504,7 +1488,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 /obj/structure/auto_flesh_door/proc/open_finish()
 	set_density(FALSE)
 	set_opacity(0)
-	state = 1
+	set_state(1)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(10,20)
@@ -1521,7 +1505,7 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 /obj/structure/auto_flesh_door/proc/close_finish()
 	set_density(TRUE)
 	set_opacity(1)
-	state = 0
+	set_state(0)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(50,250)

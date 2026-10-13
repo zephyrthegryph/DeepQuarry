@@ -118,9 +118,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 			if(S.melee_damage_upper > 1.5 * melee_damage_upper)
 				return TRUE
 
-/mob/living/simple_mob/animal/sif/kururak/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/sif/kururak/life_special(datum/seq_frame/life/F)
 	..()
 	if(src.client)

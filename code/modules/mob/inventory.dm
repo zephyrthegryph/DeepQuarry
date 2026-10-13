@@ -158,12 +158,11 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	inventory_slot_changed(slot_id, thing, inserted)
 
 /// An item entered or left equip slot `slot_id`. Runs inside the move, so it
-/// only updates this mob's own state (icons, HUD, caches) and must not sleep or
-/// move anything. Behaviour that moves other things is in slot_vacated().
+/// only updates this mob's own state (HUD, caches) and must not sleep or
+/// move anything. Behaviour that moves other things is in slot_vacated(). The look needs nothing here: a draw that reads the
+/// slots hears their occupancy change.
 /mob/proc/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
-	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
-	if(istype(def) && def.redraw)
-		call(src, def.redraw)()
+	return
 
 /// An item left equip slot `slot_id` through the inventory procs. What that
 /// does to the rest of the inventory (pockets fall out with the jumpsuit, and

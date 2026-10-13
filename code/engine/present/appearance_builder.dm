@@ -164,7 +164,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
  * Two things glow, and the first argument says which.
  *
  * A light: `look.glow(range, power, color)` (numbers first) or `look.glow(GLOW(range, power, color))`. The holder casts that light while
- * this look holds; the engine applies it when the look is applied (draw() never calls set_light(): a draw writes no state). A look that
+ * this look holds; the engine applies it when the look is applied (draw() never calls set_glow(): a draw writes no state). A look that
  * names no light (or a range or power of 0) turns off a light an earlier look gave; `look.glow(GLOW_OFF)` is dark even where the type starts lit. The values may come from tracked reads, or from a proc whose reads are declared: `look.glow(scan_light())`.
  *
  * An emissive part: `look.glow(name, value)` draws the part `name` (with a `value`, the part of that value) so it shows in the dark. A part
@@ -215,7 +215,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /**
  * This draw read `thing` (a hat's item_state, a container's contents, a part's look): a change published on `thing` redraws the holder, as a
  * change of the holder's own state does. The subscription follows the draw, so a draw that stops reading `thing` stops hearing it. The thing
- * publishes through its tracked vars or changed(); a plain var it writes is not heard. Null reads nothing.
+ * publishes through its tracked vars or PUBLISH_CHANGE(); a plain var it writes is not heard. Null reads nothing.
  */
 /datum/look/proc/watch(datum/thing)
 	if(!isdatum(thing) || QDELETED(thing))
@@ -234,6 +234,13 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!isatom(thing) || QDELETED(thing))
 		return
 	LAZYSET(watched_looks, OWN_KEY(thing), cap_engine_state_of(thing)?.look_serial || 0)
+
+/// watch_look() for a draw that shows `thing` on `wearer` (an item in a hand, on the body): `thing` is not followed through its look when its own draw
+/// composes the wearer's look (look_composes()), or each would redraw the other for good.
+/datum/look/proc/watch_look_unless_composing(atom/thing, atom/wearer)
+	if(!isatom(thing) || look_composes(thing, wearer))
+		return
+	watch_look(thing)
 
 /**
  * What stands on the turfs `dirs` away from `holder`: the movables of `type` there (a list, empty when none), and the draw hears about them. It watches
@@ -522,7 +529,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, invisibility, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
+	var/list/parts = list(icon_state, look_icon_key(icon), color, alpha, invisibility, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
@@ -557,17 +564,48 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /proc/look_part_key(entry)
 	if(istext(entry))
 		return entry
+	if(istype(entry, /icon))
+		return look_icon_key(entry)
 	if(isimage(entry) || istype(entry, /mutable_appearance))
 		var/image/I = entry
-		. = "{[I.icon]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]"
+		. = "{[look_icon_key(I.icon)]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]"
 		// A transform and a maptext are part of the key only when the image has one, so the keys of the images that set neither stay as they were.
 		var/matrix/M = I.transform
 		if(M && !(M.a == 1 && M.b == 0 && M.c == 0 && M.d == 0 && M.e == 1 && M.f == 0))
 			. += ":t[M.a],[M.b],[M.c],[M.d],[M.e],[M.f]"
 		if(length(I.maptext))
 			. += ":m[I.maptext],[I.maptext_x],[I.maptext_y],[I.maptext_width],[I.maptext_height]"
+		// What an image carries inside it is part of what it shows: a worn item's blood and accessories, a clip mask's filter.
+		if(length(I.overlays))
+			var/list/inner = list()
+			for(var/sub in I.overlays)
+				inner += look_part_key(new /mutable_appearance(sub))
+			. += ":o([jointext(inner, ",")])"
+		if(length(I.underlays))
+			var/list/under = list()
+			for(var/sub in I.underlays)
+				under += look_part_key(new /mutable_appearance(sub))
+			. += ":u([jointext(under, ",")])"
+		if(length(I.filters))
+			var/list/filter_keys = list()
+			// Only these filters take an icon: reading the icon of another (an outline) is an error.
+			var/static/list/icon_filters = list("alpha", "displace", "layer")
+			for(var/dm_filter/F as anything in I.filters)
+				filter_keys += (F.type in icon_filters) ? "[F.type]=[look_icon_key(F.icon)]" : "[F.type]"
+			. += ":f([jointext(filter_keys, ",")])"
 		return . + "}"
 	return "[entry]"
+
+/// The key of an icon: a file by its name; an icon made at runtime (a body, a tinted tail) by an id that is never reused, so two different
+/// runtime icons never share a key (their text is "/icon" for every one) and the same cached icon always has the same key.
+/proc/look_icon_key(icon)
+	READS_FROM()
+	if(isnull(icon) || isfile(icon) || istext(icon))
+		return "[icon]"
+	if(istype(icon, /icon))
+		var/icon/runtime_icon = icon
+		return SHARED_CACHE_UID(runtime_icon)
+	return "[icon]"
 
 #define LOOK_SET_ICON (1<<0)
 #define LOOK_SET_ICON_STATE (1<<1)
@@ -777,6 +815,14 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 		LAZYREMOVE(engine.look_flashes, state)
 	state_changed(A)
 
+/// A layer image that carries parts of its own (an emissive blocker, the damage on a body), built once and cached: `base` with each of `parts` (a list) as an
+/// overlay of its own. The result is shared and never written after; it is handed to look.overlay() like any layer.
+/proc/look_composed_image(image/base, list/parts)
+	READS_FROM()
+	for(var/part in parts)
+		base.overlays += part
+	return base
+
 /// A layer built in one call: a draw writes nothing, not even the members of an image it made, so a tinted, faded or re-planed
 /// layer is made here and handed to look.overlay(). (mutable_appearance() takes the layer, plane, alpha and flags; this adds the colour.)
 /proc/look_appearance(icon, icon_state = "", color = null, alpha = 255, layer = FLOAT_LAYER, plane = FLOAT_PLANE, appearance_flags = NONE)
@@ -822,7 +868,11 @@ DECLARE_SHARED_CACHE_EX(look_cached_images, GLOBAL_PROC_REF(build_look_cached_im
 	READS_FROM()
 	if(!isfile(icon))
 		return build_look_cached_image(icon, state, color, plane, layer) // a runtime /icon has no stable identity: built uncached
-	return CACHED_KEY(look_cached_images, key, icon, state, color, plane, layer)
+	. = CACHED_KEY(look_cached_images, key, icon, state, color, plane, layer)
+	if(GLOB.staleness_on && staleness_gate())
+		GLOB.staleness_depth++
+		staleness_check_image(key, ., build_look_cached_image(icon, state, color, plane, layer))
+		GLOB.staleness_depth--
 
 /proc/build_look_cached_image(icon, state, color, plane, layer)
 	var/image/I = image(icon = icon, icon_state = state)

@@ -1,15 +1,15 @@
 @turf human|none
 -click: Click: Touch
 +0 menu: Emote Beyond
-+2 menu: Pet
-+3 menu: Pet Fur
-+5 click: Click: Pet
++1 menu: Pet
++2 menu: Pet Fur
++4 click: Click: Pet
 @turf robot|none
 -click: Click: Touch
 +0 menu: Emote Beyond
-+2 menu: Pet
-+3 menu: Pet Fur
-+6 click: Click: Pet
++1 menu: Pet
++2 menu: Pet Fur
++5 click: Click: Pet
 @turf ai|none
 @turf ghost|none
 +0 menu: Emote Beyond (refused: You can't reach that.)
@@ -17,121 +17,110 @@
 @turf human|/obj/item/tool/screwdriver
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/tool/crowbar
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/tool/wrench
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/tool/wirecutters
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/multitool
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/weldingtool
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/stack/cable_coil
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+8 menu: Nothing
-+9 menu: Pet
-+10 menu: Pet Fur
-+14 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/stack/material/steel
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item/card/id
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+14 click: Click: Nothing
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
+human|/obj/item/shovel menu: Draw graffiti
+human|/obj/item/shovel menu: Emote Beyond
+human|/obj/item/shovel menu: Hit the floor
+human|/obj/item/shovel menu: Nothing
+human|/obj/item/shovel menu: Pet
+human|/obj/item/shovel menu: Pet Fur
+human|/obj/item/shovel menu: Touch
+human|/obj/item/shovel menu: Use shovel
+human|/obj/item/shovel click: Click: Nothing
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
-+1 menu: Draw graffiti
-+2 menu: Emote Beyond
-+3 menu: Floor item help
-+4 menu: Graffiti
-+5 menu: Hit the floor
-+7 menu: Nothing
-+8 menu: Pet
-+9 menu: Pet Fur
-+13 click: Click: Nothing
-keys: crawl_drag, cut_plating, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_emote_beyond, fur_item, fur_pet, fur_pet_verb, graffiti, lay_flooring, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
+keys: crawl_drag, cut_plating, dig, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_emote_beyond, fur_item, fur_pet, fur_pet_verb, graffiti, lay_flooring, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents

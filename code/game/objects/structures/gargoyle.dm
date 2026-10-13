@@ -30,6 +30,7 @@
 
 CAPABILITIES(/obj/structure/gargoyle)
 	ref_one(nameof(WR_gargoyle))
+	setup(PROC_REF(petrify_human))
 	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
 	param(nameof(petrified), pos = 1, keep = FALSE)
 	param(nameof(ident_ovr), pos = 2)
@@ -38,7 +39,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	param(nameof(tint_ovr), pos = 5)
 	param(nameof(can_revert), pos = 6)
 	param(nameof(discard_clothes), pos = 7)
-	op("anchor", tool(TOOL_WRENCH), wait(0), label("Use"), then(PROC_REF(gargoyle_wrenched)))
+	op("anchor", tool(TOOL_WRENCH), label("Use"), needs(req(PROC_REF(anchor_refusal))), starts(PROC_REF(anchoring_started)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
 	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
 
@@ -50,9 +51,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 /obj/structure/gargoyle/var/tmp/tint_ovr
 /obj/structure/gargoyle/var/tmp/discard_clothes = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a gargoyle statue takes in the human it petrifies, with their look, tint and state
-/obj/structure/gargoyle/Initialize(mapload)
-	. = ..()
+/// A gargoyle statue takes in the human it petrifies, with their look, tint and state (setup() of its CAPABILITIES block).
+/obj/structure/gargoyle/proc/petrify_human()
 	var/mob/living/carbon/human/H = petrified
 	if(isspace(loc) || isopenspace(loc))
 		set_anchored(FALSE)
@@ -113,22 +113,24 @@ CAPABILITIES(/obj/structure/gargoyle)
 
 	var/list/body_layers = HUMAN_BODY_LAYERS
 	var/list/other_layers = HUMAN_OTHER_LAYERS
-	for (var/i = 1; i <= length(H.overlays_standing); i++)
+	var/list/layers = H.look_layers()
+	for(var/i in 1 to TOTAL_LAYERS)
 		if(i in other_layers)
 			continue
 		if(discard_clothes && !(i in body_layers))
 			continue
-		if(istype(H.overlays_standing[i], /image) && (i in body_layers))
-			var/image/old_image = H.overlays_standing[i]
-			var/image/new_image = image(old_image)
+		if(isnull(layers[i]))
+			continue
+		var/new_image = layers[i]
+		if(istype(layers[i], /image) && (i in body_layers))
+			var/image/old_image = layers[i]
+			var/image/tinted = image(old_image)
 			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-				tail_image = new_image
-			new_image.color = tint_color
-			new_image.layer = old_image.layer
-			add_overlay(new_image)
-		else
-			if(!isnull(H.overlays_standing[i]))
-				add_overlay(H.overlays_standing[i])
+				tail_image = tinted
+			tinted.color = tint_color
+			tinted.layer = old_image.layer
+			new_image = tinted
+		add_overlay(new_image)
 
 	initial_sleep = H.status_units(STAT_SLEEPING)
 	initial_blind = H.status_units(STAT_BLINDED)
@@ -221,9 +223,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.transform = transform
 		gargoyle.pixel_x = pixel_x
 		gargoyle.pixel_y = pixel_y
-		gargoyle.is_shifted = initial_is_shifted
+		gargoyle.set_is_shifted(initial_is_shifted)
 		gargoyle.set_dir(dir)
-		gargoyle.lying = initial_lying
+		gargoyle.set_lying(initial_lying)
 		gargoyle.lying_prev = initial_lying_prev
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
@@ -267,16 +269,12 @@ CAPABILITIES(/obj/structure/gargoyle)
 	damage(damage)
 
 /// Old attackby with a wrench: anchor or free the statue (not over open space).
-/obj/structure/gargoyle/proc/gargoyle_wrenched(datum/act/op/A)
-	var/mob/living/user = A.actor
-	var/obj/item/W = A.held
-	if(isspace(loc) || isopenspace(loc))
-		to_chat(user, span_warning("You can't anchor that here!"))
-		set_anchored(FALSE)
-		return OP_OK
-	var/was_anchored = anchored
-	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
-	return OP_OK
+/// A statue is not anchored over space.
+/obj/structure/gargoyle/proc/anchor_refusal(datum/act/op/A)
+	return read_once(isspace(loc) || isopenspace(loc)) ? "you can't anchor that here" : null
+
+/obj/structure/gargoyle/proc/anchoring_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
 /// Old attackby: feed the petrified gargoyle's catch, or hit the statue.
 /obj/structure/gargoyle/proc/interaction_item(datum/act/op/A)
@@ -308,8 +306,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 			damage(combat_of(W).force)
 	return OP_OK
 
-/obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
-	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
+/obj/structure/gargoyle/proc/attackby_tool_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
 	set_anchored(!anchored)
 
 /obj/structure/gargoyle/set_dir(new_dir)

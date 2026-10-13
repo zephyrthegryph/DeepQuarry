@@ -77,12 +77,12 @@ CAPABILITIES(/obj/structure/dispenser)
 	var/full
 	if(istype(I, /obj/item/tank/oxygen) || istype(I, /obj/item/tank/air) || istype(I, /obj/item/tank/anesthetic))
 		if(oxygentanks < TANK_DISPENSER_CAPACITY)
-			oxygentanks++
+			set_oxygentanks(oxygentanks + 1)
 		else
 			full = TRUE
 	else if(istype(I, /obj/item/tank/phoron))
 		if(phorontanks < TANK_DISPENSER_CAPACITY)
-			phorontanks++
+			set_phorontanks(phorontanks + 1)
 		else
 			full = TRUE
 	else if(!harm)
@@ -113,7 +113,7 @@ CAPABILITIES(/obj/structure/dispenser)
 	var/obj/item/tank/phoron/tank = locate_within(src, /obj/item/tank/phoron)
 	if(tank && Adjacent(user))
 		user.put_in_hands(tank)
-		phorontanks--
+		set_phorontanks(phorontanks - 1)
 	. = TRUE
 	play_sfx(src, SFX_ITEMS_DROP_GASCAN)
 
@@ -126,6 +126,6 @@ CAPABILITIES(/obj/structure/dispenser)
 			break
 	if(tank && Adjacent(user))
 		user.put_in_hands(tank)
-		oxygentanks--
+		set_oxygentanks(oxygentanks - 1)
 	. = TRUE
 	play_sfx(src, SFX_ITEMS_DROP_GASCAN)

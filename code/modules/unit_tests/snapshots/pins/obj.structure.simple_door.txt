@@ -12,8 +12,8 @@ robot|none click: Click: Use
 @obj.structure human|/obj/item/multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+4 menu: Use welder
-+5 click: Click: Use welder
++2 menu: Use welder
++3 click: Click: Use welder
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id

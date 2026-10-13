@@ -4,7 +4,6 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	desc = "A special heavy-duty battery used to recharge SMES units. It dumps its entire power reserve into the SMES unit at once, and cannot be recharged locally. Safety systems on the coil itself mean it can't be used on charged SMES units if it would put them over their capacity."
 	icon = 'icons/obj/power_cells.dmi'
 	icon_state = "fc_spent"
-	light_color = "#30B5E6"
 	var/light_color_danger = "#D04E4C"
 	item_state = "egg6"
 
@@ -19,9 +18,9 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
 
 CAPABILITIES(/obj/item/fusion_coil)
+	configure(light_glow(color = "#30B5E6"))
 	configure(item_combat(force = 15))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_GASCAN))
-TRACKED(/obj/item/fusion_coil, coil_damaged)
 
 /obj/item/fusion_coil/draw(datum/look/look)
 	..()
@@ -37,7 +36,7 @@ TRACKED(/obj/item/fusion_coil, coil_damaged)
 	if(coil_charged)
 		look.overlay(mutable_appearance(icon, "fc_charged"))
 		look.overlay(emissive_appearance(icon, "fc_charged"))
-		look.glow(1, 2, light_color)
+		look.glow(1, 2, glow_of(src).color)
 		return
 
 	look.glow(GLOW_OFF)
@@ -62,4 +61,3 @@ TRACKED(/obj/item/fusion_coil, coil_damaged)
 	play_sfx(src, SFX_SPARKS)
 	set_coil_damaged(TRUE)
 	coil_charge = (coil_charge / 2)
-	changed(src)

@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +4 menu: Use
 +5 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -35,6 +35,7 @@
 +3 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
++0 menu: Make Cable Restraints (refused: You can't do that.)
 +3 menu: Use
 +4 click: Click: Use
 @obj human|/obj/item/stack/material/steel
@@ -43,6 +44,7 @@
 +3 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
++1 menu: Read ID Card (refused: You can't do that.)
 +3 menu: Use
 +4 click: Click: Use
 @obj human|/obj/item/kit

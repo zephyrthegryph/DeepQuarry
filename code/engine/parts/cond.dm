@@ -54,6 +54,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
 /// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
+	lookup_reads_prepare(A.holder, A)
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try
@@ -67,6 +68,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		throw fault
 	op_pure_end()
 
+PROC_SUMMARY(/proc/op_cond_eval) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/op_cond_eval(datum/act/op/A, cond)
 	if(isnull(cond))
 		return TRUE
@@ -108,6 +110,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	return op_call_list(A, handler, args.Copy(3))
 
 /// op_call() with the extra arguments as a list.
+PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/op_call_list(datum/act/op/A, handler, list/extra)
 	if(isnull(handler))
 		return null
@@ -236,7 +239,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(istext(what) && copytext(what, 1, 5) != "cap:")
 		if(istype(A, /datum/act/admission_query))
 			return op_query_read_pairs(A, what)
-		for(var/key in change_read_keys(A.holder, what))
+		for(var/key in change_read_keys(A.holder, what, A))
 			. += list(list(A.holder, key))
 
 /datum/entry/part/req/generic/refusal(datum/act/op/A)
@@ -254,6 +257,18 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /// req_is(KEY, value = TRUE, because =): the key's value is `value` (a boolean key is truthy or not).
 /proc/req_is(key, value = TRUE, because = null, of = ON_HOLDER, id = null)
 	return part_make(/datum/entry/part/req/is, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id))
+
+/// req_stage(KEY, value): the key is exactly `value` (a stage of stages(), code/library/structures/stages.dm). req_is() reads TRUE and FALSE as
+/// truthiness, so req_is(state, 1) also holds at 2; a stage compares exactly, and two req_stage() of one key with different values exclude each other
+/// (op_cond_leaf_negates()), so the steps of one stage machine never clash.
+/proc/req_stage(key, value, because = /datum/msg/req_wrong_state, of = ON_HOLDER, id = null)
+	return part_make(/datum/entry/part/req/is/exact, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id))
+
+/datum/entry/part/req/is/exact
+	part_name = "req_stage"
+
+/datum/entry/part/req/is/exact/holds(datum/act/op/A)
+	return op_key_value(op_subject(A, src.args["of"]), src.args["key"]) == src.args["value"]
 
 /// The current value of a key on an entity: a var name, a stat id or a capability key id.
 /proc/op_key_value(datum/D, key)
@@ -650,6 +665,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// A requirement (new, or a legacy /datum/requirement that has a new-engine form) as a boolean in an op's context.
 /proc/op_req_holds(datum/act/op/A, requirement)
+	lookup_reads_prepare(A.holder, A)
 	op_pure_begin()
 	. = op_req_holds_eval(A, requirement)
 	op_pure_end()
@@ -665,6 +681,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// The /datum/msg type (or text) a failed requirement reports.
 /proc/op_req_refusal(datum/act/op/A, requirement)
+	lookup_reads_prepare(A.holder, A)
 	op_pure_begin()
 	. = op_req_refusal_eval(A, requirement)
 	op_pure_end()

@@ -15,10 +15,6 @@
 /// default for an explicit null argument, so null can't mean "none".
 #define CAP_NO_LAYER "__none"
 
-// ---- change channels a capability raises ----
-/// A capability's state changed (cap_state bit or its data datum).
-#define CHANGE_CAPABILITY CHANGE_EXPLICIT
-
 /**
  * Declares a tracked var: generates `set_<V>(value)`, which compares, writes and returns TRUE when the value
  * changed; a change publishes the key "V" (publish_change(src, nameof(V))) only when READERS(src, "V") says someone
@@ -45,13 +41,6 @@
 /// publishes the field on the record and on the record's holder, so the holder's draw and on_change() follow it. A record's only procs
 /// are its accessors (base_vars records_data_only), so its set_<field>() is its setter by name: VV and record_copy() call it.
 #define TRACKED_DATA(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; record_changed(src, #V); return TRUE }
-
-/**
- * BRIDGE (removed with S4): TRACKED() that also raises the OM channel CHANNEL, for a var an OM stage `wake_on` or an
- * om_watch() still listens to by channel (the machine pipeline wakes on CHANGE_MACHINE_SETTINGS). Everything else
- * uses TRACKED(T, V). When the last channel consumer of V is gone, drop the third argument.
- */
-#define TRACKED_BRIDGED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
 
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):

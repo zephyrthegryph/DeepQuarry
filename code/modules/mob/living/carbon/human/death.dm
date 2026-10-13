@@ -97,7 +97,7 @@
 		if(B.host_brain.mind)
 			move_player_mind(B.host_brain.mind, src, "returned to own dead body from borer [B]")
 			B.host_brain.name = "host brain"
-			B.host_brain.real_name = "host brain"
+			B.host_brain.set_real_name("host brain")
 
 		revoke(src, granted_verb(/mob/living/carbon/proc/release_control), B)
 
@@ -153,12 +153,10 @@
 		looks.set_facial_style("Shaved")//we only change the icon_state of the hair datum, so it doesn't mess up their UI/UE
 	if(looks.hair_style)
 		looks.set_hair_style("Bald")
-	update_hair(0)
 
 	add_mutation(HUSK)
 	set_status_flags(status_flags | DISFIGURED) //makes them unknown without fucking up other stuff like admintools
 	remove_blood(560)
-	update_icons_body()
 	return
 
 /mob/living/carbon/human/proc/Drain()
@@ -173,11 +171,9 @@
 		looks.set_facial_style("Shaved")
 	if(looks.hair_style)
 		looks.set_hair_style("Bald")
-	update_hair(0)
 
 	add_mutation(SKELETON)
 	set_status_flags(status_flags | DISFIGURED)
-	update_icons_body()
 	return
 
 

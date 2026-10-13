@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -18,6 +18,6 @@
 @obj human|/obj/item/storage
 @obj human|/obj/item/cell
 -click: nothing
-+2 menu: Insert cell
-+6 click: Click: Insert cell
++0 menu: Insert cell
++3 click: Click: Insert cell
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable, use_screwdriver

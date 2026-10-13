@@ -97,11 +97,6 @@ CAPABILITIES(/mob/observer)
 
 		rel_set(src, nameof(mind), M.mind) //we don't transfer the mind but we keep a reference to it.
 
-		// Fix for naked ghosts.
-		// Unclear why this isn't being grabbed by appearance.
-		if(ishuman(M))
-			var/mob/living/carbon/human/H = M
-			add_overlay(H.overlays_standing) // ALLOW(decl): copies the body's overlays
 		default_pixel_x = M.default_pixel_x
 		default_pixel_y = M.default_pixel_y
 	if(!T && REGISTRY_COUNT(REGISTRY_LATEJOIN))
@@ -114,7 +109,7 @@ CAPABILITIES(/mob/observer)
 
 	if(!name)							//To prevent nameless ghosts
 		name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
-	real_name = name
+	set_real_name(name)
 	animate(src, pixel_y = 2, time = 10, loop = -1)
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
 	. = ..()

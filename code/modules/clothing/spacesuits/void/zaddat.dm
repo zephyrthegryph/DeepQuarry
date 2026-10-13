@@ -127,7 +127,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
 	has_been_customized = TRUE
-	M.regenerate_icons()
+	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
+	if(hood)
+		changed(hood)
 	return TRUE
 
 //Zaddat subtypes
@@ -231,7 +233,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
 	has_been_customized = TRUE
-	M.regenerate_icons()
+	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
+	if(hood)
+		changed(hood)
 	return TRUE
 
 
@@ -321,7 +325,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 
 	to_chat(M, "You finish customizing your Shroud. Looking good!")
 	has_been_customized = TRUE
-	M.regenerate_icons()
+	changed(src) // the sprites are plain vars: the wearer, who watches the suit and helmet, draws the new style
+	if(hood)
+		changed(hood)
 	return TRUE
 
 /obj/item/clothing/suit/space/void/zaddat/proc/open_style_request(mob/user, prompt_title)

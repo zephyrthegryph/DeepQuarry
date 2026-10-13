@@ -68,8 +68,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
-TRACKED(/obj/structure/cable, d1)
-TRACKED(/obj/structure/cable, d2)
 
 /obj/structure/cable/proc/engineered_material() as /datum/material
 	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
@@ -256,7 +254,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
-	changed(src)
 	if(flags & ATOM_INITIALIZED)
 		power_register()
 
@@ -272,8 +269,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //If underfloor, hide the cable
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	changed(src)
+		hide_under_floor(src, i)
 
 /obj/structure/cable/hides_under_flooring()
 	return 1
@@ -686,7 +682,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	C.set_d1(d1)
 	C.set_d2(d2)
 	C.add_fingerprint(user)
-	changed(C)
 	C.power_register()
 
 	use(1)
@@ -764,7 +759,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 		C.set_d2(nd2)
 
 		C.add_fingerprint()
-		changed(C)
 		C.power_register()
 
 		use(1)

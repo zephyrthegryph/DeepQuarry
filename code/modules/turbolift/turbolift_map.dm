@@ -209,7 +209,8 @@ CAPABILITIES(/obj/turbolift_map_holder)
 
 		// Place exterior control panel.
 		var/turf/placing = locate(ext_panel_x, ext_panel_y, cz)
-		var/obj/structure/lift/button/panel_ext = new(placing, lift)
+		var/obj/structure/lift/button/panel_ext = new(placing)
+		rel_set(panel_ext, nameof(panel_ext.lift), lift)
 		rel_set(panel_ext, nameof(panel_ext.floor), cfloor) // REL_PAIR: sets cfloor.ext_panel too
 		panel_ext.set_dir(udir)
 
@@ -240,7 +241,9 @@ CAPABILITIES(/obj/turbolift_map_holder)
 
 	// Place lift panel.
 	var/turf/T = locate(int_panel_x, int_panel_y, uz)
-	rel_set(lift, nameof(lift.control_panel_interior), make(/obj/structure/lift/panel, at = T, lift = lift))
+	var/obj/structure/lift/panel/interior_panel = make(/obj/structure/lift/panel, at = T)
+	rel_set(interior_panel, nameof(interior_panel.lift), lift)
+	rel_set(lift, nameof(lift.control_panel_interior), interior_panel)
 	lift.control_panel_interior.set_dir(udir)
 	rel_set(lift, nameof(lift.current_floor), lift.floors[1])
 

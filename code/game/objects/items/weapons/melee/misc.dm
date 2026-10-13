@@ -52,12 +52,11 @@ CAPABILITIES(/obj/item/melee/umbrella)
 /obj/item/melee/umbrella/proc/toggle_umbrella()
 	set_open(!open)
 	icon_state = "umbrella_[open ? "open" : "closed"]"
-	addblends = icon_state + "_a"
+	set_addblends(icon_state + "_a")
 	item_state = icon_state
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
-		H.update_inv_l_hand(0)
-		H.update_inv_r_hand()
+		changed(src)
 
 CAPABILITIES(/obj/item/melee/umbrella/random)
 	rolls(nameof(color), PROC_REF(roll_color))
@@ -100,7 +99,7 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
 	new_voice.set_ckey(candidate.ckey) //Finally, bring the client over.
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
-	new_voice.real_name = "cursed sword"
+	new_voice.set_real_name("cursed sword")
 	rel_add(src, nameof(voice_mobs), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 

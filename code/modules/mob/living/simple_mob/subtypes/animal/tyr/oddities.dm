@@ -15,7 +15,6 @@
 	projectile_accuracy = -15
 
 	glow_color = "#FF3300"
-	light_color = "#FF3300"
 	glow_range = 4
 	glow_intensity = 4
 
@@ -24,6 +23,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/rainbow_fly)
+	configure(light_glow(color = "#FF3300"))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5))
 
@@ -32,9 +32,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/rainbow_fly)
 	splatter = TRUE
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/rainbowfly, blob_projectile_chems, list(REAGENT_ID_CRYPTOBIOLIN))
-
-/mob/living/simple_mob/animal/tyr/rainbow_fly/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/animal/tyr/rainbow_fly/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)

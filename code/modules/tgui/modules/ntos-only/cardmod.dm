@@ -209,7 +209,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 		id_card = computer.card_slot.stored_card()
 	if(computer && program.can_run(user, 1) && id_card)
 		id_card.assignment = "Dismissed" // setting adjustment
-		id_card.access = list()
+		id_card.set_access(list())
 	. = TRUE
 	if(id_card)
 		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
@@ -224,7 +224,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 	if(computer && program.can_run(user, 1) && id_card)
 		var/temp_name = sanitizeName(reg, allow_numbers = TRUE)
 		if(temp_name)
-			id_card.registered_name = temp_name
+			id_card.set_registered_name(temp_name)
 		else
 			computer.visible_message(span_notice("[computer] buzzes rudely."))
 	. = TRUE
@@ -277,7 +277,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 
 				access = jobdatum.get_access()
 
-			id_card.access = access
+			id_card.set_access(access)
 			id_card.assignment = t1
 			id_card.rank = t1
 
@@ -296,9 +296,9 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 		var/access_type = access_target
 		var/access_allowed = allowed
 		if(access_type in SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM))
-			id_card.access -= access_type
+			id_card.remove_access(access_type)
 			if(!access_allowed)
-				id_card.access += access_type
+				id_card.add_access(access_type)
 	. = TRUE
 	if(id_card)
 		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")

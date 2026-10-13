@@ -734,7 +734,7 @@ CAPABILITIES(/obj/belly)
 	M.stop_sound_channel(CHANNEL_PREYLOOP)
 	//Don't let glows stick
 	M.set_glow_toggle(FALSE)
-	M.set_light(0)
+	set_glow(M, GLOW(0, null, null))
 	// Delete the digested mob
 	// Changed qdel to a forceMove to allow reforming, and... handled robots special.
 	if(isrobot(M))

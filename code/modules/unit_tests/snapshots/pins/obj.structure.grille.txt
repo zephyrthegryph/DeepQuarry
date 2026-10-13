@@ -7,8 +7,8 @@ robot|none click: Click: Kick
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
 +1 menu: Kick
-+5 menu: Use screwdriver
-+6 click: Click: Use screwdriver
++3 menu: Use screwdriver
++4 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 +1 menu: Kick
 @obj.structure human|/obj/item/tool/wrench
@@ -16,8 +16,8 @@ robot|none click: Click: Kick
 @obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
 +1 menu: Kick
-+5 menu: Use wirecutter
-+6 click: Click: Use wirecutter
++3 menu: Use wirecutter
++4 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
 +1 menu: Kick
 @obj.structure human|/obj/item/weldingtool
@@ -27,8 +27,7 @@ robot|none click: Click: Kick
 @obj.structure human|/obj/item/stack/material/steel
 -click: Click: Use
 +1 menu: Kick
-+3 menu: Place a window (refused: )
-+6 click: Click: Place a window
++3 click: Click: Place a window
 @obj.structure human|/obj/item/card/id
 +1 menu: Kick
 @obj.structure human|/obj/item
@@ -36,6 +35,5 @@ robot|none click: Click: Kick
 @obj.structure human|/obj/item/stack/material
 -click: Click: Use
 +1 menu: Kick
-+3 menu: Place a window (refused: )
-+6 click: Click: Place a window
++3 click: Click: Place a window
 keys: drag_buckle, hand, item, melee_hit, place_window, use_screwdriver, use_wirecutter

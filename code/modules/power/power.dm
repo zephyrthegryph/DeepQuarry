@@ -21,7 +21,6 @@
 	/// `/obj/machinery/power` is a `Producer` (verdigris/domains/power);
 	/// most never set a nonzero supply, which costs nothing.
 	var/power_supply_rate = 0
-TRACKED(/obj/machinery/power, power_region)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 

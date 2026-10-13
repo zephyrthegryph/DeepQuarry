@@ -1,6 +1,6 @@
 @obj.machinery.door human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.door human|/obj/item/tool/screwdriver
 human|/obj/item/tool/crowbar menu: Move To Top

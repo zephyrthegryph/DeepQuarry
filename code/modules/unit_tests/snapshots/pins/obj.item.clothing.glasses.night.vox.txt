@@ -2,7 +2,7 @@
 -menu: Switch Eyepatch (refused: You can't do that.)
 @obj.item.clothing.glasses robot|none
 -menu: Switch Eyepatch (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.glasses ghost|none
 -menu: Switch Eyepatch (refused: You can't do that.)
 @obj.item.clothing.glasses human|/obj/item/tool/screwdriver

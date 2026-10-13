@@ -14,11 +14,13 @@
 pub mod actor_tests;
 pub mod ast;
 pub mod checks;
+pub mod closure;
 pub mod ctor_args;
 pub mod handlers;
 pub mod hooks;
 pub mod cli;
 pub mod decls;
+pub mod globals;
 pub mod graph;
 pub mod layering;
 pub mod keys;
@@ -469,6 +471,45 @@ impl Sem {
 /// `OnceLock` init. A rayon `par_iter` there lets the initializing worker steal another lint's task while it waits,
 /// and a stolen task that needs the same cell blocks on the init this very thread is running (or two inits wait on
 /// each other): a deadlock the stress run hit about one cold run in six. Scoped threads never steal engine work.
+/// [`par_map`] on threads with a stack deep enough for the read walk (a followed proc is a few frames of a large recursive evaluator).
+pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
+    if n <= 1 {
+        return items.iter().map(f).collect();
+    }
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let chunk = 8;
+    let mut parts: Vec<Vec<(usize, R)>> = Vec::new();
+    std::thread::scope(|s| {
+        let handles: Vec<_> = (0..n)
+            .map(|_| {
+                std::thread::Builder::new()
+                    .stack_size(256 << 20)
+                    .spawn_scoped(s, || {
+                        let mut local: Vec<(usize, R)> = Vec::new();
+                        loop {
+                            let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);
+                            if start >= items.len() {
+                                break;
+                            }
+                            for i in start..(start + chunk).min(items.len()) {
+                                local.push((i, f(&items[i])));
+                            }
+                        }
+                        local
+                    })
+                    .expect("spawn a walk thread")
+            })
+            .collect();
+        for h in handles {
+            parts.push(h.join().expect("a walk thread panicked"));
+        }
+    });
+    let mut all: Vec<(usize, R)> = parts.into_iter().flatten().collect();
+    all.sort_by_key(|(i, _)| *i);
+    all.into_iter().map(|(_, r)| r).collect()
+}
+
 pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 || items.len() < 64 {

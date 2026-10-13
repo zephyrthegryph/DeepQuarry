@@ -4,9 +4,9 @@
 /datum/unit_test/dq_hc_computers/proc/hc_records_user(list/access)
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
-	I.registered_name = "Records Reader"
+	I.set_registered_name("Records Reader")
 	I.assignment = "Tester"
-	I.access = access
+	I.set_access(access)
 	hc_hold(H, I)
 	return H
 

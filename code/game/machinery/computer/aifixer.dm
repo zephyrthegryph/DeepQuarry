@@ -5,7 +5,6 @@
 	circuit = /obj/item/circuitboard/aifixer
 	icon_keyboard = "tech_key"
 	icon_screen = "ai-fixer"
-	light_color = LIGHT_COLOR_PINK
 
 
 	/// Variable containing transferred AI
@@ -14,7 +13,6 @@
 
 /// Variable dictating if we are in the process of restoring the occupier AI
 /obj/machinery/computer/aifixer/var/restoring = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/computer/aifixer/proc/can_use_card(datum/act/op/A)
 	if(!operable())
@@ -38,7 +36,6 @@ TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTI
 		new_occupant.control_disabled = TRUE
 		rel_set(src, nameof(occupier), new_occupant)
 		card.clear()
-		changed(src)
 	else
 		to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [card]. What exactly are you trying to do here?"))
 	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.
@@ -59,6 +56,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
+	configure(light_glow(color = LIGHT_COLOR_PINK))
 	configure(uses_power(active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
 	extend("disconnect", needs(req(PROC_REF(no_ai_loaded))))
@@ -124,10 +122,7 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 		return
 	if(!operable())
 		return
-	var/oldstat = occupier().stat
 	set_restoring(Fix())
-	if(oldstat != occupier().stat)
-		update_icon()
 
 /// Over the console's screen: restoring, and the state of the AI card's occupant (none, awake, or out).
 /obj/machinery/computer/aifixer/draw(datum/look/look)

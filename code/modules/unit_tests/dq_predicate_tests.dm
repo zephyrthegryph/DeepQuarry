@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 			held.moveToNullspace()
 	move_into(src, SLOT_ID_HAND_R, right, src)
 	move_into(src, SLOT_ID_HAND_L, left, src)
-	hand = null
+	set_hand(null)
 
 // A channel-backed temperature, for watch marking. Built into a private registry.
 /datum/property_def/dq_pred_test_temperature

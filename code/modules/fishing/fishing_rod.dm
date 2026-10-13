@@ -21,7 +21,6 @@
 
 	var/cast = FALSE
 
-TRACKED(/obj/item/material/fishing_rod, strung)
 
 /obj/item/material/fishing_rod/built
 	strung = FALSE

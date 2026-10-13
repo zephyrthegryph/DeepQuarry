@@ -67,7 +67,7 @@ Deployable items
 		return OP_OK
 	repair_damage(max_integrity)
 	set_emagged(FALSE)
-	req_access = list(ACCESS_SECURITY)
+	set_req_access(list(ACCESS_SECURITY))
 	act_message(user, src, others = span_warning("%U% repairs %T%!"))
 	return OP_OK
 
@@ -125,8 +125,8 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	var/mob/user = A.actor
 	if(emagged == 0)
 		set_emagged(1)
-		req_access = null
-		req_one_access = null
+		set_req_access(null)
+		set_req_one_access(null)
 		to_chat(user, "You break the ID authentication lock on \the [src].")
 		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
@@ -334,5 +334,5 @@ CAPABILITIES(/obj/random/cutout)
 	if(emagged == value)
 		return FALSE
 	emagged = value
-	tracked_bridged_changed(src, "emagged")
+	tracked_changed(src, "emagged")
 	return TRUE

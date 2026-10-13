@@ -4,76 +4,48 @@ robot|none menu: Search for sticks
 robot|none click: Click: Search for sticks
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure.flora human|/obj/item/tool/screwdriver
--menu: Hide item
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/tool/crowbar
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/tool/wrench
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wrench
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/tool/wirecutters
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/multitool
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/multitool
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/weldingtool
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/weldingtool
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/stack/cable_coil
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
 +3 menu: Search for sticks
-+5 menu: Use
-+6 click: Click: Use
-@obj.structure.flora human|/obj/item/stack/material/steel
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
-@obj.structure.flora human|/obj/item/card/id
--menu: Hide item
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/card/id
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
 +3 menu: Search for sticks
-+5 menu: Use
-+6 click: Click: Use
-@obj.structure.flora human|/obj/item
--menu: Hide item (refused: That is too large to fit.)
--menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
--click: Click: Hide item
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item
++1 menu: Move To Top
 +2 menu: Search for sticks
-+4 menu: Use
-+5 click: Click: Use
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/shovel
 -menu: Take a present
 keys: dig_stump, drag_buckle, melee_hit, search_sticks, tree_hit

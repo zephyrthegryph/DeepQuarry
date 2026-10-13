@@ -3,8 +3,6 @@
 	name = "blob"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob"
-	light_range = 2
-	light_color = "#b5ff5b"
 	desc = "Some blob creature thingy"
 	density = TRUE
 	opacity = 0
@@ -137,6 +135,7 @@
 	return blob_damage(P.damage, damage_type)
 
 CAPABILITIES(/obj/effect/blob)
+	configure(light_glow(range = 2, color = "#b5ff5b"))
 	op("hit_blob", item(/obj/item), then(PROC_REF(interaction_hit_blob)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blob_blast_damage))))
 
@@ -159,8 +158,6 @@ CAPABILITIES(/obj/effect/blob)
 	name = "blob core"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob_core"
-	light_range = 3
-	light_color = "#ffc880"
 	max_integrity = 200
 	brute_resist = 2
 	fire_resist = 2
@@ -174,6 +171,7 @@ CAPABILITIES(/obj/effect/blob)
 	look.state(null)
 
 CAPABILITIES(/obj/effect/blob/core)
+	configure(light_glow(range = 3, color = "#ffc880"))
 	every(2 SECONDS, then(PROC_REF(blob_core_step)))
 
 /obj/effect/blob/core/proc/blob_core_step(datum/act/timer/A)
@@ -186,13 +184,13 @@ CAPABILITIES(/obj/effect/blob/core)
 	name = "strong blob"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob_idle"
-	light_range = 3
 	desc = "Some blob creature thingy"
 	max_integrity = 60
 	brute_resist = 1
 	fire_resist = 2
 
 CAPABILITIES(/obj/effect/blob/shield)
+	configure(light_glow(range = 3))
 	after_init(0, then(PROC_REF(blob_shield_tiles)))
 
 /obj/effect/blob/shield/proc/blob_shield_tiles(datum/act/timer/A)

@@ -61,6 +61,9 @@
 	if(!E || QDELING(E))
 		return
 	OP_PURE_GUARD("[E.type][var_name ? ".[var_name]" : ""] was written")
+	if(GLOB.state_batch_depth)
+		state_batch_queue(E, channel, var_name)
+		return
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && GLOB.stat_input_keys?[var_name] && var_name != GLOB.stat_writing)
@@ -101,6 +104,9 @@
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
+	// The staleness checker: the graph says no draw reads this var, so the applied look is served as it is (checked at the next presentation drain).
+	if(var_name && GLOB.staleness_on && !(mask & DEP_DRAW))
+		staleness_note_served(E, var_name)
 	if(mask)
 		if(!refresh_wanted(E))
 			refresh_mark_owner(E, mask, channel)
@@ -592,6 +598,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		return
 	rx_of(A).refresh_swept = TRUE
 	GLOB.refresh_sweep_list[REF(A)] = TRUE
+	staleness_track(A)
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
 /// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
@@ -621,9 +628,8 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			continue
 		GLOB.refresh_sweep_index++
 		scanned++
-		// Queued here, or by a declared appearance watch (a stat or density change) whose
-		// update_icon() on this same lane marks it: its refresh is pending, not missed.
-		if(A.refresh_queued || A.appearance_queued)
+		// Queued here: its refresh is pending, not missed.
+		if(A.refresh_queued)
 			continue
 #if !defined(UNIT_TESTS) || defined(BENCHMARK)
 		if(!LAZYLEN(A.open_tguis) && !refresh_near(A, client_turfs))
@@ -782,6 +788,13 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	LAZYINITLIST(theirs.look_watchers)
 	theirs.look_watchers[key] = (theirs.look_watchers[key] || 0) + 1
 
+/// TRUE while `composer`'s draw composes `target`'s look (look.watch_look(target)). A draw that shows the atom wearing or holding it asks this, so two
+/// atoms that compose each other (a human holding the doll that shows them) do not chase each other's looks round and round.
+/proc/look_composes(atom/composer, atom/target)
+	READS_FROM()
+	var/list/watching = cap_engine_state_of(composer)?.look_watching_looks
+	return !!(watching && (OWN_KEY(target) in watching))
+
 /proc/look_unsubscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(target)
 	if(!theirs?.look_watchers)
@@ -809,7 +822,9 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 		if(!isatom(watcher) || QDELING(watcher))
 			LAZYADD(gone, key)
 			continue
-		state_changed(watcher)
+		// Its draw is queued and nothing else: a state_changed() would also reach whatever watches the watcher through a relation, which for two atoms that
+		// compose each other (a human holding the doll that shows them) marks the one whose look was just published, during its own refresh.
+		refresh_mark(watcher, DEP_DRAW)
 	if(gone)
 		engine.look_watchers -= gone
 		UNSETEMPTY(engine.look_watchers)

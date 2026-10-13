@@ -17,8 +17,14 @@
 	var/affected_area = 3
 	special_handling = TRUE
 
+TRACKED(/obj/item/grenade/chem_grenade, stage)
+
 CAPABILITIES(/obj/item/grenade/chem_grenade)
 	configure(item_combat(force = 2.0))
+	// a hand-built casing: 0 empty, 1 parts in, 2 locked (armed by its self-use); the screwdriver locks and unlocks it, ahead of the timer
+	stages(nameof(stage),
+		stage_step(1, 2, tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Lock the assembly"), when(PROC_REF(hand_built)), wait(0), then(PROC_REF(assembly_locked))),
+		stage_step(2, 1, tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Unlock the assembly"), when(PROC_REF(hand_built)), needs(req(PROC_REF(sealed_refusal))), wait(0), then(PROC_REF(assembly_unlocked))))
 	reagents(1000)
 	owns_many(nameof(beakers))
 	owns_one(nameof(detonator), /obj/item/assembly_holder)
@@ -38,8 +44,8 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 			detonator.detached()
 			user.put_in_hands(detonator)
 			rel_take(src, nameof(detonator))
-			det_time = null
-			stage=0
+			set_det_time(null)
+			set_stage(0)
 			icon_state = initial(icon_state)
 		else if(length(beakers))
 			for(var/obj/B in beakers)
@@ -82,13 +88,13 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 			return OP_PASS
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
-			det_time = 10*T.time
+			set_det_time(10*T.time)
 		if(istimer(detonator.a_right))
 			var/obj/item/assembly/timer/T = detonator.a_right
-			det_time = 10*T.time
+			set_det_time(10*T.time)
 		icon_state = initial(icon_state) +"_ass"
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
-		stage = 1
+		set_stage(1)
 	else if(is_type_in_list(W, TYPE_TABLE_GET(src, chem_grenade_containers)) && (!stage || stage==1) && path != 2)
 		var/why = container_refusal(user, W)
 		if(why)
@@ -103,43 +109,49 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 				if(!move_into(src, nameof(beakers), W, user))
 					return OP_PASS
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
-				stage = 1
+				set_stage(1)
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else
 				to_chat(user, span_warning("\The [W] is empty."))
 	return OP_PASS
 
-/obj/item/grenade/chem_grenade/screwdriver_used(datum/act/op/A)
+/// A casing put together by hand (path 2 is the premade kind, whose screwdriver only turns the timer).
+/obj/item/grenade/chem_grenade/proc/hand_built(datum/act/op/A)
+	return read_once(path) != 2
+
+/// A sealed grenade has no way to be taken apart (unless it is live: the screwdriver may set it off).
+/obj/item/grenade/chem_grenade/proc/sealed_refusal(datum/act/op/A)
+	return (read_once(sealed) && !read_once(active)) ? "this grenade lacks a way to disassemble it" : null
+
+/obj/item/grenade/chem_grenade/proc/assembly_locked(datum/act/op/A)
+	path = 1
+	if(length(beakers))
+		to_chat(A.actor, span_notice("You lock the assembly."))
+		name = "grenade"
+	else
+		to_chat(A.actor, span_notice("You lock the empty assembly."))
+		name = "fake grenade"
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+	icon_state = "[initial(icon_state)]_locked"
+	return OP_OK
+
+/// Unlocked, the parts come loose again; a live grenade almost always goes off instead.
+/obj/item/grenade/chem_grenade/proc/assembly_unlocked(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(path == 2)
-		return ..()
-	if(stage == 1)
-		path = 1
-		if(length(beakers))
-			to_chat(user, span_notice("You lock the assembly."))
-			name = "grenade"
-		else
-			to_chat(user, span_notice("You lock the empty assembly."))
-			name = "fake grenade"
-		playsound(src, sounds_of(tool).use, 50, TRUE)
-		icon_state = "[initial(icon_state)]_locked"
-		stage = 2
-		return OP_OK
-	if(stage != 2)
-		return ..()
 	if(active && prob(95))
+		set_stage(2) // it was still locked when it went off
 		to_chat(user, span_warning("You trigger the assembly!"))
 		detonate()
-	else if(sealed)
+		return OP_OK
+	if(sealed)
+		set_stage(2)
 		to_chat(user, span_warning("This grenade lacks a way to disassemble it."))
-	else
-		to_chat(user, span_notice("You unlock the assembly."))
-		playsound(src, sounds_of(tool).use, 50, TRUE)
-		name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
-		icon_state = initial(icon_state) + (detonator ? "_ass" : "")
-		stage = 1
-		active = FALSE
+		return OP_OK
+	to_chat(user, span_notice("You unlock the assembly."))
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+	name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
+	icon_state = initial(icon_state) + (detonator ? "_ass" : "")
+	active = FALSE
 	return OP_OK
 
 /obj/item/grenade/chem_grenade/examine(mob/user)
@@ -327,7 +339,7 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/teargas)
 /obj/item/grenade/chem_grenade/proc/sync_det_time()
 	if(istimer(detonator.a_left)) //Make sure description reflects that the timer has been reset
 		var/obj/item/assembly/timer/T = detonator.a_left
-		det_time = 10*T.time
+		set_det_time(10*T.time)
 	if(istimer(detonator.a_right))
 		var/obj/item/assembly/timer/T = detonator.a_right
-		det_time = 10*T.time
+		set_det_time(10*T.time)

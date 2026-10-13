@@ -9,7 +9,7 @@
 	var/obj/item/reagent_containers/held_container
 
 /obj/machinery/bunsen_burner/var/heating = FALSE
-TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/bunsen_burner, heating)
 /// Boils its container while heating (start_boiling() .. end_boil()).
 // The holder resizes to match the boiling container.
 
@@ -36,19 +36,19 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 		start_boiling()
 	return TRUE
 
-/obj/machinery/bunsen_burner/proc/crowbar_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(!panel_open || !isturf(loc))
-		return OP_OK
-	use_tool(user, tool, src, delay = 5, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-	return OP_OK
+/// When the crowbar does nothing (the click is used up, nothing is said).
+/obj/machinery/bunsen_burner/proc/crowbar_refusal(datum/act/op/A)
+	return read_once(!panel_open || !isturf(loc)) ? "no" : null
 
-/obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(mob/user)
+/obj/machinery/bunsen_burner/proc/crowbar_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	drop_held_container()
 	to_chat(user, span_notice("You disassemble \the [src]."))
 	replace_with(src, /obj/item/stack/material/steel, 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/bunsen_burner/proc/interaction_remove_container(datum/act/op/A)
 	var/mob/user = A.actor
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
 	reagents(1, holder = /datum/reagents/distilling)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
-	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(crowbar_refusal), silent = TRUE)), starts(PROC_REF(crowbar_started)), wait(5), then(PROC_REF(crowbar_act_tool_done)))
 	extend("machine_anchor", then(PROC_REF(rewrenched)))
 	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 

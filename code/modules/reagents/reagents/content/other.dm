@@ -144,7 +144,7 @@
 	return color
 
 /datum/reagent/paint/initialize_data(newdata)
-	color = newdata
+	set_color(newdata)
 	return
 
 /datum/reagent/paint/mix_data(newdata, newamount)
@@ -170,7 +170,7 @@
 	colors[4] += hex2num(copytext(hex2, 8, 10)) * newamount
 	tot_w += newamount
 
-	color = rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w)
+	set_color(rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w))
 	return
 
 /* Things that didn't fit anywhere else */
@@ -579,24 +579,19 @@
 	if(M.get_equipped_item(SLOT_ID_HAND_L))
 		M.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
 	if(M.get_equipped_item(SLOT_ID_MASK))
-		if(M.get_equipped_item(SLOT_ID_MASK).wash(CLEAN_SCRUB))
-			M.update_inv_wear_mask(0)
+		M.get_equipped_item(SLOT_ID_MASK).wash(CLEAN_SCRUB)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME)
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB))
-				H.update_inv_head(0)
+			H.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB)
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			if(H.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB))
-				H.update_inv_wear_suit(0)
+			H.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB)
 		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
-			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB))
-				H.update_inv_w_uniform(0)
+			H.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB)
 		if(H.get_equipped_item(SLOT_ID_SHOES))
-			if(H.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB))
-				H.update_inv_shoes(0)
+			H.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB)
 		else
 			H.wash(CLEAN_SCRUB)
 			return

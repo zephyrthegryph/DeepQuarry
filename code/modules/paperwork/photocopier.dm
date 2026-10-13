@@ -91,7 +91,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 /// The AI's photo print asks for a picture when the copier can print one and the album has one.
 /obj/machinery/photocopier/proc/album_ready(datum/act/op/A)
 	var/mob/living/silicon/tempAI = A.actor
-	return istype(tempAI) && toner >= 5 && length(tempAI.aiCamera?.aipictures) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return istype(tempAI) && toner >= 5 && length(tempAI.aiCamera?.aipictures)
 
 /obj/machinery/photocopier/proc/album_names(datum/act/op/A)
 	. = list()
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 		p.desc += "Copied by [tempAI.name]"
 	else
 		p.desc += " - Copied by [tempAI.name]"
-	toner -= 5
+	set_toner(toner - 5)
 	return TRUE
 
 /// Makes `copies` copies, one after another (each a few steps on the machine's timers).
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		flick("photocopier_toner", src)
 		play_sfx(loc, SFX_MACHINES_CLICK)
-		toner += refill_amount
+		set_toner(toner + refill_amount)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/datum/damage_packet/packet = N.packet
 	if(packet.severity >= 2 && prob(50) && toner > 0)
 		new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
-		toner = 0
+		set_toner(0)
 
 /obj/machinery/photocopier/proc/copy(obj/item/paper/copy, need_toner=1)
 	var/obj/item/paper/c = new /obj/item/paper (loc)
@@ -261,7 +261,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	c.set_stamp_marks(grey_marks)
 	c.updateinfolinks()
 	if(need_toner)
-		toner--
+		set_toner(toner - 1)
 	if(toner == 0)
 		playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 		visible_message(span_notice("A [span_red("red")] light on \the [src] flashes, indicating that it is out of toner."))
@@ -282,9 +282,9 @@ CAPABILITIES(/obj/machinery/photocopier)
 		p.tiny.MapColors(rgb(77,77,77), rgb(150,150,150), rgb(28,28,28), rgb(100,100,100))
 	p.icon = I
 	if(need_toner)
-		toner -= 5	//photos use a lot of ink!
+		set_toner(toner - 5)	//photos use a lot of ink!
 	if(toner < 0)
-		toner = 0
+		set_toner(0)
 		playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 		visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 
@@ -357,9 +357,9 @@ CAPABILITIES(/obj/machinery/photocopier)
 	small_img.Scale(8, 8)
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
 	p.icon = ic
-	toner -= 10 // PHOTOCOPYING YOUR ASS IS EXPENSIVE (And so you can't just spam it a bunch).
+	set_toner(toner - 10) // PHOTOCOPYING YOUR ASS IS EXPENSIVE (And so you can't just spam it a bunch).
 	if(toner < 0)
-		toner = 0
+		set_toner(0)
 		playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 		visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 	return p
@@ -371,7 +371,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/obj/item/paper_bundle/p = new /obj/item/paper_bundle (src)
 	for(var/obj/item/W in bundle.pages)
 		if(toner <= 0 && need_toner)
-			toner = 0
+			set_toner(0)
 			playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 			visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 			break

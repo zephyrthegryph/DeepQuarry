@@ -2,7 +2,7 @@
 +3 menu: Toggle tracking
 @obj robot|none
 +4 menu: Toggle tracking
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 +2 menu: Toggle tracking
@@ -17,11 +17,11 @@
 @obj human|/obj/item/weldingtool
 +2 menu: Toggle tracking
 @obj human|/obj/item/stack/cable_coil
-+3 menu: Toggle tracking
++2 menu: Toggle tracking
 @obj human|/obj/item/stack/material/steel
 +2 menu: Toggle tracking
 @obj human|/obj/item/card/id
-+3 menu: Toggle tracking
++2 menu: Toggle tracking
 @obj human|/obj/item/kit
 +3 menu: Toggle tracking
 @obj human|/obj/item/storage

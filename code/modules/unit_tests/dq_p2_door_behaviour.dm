@@ -219,7 +219,7 @@
 	if(!live)
 		p2_door_set_autoclose(D, FALSE)
 	if(access)
-		D.req_access = access
+		D.set_req_access(access)
 	return D
 
 /// A person next to the door (east of it) wearing an ID with `access`, or no ID at all when `access` is null.
@@ -230,8 +230,8 @@
 	rel_set(H, nameof(H.teleop), controller)
 	if(access)
 		var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
-		card.access = access
-		card.registered_name = "P2 Tester"
+		card.set_access(access)
+		card.set_registered_name("P2 Tester")
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 		H.equip_to_slot(card, SLOT_ID_ID)
 	return H
@@ -336,7 +336,7 @@
 
 /datum/unit_test/dq_p2_door/airlock_one_access_door_takes_any_listed_access/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
-	D.req_one_access = list(ACCESS_ENGINE, ACCESS_SECURITY)
+	D.set_req_one_access(list(ACCESS_ENGINE, ACCESS_SECURITY))
 	var/mob/living/carbon/human/sec = make_person(list(ACCESS_SECURITY))
 	var/mob/living/carbon/human/medic = make_person(list(ACCESS_MEDICAL), tile(3, 3))
 	click(medic, D, null)
@@ -359,7 +359,7 @@
 	var/obj/machinery/door/airlock/D = make_door(/obj/machinery/door/airlock, list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/card/id/card = give_item(H, /obj/item/card/id)
-	card.access = list(ACCESS_ENGINE)
+	card.set_access(list(ACCESS_ENGINE))
 	click(H, D, card)
 	TEST_ASSERT(!D.density, "swiping an ID in hand opens the door")
 
@@ -390,7 +390,7 @@
 	p2_door_set_autoclose(D, FALSE)
 	var/mob/living/carbon/human/H = make_person(null)
 	H.Bump(D) // refused, but it counts as a bump
-	D.req_access = null
+	D.set_req_access(null)
 	H.Bump(D) // within the second
 	sleep(2 SECONDS)
 	TEST_ASSERT(D.density, "a second bump inside a second is ignored")
@@ -1203,7 +1203,7 @@
 /datum/unit_test/dq_p2_door/airlock_welding_fitted_plasteel_reinforces_the_door/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
-	D.reinforcing = 2 // two sheets fitted
+	D.set_reinforcing(2) // two sheets fitted
 	TEST_ASSERT(!D.heat_proof, "not reinforced yet")
 	click(H, D, give_welder(H))
 	TEST_ASSERT(D.heat_proof, "welding the fitted plasteel in reinforces the door")
@@ -1214,7 +1214,7 @@
 /datum/unit_test/dq_p2_door/airlock_fitted_plasteel_can_be_pried_back_off/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
-	D.reinforcing = 2 // two sheets fitted
+	D.set_reinforcing(2) // two sheets fitted
 	click(H, D, give_tool(H, /obj/item/tool/crowbar))
 	TEST_ASSERT_EQUAL(D.reinforcing, 0, "a crowbar takes the unwelded plasteel back off")
 	TEST_ASSERT(!D.heat_proof, "the door is not reinforced")
@@ -1298,7 +1298,7 @@
 
 /datum/unit_test/dq_p2_door/electronics_non_engineer_may_set_only_their_own_access/run_gate()
 	var/obj/item/airlock_electronics/E = allocate(/obj/item/airlock_electronics, tile(2, 2))
-	E.req_one_access = list(ACCESS_MEDICAL) // the unlocking ID for this device
+	E.set_req_one_access(list(ACCESS_MEDICAL)) // the unlocking ID for this device
 	var/mob/living/carbon/human/medic = make_person(list(ACCESS_MEDICAL))
 	press(medic, E, "login")
 	TEST_ASSERT(!E.locked, "the right ID unlocks it")
@@ -1340,7 +1340,7 @@
 /// Walks an airlock assembly through its frame, wiring and electronics (as `H` with the access `access` set on the board).
 /datum/unit_test/dq_p2_door/proc/frame_up(obj/structure/door_assembly/A, mob/living/carbon/human/H, list/access)
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
-	board.conf_access = access
+	board.set_conf_access(access)
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
 	if(!A.anchored)
 		return null
@@ -1356,7 +1356,7 @@
 	var/obj/structure/door_assembly/A = allocate(/obj/structure/door_assembly, tile(2, 2))
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
-	board.conf_access = list(ACCESS_ENGINE)
+	board.set_conf_access(list(ACCESS_ENGINE))
 	TEST_ASSERT(!A.anchored, "a new assembly is loose")
 	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 0, "and bare")
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
@@ -1392,7 +1392,7 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/airlock_electronics/board = frame_up(A, H, list(ACCESS_ENGINE, ACCESS_SECURITY))
 	TEST_ASSERT_NOTNULL(board, "the frame went up")
-	board.one_access = TRUE
+	board.set_one_access(TRUE)
 	click(H, A, give_tool(H, /obj/item/tool/screwdriver))
 	var/obj/machinery/door/airlock/D = locate(/obj/machinery/door/airlock) in tile(2, 2)
 	TEST_ASSERT_NOTNULL(D, "an airlock stands where the assembly was")
@@ -2085,7 +2085,7 @@
 	var/obj/structure/windoor_assembly/A = allocate(/obj/structure/windoor_assembly, tile(2, 2))
 	var/mob/living/carbon/human/H = make_person(null, tile(1, 2))
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
-	board.conf_access = list(ACCESS_ENGINE)
+	board.set_conf_access(list(ACCESS_ENGINE))
 	TEST_ASSERT(!A.anchored, "a new assembly is loose")
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
 	TEST_ASSERT(A.anchored, "a wrench bolts it down")
@@ -2162,7 +2162,7 @@
 	var/obj/machinery/button/remote/button = allocate(button_type, tile(4, 2))
 	p2_door_set_power(button, TRUE)
 	if(access)
-		button.req_access = access
+		button.set_req_access(access)
 	return list(B, button)
 
 /datum/unit_test/dq_p2_door/button_access_lock_keeps_out_strangers
@@ -2278,7 +2278,7 @@
 	var/obj/machinery/access_button/airlock_interior/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
 	p2_door_set_power(button, TRUE)
 	button.master_tag = "p2_controller"
-	button.req_access = list(ACCESS_ENGINE)
+	button.set_req_access(list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/stranger = make_person(null, tile(3, 2))
 	var/mob/living/carbon/human/engineer = make_person(list(ACCESS_ENGINE), tile(3, 3))
 	click(stranger, button, null)
@@ -2296,10 +2296,10 @@
 	var/obj/p2_radio_listener/L = radio_listener()
 	var/obj/machinery/access_button/airlock_interior/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
 	p2_door_set_power(button, TRUE)
-	button.req_access = list(ACCESS_ENGINE)
+	button.set_req_access(list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
 	var/obj/item/card/id/card = give_item(H, /obj/item/card/id)
-	card.access = list(ACCESS_ENGINE)
+	card.set_access(list(ACCESS_ENGINE))
 	click(H, button, card)
 	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an ID swiped on it presses it")
 	SSradio.remove_object(L, AIRLOCK_FREQ)
@@ -2361,7 +2361,7 @@
 	T.atom_fix() // it broke itself in its after-init pass, before its keyed doors had linked
 	p2_door_set_power(T, TRUE)
 	if(access)
-		T.req_access = access
+		T.set_req_access(access)
 	return list(T, D)
 
 /datum/unit_test/dq_p2_door/timer_closes_the_cell_then_lets_it_go

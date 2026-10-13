@@ -75,10 +75,7 @@ TRACKED(/obj/machinery/door/firedoor, air_hot_3)
 TRACKED(/obj/machinery/door/firedoor, air_cold_3)
 TRACKED(/obj/machinery/door/firedoor, air_hot_4)
 TRACKED(/obj/machinery/door/firedoor, air_cold_4)
-TRACKED(/obj/machinery/door/firedoor, dir_alerts)
-TRACKED(/obj/machinery/door/firedoor, pdiff_alert)
 
-TRACKED(/obj/machinery/door/firedoor, blocked)
 TRACKED(/obj/machinery/door/firedoor, hatch_open)
 
 /obj/machinery/door/firedoor/Initialize(mapload)
@@ -247,7 +244,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// An alarm, a lockdown and no access keep a shut door shut (for whoever has no access).
 /obj/machinery/door/firedoor/proc/not_locked_out(datum/act/op/A)
-	return (!(density && lockdown && alarmed() && !allowed(A.actor))) ? null : MSG(firedoor/locked_out) // ALLOW(reads): the alarm and the lockdown are read when the question is asked and again when it is answered
+	return (!(density && lockdown && alarmed() && !allowed(A.actor))) ? null : MSG(firedoor/locked_out)
 
 /// What is asked: to open or close it, with the warning that opening it in an alarm is on whoever does.
 /// The yes button names what it does.
@@ -553,30 +550,28 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// Reads the air around a shut door: a pressure difference past the limit or a band of temperature on any side is an alert, and any alert is a lockdown.
 /obj/machinery/door/firedoor/proc/air_check(datum/act/A)
-	var/redraw = FALSE
-	lockdown = FALSE
+	set_lockdown(FALSE)
 	pdiff = getOPressureDifferential(src.loc)
 	var/new_pdiff_alert = pdiff >= FIREDOOR_MAX_PRESSURE_DIFF
 	lockdown ||= new_pdiff_alert
 	if(pdiff_alert != new_pdiff_alert)
 		set_pdiff_alert(new_pdiff_alert)
-		redraw = TRUE
 	var/list/tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
 	var/any_alerts = FALSE
+	var/list/new_alerts
 	for(var/index = 1; index <= 4; index++)
 		var/list/tileinfo = tile_info[index]
 		var/alerts = tileinfo ? firedoor_temperature_band(tileinfo[1]) : 0
 		if((LAZYACCESS(dir_alerts, index) || 0) != alerts)
-			redraw = TRUE
-			if(!dir_alerts)
-				set_dir_alerts(new /list(4))
-			dir_alerts[index] = alerts
+			if(!new_alerts)
+				new_alerts = dir_alerts ? dir_alerts.Copy() : new /list(4)
+			new_alerts[index] = alerts
 		any_alerts ||= alerts
 		lockdown ||= alerts
 	if(!any_alerts)
 		set_dir_alerts(null)
-	if(redraw)
-		changed(src) // the alert lights are no tracked var: the look is redrawn by hand
+	else if(new_alerts)
+		set_dir_alerts(new_alerts)
 
 /obj/machinery/door/firedoor/proc/firedoor_temperature_band(temperature)
 	// Auxmos publishes temperatures as 32-bit floats. Allow a tiny boundary

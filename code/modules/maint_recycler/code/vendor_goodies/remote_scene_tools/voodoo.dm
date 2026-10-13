@@ -61,7 +61,6 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_necklace)
 	primary =/obj/item/remote_scene_tool/voodoo_doll
 	secondary =/obj/item/remote_scene_tool/voodoo_necklace
 
-TRACKED(/obj/item/remote_scene_tool/voodoo_doll, no_fun_mode)
 
 CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 	op("voodoo_doll_verb_toggle_fun", menu(), label("Disable Special Rendering"), needs(carried()), then(PROC_REF(voodoo_doll_verb_toggle_fun)))
@@ -90,18 +89,21 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 /// The outline colour of the wearer's tail: a grey, or a darker version of the tail's colouration.
 /obj/item/remote_scene_tool/voodoo_doll/proc/tail_outline_color(mob/living/carbon/human/buddy)
 	if(buddy.tail_style?.do_colouration)
-		return get_outline_color(buddy.r_tail, buddy.g_tail, buddy.b_tail, buddy.a_tail)
+		var/list/tail_rgb = hex2rgb(buddy.looks.tail_color)
+		return get_outline_color(tail_rgb[1], tail_rgb[2], tail_rgb[3], buddy.looks.tail_alpha)
 	return rgb(50,50,50)
 
 /// The outline colour of the wearer's wings, the same way.
 /obj/item/remote_scene_tool/voodoo_doll/proc/wing_outline_color(mob/living/carbon/human/buddy)
 	if(buddy.wing_style?.do_colouration)
-		return get_outline_color(buddy.r_wing, buddy.g_wing, buddy.b_wing, buddy.a_wing)
+		var/list/wing_rgb = hex2rgb(buddy.looks.wing_color)
+		return get_outline_color(wing_rgb[1], wing_rgb[2], wing_rgb[3], buddy.looks.wing_alpha)
 	return rgb(50,50,50)
 
 /obj/item/remote_scene_tool/voodoo_doll/proc/generate_layer_image(image/input, matrix/newtransform, outline_width = 0, outline_color = rgb(50,50,50), mask_inverse = FALSE)
 	if(input == null)
 		return null
+	input = image(input) // the wearer's layers are shared images: the doll turns and outlines its own copy
 
 	input.dir = SOUTH
 	input.transform = newtransform
@@ -146,11 +148,12 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 
 	//same kind of scenario for wings
 	var/wingoutlinecolor = wing_outline_color(buddy)
-	var/image/wing_image = generate_layer_image(buddy.get_wing_image(FALSE), generate_layer_matrix(wing_data), outline_size, wingoutlinecolor)
-	var/image/under_wing_image = generate_layer_image(buddy.get_wing_image(TRUE), generate_layer_matrix(wing_data), outline_size, wingoutlinecolor)
+	var/image/wing_image = generate_layer_image(buddy.wing_look(FALSE), generate_layer_matrix(wing_data), outline_size, wingoutlinecolor)
+	var/image/under_wing_image = generate_layer_image(buddy.wing_look(TRUE), generate_layer_matrix(wing_data), outline_size, wingoutlinecolor)
 
 	//the rest are pretty simple
-	var/ear_icon = buddy.get_ears_overlay()
+	var/obj/item/buddy_hat = buddy.get_equipped_item(SLOT_ID_HEAD)
+	var/ear_icon = buddy.get_ears_overlay(buddy_hat && (worn_of(buddy_hat).hides & BLOCKHEADHAIR))
 	var/image/ear_image = generate_layer_image(image(icon = ear_icon), generate_layer_matrix(ear_data))
 
 	//hat

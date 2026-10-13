@@ -92,7 +92,7 @@
 
 /// The canister can be relabelled now (its window's can_relabel).
 /proc/am_canister_relabelable(obj/machinery/portable_atmospherics/canister/C)
-	return !!C.can_relabel(null)
+	return isnull(C.can_relabel(null))
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
@@ -235,8 +235,8 @@
 /// An ID card with `access`.
 /datum/unit_test/dq_atmos_m/proc/id_card(list/access, turf/where)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, where || tile(2, 1))
-	card.access = access || list()
-	card.registered_name = "Atmos Tester"
+	card.set_access(access || list())
+	card.set_registered_name("Atmos Tester")
 	return card
 
 /// A fast tool of `type`.
@@ -540,7 +540,7 @@
 	var/turf/T = tile(1, 1)
 	dq_atmos_test_isolate_pair(T, T)
 	var/obj/machinery/alarm/A = alarm()
-	A.target_temperature = T20C
+	A.set_target_temperature(T20C)
 	am_set_air(T, temperature = T20C - 10)
 	var/before = am_air_energy(T)
 	for(var/i in 1 to 3)
@@ -770,7 +770,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/weldingtool/W = welder()
 	var/datum/op_result/R = am_click(H, V, W)
-	TEST_ASSERT(am_device_welded(V), "the vent is welded shut ([R?.outcome] [R?.key] [R?.reason] [json_encode(GLOB.dq_tool_last_use)])")
+	TEST_ASSERT(am_device_welded(V), "the vent is welded shut ([R?.outcome] [R?.key] [R?.reason])")
 	am_click(H, V, W)
 	TEST_ASSERT(!am_device_welded(V), "and freed")
 	am_click(H, S, W)
@@ -823,7 +823,7 @@
 /datum/unit_test/dq_atmos_m/remote_console_access/run_gate()
 	var/obj/machinery/alarm/A = alarm()
 	am_alarm_set_locked(A, TRUE)
-	A.rcon_setting = RCON_NO
+	A.set_rcon_setting(RCON_NO)
 	var/datum/tgui_module/atmos_control/console = am_remote_console(list(ACCESS_ATMOSPHERICS))
 	var/mob/living/carbon/human/tech = person(list(ACCESS_ATMOSPHERICS))
 	var/mob/living/carbon/human/visitor = person(null, tile(2, 2))
@@ -831,10 +831,10 @@
 	TEST_ASSERT_EQUAL(A.mode, AM_MODE_SCRUBBING, "no access, no remote control: refused")
 	am_remote_press(tech, console, A, "mode", list("mode" = AM_MODE_PANIC))
 	TEST_ASSERT_EQUAL(A.mode, AM_MODE_PANIC, "the console's access works the locked alarm")
-	A.rcon_setting = RCON_YES
+	A.set_rcon_setting(RCON_YES)
 	am_remote_press(visitor, console, A, "mode", list("mode" = AM_MODE_FILL))
 	TEST_ASSERT_EQUAL(A.mode, AM_MODE_FILL, "remote control always on lets anyone in")
-	A.rcon_setting = RCON_AUTO
+	A.set_rcon_setting(RCON_AUTO)
 	am_remote_press(visitor, console, A, "mode", list("mode" = AM_MODE_SCRUBBING))
 	TEST_ASSERT_EQUAL(A.mode, AM_MODE_FILL, "on auto without an emergency: refused")
 	var/area/room = get_area(A)
@@ -842,7 +842,7 @@
 	am_remote_press(visitor, console, A, "mode", list("mode" = AM_MODE_SCRUBBING))
 	TEST_ASSERT_EQUAL(A.mode, AM_MODE_SCRUBBING, "on auto in an emergency: let in")
 	room.atmosalert(0, A)
-	A.rcon_setting = RCON_NO
+	A.set_rcon_setting(RCON_NO)
 	am_remote_console_emag(console)
 	am_remote_press(visitor, console, A, "mode", list("mode" = AM_MODE_PANIC))
 	TEST_ASSERT_EQUAL(A.mode, AM_MODE_PANIC, "an emagged console lets anyone in")

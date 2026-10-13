@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/shield)
 	var/mob/user = A.actor
 	set_active(!active)
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
-	user.update_inv_wear_suit()
+	changed(src)
 	user.update_mob_action_buttons()
 
 TRACKED(/obj/item/clothing/suit/armor/shield, active)

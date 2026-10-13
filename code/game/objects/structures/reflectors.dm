@@ -27,7 +27,6 @@
 
 TRACKED(/obj/structure/reflector, refiring)
 TRACKED(/obj/structure/reflector, finished)
-TRACKED(/obj/structure/reflector, admin)
 
 /// The look (the draw sweep: from its layers).
 /obj/structure/reflector/draw(datum/look/look)

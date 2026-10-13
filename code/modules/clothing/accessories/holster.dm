@@ -204,17 +204,17 @@ CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
 	if(!has_full_icon)
 		return
 	if(contents_count(src))
-		overlay_state = "[initial(overlay_state)]-rapier"
+		set_overlay_state("[initial(overlay_state)]-rapier")
 	else
-		overlay_state = initial(overlay_state)
+		set_overlay_state(initial(overlay_state))
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords/occupied()
 	if(!has_full_icon)
 		return
 	if(contents_count(src))
-		overlay_state = "[initial(overlay_state)]-secondary"
+		set_overlay_state("[initial(overlay_state)]-secondary")
 	else
-		overlay_state = initial(overlay_state)
+		set_overlay_state(initial(overlay_state))
 
 /obj/item/clothing/accessory/holster/machete/rapier/holster(obj/item/I, mob/living/user)
 	..()

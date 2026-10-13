@@ -4,114 +4,114 @@
 
 /obj/effect/projectile/impact/laser_pulse
 	icon_state = "impact_u_laser"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/impact/laser_pulse)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/impact/laser_heavy
 	icon_state = "impact_beam_heavy"
-	light_range = 3
-	light_power = 1
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/impact/laser_heavy)
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
 
 /obj/effect/projectile/impact/laser_em
 	icon_state = "impact_em_laser"
-	light_range = 3
-	light_power = 1
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/impact/laser_em)
+	configure(light_glow(range = 3, power = 1, color = "#00C6FF"))
 
 /obj/effect/projectile/impact/xray
 	icon_state = "impact_xray"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00CC33"
+
+CAPABILITIES(/obj/effect/projectile/impact/xray)
+	configure(light_glow(range = 2, power = 0.5, color = "#00CC33"))
 
 /obj/effect/projectile/impact/laser_omni
 	icon_state = "impact_omni"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/impact/laser_omni)
+	configure(light_glow(range = 2, power = 0.5, color = "#00C6FF"))
 
 /obj/effect/projectile/impact/laser
 	icon_state = "impact_laser"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/impact/laser)
+	configure(light_glow(range = 2, power = 0.5, color = "#FF0D00"))
 
 /obj/effect/projectile/impact/laser_blue
 	icon_state = "impact_blue"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/impact/laser_blue)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/impact/emitter
 	icon_state = "impact_emitter"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00CC33"
+
+CAPABILITIES(/obj/effect/projectile/impact/emitter)
+	configure(light_glow(range = 2, power = 0.5, color = "#00CC33"))
 
 /obj/effect/projectile/impact/stun
 	icon_state = "impact_stun"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/impact/stun)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/effect/projectile/impact/lightning
 	icon_state = "impact_lightning"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/impact/lightning)
+	configure(light_glow(range = 2, power = 0.5, color = "#00C6FF"))
 
 /obj/effect/projectile/impact/darkmatterstun
 	icon_state = "impact_darkt"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#8837A3"
+
+CAPABILITIES(/obj/effect/projectile/impact/darkmatterstun)
+	configure(light_glow(range = 2, power = 0.5, color = "#8837A3"))
 
 /obj/effect/projectile/impact/inversion
 	icon_state = "impact_invert"
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/impact/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
 
 /obj/effect/projectile/impact/darkmatter
 	icon_state = "impact_darkb"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#8837A3"
+
+CAPABILITIES(/obj/effect/projectile/impact/darkmatter)
+	configure(light_glow(range = 2, power = 0.5, color = "#8837A3"))
 
 /obj/effect/projectile/impact/precursor // add precursor impact
 	icon = 'icons/obj/projectiles_ch.dmi' // Fix path + replace missing file
 	icon_state = "impact_prec"
-	light_range = 2
-	light_power = 0.7
-	light_color = "#FF0099"
+
+CAPABILITIES(/obj/effect/projectile/impact/precursor)
+	configure(light_glow(range = 2, power = 0.7, color = "#FF0099"))
 
 /obj/effect/projectile/impact/tungsten
 	icon_state = "impact_mhd_laser"
-	light_range = 4
-	light_power = 3
-	light_color = "#3300ff"
+
+CAPABILITIES(/obj/effect/projectile/impact/tungsten)
+	configure(light_glow(range = 4, power = 3, color = "#3300ff"))
 
 // medigun
 /obj/effect/projectile/impact/medigun
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "impact_medbeam"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#80F5FF"
+
+CAPABILITIES(/obj/effect/projectile/impact/medigun)
+	configure(light_glow(range = 2, power = 0.5, color = "#80F5FF"))
 // ends
 /obj/effect/projectile/impact/pointdefense
 	icon_state = "impact_pointdef"
 
 /obj/effect/projectile/impact/rainbow
 	icon_state = "impact_rainbow"
-	light_range = 3
-	light_power = 1
-	light_color = "#ffffff"
+
+CAPABILITIES(/obj/effect/projectile/impact/rainbow)
+	configure(light_glow(range = 3, power = 1, color = "#ffffff"))
 
 /obj/effect/projectile/impact/coildefense
 	icon_state = "impact_coildef"
-	light_range = 2
-	light_power = 3
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/impact/coildefense)
+	configure(light_glow(range = 2, power = 3, color = "#FFFFFF"))

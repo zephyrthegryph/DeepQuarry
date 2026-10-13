@@ -1,45 +1,25 @@
 @obj.machinery human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/tool/wrench
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/multitool
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/weldingtool
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+2 menu: Pay
-+4 click: Click: Pay
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
-@obj human|/obj/item/card/id
--click: nothing
-+1 menu: Pay
-+4 click: Click: Pay
-@obj human|/obj/item
--click: nothing
-+1 menu: Pay
-+3 click: Click: Pay
+human|/obj/item/tool/screwdriver menu: Pay
+human|/obj/item/tool/screwdriver click: Click: Pay
+human|/obj/item/tool/crowbar menu: Pay
+human|/obj/item/tool/crowbar click: Click: Pay
+human|/obj/item/tool/wrench menu: Pay
+human|/obj/item/tool/wrench click: Click: Pay
+human|/obj/item/tool/wirecutters menu: Pay
+human|/obj/item/tool/wirecutters click: Click: Pay
+human|/obj/item/multitool menu: Pay
+human|/obj/item/multitool click: Click: Pay
+human|/obj/item/weldingtool menu: Pay
+human|/obj/item/weldingtool click: Click: Pay
+human|/obj/item/stack/cable_coil menu: Pay
+human|/obj/item/stack/cable_coil click: Click: Pay
+human|/obj/item/stack/material/steel menu: Pay
+human|/obj/item/stack/material/steel click: Click: Pay
+human|/obj/item/card/id menu: Pay
+human|/obj/item/card/id click: Click: Pay
+human|/obj/item menu: Pay
+human|/obj/item click: Click: Pay
 keys: clean_order, confirm_order, drag_buckle, hw_battery, hw_card, hw_cpu, hw_disk, hw_nanoprint, hw_netcard, hw_tesla, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pay, pick_device, robot_remote_blocked, silicon_hand

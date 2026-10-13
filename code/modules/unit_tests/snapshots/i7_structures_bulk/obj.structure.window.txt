@@ -11,35 +11,57 @@ robot|none click: Click: Knock
 +0 menu: Bang on
 +1 menu: Fasten to or free from the floor
 +3 menu: Knock
++4 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 click: Click: Fasten to or free from the floor
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/tool/wrench
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/tool/wirecutters
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/multitool
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
 +4 menu: Repair the window (refused: It is already in good condition.)
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 click: Click: Repair the window
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Make Cable Restraints (refused: You can't do that.)
++4 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/stack/material/steel
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/card/id
 +0 menu: Bang on
 +2 menu: Knock
++3 menu: Move To Top
++4 menu: Read ID Card (refused: You can't do that.)
++5 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item
 +0 menu: Bang on
 +2 menu: Knock
-keys: anchor, bang, dismantle, drag_buckle, fasten_frame, item, knock, melee_hit, pry_in, pry_out, tk_knock, unfasten_frame, weld_repair
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+keys: anchor, bang, dismantle, drag_buckle, fasten_frame, item, knock, melee_hit, polarize, pry_in, pry_out, tk_knock, unfasten_frame, weld_repair

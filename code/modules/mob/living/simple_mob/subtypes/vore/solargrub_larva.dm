@@ -47,7 +47,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
 	powermachine.set_draining(0)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	return ..()
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /mob/living/simple_mob/animal/solargrub_larva/life_light(datum/seq_frame/life/F)
 	. = ..()
 	if(. == 0 && !src.is_dead())
-		src.set_light(1.5, 1, COLOR_YELLOW)
+		set_glow(src, GLOW(1.5, 1, COLOR_YELLOW))
 		return 1
 	else if(src.is_dead())
 		src.set_glow_override(FALSE)
@@ -192,7 +192,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 
 /// 0 stopped, 1 idle drain, 2 active drain.
 /obj/machinery/abstract_grub_machine/var/draining = 1
-TRACKED_BRIDGED(/obj/machinery/abstract_grub_machine, draining, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/abstract_grub_machine, draining)
 /// It names the grub that made it (its owner's owns_one(starts =)).
 /obj/machinery/abstract_grub_machine/default_child_backref()
 	return nameof(grub)

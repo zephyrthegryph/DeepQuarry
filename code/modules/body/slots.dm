@@ -48,9 +48,6 @@
 	var/list/required_parts
 	/// BP_* parts of which at least one must be present.
 	var/list/any_parts
-	/// /mob proc that redraws this slot's overlay and HUD icon when its item changes. Run it with redraw_on(): a proc path called through call() binds that
-	/// exact proc, so the mob type's own override (the human's) would never run.
-	var/redraw
 	/// Slots whose items fall out when this slot is emptied through the inventory
 	/// procs (pockets and ID with the jumpsuit, suit storage with the suit).
 	var/list/drops_with
@@ -88,13 +85,6 @@
 	heat_transmission = 0
 	radiation_transmission = 0
 
-/// Redraws this slot on `M`: the proc `redraw` names, called by name so the mob type's override of it runs.
-/datum/relation_definition/slot/body/proc/redraw_on(mob/M)
-	if(!redraw)
-		return
-	var/path_text = "[redraw]"
-	call(M, copytext(path_text, findlasttext(path_text, "/") + 1))()
-
 // ---- Hands ----
 
 /datum/relation_definition/slot/body/hand
@@ -102,13 +92,11 @@
 	provides = AFF_HOLD | AFF_MANIPULATE | AFF_HOLD_SMALL | AFF_INTERFACE
 
 /datum/relation_definition/slot/body/hand/left
-	redraw = /mob/proc/update_inv_l_hand
 	slot_id = SLOT_ID_HAND_L
 	name = "left hand"
 	required_parts = list(BP_L_HAND)
 
 /datum/relation_definition/slot/body/hand/right
-	redraw = /mob/proc/update_inv_r_hand
 	slot_id = SLOT_ID_HAND_R
 	name = "right hand"
 	required_parts = list(BP_R_HAND)
@@ -116,14 +104,12 @@
 // ---- Humanoid equipment ----
 
 /datum/relation_definition/slot/body/head
-	redraw = /mob/proc/update_inv_head
 	slot_id = SLOT_ID_HEAD
 	name = "head"
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
 /datum/relation_definition/slot/body/mask
-	redraw = /mob/proc/update_inv_wear_mask
 	covered_by = SLOT_ID_HEAD
 	cover_flags = FACE
 	slot_id = SLOT_ID_MASK
@@ -132,7 +118,6 @@
 	required_parts = list(BP_HEAD)
 
 /datum/relation_definition/slot/body/suit
-	redraw = /mob/proc/update_inv_wear_suit
 	drops_with = list(SLOT_ID_SUIT_STORAGE)
 	slot_id = SLOT_ID_SUIT
 	name = "suit"
@@ -141,7 +126,6 @@
 	required_parts = list(BP_TORSO)
 
 /datum/relation_definition/slot/body/uniform
-	redraw = /mob/proc/update_inv_w_uniform
 	drops_with = list(SLOT_ID_POCKET_R, SLOT_ID_POCKET_L, SLOT_ID_ID)
 	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_UNIFORM
@@ -151,7 +135,6 @@
 	required_parts = list(BP_TORSO)
 
 /datum/relation_definition/slot/body/gloves
-	redraw = /mob/proc/update_inv_gloves
 	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_GLOVES
 	name = "gloves"
@@ -159,7 +142,6 @@
 	any_parts = list(BP_L_HAND, BP_R_HAND)
 
 /datum/relation_definition/slot/body/shoes
-	redraw = /mob/proc/update_inv_shoes
 	slot_id = SLOT_ID_SHOES
 	name = "shoes"
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
@@ -168,7 +150,6 @@
 /// Glasses: armour (get_covering_clothing() counts them) but not conductivity
 /// or thermal protection, as before.
 /datum/relation_definition/slot/body/eyes
-	redraw = /mob/proc/update_inv_glasses
 	covered_by = SLOT_ID_HEAD
 	cover_flags = EYES
 	slot_id = SLOT_ID_EYES
@@ -177,42 +158,36 @@
 	required_parts = list(BP_HEAD)
 
 /datum/relation_definition/slot/body/ear_left
-	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_L
 	name = "left ear"
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
 /datum/relation_definition/slot/body/ear_right
-	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_R
 	name = "right ear"
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
 /datum/relation_definition/slot/body/back
-	redraw = /mob/proc/update_inv_back
 	slot_id = SLOT_ID_BACK
 	name = "back"
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
 /datum/relation_definition/slot/body/belt
-	redraw = /mob/proc/update_inv_belt
 	slot_id = SLOT_ID_BELT
 	name = "belt"
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
 /datum/relation_definition/slot/body/id
-	redraw = /mob/proc/update_inv_wear_id
 	slot_id = SLOT_ID_ID
 	name = "ID"
 	roles = BODY_SLOT_WORN
 
 /// Suit storage: clipped inside the suit.
 /datum/relation_definition/slot/body/suit_storage
-	redraw = /mob/proc/update_inv_s_store
 	slot_id = SLOT_ID_SUIT_STORAGE
 	name = "suit storage"
 	exposure = SLOT_EXPOSURE_INTERNAL
@@ -232,13 +207,11 @@
 	name = "right pocket"
 
 /datum/relation_definition/slot/body/handcuffed
-	redraw = /mob/proc/update_inv_handcuffed
 	slot_id = SLOT_ID_HANDCUFFED
 	name = "wrists"
 	required_parts = list(BP_L_HAND, BP_R_HAND)
 
 /datum/relation_definition/slot/body/legcuffed
-	redraw = /mob/proc/update_inv_legcuffed
 	slot_id = SLOT_ID_LEGCUFFED
 	name = "ankles"
 	required_parts = list(BP_L_FOOT, BP_R_FOOT)

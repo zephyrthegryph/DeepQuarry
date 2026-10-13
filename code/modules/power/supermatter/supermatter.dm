@@ -58,7 +58,6 @@
 	// damage (projectiles, hotspots, explosions, machinery fall-apart) must never
 	// destroy it as though it were an ordinary machine.
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
-	light_range = 4
 
 	var/gasefficency = 0.25
 
@@ -78,7 +77,6 @@
 	///Are we exploding? (Chompers Edit)
 	var/final_countdown = FALSE
 
-	light_color = "#8A8A00"
 	var/warning_color = "#B8B800"
 	var/emergency_color = "#D9D900"
 
@@ -121,13 +119,13 @@
 	var/critwarn = FALSE
 	var/causalitywarn = FALSE
 	var/stationcrystal = FALSE
-TRACKED(/obj/machinery/power/supermatter, final_countdown)
 
 // The crystal (doc/rewrite/final_api.html section 16): its reaction runs every machine service interval while it sits on a turf (sm_step(); in a
 // crate or an exosuit it waits), whatever touches it is consumed (the touch ops and the bump), and silicons read its monitor window from afar. Its
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
+	configure(light_glow(range = 4, color = "#8A8A00"))
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))
 	interface("AiSupermatter", input = remote())
@@ -292,8 +290,8 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 //Changes color and luminosity of the light to these values if they were not already set
 /obj/machinery/power/supermatter/proc/shift_light(lum, clr)
-	if(lum != light_range || clr != light_color)
-		set_light(lum, l_color = clr)
+	if(lum != glow_of(src).range || clr != glow_of(src).color)
+		set_glow(src, GLOW(lum, null, clr))
 
 // Supermatter reports integrity as 0-100% of its meltdown threshold; this overrides the
 // atom get_integrity() (the SM is not damaged through the atom_integrity system).
@@ -380,7 +378,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		if(!istype(L, /turf/space) && (world.timeofday - lastwarning) >= WARNING_DELAY * 10)
 			announce_warning()
 	else
-		shift_light(4,initial(light_color))
+		shift_light(4,glow_of_type(type).color)
 
 	if(damage < warning_point && !safe_warned && (world.timeofday - lastwarning) >= WARNING_DELAY * 10) // In case our safe announcement was not sent, we send it latest now
 		announce_warning()

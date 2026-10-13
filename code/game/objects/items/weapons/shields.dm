@@ -193,8 +193,7 @@ CAPABILITIES(/obj/item/shield/energy)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
 	return OP_OK
@@ -272,8 +271,7 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
 	return OP_OK
@@ -334,16 +332,15 @@ TRACKED(/obj/item/shield/riot/explorer, on)
 
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.update_inv_l_hand()
-			H.update_inv_r_hand()
+			changed(src)
 	return TRUE
 
 /obj/item/shield/riot/explorer/proc/update_flashlight(mob/user = null)
 	if(on && !light_applied)
-		set_light(brightness_on)
+		set_glow(src, GLOW(brightness_on, null, null))
 		light_applied = 1
 	else if(!on && light_applied)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		light_applied = 0
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)

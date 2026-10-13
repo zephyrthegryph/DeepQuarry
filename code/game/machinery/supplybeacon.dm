@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/supply_beacon)
 
 /// Spent: the drop was sent, the beacon never works again.
 /obj/machinery/power/supply_beacon/var/expended = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/supply_beacon, expended, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/supply_beacon, expended)
 /// Draws power (and arms the drop) while switched on and not yet spent.
 CAPABILITIES(/obj/machinery/power/supply_beacon)
 	silicon_hand(adjacent = TRUE)
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 	if(surplus() < 500)
 		if(user) to_chat(user, span_notice("The connected wire doesn't have enough current."))
 		return
-	set_light(3, 3, "#00CCAA")
+	set_glow(src, GLOW(3, 3, "#00CCAA"))
 	icon_state = "beacon_active"
 	set_use_power(USE_POWER_IDLE)
 	if(user) to_chat(user, span_notice("You activate the beacon. The supply drop will be dispatched soon."))
@@ -107,7 +107,7 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 		icon_state = "beacon_depleted"
 	else
 		icon_state = "beacon"
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_use_power(USE_POWER_OFF)
 	cancel_after(src, "drop")
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))

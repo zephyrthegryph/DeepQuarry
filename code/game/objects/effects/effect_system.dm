@@ -211,7 +211,7 @@ CAPABILITIES(/obj/effect/effect/smoke/illumination)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/effect/effect/smoke/illumination/proc/glow(colour)
-	set_light(glow_range, glow_power, glow_color)
+	set_glow(src, GLOW(glow_range, glow_power, glow_color))
 
 /////////////////////////////////////////////
 // Bad smoke
@@ -300,9 +300,9 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	name = "burning cloud"
 	desc = "A cloud of something that is on fire."
 	color = "#FF9933"
-	light_color = "#FF0000"
-	light_range = 2
-	light_power = 5
+
+CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
+	configure(light_glow(color = "#FF0000", range = 2, power = 5))
 
 /obj/effect/effect/smoke/elemental/fire/affect(mob/living/L)
 	L.inflict_heat_damage(strength)

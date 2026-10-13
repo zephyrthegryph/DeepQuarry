@@ -4,46 +4,26 @@ human|none click: Click: Weigh
 -click: Click: Use
 +2 menu: Weigh
 +3 click: Click: Weigh
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/tool/wrench
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/multitool
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/weldingtool
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+3 menu: Weigh
-+4 click: Click: Weigh
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
-@obj human|/obj/item/card/id
--click: nothing
-+3 menu: Weigh
-+4 click: Click: Weigh
-@obj human|/obj/item
--click: nothing
-+2 menu: Weigh
-+3 click: Click: Weigh
+human|/obj/item/tool/screwdriver menu: Weigh
+human|/obj/item/tool/screwdriver click: Click: Weigh
+human|/obj/item/tool/crowbar menu: Weigh
+human|/obj/item/tool/crowbar click: Click: Weigh
+human|/obj/item/tool/wrench menu: Weigh
+human|/obj/item/tool/wrench click: Click: Weigh
+human|/obj/item/tool/wirecutters menu: Weigh
+human|/obj/item/tool/wirecutters click: Click: Weigh
+human|/obj/item/multitool menu: Weigh
+human|/obj/item/multitool click: Click: Weigh
+human|/obj/item/weldingtool menu: Weigh
+human|/obj/item/weldingtool click: Click: Weigh
+human|/obj/item/stack/cable_coil menu: Weigh
+human|/obj/item/stack/cable_coil click: Click: Weigh
+human|/obj/item/stack/material/steel menu: Weigh
+human|/obj/item/stack/material/steel click: Click: Weigh
+human|/obj/item/card/id menu: Weigh
+human|/obj/item/card/id click: Click: Weigh
+human|/obj/item menu: Weigh
+human|/obj/item click: Click: Weigh
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, scale_weigh_hand, silicon_hand

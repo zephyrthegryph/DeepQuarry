@@ -7,7 +7,7 @@
 //		of = /obj/machinery/recharger
 //		include = list(/datum/definition_bundle/powered_machine)
 //		ticks = list(/obj/machinery/recharger/proc/charge = list(every = 2 SECONDS))
-//		reacts = list(/obj/machinery/recharger/proc/power_changed = CHANGE_MACHINE_POWER)
+//		inputs = list("charge")
 //
 // A decl applies to `of` and every subtype, so base-type families supply
 // defaults; a more specific decl adds to them. Bundles are the same rows with
@@ -67,17 +67,6 @@
 	var/list/services
 	/// Parallel to services: the channels each service observes on this type (per-(service, type) mask).
 	var/list/service_masks
-	/// Declared caches (declared_cache_vars(), read from the first instance by
-	/// entity_cache_scan()): the change bits that clear one, and stride-2 rules
-	/// (bits, var) / (event path, var) / (relation id, var).
-	var/cache_scanned = FALSE
-	/// Declared appearance watch mask (appearance_mask_of(), code/datums/sys/appearance.dm), read once.
-	var/appearance_scanned = FALSE
-	var/appearance_mask = 0
-	var/cache_mask = 0
-	var/list/cache_change
-	var/list/cache_events
-	var/list/cache_relations
 
 // ---- Combinators (plain lists; used by checks and derived rows). ----
 

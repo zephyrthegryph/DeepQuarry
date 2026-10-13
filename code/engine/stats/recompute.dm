@@ -24,17 +24,26 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> uncached read computes
+GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
+PROC_SUMMARY(/proc/stat_call) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_call(datum/holder, proc_name)
+	lookup_reads_prepare(holder)
 	// One context for every contribution handler: a handler may not keep it, and a recompute inside a handler puts the outer holder back.
 	var/static/datum/act/eval/ctx = new
 	var/datum/outer = ctx.holder
 	ctx.holder = holder
-	. = call(holder, proc_name)(ctx)
+	try
+		. = call(holder, proc_name)(ctx)
+	catch(var/exception/fault)
+		ctx.holder = outer
+		throw fault
 	ctx.holder = outer
 
 /// The value of stat `stat_id` on E: its var, or (a virtual stat) what the record holds, or what it composes to now.
+PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_value(datum/E, stat_id)
 	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat_id)
@@ -42,13 +51,39 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		return null
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
-		return E.vars[def.name]
+		. = E.vars[def.name]
+		if(GLOB.staleness_on)
+			staleness_check_stat(E, def, I || null, ., "stat_value")
+		return .
 	var/datum/stat_record/rec = E.rx?.stats
-	if(rec?.virtual && (def.skey in rec.virtual))
-		return rec.virtual[def.skey]
-	return stat_compute(E, def, I || null, rec)
+	// A stat whose inputs all publish keeps its value until one does (stat_recompute() rewrites it then); one that reads something nobody publishes
+	// (code/engine/_generated/deps.dm, the untracked_inputs lint) is composed on every read, so it is never stale.
+	var/tracked = stat_inputs_tracked(I || null, def)
+	if(tracked && rec?.virtual && (def.skey in rec.virtual))
+		. = rec.virtual[def.skey]
+		if(GLOB.staleness_on)
+			staleness_check_stat(E, def, I || null, ., "stat_value")
+		return .
+	GLOB.stat_read_computes++
+#if defined(BENCHMARK)
+	GLOB.stat_read_compute_by["[E.type]:[def.name]"]++
+#endif
+	. = stat_compute(E, def, I || null, rec)
+	// Cached on first read once the stat layer has set the entity up (its init computation, or its first hold): before that a map edit or an
+	// Initialize() write may still be on its way. A keyed stat's list is handed out, so it is cached only by a recompute, as before.
+	if(tracked && rec?.inited && !def.keyed)
+		stat_store(E, def, ., I || null)
+
+/// PUBLISH_CHANGE(E, KEY): a producer key that is not one var changed. The stats that read it (through a READS_AS accessor) recompute before the
+/// writer's next line, as for a tracked var, then the key's readers hear it.
+/proc/publish_key_changed(datum/E, key)
+	if(GLOB.stat_input_keys?[key] && key != GLOB.stat_writing)
+		stat_inputs_changed(E, key)
+	if(READERS(E, key))
+		publish_change(E, key)
 
 /// Writes a stat's settled value where it lives.
+PROC_SUMMARY(/proc/stat_store) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_store(datum/E, datum/stat_def/def, value, datum/stat_type_info/I)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
 		E.vars[def.name] = value // ALLOW(api): the stat layer is the one writer of a stat's var
@@ -64,6 +99,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
  * The composed value of `def` on E now: the stat's base, the type's constant (the var's initial value, or the map's edit of it) as a contribution at
  * default priority, the type's contributes() entries whose gates hold, and the holds, combined by the rule. A status reads 0 while its immunity holds.
  */
+PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_compute(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
 	var/value
 	var/override_set = FALSE
@@ -174,6 +210,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	return TRUE
 
 /// What one contribution contributes: its constant, a var read, another stat, a capability key, a holder proc, or a condition tree.
+PROC_SUMMARY(/proc/stat_contrib_value) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_contrib_value(datum/E, datum/stat_def/def, datum/stat_contrib/C)
 	var/value
 	switch(C.value_kind)
@@ -192,6 +229,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	return stat_boolean_normal(def, value)
 
 /// Recomputes one stat on E and writes it when it changed. TRUE when it changed.
+PROC_SUMMARY(/proc/stat_recompute) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_recompute(datum/E, datum/stat_def/def, silent = FALSE, datum/stat_type_info/I = null)
 	if(isnull(I))
 		I = stat_type_of(E)
@@ -202,9 +240,10 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	var/old = has_var ? E.vars[def.name] : stat_value_now(E, def, FALSE)
 	var/new_value = stat_compute(E, def, I || null, rec)
 	GLOB.stat_evals++
-	if(old == new_value && !islist(new_value))
-		return FALSE
-	if(islist(new_value) && stat_values_equal(old, new_value))
+	if((old == new_value && !islist(new_value)) || (islist(new_value) && stat_values_equal(old, new_value)))
+		// Unchanged, but a virtual stat that equals its base was never stored: keep it now, so its reads stop composing it (stat_value()).
+		if(!has_var && !def.keyed && !(rec.virtual && (def.skey in rec.virtual)) && stat_inputs_tracked(I || null, def))
+			stat_store(E, def, new_value, I || null)
 		return FALSE
 	if(has_var)
 		E.vars[def.name] = new_value // ALLOW(api): the stat layer is the one writer of a stat's var
@@ -217,9 +256,14 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		TEST_REC_DELTA(E, def.name, old, new_value)
 #endif
 	if(has_var)
+		var/outer_writing = GLOB.stat_writing
 		GLOB.stat_writing = def.name
-		state_changed(E, 0, def.name)
-		GLOB.stat_writing = null
+		try
+			state_changed(E, 0, def.name)
+		catch(var/exception/fault)
+			GLOB.stat_writing = outer_writing
+			throw fault
+		GLOB.stat_writing = outer_writing
 	else
 		op_changed(E)
 		if(READERS(E, def.stat_key))
@@ -237,6 +281,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	return TRUE
 
 /// The value a stat holds now, without computing it.
+PROC_SUMMARY(/proc/stat_value_now) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_value_now(datum/E, datum/stat_def/def, has_var)
 	if(isnull(has_var))
 		has_var = (def.name in E.vars)
@@ -251,11 +296,13 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 
 /// Captures a map's edit of each stat var as the stat's constant. Only the engine writes a stat var, so until the first recompute the var still holds
 /// what the map set. Runs before an entity's first computation, from init or from the first hold.
+PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_ensure_inited(datum/E, datum/stat_type_info/I)
 	var/datum/stat_record/rec = stat_record_of(E)
 	if(rec.inited)
 		return rec
 	rec.inited = TRUE
+	staleness_track(E)
 	if(!I)
 		return rec
 	for(var/datum/stat_def/def as anything in I.defs)
@@ -329,16 +376,20 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		declare_report("[RULE_STAT_CYCLE] settle of [E.type] is [GLOB.stat_settle_depth] writes deep: a runtime cycle through relations or contributes_to")
 		return
 	GLOB.stat_settle_depth++
-	if(stat_recompute(E, def, FALSE, I))
-		if(I && (I.stat_readers[def.skey] || I.inputs[def.stat_key] || I.inputs[def.name]))
-			var/list/queue = list(def)
-			stat_changed_dependents(E, def, I, queue)
-			stat_settle_queue_run(E, I, queue, 2)
-		else
-			if(GLOB.stat_hop_index[def.name])
-				stat_notify_hops(E, def.name)
-			if(length(GLOB.stat_sys_index))
-				stat_notify_system(E, def.name)
+	try
+		if(stat_recompute(E, def, FALSE, I))
+			if(I && (I.stat_readers[def.skey] || I.inputs[def.stat_key] || I.inputs[def.name]))
+				var/list/queue = list(def)
+				stat_changed_dependents(E, def, I, queue)
+				stat_settle_queue_run(E, I, queue, 2)
+			else
+				if(GLOB.stat_hop_index[def.name])
+					stat_notify_hops(E, def.name)
+				if(length(GLOB.stat_sys_index))
+					stat_notify_system(E, def.name)
+	catch(var/exception/fault)
+		GLOB.stat_settle_depth--
+		throw fault
 	GLOB.stat_settle_depth--
 
 /// Runs a settle queue from entry `start` (entries before it are done).
@@ -347,7 +398,11 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		declare_report("[RULE_STAT_CYCLE] settle of [E.type] is [GLOB.stat_settle_depth] writes deep: a runtime cycle through relations or contributes_to")
 		return
 	GLOB.stat_settle_depth++
-	stat_settle_queue_run(E, I, queue, start)
+	try
+		stat_settle_queue_run(E, I, queue, start)
+	catch(var/exception/fault)
+		GLOB.stat_settle_depth--
+		throw fault
 	GLOB.stat_settle_depth--
 
 /proc/stat_settle_queue_run(datum/E, datum/stat_type_info/I, list/queue, start)
@@ -506,6 +561,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
  * Re-evaluates one contributes_to entry of E: what it contributes to the stat of the entity its relation names, now. The row on the target is E's
  * (source E, untimed, so E's deletion releases it); it moves when the relation changes and goes when the gate stops holding.
  */
+PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_ct_update(datum/E, datum/stat_contrib/ct)
 	if(QDELETED(E))
 		return
@@ -691,8 +747,16 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	if(materialization_host().map_loading())
 		return
 	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
-	if(length(GLOB.stat_marked))
+	// The stats a pass settles publish their changes, which mark on_change hooks (a machine's has_power flip, its power_change()): those run in
+	// the same drain, and what they mark is settled after them, so a tracked write reaches its readers' reactions in one drain, not the next.
+	var/passes = 0
+	while(length(GLOB.stat_marked) && passes < DRAIN_MAX_PASSES)
+		passes++
+		var/spills = GLOB.stat_spills
 		stat_drain_marked(LANE_SIMULATION, FALSE)
+		act_drain_point()
+		if(GLOB.stat_spills != spills)
+			break // the lane's budget is spent: the rest resumes at the next drain
 
 /// A kernel pass begins: the lane's budget is whole again, shared by the drains of this tick's D, P and R.
 /proc/stat_tick_begin()
@@ -716,6 +780,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 // ---- the reverse index of one-relation hops ----
 
 /// Records that reader E's relation var `rel_var` names what it names now: E joins the new target's hop_in[rel_var] and leaves the old one's.
+PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_hop_attach(datum/E, rel_var)
 	var/datum/stat_record/rec = stat_record_of(E)
 	var/datum/old = rec.hop_targets?[rel_var]

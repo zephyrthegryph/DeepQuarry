@@ -940,6 +940,7 @@ GLOBAL_VAR(dq_test_select_names)
 		if(!test.run_finished)
 			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
+		staleness_test_end(test)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration
@@ -1382,11 +1383,13 @@ GLOBAL_VAR(boot_unclean)
 		log_test(line)
 	if(length(framework_failures))
 		test_results["ownership_framework_checks"] = list("status" = UNIT_TEST_FAILED, "message" = jointext(framework_failures, "\n"), "name" = "ownership_framework_checks", "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
+#ifdef REFERENCE_TRACKING
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()
 		for(var/type in GLOB.dq_refsearch_type_counts)
 			searched += "[type] x[GLOB.dq_refsearch_type_counts[type]][GLOB.dq_refsearch_skipped[type] ? " (+[GLOB.dq_refsearch_skipped[type]] skipped)" : ""]"
 		log_test("Reference searches this run ([GLOB.dq_refsearch_spent_ds / 10]s): [jointext(searched, ", ")]")
+#endif
 	if(GLOB.e0_proofs_passed + GLOB.e0_proofs_pending + GLOB.e0_proofs_failed)
 		log_test("E0 proofs: [GLOB.e0_proofs_passed] green, [GLOB.e0_proofs_pending] pending an engine (E1-E6 not implemented), [GLOB.e0_proofs_failed] failed for another reason.")
 	log_test("Unit-test suite finished: [total_tests] test types, failures: [GLOB.failed_any_test ? "yes" : "no"].")

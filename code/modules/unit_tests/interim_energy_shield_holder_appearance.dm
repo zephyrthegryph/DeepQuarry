@@ -1,21 +1,20 @@
-/// Counts observe real human inventory redraws and still chain their real implementations.
+/// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_energy_shield_holder
 	var/left_redraws = 0
 	var/right_redraws = 0
 
-/mob/living/carbon/human/interim_energy_shield_holder/update_inv_l_hand()
-	left_redraws++
-	return ..()
-
-/mob/living/carbon/human/interim_energy_shield_holder/update_inv_r_hand()
-	right_redraws++
-	return ..()
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_energy_shield_holder/draw(datum/look/look)
+	set_left_redraws(left_redraws + 1)
+	set_right_redraws(right_redraws + 1)
+	..()
 
 /// Draws the real look and applies it, observing the overlays it lays.
 /obj/item/shield/energy/interim_holder_appearance
 	var/list/observed_overlays
 
 /obj/item/shield/energy/interim_holder_appearance/proc/observe()
+	refresh_flush() // the queued draws run: the holder hears its item's change
 	var/datum/look/look = new
 	draw(look)
 	observed_overlays = look.overlays ? look.overlays.Copy() : list()
@@ -35,16 +34,16 @@
 		if(entry && entry.icon_state == "eshield_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
-	bystander.left_redraws = 0
-	bystander.right_redraws = 0
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
+	bystander.set_left_redraws(0)
+	bystander.set_right_redraws(0)
 	perform_op(holder, shield, "toggle", null, ORIGIN_SYSTEM)
 	shield.observe()
 	TEST_ASSERT(shield.active, "the actual shield interaction extends its blade")
 	TEST_ASSERT_EQUAL(shield.item_state, "eshield_blade", "the actual extended blade has its held item state")
-	TEST_ASSERT_EQUAL(shield.light_range, shield.lrange, "the real active shield enables its configured illumination")
-	TEST_ASSERT_EQUAL(shield.light_power, shield.lpower, "the real active shield uses its configured light power")
+	TEST_ASSERT_EQUAL(glow_of(shield).range, shield.lrange, "the real active shield enables its configured illumination")
+	TEST_ASSERT_EQUAL(glow_of(shield).power, shield.lpower, "the real active shield uses its configured light power")
 	shield.observe()
 	TEST_ASSERT(holder.left_redraws > 0 && holder.right_redraws > 0, "real appearance generation redraws the actual holder's hands")
 	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "appearance generation does not redraw the ambient caller's left hand")
@@ -59,7 +58,7 @@
 	perform_op(holder, shield, "toggle", null, ORIGIN_SYSTEM)
 	shield.observe()
 	TEST_ASSERT(!shield.active, "the actual shield interaction retracts its blade")
-	TEST_ASSERT_EQUAL(shield.light_range, 0, "the real retracted shield extinguishes its illumination")
+	TEST_ASSERT_EQUAL(glow_of(shield).range, 0, "the real retracted shield extinguishes its illumination")
 	TEST_ASSERT_EQUAL(shield.item_state, "eshield", "the actual retracted shield restores its held item state")
 	shield.observe()
 	TEST_ASSERT_EQUAL(length(shield.observed_overlays), inherited_count, "retracting the actual blade restores its inherited appearance count")
@@ -69,8 +68,9 @@
 			retracted_blades++
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(shield), "the actual holder releases the shield to the floor")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
 	shield.observe()
 	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld energy shield does not redraw its former holder")
 	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld energy shield leaves its former holder's right hand untouched")

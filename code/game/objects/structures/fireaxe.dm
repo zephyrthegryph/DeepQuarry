@@ -18,11 +18,13 @@
 
 TRACKED(/obj/structure/fireaxecabinet, open)
 TRACKED(/obj/structure/fireaxecabinet, hitstaken)
-TRACKED(/obj/structure/fireaxecabinet, smashed)
 
 MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
 CAPABILITIES(/obj/structure/fireaxecabinet)
+	// a multitool on an intact cabinet resets its lock: a locked one opens up, a shut unlocked one locks again
+	op("unlock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 1), label("Reset the lock"), when(PROC_REF(lock_resettable_open)), starts(PROC_REF(reset_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
+	op("lock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 2), label("Reset the lock"), when(PROC_REF(lock_resettable_shut)), starts(PROC_REF(lock_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done2)))
 	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	// a cyborg's module only ever strikes the glass or resets the lock, as if the cabinet were locked
 	op("robot_item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(struck_shut)))
@@ -63,11 +65,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 				set_open(0)
 				flick("[cabinet_state()]closing", src)
 				return OP_OK
-			else
-				to_chat(user, span_warning("Resetting circuitry..."))
-				play_sfx(src, SFX_MACHINES_LOCKENABLE)
-				use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user))
-				return OP_OK
+			return OP_OK // a shut cabinet's lock is reset by the lock_reset op
 		else
 			toggle_close_open()
 	return OP_OK
@@ -77,12 +75,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	user.setClickCooldown(10)
-	if(O.has_tool_quality(TOOL_MULTITOOL))
-		to_chat(user, span_warning("Resetting circuitry..."))
-		play_sfx(src, SFX_MACHINES_LOCKRESET)
-		use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user))
-		return OP_OK
-	else if(istype(O, /obj/item))
+	if(istype(O, /obj/item))
 		var/obj/item/W = O
 		if(smashed || open)
 			if(open)
@@ -102,12 +95,33 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 
 	return OP_OK
 
-/obj/structure/fireaxecabinet/proc/attackby_tool_done(mob/user)
+MSG_DEF_SELF(fireaxecabinet/resetting, span_warning("Resetting circuitry..."))
+
+/// A locked cabinet (struck shut) is unlocked by resetting its lock.
+/obj/structure/fireaxecabinet/proc/lock_resettable_open(datum/act/op/A)
+	return !!read_once(locked)
+
+/// A shut, unbroken, unlocked cabinet is locked again.
+/obj/structure/fireaxecabinet/proc/lock_resettable_shut(datum/act/op/A)
+	return read_once(!locked && !smashed && !open)
+
+/obj/structure/fireaxecabinet/proc/reset_started(datum/act/op/A)
+	A.actor.setClickCooldown(10)
+	play_sfx(src, SFX_MACHINES_LOCKRESET)
+
+/obj/structure/fireaxecabinet/proc/lock_started(datum/act/op/A)
+	A.actor.setClickCooldown(10)
+	play_sfx(src, SFX_MACHINES_LOCKENABLE)
+
+/obj/structure/fireaxecabinet/proc/attackby_tool_done(datum/act/op/A)
 	locked = 0
-	to_chat(user, span_warning("You disable the locking modules."))
-/obj/structure/fireaxecabinet/proc/attackby_tool_done2(mob/user)
+	to_chat(A.actor, span_warning("You disable the locking modules."))
+	return OP_OK
+
+/obj/structure/fireaxecabinet/proc/attackby_tool_done2(datum/act/op/A)
 	locked = 1
-	to_chat(user, span_warning("You re-enable the locking modules."))
+	to_chat(A.actor, span_warning("You re-enable the locking modules."))
+	return OP_OK
 
 /obj/structure/fireaxecabinet/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor

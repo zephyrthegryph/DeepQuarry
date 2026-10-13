@@ -58,7 +58,7 @@
 
 	if(!mapper_set())
 		for(var/datum/omni_port/P in inputs)
-			P.concentration = 1 / max(1, length(inputs))
+			P.set_concentration(1 / max(1, length(inputs)))
 
 	if(output)
 		output.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * length(inputs))
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 /obj/machinery/atmospherics/omni/mixer/proc/share_free(datum/act/op/A)
 	var/port = dir_flag(A.args["dir"])
 	for(var/datum/omni_port/P in inputs)
-		if(P.dir != port && !P.con_lock) // ALLOW(reads): the ports are asked when the button is pressed, never from a cached menu or look
+		if(P.dir != port && !P.con_lock)
 			return null
 	return /datum/msg/req_silent
 
@@ -288,14 +288,14 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	remain_con = max(0, remain_con - new_con) / max(1, non_locked)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
-			P.concentration = new_con
+			P.set_concentration(new_con)
 		else if(!P.con_lock)
-			P.concentration = remain_con
+			P.set_concentration(remain_con)
 
 /obj/machinery/atmospherics/omni/mixer/proc/con_lock(port = NORTH)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
-			P.con_lock = !P.con_lock
+			P.set_con_lock(!P.con_lock)
 
 /// The Southern Cross atmospherics mixer: draws 7500 W while mixing (the map edit `active_power_usage = 7500` it carried before the draw
 /// became the uses_power() trait; a compiled map cannot name a var that left the type).

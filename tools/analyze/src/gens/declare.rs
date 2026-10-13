@@ -672,6 +672,10 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
                     continue;
                 }
                 let line = m.line_at(offsets[i]);
+                if is_var_assignment(a) {
+                    out.diag(&m.rel, line, format!("`{}` is a var assignment inside the CAPABILITIES block of {}: the block holds entries only, so the type's vars would be lost; put the CAPABILITIES block after the type's var lines", one_line(a), ty));
+                    continue;
+                }
                 if let Some(parts) = section_parts(a) {
                     close_section(&current, out);
                     let name = parts.first().map(|p| p.trim().to_string()).unwrap_or_default();
@@ -703,6 +707,17 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             out.blank();
         }
         lifeform_type_extras(cx, out, &in_half);
+}
+
+/// Whether a block line is `name = value` (a var override that fell into a CAPABILITIES block) and not an entry call.
+fn is_var_assignment(arg: &str) -> bool {
+    let t = arg.trim_start();
+    let end = t.find(|c: char| !(c.is_alphanumeric() || c == '_')).unwrap_or(t.len());
+    if end == 0 {
+        return false;
+    }
+    let rest = t[end..].trim_start();
+    rest.starts_with('=') && !rest.starts_with("==")
 }
 
 /// The first argument of a `nameof(x)` text: `x`.
@@ -1037,6 +1052,15 @@ CAPABILITIES(/obj/thing, \
     }
 
     #[test]
+    fn a_var_assignment_in_a_block_is_reported() {
+        let (_, _, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing)
+	wall(1, 2)
+	pixel_x = -16
+")]);
+        assert!(diags.iter().any(|d| format!("{:?}", d).contains("var assignment")), "{:?}", diags);
+    }
+
+    #[test]
     fn bad_sections_are_reported() {
         let (_, _, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing)
 	section(a)
@@ -1067,9 +1091,10 @@ CAPABILITIES(/obj/random/x/y)
         let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
         assert!(diags.is_empty(), "{:?}", diags);
         assert!(decl.contains("/proc/declared_static_blocks()
-	. = list()"), "{}", decl);
-        assert!(decl.contains("	.[/obj/random/x] = list(\"code/a.dm\", 2, list(entry_line(3), global.loot(table = list(/obj/a = 2))))"), "{}", decl);
-        assert!(decl.contains("	.[/obj/random/x/y] = list(\"code/a.dm\", 5, list(entry_line(6), configure(global.loot(chance = 5))))"), "{}", decl);
+	. = list()
+	declared_static_blocks_part1(.)"), "{}", decl);
+        assert!(decl.contains("	into[/obj/random/x] = list(\"code/a.dm\", 2, list(entry_line(3), global.loot(table = list(/obj/a = 2))))"), "{}", decl);
+        assert!(decl.contains("	into[/obj/random/x/y] = list(\"code/a.dm\", 5, list(entry_line(6), configure(global.loot(chance = 5))))"), "{}", decl);
         assert!(!decl.contains("into += list(global.loot"), "a static entry is not in the instance chain: {}", decl);
         assert!(!decl.contains("configure(global.loot(chance = 5))
 	into"), "{}", decl);

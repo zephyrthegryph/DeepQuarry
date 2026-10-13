@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Margherita pizza volume now fits its contents (no overflow warning when an MRE rolls it)"
+  - code_imp: "Destroyed entities leave the staleness sweep index at once; chameleon appearance lists are built at boot"

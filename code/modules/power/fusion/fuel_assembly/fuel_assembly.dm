@@ -57,12 +57,11 @@ CAPABILITIES(/obj/item/fuel_assembly)
 			set_radioactivity(mat_rad)
 			desc += " It is warm to the touch."
 		if(mat_lum)
-			set_light(mat_lum, mat_lum, material.icon_colour)
+			set_glow(src, GLOW(mat_lum, mat_lum, material.icon_colour))
 	else
 		name = "[fuel_type] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [fuel_type]."
 
-	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 
 // Mapper shorthand.
@@ -95,7 +94,6 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	fuel_colour = "#FCE300"
 	fuel_type = "blitzu"
 	rod_glows = TRUE
-	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 	radiation_pulse(
 		source = src,
@@ -104,7 +102,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 		chance = DEFAULT_RADIATION_CHANCE,
 		strength = 20
 	)
-	set_light(3, 3, "#FCE300")
+	set_glow(src, GLOW(3, 3, "#FCE300"))
 
 /obj/item/fuel_assembly/blitz/throw_impact(atom/hit_atom)
 	if(!..())
@@ -181,9 +179,8 @@ CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
 	fuel_colour = "#76888F"
 	fuel_type = "blitz"
 	rod_glows = TRUE
-	changed(src)
 	rod_quantities[fuel_type] = initial_amount
-	set_light(2, 2, "#FCE300")
+	set_glow(src, GLOW(2, 2, "#FCE300"))
 
 /// Whether the rod glows (the blitz rods).
 /obj/item/fuel_assembly/var/rod_glows = FALSE

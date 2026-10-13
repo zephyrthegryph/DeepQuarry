@@ -91,6 +91,12 @@
 
 	// HUD element variable, see organ_icon.dm get_damage_hud_image()
 	var/image/hud_damage_image
+TRACKED(/obj/item/organ/external, transparent)
+TRACKED(/obj/item/organ/external, s_tone)
+TRACKED(/obj/item/organ/external, s_col)
+TRACKED(/obj/item/organ/external, model)
+TRACKED(/obj/item/organ/external, h_col)
+TRACKED(/obj/item/organ/external, open)
 
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
@@ -234,13 +240,13 @@ CAPABILITIES(/obj/item/organ/external)
 
 /// The scalpel cuts a closed limb open, or the necrotic tissue off a fully open one.
 /obj/item/organ/external/proc/at_scalpel_stage(datum/act/op/A)
-	return (stage == 0 || stage == 2) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 0 || stage == 2) ? null : /datum/msg/req_failed
 /obj/item/organ/external/proc/at_stage_1(datum/act/op/A)
-	return (stage == 1) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 1) ? null : /datum/msg/req_failed
 /obj/item/organ/external/proc/at_stage_2(datum/act/op/A)
-	return (stage == 2) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 2) ? null : /datum/msg/req_failed
 /obj/item/organ/external/proc/at_stage_3(datum/act/op/A)
-	return (stage == 3) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 3) ? null : /datum/msg/req_failed
 
 /obj/item/organ/external/proc/bench_scalpel(datum/act/op/A)
 	if(stage == 2)
@@ -250,15 +256,15 @@ CAPABILITIES(/obj/item/organ/external)
 
 /obj/item/organ/external/proc/bench_incise(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts %T% open with [A.held]!"))
-	stage++
+	set_stage(stage + 1)
 
 /obj/item/organ/external/proc/bench_retract(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cracks %T% open like an egg with [A.held]!"))
-	stage++
+	set_stage(stage + 1)
 
 /obj/item/organ/external/proc/bench_cauterize(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " closes %T% with [A.held]!"))
-	stage--
+	set_stage(stage - 1)
 
 /obj/item/organ/external/proc/has_contents(datum/act/op/A)
 	return LAZYLEN(contents) > 0 // ALLOW(reads): the extraction question is asked from what the limb holds when the hemostat goes in
@@ -292,7 +298,7 @@ CAPABILITIES(/obj/item/organ/external)
 
 /obj/item/organ/external/proc/bench_fixovein(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " partially closes %T% with [A.held]!"))
-	stage--
+	set_stage(stage - 1)
 
 //Begin necrosis surgery
 /obj/item/organ/external/proc/bench_necrosis(datum/act/op/A)
@@ -300,14 +306,14 @@ CAPABILITIES(/obj/item/organ/external)
 		to_chat(A.actor, span_notice("The limb isn't necrotic, there's no need to fix it!"))
 		return
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts necrotic tissue off %T% with [A.held]!"))
-	stage++
+	set_stage(stage + 1)
 
 /obj/item/organ/external/proc/bench_rejuvenate(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " rejuvinates formerly necrotic tissue on %T% with [A.held]!"))
 	germ_level = 0
 	set_status(status & ~ORGAN_DEAD)
 	clear_necrosis() // the dead-tissue afflictions go too (audit D12)
-	stage-- //Go back to stage 2
+	set_stage(stage - 1) //Go back to stage 2
 
 /obj/item/organ/external/get_mechanics_info(list/additional_information)
 	if(!additional_information)
@@ -753,7 +759,7 @@ CAPABILITIES(/obj/item/organ/external)
 		var/fix_verb = "patches"
 		if(damage_amount > repair_amount)
 			fix_verb = "finishes patching"
-			disfigured = FALSE //Prevents some edgecases where you can repair despite hitting disfigurement thresholds, they're fully healed at this point anyways.
+			set_disfigured(FALSE) //Prevents some edgecases where you can repair despite hitting disfigurement thresholds, they're fully healed at this point anyways.
 		if(user == src.owner)
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " [fix_verb] [damage_desc] on %THEIR% [src.name] with [tool]."))
 		else
@@ -765,7 +771,7 @@ CAPABILITIES(/obj/item/organ/external)
 This function completely restores a damaged organ to perfect condition.
 */
 /obj/item/organ/external/rejuvenate(ignore_prosthetic_prefs)
-	damage_state = "00"
+	set_damage_state("00")
 	set_status(0)
 	germ_level = 0
 	for(var/datum/affliction/wound/W as anything in get_wounds())
@@ -972,7 +978,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if (!(status & ORGAN_DEAD))
 			set_status(status | ORGAN_DEAD)
 			to_chat(owner, span_notice("You can't feel your [name] anymore..."))
-			owner.update_icons_body()
+			changed(src)
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
@@ -1008,7 +1014,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/update_damage_state()
 	var/n_is = damage_state_text()
 	if (n_is != damage_state)
-		damage_state = n_is
+		set_damage_state(n_is)
 		return 1
 	return 0
 
@@ -1369,7 +1375,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	..()
 
 	if(company)
-		model = company
+		set_model(company)
 		var/datum/robolimb/R = GLOB.all_robolimbs[company]
 		if(!R || (data.get_species_name() in R.species_cannot_use))
 			R = GLOB.basic_robolimb
@@ -1423,11 +1429,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(src.is_robotic())
 		return
 	src.set_status(src.status | ORGAN_MUTATED)
-	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/unmutate()
 	src.set_status(src.status & ~ORGAN_MUTATED)
-	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/get_damage()	//returns total damage
 	return (get_trauma() + get_burn())	//could use max_damage?
@@ -1453,7 +1457,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(!silent)
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
 	rel_add(src, nameof(implants), W)
-	owner.embedded_flag = 1
+	owner.set_embedded_flag(1)
 	grant(owner, granted_verb(/mob/proc/yank_out_object), owner)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 	W.add_blood(owner)
@@ -1500,7 +1504,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		expire(0.1 SECONDS)
 
-	victim.update_icons_body()
+	changed(src)
 	return TRUE
 
 /// Drops what `victim` wears on this limb, which is about to be severed.
@@ -1532,7 +1536,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			owner.visible_message(span_danger("\The [owner]'s [name] melts away, turning into mangled mess!"),	\
 			span_danger("Your [name] melts away!"),	\
 			span_danger("You hear a sickening sizzle."))
-	disfigured = 1
+	set_disfigured(TRUE)
 
 /obj/item/organ/external/proc/jostle_bone(force)
 	if(!is_fractured()) //intact bones stay still
@@ -1643,15 +1647,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				return 1
 
 /obj/item/organ/external/proc/is_hidden_by_sprite_accessory(clothing_only = FALSE)			// Clothing only will mean the check should only be used in places where we want to hide clothing icon, not organ itself.
-	if(owner && owner.tail_style && owner.tail_style.hide_body_parts && (organ_tag in owner.tail_style.hide_body_parts))
-		return 1
-	if(clothing_only && LAZYLEN(markings))
-		for(var/M in markings)
-			if(!markings[M]["on"]) //If the marking is off, the organ isn't hidden by it.
-				continue
-			var/datum/sprite_accessory/marking/mark = markings[M]["datum"]
-			if(mark.hide_body_parts && (organ_tag in mark.hide_body_parts))
-				return 1
+	return owner?.limb_hidden(src, clothing_only)
 
 #undef DROPLIMB_THRESHOLD_EDGE
 #undef DROPLIMB_THRESHOLD_DESTROY
@@ -1659,13 +1655,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)
 
-/// A tick after a limb comes off, the body's icons catch up.
+/// A tick after a limb comes off, the body's icons catch up (a human's draw follows its parts by itself).
 /proc/droplimb_refresh_icons(mob/living/victim)
-	if(ishuman(victim))
-		var/mob/living/carbon/human/H = victim
-		H.UpdateDamageIcon()
-		H.update_icons_body()
-	else
+	if(!ishuman(victim))
 		victim.update_icons()
 
 #undef LIMB_SPILL_SHARP_BRUTE
@@ -1680,3 +1672,14 @@ Note that amputating the affected organ does in fact remove the infection from t
 #undef LIMB_DISMEMBER_SPARED
 #undef LIMB_DISMEMBER_DROPPED
 
+
+/// Scarred beyond recognition or mended: the owner's visible name follows it (MOB_KEY_IDENTITY).
+/obj/item/organ/external/proc/set_disfigured(value)
+	if(TRACKED_UNCHANGED(disfigured, value))
+		return FALSE
+	disfigured = value
+	tracked_changed(src, nameof(disfigured))
+	if(owner)
+		PUBLISH_CHANGE(owner, MOB_KEY_IDENTITY)
+	return TRUE
+SETTER(/obj/item/organ/external, disfigured)

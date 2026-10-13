@@ -1,6 +1,6 @@
 @obj.machinery.computer human|none
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 -click: nothing
 +1 menu: View
@@ -8,7 +8,7 @@
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Disconnect
 -click: Click: Disconnect
-+5 click: Click: Use item
++3 click: Click: Use item
 @obj.machinery.computer human|/obj/item/tool/crowbar
 @obj.machinery.computer human|/obj/item/tool/wrench
 @obj.machinery.computer human|/obj/item/tool/wirecutters

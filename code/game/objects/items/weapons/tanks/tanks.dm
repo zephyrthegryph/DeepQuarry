@@ -89,7 +89,6 @@ TRACKED(/obj/item/tank, seal_damaged)
 /// TRUE while a mob holds or wears the tank (set by equipped(), cleared by dropped()).
 /obj/item/tank/var/handled = FALSE
 TRACKED(/obj/item/tank, handled)
-TRACKED(/obj/item/tank, wired)
 TRACKED(/obj/item/tank, valve_welded)
 
 /obj/item/tank/on_update_integrity(old_value, new_value)

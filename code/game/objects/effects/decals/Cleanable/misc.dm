@@ -37,6 +37,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/ash)
 
 /// Radiates only while a client is near (the proximity tracker): otherwise the every() parks until one comes near.
 CAPABILITIES(/obj/effect/decal/cleanable/greenglow)
+	configure(light_glow(range = 1))
 	every(2 SECONDS, then(PROC_REF(greenglow_step)), when = STAT_RELEVANCE)
 
 /obj/effect/decal/cleanable/greenglow/proc/greenglow_step(datum/act/timer/A)
@@ -117,7 +118,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	gender = PLURAL
 	density = FALSE
 	anchored = TRUE
-	light_range = 1
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "greenglow"
 

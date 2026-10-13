@@ -1,57 +1,59 @@
 @turf human|none
--menu: Graffiti
 @turf robot|none
--menu: Graffiti
 @turf ai|none
 @turf ghost|none
 @turf human|/obj/item/tool/screwdriver
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/tool/crowbar
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/tool/wrench
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/tool/wirecutters
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/multitool
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/weldingtool
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/stack/cable_coil
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+7 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/stack/material/steel
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
++3 click: Click: Build
 @turf human|/obj/item/card/id
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+7 click: Click: Build
++3 click: Click: Build
+human|/obj/item/shovel menu: Build
+human|/obj/item/shovel menu: Touch
+human|/obj/item/shovel menu: Use shovel
+human|/obj/item/shovel click: Click: Build
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
 +0 menu: Build
-+6 click: Click: Build
-keys: crawl_drag, dig_grave, graffiti, silicon_hand, space_build, turf_crawl, turf_item, turf_touch
++3 click: Click: Build
+keys: crawl_drag, dig, dig_grave, graffiti, silicon_hand, space_build, turf_crawl, turf_item, turf_touch

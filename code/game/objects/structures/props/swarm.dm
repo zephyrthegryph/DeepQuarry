@@ -3,7 +3,6 @@
 	desc = "A small pod."
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "pod"
-	light_color = "#00B2B2"
 
 	shatter_message = "The energetic field shatters!"
 	impact_sound = SFX_EFFECTS_GLASSHIT
@@ -12,6 +11,7 @@
 	var/list/active_beams
 
 CAPABILITIES(/obj/structure/cult/pylon/swarm)
+	configure(light_glow(color = "#00B2B2"))
 	owns_many(nameof(active_beams))
 
 /obj/structure/cult/pylon/swarm/CanPass(atom/movable/mover, turf/target)
@@ -33,7 +33,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/swarm/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
@@ -46,7 +46,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
 			playsound(src,impact_sound, 75, 1)
@@ -107,7 +107,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/swarm/defender/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
 			playsound(src,impact_sound, 75, 1)

@@ -2,72 +2,72 @@
 +2 menu: Reset camera bug (refused: You can't do that.)
 @obj robot|none
 +3 menu: Reset camera bug (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Reset camera bug (refused: You can't do that.)
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use screwdriver
 +4 click: Click: Hit
 @obj human|/obj/item/tool/crowbar
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use crowbar
 +4 click: Click: Hit
 @obj human|/obj/item/tool/wrench
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
-+3 menu: Secure or unsecure
++1 menu: Reset camera bug (refused: You can't do that.)
++2 menu: Secure or unsecure
++4 menu: Use wrench
 +5 click: Click: Secure or unsecure
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use wirecutters
 +4 click: Click: Hit
 @obj human|/obj/item/multitool
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use multitool
 +4 click: Click: Hit
 @obj human|/obj/item/weldingtool
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use welding tool
 +4 click: Click: Hit
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+0 menu: Hit
-+3 menu: Reset camera bug (refused: You can't do that.)
-+5 click: Click: Hit
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use cable coil
++4 click: Click: Hit
 @obj human|/obj/item/stack/material/steel
 -click: nothing
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use steel sheet
 +4 click: Click: Hit
 @obj human|/obj/item/card/id
 -click: nothing
-+0 menu: Hit
-+3 menu: Reset camera bug (refused: You can't do that.)
-+5 click: Click: Hit
++1 menu: Reset camera bug (refused: You can't do that.)
++3 menu: Use identification card
++4 click: Click: Hit
 @obj human|/obj/item/kit
-+1 menu: Hit
-+3 menu: Reset camera bug (refused: You can't do that.)
++2 menu: Reset camera bug (refused: You can't do that.)
++4 menu: Use item
 @obj human|/obj/item/storage
 -click: Click: Collect
-+1 menu: Hit
-+3 menu: Reset camera bug (refused: You can't do that.)
++2 menu: Reset camera bug (refused: You can't do that.)
++4 menu: Use storage
 +5 click: Click: Hit
-human|/obj/item/bug_monitor menu: Hit
 human|/obj/item/bug_monitor menu: Move To Top
 human|/obj/item/bug_monitor menu: Pair
 human|/obj/item/bug_monitor menu: Reset camera bug (refused: You can't do that.)
 human|/obj/item/bug_monitor menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/bug_monitor menu: Use mobile camera pod monitor
 human|/obj/item/bug_monitor click: Click: Pair
-human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Reset camera bug (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
 human|/obj/item click: Click: Hit
 keys: collect_item, crush, drag_buckle, gen_silicon_item_silicon_equip_module, hit, kit_customize, kit_customize_last, move_to_top, pair, pick_up_item, reset, secure, toggle_digestable

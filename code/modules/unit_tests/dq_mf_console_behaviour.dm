@@ -71,19 +71,19 @@
 	var/obj/machinery/computer/mfc_probe/C = probe()
 	C.power_change()
 	test_time(1 SECOND)
-	TEST_ASSERT_EQUAL(C.light_range, C.light_range_on, "a powered console lights its screen")
+	TEST_ASSERT_EQUAL(glow_of(C).range, C.light_range_on, "a powered console lights its screen")
 	var/area/A = get_area(C)
 	var/requires = A.requires_power
 	var/equip = A.power_equip
 	A.set_requires_power(TRUE)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = FALSE
+	A.set_power_equip(FALSE)
 	C.power_change()
 	test_time(1 SECOND)
-	TEST_ASSERT(!C.light_range, "an unpowered one is dark")
+	TEST_ASSERT(!glow_of(C).range, "an unpowered one is dark")
 	A.set_requires_power(requires)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = equip
+	A.set_power_equip(equip)
 	C.power_change()
 
 /// Two consoles side by side, facing the same way, join up into one desk.
@@ -94,8 +94,6 @@
 	var/obj/machinery/computer/mfc_probe/B = probe(get_step(left, EAST))
 	A.set_dir(SOUTH)
 	B.set_dir(SOUTH)
-	A.update_icon()
-	B.update_icon()
 	test_time(1 SECOND)
 	TEST_ASSERT(findtext(A.icon_state, "computer_") && findtext(B.icon_state, "computer_"), "both draw the joined desk ([A.icon_state], [B.icon_state])")
 

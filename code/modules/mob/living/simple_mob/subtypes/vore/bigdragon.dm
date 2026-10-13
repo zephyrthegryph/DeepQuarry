@@ -633,9 +633,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 ///		AI handling stuff
 ///
 
-/mob/living/simple_mob/vore/bigdragon/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/bigdragon/life_special(datum/seq_frame/life/F)
 	if(!src.noenrage)
 		if(!src.enraged)
@@ -748,7 +745,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	ai_busy_end()
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathstart(atom/A)
 	set_glow_toggle(1)
-	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color)) //Setting it here so the light starts immediately
 	if(!enraged)
 		ai_busy_begin()
 	set_flames(1)
@@ -934,14 +931,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 			set_eyes(input_style_list[12])
 
 TRACKED(/mob/living/simple_mob/vore/bigdragon, overlay_colors)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, under)
 TRACKED(/mob/living/simple_mob/vore/bigdragon, body_style)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, ears)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, mane)
 TRACKED(/mob/living/simple_mob/vore/bigdragon, horns)
 TRACKED(/mob/living/simple_mob/vore/bigdragon, eyes)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, enraged)
-TRACKED(/mob/living/simple_mob/vore/bigdragon, flames)
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 	knows(LANGUAGE_DRUDAKAR)

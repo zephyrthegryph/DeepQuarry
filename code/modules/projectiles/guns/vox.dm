@@ -18,7 +18,6 @@
 	fire_sound_text = "a strange noise"
 
 /obj/item/gun/launcher/spikethrower/var/spikes = 5
-TRACKED(/obj/item/gun/launcher/spikethrower, spikes)
 /// Regrows spikes every 2 s while short of them; full, the gate keeps it idle.
 CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	every(2 SECONDS, then(PROC_REF(spikethrower_step)), when = PROC_REF(spikes_short))
@@ -84,11 +83,13 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	taser_effect = 1
 	agony = 55
 	injury_kind = INJURY_PAIN
-	light_color = "#8837A3"
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatterstun
 	tracer_type = /obj/effect/projectile/tracer/darkmatterstun
 	impact_type = /obj/effect/projectile/impact/darkmatterstun
+
+CAPABILITIES(/obj/item/projectile/beam/stun/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 
 /obj/item/projectile/beam/darkmatter
 	name = "dark matter bolt"
@@ -96,7 +97,6 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
 
@@ -105,6 +105,7 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	impact_type = /obj/effect/projectile/impact/darkmatter
 
 CAPABILITIES(/obj/item/projectile/beam/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 	configure(item_combat(armor_penetration = 35))
 
 /obj/item/projectile/energy/darkmatter
@@ -113,11 +114,11 @@ CAPABILITIES(/obj/item/projectile/beam/darkmatter)
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 20
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
 
 CAPABILITIES(/obj/item/projectile/energy/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 	configure(item_combat(armor_penetration = 35))
 
 /*

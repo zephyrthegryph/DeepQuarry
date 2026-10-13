@@ -43,9 +43,6 @@
 	melee_damage_upper = 7
 
 
-/mob/living/simple_mob/homunculus/evil/life_type_pre_due()
-	return TRUE
-
 /mob/living/simple_mob/homunculus/evil/life_type_pre(datum/seq_frame/life/F)
 	src.handle_homunculus()
 	return ..()

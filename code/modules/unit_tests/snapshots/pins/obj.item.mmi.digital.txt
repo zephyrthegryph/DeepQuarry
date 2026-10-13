@@ -2,7 +2,7 @@
 +2 menu: Toggle Brain Radio (refused: You can't do that.)
 @obj robot|none
 +3 menu: Toggle Brain Radio (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Toggle Brain Radio (refused: You can't do that.)
 @obj human|/obj/item/tool/screwdriver
@@ -44,9 +44,9 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Interaction pass
-+3 menu: Toggle Brain Radio (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Interaction pass
@@ -56,9 +56,9 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Interaction pass
-+3 menu: Toggle Brain Radio (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
 @obj human|/obj/item/kit
 +1 menu: Interaction pass
 +3 menu: Toggle Brain Radio (refused: You can't do that.)
@@ -69,7 +69,7 @@
 +3 menu: Toggle Brain Radio (refused: You can't do that.)
 +5 menu: Use
 +6 click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 +0 menu: Interaction pass
 +2 menu: Toggle Brain Radio (refused: You can't do that.)

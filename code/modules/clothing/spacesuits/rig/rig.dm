@@ -301,7 +301,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	return
 
 /obj/item/rig/proc/reset()
-	offline = 2
+	set_offline(2)
 	set_canremove(TRUE)
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 		if(!piece) continue
@@ -311,7 +311,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	refresh_worn_pieces()
 
 /obj/item/rig/proc/cut_suit()
-	offline = 2
+	set_offline(2)
 	set_canremove(TRUE)
 	toggle_piece("helmet", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("gauntlets", loc, ONLY_RETRACT, TRUE)
@@ -462,16 +462,16 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	switch(msg_type)
 		if("boots")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
-			M.update_inv_shoes()
+			changed(src)
 		if("gloves")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "tighten around your fingers and wrists" : "become loose around your fingers"]."))
-			M.update_inv_gloves()
+			changed(src)
 		if("chest")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
-			M.update_inv_wear_suit()
+			changed(src)
 		if("helmet")
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-			M.update_inv_head()
+			changed(src)
 			if(helmet?.light_system == STATIC_LIGHT)
 				helmet.update_light(wearer())
 
@@ -588,21 +588,21 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	// the cell-check path, preserving the original conditional structure.
 	if(!istype(wearer(), /mob/living/carbon/human) || loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
 		if(power_system.process_offline_state())
-			offline = power_system.offline
+			set_offline(power_system.offline)
 			return
-		offline = power_system.offline
+		set_offline(power_system.offline)
 
 	// If we are still offline (came online this tick but skipped the block above),
 	// sync and bail so we don't run module processing while unpowered.
 	if(offline)
-		offline = power_system.offline
+		set_offline(power_system.offline)
 		return
 
 	if(cell && cell.charge > 0 && electrified > 0)
 		electrified--
 
 	if(malfunction_delay > 0)
-		malfunction_delay--
+		set_malfunction_delay(malfunction_delay - 1)
 	else if(malfunctioning)
 		malfunctioning--
 		malfunction()
@@ -678,11 +678,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	var/mob/living/carbon/human/H = wearer()
 	if(!H)
 		return
-	H.update_inv_shoes()
-	H.update_inv_gloves()
-	H.update_inv_head()
-	H.update_inv_wear_suit()
-	H.update_inv_back()
+	changed(src)
 
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
 
@@ -875,7 +871,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	if(emp_protection < 30) //for ninjas, really.
 		malfunctioning += 10
 		if(malfunction_delay <= 0)
-			malfunction_delay = max(malfunction_delay, round(30/packet.severity))
+			set_malfunction_delay(max(malfunction_delay, round(30/packet.severity)))
 
 	//drain some charge
 	if(cell) cell.emp_act(packet.severity + 15)
@@ -1126,3 +1122,16 @@ TRACKED(/obj/item/rig, carried_by_mob)
 /// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
 	return wearer
+
+/// Online, offline or cut: a wearer's sight under the helmet (offline_vision_restriction) follows it, so the wearer's
+/// equipment key is published (the human status step re-reads its rig visor).
+/obj/item/rig/proc/set_offline(value)
+	if(TRACKED_UNCHANGED(offline, value))
+		return FALSE
+	offline = value
+	tracked_changed(src, nameof(offline))
+	var/mob/living/W = wearer()
+	if(W)
+		PUBLISH_CHANGE(W, MOB_KEY_EQUIPMENT)
+	return TRUE
+SETTER(/obj/item/rig, offline)

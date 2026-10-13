@@ -6,7 +6,6 @@
 	desc = "Used to command and control the station. Can relay long-range communications."
 	icon_keyboard = "tech_key"
 	icon_screen = "comm"
-	light_color = "#0099ff"
 	req_access = list(ACCESS_HEADS)
 	circuit = /obj/item/circuitboard/communications
 
@@ -17,6 +16,7 @@ MSG_DEF(communications/scrambled, "You scramble the communication routing circui
 // The command console hosts the communications window (its module); an emag scrambles its routing, which opens the line to the Syndicate
 // until someone restores the backup routing from the window.
 CAPABILITIES(/obj/machinery/computer/communications)
+	configure(light_glow(color = "#0099ff"))
 	owns_one(nameof(communications), /datum/tgui_module/communications, starts = /datum/tgui_module/communications)
 	emag(say = MSG(communications/scrambled))
 	op("use", hand(), remote(), then(PROC_REF(open_module_window)))

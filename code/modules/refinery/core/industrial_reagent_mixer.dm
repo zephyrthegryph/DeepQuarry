@@ -10,8 +10,6 @@
 	var/mixer_angle = 0
 	var/mixer_rotation_rate = 45
 	var/got_input = FALSE
-TRACKED(/obj/machinery/reagent_refinery/mixer, got_input)
-TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 
 /obj/machinery/reagent_refinery/mixer/Initialize(mapload)
 	set_mixer_angle(dir2angle(dir))

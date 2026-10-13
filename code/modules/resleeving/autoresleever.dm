@@ -43,12 +43,12 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
-				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use 	he [src]."))
+				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use \the [src]."))
 				return
 		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
-			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use 	he [src]."))
+			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
 		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"), buttons = TRUE)
@@ -251,7 +251,6 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 			new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 
 	//A redraw for good measure
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 

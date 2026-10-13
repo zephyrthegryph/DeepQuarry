@@ -332,7 +332,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 /obj/item/mmi/digital/robot/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/brain/view = get_occupant()
-	view.real_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]"
+	view.set_real_name("[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]")
 	view.name = view.real_name
 	view.identity().real_name = view.real_name
 	name = "[initial(name)] ([view.name])"
@@ -377,7 +377,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 /obj/item/mmi/digital/posibrain/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/brain/view = get_occupant()
-	view.real_name = "[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]"
+	view.set_real_name("[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]")
 	view.name = view.real_name
 	view.identity().real_name = view.real_name
 

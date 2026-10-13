@@ -412,7 +412,7 @@
 
 /datum/affliction_trigger/metric/cold_exposure/setup()
 	..()
-	declare(/datum/affliction/hypothermia, threshold = 20)  // ~17°C below 37°C
+	declare(/datum/affliction/hypothermia, threshold = DQ_COLD_EXPOSURE_KELVIN)  // ~17°C below 37°C
 
 
 /datum/affliction_trigger/metric/heat_exposure
@@ -424,4 +424,4 @@
 
 /datum/affliction_trigger/metric/heat_exposure/setup()
 	..()
-	declare(/datum/affliction/heatstroke, threshold = 5)  // ~5°C above 37°C
+	declare(/datum/affliction/heatstroke, threshold = DQ_HEAT_EXPOSURE_KELVIN)  // ~5°C above 37°C

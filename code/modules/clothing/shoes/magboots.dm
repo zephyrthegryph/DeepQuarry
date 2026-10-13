@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		if(icon_base) icon_state = "[icon_base]1"
 		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)
-	user.update_inv_shoes()	//so our mob-overlays update
+	changed(src)
 	user.update_mob_action_buttons()
 
 

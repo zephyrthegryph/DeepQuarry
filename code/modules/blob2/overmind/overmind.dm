@@ -46,7 +46,7 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 /mob/observer/blob/Initialize(mapload)
 	var/new_name = "[initial(name)] ([rand(1, 999)])"
 	name = new_name
-	real_name = new_name
+	set_real_name(new_name)
 	for(var/L in TYPE_TABLE_GET(src, blob_langs))
 		languages |= GLOB.all_languages[L]
 	if(languages.len)

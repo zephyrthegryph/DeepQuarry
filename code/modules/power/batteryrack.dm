@@ -45,10 +45,8 @@ MSG_DEF_SELF(batteryrack/full, "It has no empty slot for that.")
 	circuit = /obj/item/circuitboard/batteryrack
 
 TRACKED(/obj/machinery/power/smes/batteryrack, max_transfer_rate)
-TRACKED(/obj/machinery/power/smes/batteryrack, max_cells)
 TRACKED(/obj/machinery/power/smes/batteryrack, equalise)
 TRACKED(/obj/machinery/power/smes/batteryrack, ui_tick)
-TRACKED(/obj/machinery/power/smes/batteryrack, shown_overlays)
 
 CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	default_parts()
@@ -345,14 +343,15 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 		insert_cell(newcell)
 
 CAPABILITIES(/obj/item/module/power_control)
-	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), starts(PROC_REF(multitool_started)), begins(PROC_REF(multitool_begins)), wait(5 SECONDS), then(PROC_REF(multitool_act_tool_done)))
 
-/obj/item/module/power_control/proc/multitool_used(datum/act/op/A)
+/obj/item/module/power_control/proc/multitool_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/item/module/power_control/proc/multitool_begins(datum/act/op/A)
+	return msg_text("You begin tweaking the power control circuits to support a power cell rack.", null)
+
+/obj/item/module/power_control/proc/multitool_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	use_tool(user, I, src, delay = 5 SECONDS, start_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
-	return OP_OK
-
-/obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)
 	var/obj/item/newcircuit = replace_with(src, /obj/item/circuitboard/batteryrack)
 	user.put_in_hands(newcircuit)

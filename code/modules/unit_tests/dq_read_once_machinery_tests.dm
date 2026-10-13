@@ -20,7 +20,7 @@
 	var/obj/machinery/suit_cycler/C = mach(/obj/machinery/suit_cycler, tile(3, 2))
 	C.set_locked(FALSE)
 	var/obj/item/clothing/head/helmet/space/void/helmet = allocate(/obj/item/clothing/head/helmet/space/void, H.loc)
-	helmet.icon_override = null
+	helmet.set_icon_override(null)
 	TEST_ASSERT(H.put_in_active_hand(helmet), "The real void helmet is in the actor's active hand")
 	TEST_ASSERT_NULL(C.helmet, "The real cycler starts with its helmet slot empty")
 	var/time_before = op_now()
@@ -29,7 +29,7 @@
 	var/actor_gen = rx_of(H).act_gen
 	var/machine_gen = rx_of(C).act_gen
 	var/item_gen = rx_of(helmet).act_gen
-	helmet.icon_override = CUSTOM_ITEM_MOB
+	helmet.set_icon_override(CUSTOM_ITEM_MOB)
 	var/list/customised = find_row(op_menu(H, C, helmet), "cycler_insert_helmet")
 	TEST_ASSERT_NOTNULL(customised, "Custom appearance disables rather than hides the helmet row")
 	TEST_ASSERT(!customised["enabled"], "The current custom helmet cannot be refitted")
@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(rejected?.outcome, ACT_REFUSED, "The public menu pick rejects the currently customised helmet")
 	TEST_ASSERT_EQUAL(H.get_active_hand(), helmet, "Refusal preserves the actual held helmet")
 	TEST_ASSERT_NULL(C.helmet, "Refusal does not mutate the cycler's actual helmet slot")
-	helmet.icon_override = null
+	helmet.set_icon_override(null)
 	var/list/accepted = find_row(op_menu(H, C, helmet), "cycler_insert_helmet")
 	TEST_ASSERT(accepted && accepted["enabled"], "Removing custom appearance re-enables the same held helmet")
 	var/datum/op_result/inserted = test_menu(H, C, "cycler_insert_helmet")
@@ -58,7 +58,7 @@
 	var/obj/machinery/suit_cycler/C = mach(/obj/machinery/suit_cycler, tile(3, 2))
 	C.set_locked(FALSE)
 	var/obj/item/clothing/suit/space/void/suit = allocate(/obj/item/clothing/suit/space/void, H.loc)
-	suit.icon_override = null
+	suit.set_icon_override(null)
 	TEST_ASSERT(H.put_in_active_hand(suit), "The real voidsuit is in the actor's active hand")
 	TEST_ASSERT_NULL(C.suit, "The real cycler starts with its suit slot empty")
 	var/time_before = op_now()
@@ -67,7 +67,7 @@
 	var/actor_gen = rx_of(H).act_gen
 	var/machine_gen = rx_of(C).act_gen
 	var/item_gen = rx_of(suit).act_gen
-	suit.icon_override = CUSTOM_ITEM_MOB
+	suit.set_icon_override(CUSTOM_ITEM_MOB)
 	var/list/customised = find_row(op_menu(H, C, suit), "cycler_insert_suit")
 	TEST_ASSERT_NOTNULL(customised, "Custom appearance keeps the disabled voidsuit row visible")
 	TEST_ASSERT(!customised["enabled"], "The current custom voidsuit cannot be refitted")
@@ -80,7 +80,7 @@
 	TEST_ASSERT_EQUAL(rejected?.outcome, ACT_REFUSED, "A public pick cannot insert the currently customised suit")
 	TEST_ASSERT_EQUAL(H.get_active_hand(), suit, "Refusal preserves the actual held suit")
 	TEST_ASSERT_NULL(C.suit, "Refusal leaves the actual suit slot empty")
-	suit.icon_override = null
+	suit.set_icon_override(null)
 	var/list/accepted = find_row(op_menu(H, C, suit), "cycler_insert_suit")
 	TEST_ASSERT(accepted && accepted["enabled"], "The same voidsuit is accepted after its custom appearance is removed")
 	var/datum/op_result/inserted = test_menu(H, C, "cycler_insert_suit")

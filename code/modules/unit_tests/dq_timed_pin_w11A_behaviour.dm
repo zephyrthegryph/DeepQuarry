@@ -40,7 +40,7 @@
 /datum/unit_test/dq_timed_pin_w8/a_dig_grave/setup_scene()
 	user = person()
 	var/obj/item/shovel/dig = hold(/obj/item/shovel)
-	dig.grave_mode = TRUE
+	dig.set_grave_mode(TRUE)
 	dig.set_toolspeed(1)
 	target = get_step(user, NORTH)
 	held = dig

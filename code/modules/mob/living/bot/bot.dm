@@ -53,14 +53,14 @@
 /// Its ID card opens what its type says (owns_one(starts =)).
 /mob/living/bot/proc/start_botcard(current, mapload)
 	var/obj/item/card/id/card = new /obj/item/card/id(src)
-	card.access = botcard_access.Copy()
+	card.set_access(botcard_access.Copy())
 	return card
 
 /// What it checks for access before taking orders (owns_one(starts =)).
 /mob/living/bot/proc/start_access_scanner(current, mapload)
 	var/obj/scanner = new /obj(src)
-	scanner.req_access = req_access.Copy()
-	scanner.req_one_access = req_one_access.Copy()
+	scanner.set_req_access(req_access.Copy())
+	scanner.set_req_one_access(req_one_access.Copy())
 	return scanner
 
 /// A map that has bots stay put keeps every bot from patrolling (rolls(): the map's setting, read as it is made).
@@ -426,7 +426,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(stat)
 		return 0
 	set_on(1)
-	set_light(light_strength)
+	set_glow(src, GLOW(light_strength, null, null))
 	update_icons()
 	resetTarget()
 	patrol_path = list()
@@ -512,7 +512,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 /mob/living/bot/proc/turn_off()
 	set_on(0)
 	bot_stop_work() // If ever stuck... reboot!
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	update_icons()
 	update_canmove()
 

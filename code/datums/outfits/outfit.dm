@@ -186,7 +186,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		return
 	var/obj/item/pda/pda = new pda_type(H)
 	if(H.equip_to_slot_or_del(pda, pda_slot))
-		pda.owner = H.real_name
+		pda.set_owner(H.real_name)
 		pda.ownjob = assignment
 		pda.ownrank = rank
 		pda.name = "PDA-[H.real_name] ([assignment])"
@@ -223,10 +223,10 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "USDF"
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	return C
 
 /datum/decl/hierarchy/outfit/USDF/Officer
@@ -249,10 +249,10 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "USDF"
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	return C
 
 /datum/decl/hierarchy/outfit/solcom/representative
@@ -273,10 +273,10 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s SolGov ID Card" // SolGov
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "SolGov Representative" // SolGov
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	return C
 
 /datum/decl/hierarchy/outfit/imperial/soldier

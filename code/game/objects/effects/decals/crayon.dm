@@ -27,7 +27,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/crayon)
 			kind = "rune[rand(1,6)]"
 		if("graffiti")
 			kind = pick("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")
-	art_type = kind
+	set_art_type(kind)
 
 DECLARE_SHARED_CACHE(crayon_art, GLOBAL_PROC_REF(build_crayon_art), SC_NEVER)
 

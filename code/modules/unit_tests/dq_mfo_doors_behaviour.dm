@@ -17,7 +17,6 @@
 
 /// The icon state `A` shows once every pending redraw has run.
 /proc/mfo_look(atom/A)
-	A.update_icon()
 	refresh_flush()
 	return A.icon_state
 
@@ -87,7 +86,7 @@
 	mfo_walk_into(U, locked)
 	settle()
 	TEST_ASSERT(locked.density, "a door with access is shut to a drone")
-	locked.req_access = null
+	locked.set_req_access(null)
 	mfo_walk_into(U, locked)
 	settle()
 	TEST_ASSERT(!locked.density, "a public door opens for one")

@@ -9,6 +9,7 @@
 /datum/tgui
 	/// The mob who opened/is using the UI.
 	var/mob/user
+	var/datum/lookup_read_scope/lookup_scope
 	/// The object which owns the UI.
 	var/tmp/datum/src_object
 	/// The title of the UI.
@@ -244,6 +245,8 @@
  * optional can_be_suspended bool
  */
 /datum/tgui/proc/close(can_be_suspended = TRUE, logout = FALSE)
+	if(lookup_scope)
+		rel_clear(src, nameof(lookup_scope))
 	if(closing)
 		return
 	closing = TRUE
@@ -257,16 +260,18 @@
 		// the error message properly.
 		window().release_lock()
 		window().close(can_be_suspended, logout)
-		// Either side may already be gone (deleted src_object, deleted mob);
-		// SStgui.on_close must still run so the UI leaves all_uis.
 		if(!QDELETED(src_object()))
 			src_object().tgui_close(user)
-		SStgui.on_close(src)
-		status_unwatch()
-		cancel_after(src, "ping")
-
 		if(user?.client)
 			terminate_byondui_elements()
+	// Whatever happened to the window (a deleted tgui_window clears this UI's
+	// relation to it, so window() is null here), the UI must leave every list
+	// that registered it: all_uis, autoupdating, the user's tgui_open_uis and
+	// the src_object's open_tguis. Skipping this with the window gone left the
+	// spent UI in those lists and it hard-deleted (ref count 3).
+	SStgui.on_close(src)
+	status_unwatch()
+	cancel_after(src, "ping")
 
 	// Unset machine just to be sure.
 	if(!QDELETED(user))
@@ -434,6 +439,8 @@
 	// static data: open, ready and full updates. A data push carries the slim block --
 	// the frontend merges config, so everything not resent keeps its value.
 	json_data["config"] = with_static_data ? full_config() : slim_config()
+	if(with_data)
+		prepare_lookup_reads()
 	var/data = custom_data || with_data && src_object().tgui_data(user, src, state())
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
@@ -635,6 +642,7 @@
 	return state_static
 
 CAPABILITIES(/datum/tgui)
+	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
 	links(/datum/tgui::user, /mob::tgui_open_uis, b_many = TRUE, a_on_unlink = PROC_REF(participant_gone))
 	ref_one(nameof(src_object), on_unlink = PROC_REF(participant_gone))
 	ref_one(nameof(window), on_unlink = PROC_REF(participant_gone))
@@ -643,3 +651,19 @@ CAPABILITIES(/datum/tgui)
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return parent_ui
 
+
+/// Bind contextual window reads before its pure output runs. The real window
+/// owns these bindings; participant teardown and closing dispose of them.
+/datum/tgui/proc/prepare_lookup_reads()
+	var/datum/host = src_object()
+	if(!host || QDELETED(host))
+		return
+	if(!lookup_scope)
+		var/datum/lookup_read_scope/scope = new
+		rel_set(src, nameof(lookup_scope), scope)
+	var/datum/act/eval/A = present_eval_context(host, user)
+	lookup_reads_prepare(host, A, lookup_scope)
+	var/datum/unit = present_forwarded_unit(host)
+	if(unit)
+		lookup_reads_prepare(unit, A, lookup_scope)
+	A.release()

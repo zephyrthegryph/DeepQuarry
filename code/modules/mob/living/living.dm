@@ -147,8 +147,7 @@
 		if (src.has_mutation(COLD_RESISTANCE)) //fireproof
 			return 0
 		// Electrical burns spread across the whole body.
-		if(injure(INJURY_ELECTRIC, burn_amount))
-			UpdateDamageIcon()
+		injure(INJURY_ELECTRIC, burn_amount)
 		return 1
 	else if(isAI(src))
 		return 0
@@ -610,20 +609,20 @@ sparse(/mob/living, vomiting, type = bool)
 
 /mob/living/update_canmove()
 	if(!resting && cannot_stand() && can_stand_overridden())
-		lying = FALSE
+		set_lying(FALSE)
 		canmove = TRUE
 	else
 		var/obj/buckled = src?.buckled_to()
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/V = buckled
 			if(is_physically_disabled())
-				lying = FALSE
+				set_lying(FALSE)
 				canmove = TRUE
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y - 5
 			else
 				if(buckled.buckle_lying != -1)
-					lying = buckled.buckle_lying
+					set_lying(buckled.buckle_lying)
 				canmove = TRUE
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y
@@ -632,13 +631,13 @@ sparse(/mob/living, vomiting, type = bool)
 			canmove = TRUE //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
 			if(istype(buckled))
 				if(buckled.buckle_lying != -1)
-					lying = buckled.buckle_lying
+					set_lying(buckled.buckle_lying)
 					canmove = buckled.buckle_movable
 				if(buckled.buckle_movable)
 					set_anchored(FALSE)
 					canmove = TRUE
 		else
-			lying = incapacitated(INCAPACITATION_KNOCKDOWN)
+			set_lying(incapacitated(INCAPACITATION_KNOCKDOWN))
 			// Prone is not immobile. Voluntary rest and conscious knockdown use
 			// movement_delay()'s crawl penalties; knockout, stun, paralysis, and
 			// aggressive grabs are rejected below.
@@ -648,12 +647,11 @@ sparse(/mob/living, vomiting, type = bool)
 		canmove = FALSE
 
 	if(is_paralyzed())
-		lying = TRUE
+		set_lying(TRUE)
 		canmove = FALSE
 
 	if(lying)
 		set_density(FALSE)
-		update_water() // Submerges the mob.
 		stop_pulling()
 
 		if(!passtable_crawl_checked)
@@ -701,8 +699,6 @@ sparse(/mob/living, vomiting, type = bool)
 /mob/living/proc/update_modifier_visuals()
 	return
 
-/mob/living/proc/update_water() // Involves overlays for humans.  Maybe we'll get submerged sprites for borgs in the future?
-	return
 
 /mob/living/proc/can_feel_pain(check_organ)
 	if(HAS_SYNTHETIC_BIOLOGY(src))

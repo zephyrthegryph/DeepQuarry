@@ -36,9 +36,7 @@ TRACKED(/obj/item, constraint_overrides)
 
 /// Clearing an instance override restores the inherited declaration.
 /obj/item/proc/clear_constraint(kind)
-	var/list/next = constraint_overrides ? constraint_overrides.Copy() : list()
-	next -= kind
-	set_constraint_overrides(length(next) ? next : null)
+	remove_constraint_overrides(kind)
 
 /obj/item/proc/restrict_hold(list/types, max_size)
 	var/datum/entry/part/acceptance_plan/native_plan = table_of(src).acceptance_channels?[CONSTRAINT_HOLD]

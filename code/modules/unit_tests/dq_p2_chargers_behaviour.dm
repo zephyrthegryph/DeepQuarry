@@ -71,13 +71,13 @@
 	p2_area_equip = p2_area.power_equip
 	p2_area.set_requires_power(FALSE)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2_area.power_equip = TRUE
+	p2_area.set_power_equip(TRUE)
 	run_gate()
 	own_turf_contents(run_loc_floor_bottom_left)
 	own_turf_contents(run_loc_floor_top_right)
 	p2_area.set_requires_power(p2_area_requires)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2_area.power_equip = p2_area_equip
+	p2_area.set_power_equip(p2_area_equip)
 	test_driver_end()
 
 /datum/unit_test/dq_p2_chargers/proc/run_gate()
@@ -109,7 +109,7 @@
 /// A big, empty cell, so a charge never saturates.
 /datum/unit_test/dq_p2_chargers/proc/p2c_cell(type = /obj/item/cell)
 	var/obj/item/cell/C = allocate(type, run_loc_floor_bottom_left)
-	C.maxcharge = 1e7
+	C.set_maxcharge(1e7)
 	C.set_charge(0)
 	return C
 
@@ -213,10 +213,10 @@
 	var/obj/machinery/cell_charger/C = p2c_cell_charger()
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/cell/cell = p2c_cell()
-	p2_area.power_equip = FALSE
+	p2_area.set_power_equip(FALSE)
 	touch(H, C, cell)
 	TEST_ASSERT_NULL(p2c_held(C), "refused with no area power")
-	p2_area.power_equip = TRUE
+	p2_area.set_power_equip(TRUE)
 	touch(H, C, cell)
 	TEST_ASSERT_EQUAL(p2c_held(C), cell, "accepted with area power")
 
@@ -301,12 +301,12 @@
 	var/obj/machinery/cell_charger/C = p2c_cell_charger()
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/cell/cell = p2c_cell()
-	cell.maxcharge = 1000
+	cell.set_maxcharge(1000)
 	cell.set_charge(1000)
 	touch(H, C, cell)
 	TEST_ASSERT_EQUAL(cell.charge, 1000, "full stays full")
 	TEST_ASSERT_EQUAL(C.use_power, USE_POWER_IDLE, "idle while full")
-	cell.maxcharge = 1e7
+	cell.set_maxcharge(1e7)
 	cell.set_charge(0)
 	C.set_grid_power(FALSE)
 	p2c_settle()
@@ -356,7 +356,7 @@
 /datum/unit_test/dq_p2_chargers/proc/p2c_gun(charge = 0)
 	var/obj/item/melee/baton/loaded/G = allocate(/obj/item/melee/baton/loaded, run_loc_floor_bottom_left)
 	var/obj/item/cell/C = G.get_cell()
-	C.maxcharge = 1e7
+	C.set_maxcharge(1e7)
 	C.set_charge(charge)
 	return G
 
@@ -444,12 +444,12 @@
 	R.set_grid_power(FALSE)
 	p2_area.set_requires_power(TRUE)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2_area.power_equip = FALSE
+	p2_area.set_power_equip(FALSE)
 	touch(H, R, G)
 	TEST_ASSERT_NULL(p2c_held(R), "unpowered: refused")
 	p2_area.set_requires_power(FALSE)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2_area.power_equip = TRUE
+	p2_area.set_power_equip(TRUE)
 	R.set_grid_power(TRUE)
 	var/obj/item/gun/energy/selfish = allocate(/obj/item/gun/energy/taser, run_loc_floor_bottom_left)
 	selfish.set_self_recharge(TRUE)
@@ -501,11 +501,11 @@
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/G = p2c_gun()
 	var/obj/item/cell/C = G.get_cell()
-	C.maxcharge = 1000
+	C.set_maxcharge(1000)
 	C.set_charge(1000)
 	touch(H, R, G)
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "idle while full")
-	C.maxcharge = 1e7
+	C.set_maxcharge(1e7)
 	C.set_charge(0)
 	R.set_grid_power(FALSE)
 	p2c_settle()
@@ -534,7 +534,7 @@
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/ammo_casing/microbattery/medical/brute/B = allocate(/obj/item/ammo_casing/microbattery/medical/brute, run_loc_floor_bottom_left)
 	var/full = initial(B.shots_left)
-	B.shots_left = 0
+	B.set_shots_left(0)
 	touch(H, R, B)
 	TEST_ASSERT_EQUAL(p2c_held(R), B, "held")
 	TEST_ASSERT(B.shots_left > 0, "shots came back")

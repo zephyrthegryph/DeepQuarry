@@ -14,7 +14,6 @@ dq_state_canonical_delta
 dq_after_init/runtime
 dq_after_init/mapload
 dq_engine_policy_binding_ranking
-dq_sys_appearance_draws
 dq_draw_effect_runs_when_the_look_applies
 dq_draw_watch_redraws_on_the_other_end
 dq_om_wake_status_display
@@ -30,3 +29,11 @@ dq_capability_runtime_storage
 ownership_transfer_from_hand
 dq_proximity/object_moves
 dq_timed_pin/last_occupant/cryo_yes
+dx_deps_drift_names_read
+dx_deps_output_writes_state
+dq_b4_hud_generated_reads_merged
+kernel_hotspot_work
+dq_om_machine_step_park_wake
+dq_machinery_last_conversion_pin
+dq_machinery_timed_conversion_pin
+dx_menu_order

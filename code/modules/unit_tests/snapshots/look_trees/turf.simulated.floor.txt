@@ -223,13 +223,13 @@
 /turf/simulated/floor/outdoors/newdirt state: dirt0
 /turf/simulated/floor/outdoors/newdirt dir: 2
 /turf/simulated/floor/outdoors/newdirt/virgo3c icon: icons/turf/outdoors_vr.dmi
-/turf/simulated/floor/outdoors/newdirt/virgo3c state: dirt0
+/turf/simulated/floor/outdoors/newdirt/virgo3c state: dirt7
 /turf/simulated/floor/outdoors/newdirt/virgo3c dir: 2
 /turf/simulated/floor/outdoors/newdirt_nograss icon: icons/turf/outdoors_vr.dmi
 /turf/simulated/floor/outdoors/newdirt_nograss state: dirt0
 /turf/simulated/floor/outdoors/newdirt_nograss dir: 2
 /turf/simulated/floor/outdoors/newdirt_nograss/virgo3c icon: icons/turf/outdoors_vr.dmi
-/turf/simulated/floor/outdoors/newdirt_nograss/virgo3c state: dirt0
+/turf/simulated/floor/outdoors/newdirt_nograss/virgo3c state: dirt7
 /turf/simulated/floor/outdoors/newdirt_nograss/virgo3c dir: 2
 /turf/simulated/floor/outdoors/sidewalk icon: icons/turf/outdoors_vr.dmi
 /turf/simulated/floor/outdoors/sidewalk state: sidewalk
@@ -247,7 +247,7 @@
 /turf/simulated/floor/outdoors/sidewalk/slab/virgo3c state: slab
 /turf/simulated/floor/outdoors/sidewalk/slab/virgo3c dir: 2
 /turf/simulated/floor/outdoors/sidewalk/virgo3c icon: icons/turf/outdoors_vr.dmi
-/turf/simulated/floor/outdoors/sidewalk/virgo3c state: sidewalk
+/turf/simulated/floor/outdoors/sidewalk/virgo3c state: sidewalk3
 /turf/simulated/floor/outdoors/sidewalk/virgo3c dir: 2
 /turf/simulated/floor/outdoors/fur icon: icons/turf/fur.dmi
 /turf/simulated/floor/outdoors/fur state: fur6
@@ -755,15 +755,15 @@
 /turf/simulated/floor/looking_glass state: origin
 /turf/simulated/floor/looking_glass dir: 2
 /turf/simulated/floor/glass icon: icons/turf/flooring/glass.dmi
-/turf/simulated/floor/glass state: glass-0
+/turf/simulated/floor/glass state: 
 /turf/simulated/floor/glass dir: 2
 /turf/simulated/floor/glass underlay: icons/turf/space.dmi:white:-82
 /turf/simulated/floor/glass/reinforced icon: icons/turf/flooring/reinf_glass.dmi
-/turf/simulated/floor/glass/reinforced state: reinf_glass-0
+/turf/simulated/floor/glass/reinforced state: 
 /turf/simulated/floor/glass/reinforced dir: 2
 /turf/simulated/floor/glass/reinforced underlay: icons/turf/space.dmi:white:-82
 /turf/simulated/floor/glass/reinforced/virgo3c icon: icons/turf/flooring/reinf_glass.dmi
-/turf/simulated/floor/glass/reinforced/virgo3c state: reinf_glass-0
+/turf/simulated/floor/glass/reinforced/virgo3c state: 
 /turf/simulated/floor/glass/reinforced/virgo3c dir: 2
 /turf/simulated/floor/glass/reinforced/virgo3c underlay: icons/turf/space.dmi:white:-82
 /turf/simulated/floor/virgo3c icon: icons/turf/flooring/plating.dmi

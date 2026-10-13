@@ -11,7 +11,6 @@
 	var/self_bind = FALSE
 	flags = NOBLUDGEON
 
-TRACKED(/obj/item/mindbinder, self_bind)
 
 CAPABILITIES(/obj/item/mindbinder)
 	configure(item_worn(slots = SLOT_BELT))

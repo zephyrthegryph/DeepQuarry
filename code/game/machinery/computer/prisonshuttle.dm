@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	desc = "Used to move the prison shuttle to and from its destination."
 	icon_keyboard = "security_key"
 	icon_screen = "syndishuttle"
-	light_color = "#00ffff"
 	req_access = list(ACCESS_SECURITY)
 	circuit = /obj/item/circuitboard/prison_shuttle
 	var/hacked = 0
@@ -25,7 +24,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/in_flight = FALSE
 
 /// The shuttle this console sent is in flight: prison_process() counts it down every half second.
-TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/prison_shuttle, in_flight)
 
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
@@ -37,7 +36,6 @@ TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHIN
  * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
 TRACKED(/obj/machinery/computer/prison_shuttle, hacked)
-TRACKED(/obj/machinery/computer/prison_shuttle, prison_break)
 
 /// Requirement: null, or why the console can't be used.
 /obj/machinery/computer/prison_shuttle/proc/can_open_console(datum/act/op/A)
@@ -55,6 +53,7 @@ TRACKED(/obj/machinery/computer/prison_shuttle, prison_break)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/prison_shuttle)
+	configure(light_glow(color = "#00ffff"))
 	interface("PrisonShuttleConsole", title = "Prison Shuttle")
 	extend("ui_open", needs(req(PROC_REF(can_open_console))), then(PROC_REF(record_window_open)))
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))

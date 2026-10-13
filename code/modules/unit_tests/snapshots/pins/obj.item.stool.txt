@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -16,8 +16,8 @@
 @obj human|/obj/item/weldingtool
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+2 menu: Pad (refused: You cannot pad that with that.)
-+4 click: Click: Pad
++1 menu: Pad (refused: You cannot pad that with that.)
++3 click: Click: Pad
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +1 menu: Pad (refused: You cannot pad that with that.)

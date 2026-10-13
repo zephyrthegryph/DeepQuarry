@@ -7,64 +7,44 @@ robot|none click: Click: Give present
 @obj.structure ai|none
 @obj ghost|none
 +0 menu: Bind/unbind sack (refused: You can't reach that.)
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+6 click: Click: Give present
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+6 click: Click: Give present
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Bind/unbind sack
-+1 menu: Give present
-+5 click: Click: Give present
+human|/obj/item/tool/screwdriver menu: Bind/unbind sack
+human|/obj/item/tool/screwdriver menu: Give present
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver click: Click: Give present
+human|/obj/item/tool/crowbar menu: Bind/unbind sack
+human|/obj/item/tool/crowbar menu: Give present
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar click: Click: Give present
+human|/obj/item/tool/wrench menu: Bind/unbind sack
+human|/obj/item/tool/wrench menu: Give present
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench click: Click: Give present
+human|/obj/item/tool/wirecutters menu: Bind/unbind sack
+human|/obj/item/tool/wirecutters menu: Give present
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters click: Click: Give present
+human|/obj/item/multitool menu: Bind/unbind sack
+human|/obj/item/multitool menu: Give present
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool click: Click: Give present
+human|/obj/item/weldingtool menu: Bind/unbind sack
+human|/obj/item/weldingtool menu: Give present
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool click: Click: Give present
+human|/obj/item/stack/cable_coil menu: Bind/unbind sack
+human|/obj/item/stack/cable_coil menu: Give present
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil click: Click: Give present
+human|/obj/item/stack/material/steel menu: Bind/unbind sack
+human|/obj/item/stack/material/steel menu: Give present
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel click: Click: Give present
+human|/obj/item/card/id menu: Bind/unbind sack
+human|/obj/item/card/id menu: Give present
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id click: Click: Give present
+human|/obj/item menu: Bind/unbind sack
+human|/obj/item menu: Give present
+human|/obj/item menu: Hit
+human|/obj/item click: Click: Give present
 keys: bind_sack, drag_buckle, give_present, melee_hit

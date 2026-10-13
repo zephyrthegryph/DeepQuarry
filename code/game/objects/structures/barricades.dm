@@ -16,7 +16,6 @@ CAPABILITIES(/obj/structure/barricade)
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 TRACKED(/obj/structure/barricade, material)
-TRACKED(/obj/structure/barricade, material_colour)
 
 /// The barricade's material (its constructor param; a subtype's default).
 /obj/structure/barricade/var/barricade_material = MAT_WOOD

@@ -23,11 +23,11 @@
 	var/is_on = FALSE
 	var/light_range_on = 2
 	var/light_power_on = 1
-	light_color = "#0f8f0f"
 
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 10))
 	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
@@ -127,12 +127,12 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 		purchase_failed(user, "Out of Stock")
 		return FALSE
 	if(LAZYLEN(attempted_entry.required_access)) //access check
-		req_one_access = attempted_entry.required_access
+		set_req_one_access(attempted_entry.required_access)
 		if(!allowed(user))
 			purchase_failed(user, "Access Denied")
-			req_one_access = list()
+			set_req_one_access(list())
 			return FALSE
-		req_one_access = list()
+		set_req_one_access(list())
 
 	return TRUE
 
@@ -209,11 +209,11 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	is_on = state
 	if(is_on)
 		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 		monitor_screen.icon_state = "screen_default"
 	else
 		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		monitor_screen.icon_state = "screen_off"
 
 /obj/machinery/maint_vendor/power_change()

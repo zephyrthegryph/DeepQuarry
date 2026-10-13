@@ -2,7 +2,7 @@
 +1 menu: Emote Beyond
 @obj.machinery.computer robot|none
 +2 menu: Emote Beyond
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer.ship ghost|none
 +1 menu: Emote Beyond (refused: too far away)
 @obj.machinery.computer human|/obj/item/tool/screwdriver

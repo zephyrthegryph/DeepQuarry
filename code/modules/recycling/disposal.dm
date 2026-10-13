@@ -60,7 +60,7 @@
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
 /obj/structure/disposalpipe/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE	// hide if floor is intact
+	hide_under_floor(src, intact)	// hide if floor is intact
 
 // update actual icon_state depending on visibility
 // if invisible, append "f" to icon_state to show faded version
@@ -141,7 +141,7 @@
 				var/obj/structure/disposalpipe/broken/P = new(get_turf(src))
 				P.set_dir(D)
 
-	invisibility = INVISIBILITY_ABSTRACT	// make invisible (since we won't delete the pipe immediately)
+	conceal(src, INVISIBILITY_ABSTRACT)	// make invisible (since we won't delete the pipe immediately)
 	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present
@@ -177,26 +177,30 @@
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
 CAPABILITIES(/obj/structure/disposalpipe)
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
 
-/obj/structure/disposalpipe/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
+/// Only a pipe under bare plating is sliced (a T-scanner shows the hidden ones; they are not reached).
+/obj/structure/disposalpipe/proc/on_bare_plating(datum/act/op/A)
 	var/turf/T = get_turf(src)
-	if(!T.is_plating())
-		return OP_OK // prevent interaction with T-scanner revealed pipes
-	add_fingerprint(user)
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing [src]....", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), on_fail = PROC_REF(welder_act_tool_failed), fail_args = list(user))
-	return OP_OK
+	return istype(T) && read_once(T.is_plating())
 
-/obj/structure/disposalpipe/proc/welder_act_tool_done(mob/user)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
+/obj/structure/disposalpipe/proc/plating_refusal(datum/act/op/A)
+	return on_bare_plating(A) ? null : "the plating is covered"
+
+/obj/structure/disposalpipe/proc/slice_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, sounds_of(A.held).use, 100, TRUE)
+
+/obj/structure/disposalpipe/proc/slice_begins(datum/act/op/A)
+	return msg_text("You start slicing [src]....")
+
+/obj/structure/disposalpipe/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "You slice [src]")
 	welded()
 
-/obj/structure/disposalpipe/proc/welder_act_tool_failed(mob/user)
-	to_chat(user, "You must stay still while welding the pipe.")
+/obj/structure/disposalpipe/proc/welder_act_tool_failed(datum/act/op/A)
+	to_chat(A.actor, "You must stay still while welding the pipe.")
 
 // called when pipe is cut with welder
 /obj/structure/disposalpipe/proc/welded()

@@ -11,47 +11,46 @@ ghost|none click: Click: Nothing
 -click: Click: Use
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
-+7 menu: Use screwdriver
-+8 click: Click: Use screwdriver
++4 menu: Use screwdriver
++5 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use crowbar
 @obj.structure human|/obj/item/tool/wrench
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use wrench
 @obj.structure human|/obj/item/tool/wirecutters
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use wirecutters
 @obj.structure human|/obj/item/multitool
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
-+5 menu: Repair the window (refused: It is already in good condition.)
-+8 menu: Weld or cut
-+9 click: Click: Weld or cut
++3 menu: Repair the window (refused: It is already in good condition.)
++5 menu: Use welding tool
++6 menu: Weld or cut
++7 click: Click: Weld or cut
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use cable coil
 @obj.structure human|/obj/item/stack/material/steel
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use steel sheet
 @obj.structure human|/obj/item/card/id
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
++4 menu: Use identification card
 @obj.structure human|/obj/item
 +0 menu: Bang on
 +2 menu: Knock
-+3 menu: Maintenance panel interaction item
-keys: bang, dismantle, drag_buckle, fasten_frame, item, knock, maintenance_panel_interaction_item, melee_hit, pry_in, pry_out, swallow, tk_knock, unfasten_frame, use_screwdriver, weld_repair, weld_toggle, weld_toggle_help
++4 menu: Use item
+keys: bang, dismantle, drag_buckle, fasten_frame, item, knock, maintenance_panel_interaction_item, melee_hit, polarize, pry_in, pry_out, swallow, tk_knock, unfasten_frame, use_screwdriver, weld_repair, weld_toggle, weld_toggle_help

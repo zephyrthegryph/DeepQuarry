@@ -58,7 +58,7 @@ SYSTEM_DEF(machines)
 	while(!wake_dirty_gas_subscribers(FALSE))
 		continue
 	flush_pump_transfers()
-	log_world("Machine service initialized: [length(power_grids)] power regions, [gas_dirty_last] gas observations.")
+	log_world("Machine service initialized: [length(power_grids.ids())] power regions, [gas_dirty_last] gas observations.")
 
 /// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
 /// the power step. The gas wake may yield; the power step only starts once it has completed, and its
@@ -110,16 +110,29 @@ SYSTEM_DEF(machines)
 	poll_power_storage(FALSE)
 	process_power_finish()
 
-/// The power step up to the APC/SMES poll: area loads, the Rust commit, grid state and every power
-/// machine's region. Queues the APCs and SMES for poll_power_storage().
+/// The power step up to the SMES poll: area loads, the Rust commit, grid state and every power
+/// machine's region. Queues the SMES for poll_power_storage().
 /datum/system/machines/proc/process_power_begin()
 	power_flush_areas()
 	vg_power_commit()
-	for(var/id in power_grids)
-		if(!power_grid_refresh(id))
-			power_grids -= id
-			continue
-		power_grid_sync_problem(id)
+	var/list/sync_ids = list()
+	for(var/id in power_grids.ids())
+		sync_ids |= list(id)
+	for(var/id in power_grids.watched_native_ids())
+		sync_ids |= list(id)
+	for(var/id in sync_ids)
+		if(id <= 0)
+			continue // detached test grids have no native ledger and keep their real tracked fields
+		if(!power_grids.lookup(id))
+			var/list/info = vg_power_region_read(id)
+			if(!islist(info) || length(info) < 3)
+				continue // a watched stale native identity remains absent until a real region exists
+			var/datum/power_grid/adopted = power_grid(id) // system write boundary publishes this numeric identity
+			for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
+				if(!QDELETED(machine) && machine.power_region == id)
+					rel_add(adopted, nameof(adopted.nodes), machine) // actual currently bound DM members, never a sentinel
+		else if(!power_grid_refresh(id))
+			power_grids.drop(id)
 	// Every power machine's `power_region` is polled here, not pushed --
 	// a deferred `connect_to_network(FALSE)` (map load, and every
 	// `power_autoconnect()`) relies on this to eventually resolve. Region ids
@@ -132,25 +145,19 @@ SYSTEM_DEF(machines)
 		for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
 			if(!QDELETED(machine))
 				machine.power_refresh_network()
-	power_poll_queue = REGISTRY_MEMBERS(REGISTRY_APCS) + REGISTRY_MEMBERS(REGISTRY_SMES)
+	// The APCs are not polled: Rust reports one when what it shows changes (on_apc_report(), delivered by the native frame).
+	power_poll_queue = list() + REGISTRY_MEMBERS(REGISTRY_SMES)
 	power_poll_index = 1
 
-/// Polls the queued APCs and SMES. A poll that finds an APC's channels changed repowers its area
-/// (apply_area_power(): every machine and light in it), so when every APC changes at once -- the first
-/// step of a round, or a grid coming back -- the poll is seconds of work. `budgeted` stops at the tick
-/// limit and returns FALSE (the next call carries on); otherwise it polls them all.
+/// Polls the queued SMES (their flow readings for the display). `budgeted` stops at the tick limit and returns FALSE (the next call carries on);
+/// otherwise it polls them all. The APCs are not here: Rust reports an APC when its shown state crosses a band (on_apc_report()).
 /datum/system/machines/proc/poll_power_storage(budgeted)
 	var/list/queue = power_poll_queue
 	while(power_poll_index <= length(queue))
-		var/obj/machinery/power/machine = queue[power_poll_index++]
-		if(QDELETED(machine))
+		var/obj/machinery/power/smes/storage = queue[power_poll_index++]
+		if(QDELETED(storage))
 			continue
-		if(istype(machine, /obj/machinery/power/apc))
-			var/obj/machinery/power/apc/apc = machine
-			apc.power_poll()
-		else
-			var/obj/machinery/power/smes/storage = machine
-			storage.power_poll()
+		storage.power_poll()
 		if(budgeted && TICK_CHECK)
 			return FALSE
 	power_poll_queue = null
@@ -160,7 +167,7 @@ SYSTEM_DEF(machines)
 /datum/system/machines/stat_entry(msg)
 	. = "[..()]C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
 	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
-	. += "PN:[length(power_grids)]|"
+	. += "PN:[length(power_grids.ids())]|"
 	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 
 /datum/system/machines/proc/flush_pump_transfers()

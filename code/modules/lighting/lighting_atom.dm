@@ -1,12 +1,7 @@
 /atom
 	///Light systems, both shouldn't be active at the same time.
 	var/light_system = STATIC_LIGHT
-	///Range of the light in tiles. Zero means no light.
-	var/light_range = 0
-	///Intensity of the light. The stronger, the less shadows you will see on the lit area.
-	var/light_power = 1
-	///Hexadecimal RGB string representing the colour of the light. White by default.
-	var/light_color = COLOR_WHITE
+	// The light's range, power and colour are the light_glow() type trait (code/modules/lighting/glow.dm): glow_of(src).range.
 	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
 	var/light_on = FALSE
 	///Bitflags to determine lighting-related atom properties.
@@ -50,41 +45,6 @@ CAPABILITIES(/atom/movable)
 	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
 	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
 
-// The proc you should always use to set the light of this atom.
-// Nonesensical value for l_color default, so we can detect if it gets set to null.
-#define NONSENSICAL_VALUE -99999
-/atom/proc/set_light(l_range, l_power, l_color = NONSENSICAL_VALUE, l_on)
-	if(l_range > 0 && l_range < MINIMUM_USEFUL_LIGHT_RANGE)
-		l_range = MINIMUM_USEFUL_LIGHT_RANGE //Brings the range up to 1.4, which is just barely brighter than the soft lighting that surrounds players.
-
-
-	// Legacy behavior helper
-	if(l_range == 0)
-		l_on = FALSE
-	else if(l_range > 0)
-		l_on = TRUE
-
-	var/needs_update = FALSE
-	if(!isnull(l_power) && l_power != light_power)
-		if(!isnull(set_light_power(l_power)))
-			needs_update = TRUE
-
-	if(!isnull(l_range) && l_range != light_range)
-		if(!isnull(set_light_range(l_range)))
-			needs_update = TRUE
-
-	if(l_color != NONSENSICAL_VALUE && l_color != light_color)
-		if(!isnull(set_light_color(l_color)))
-			needs_update = TRUE
-
-	if(!isnull(l_on) && l_on != light_on)
-		if(!isnull(set_light_on(l_on)))
-			needs_update = TRUE
-
-	if(needs_update)
-		update_light()
-
-#undef NONSENSICAL_VALUE
 
 // Will update the light (duh).
 // Creates or destroys it if needed, makes it update values, makes sure it's got the correct source turf...
@@ -95,7 +55,7 @@ CAPABILITIES(/atom/movable)
 	if(light_system != STATIC_LIGHT)
 		CRASH("update_light() for [src] with following light_system value: [light_system]")
 
-	if (!light_on || !light_power || !light_range) // We won't emit light anyways, destroy the light source.
+	if (!light_on || !glow_of(src).power || !glow_of(src).range) // We won't emit light anyways, destroy the light source.
 		rel_clear(src, nameof(light))
 	else
 		if (!ismovable(loc)) // We choose what atom should be the top atom of the light here.
@@ -126,7 +86,11 @@ SETTER(/atom, opacity)
 
 /atom/movable/set_opacity(new_opacity)
 	. = ..()
-	if(isnull(.) || !isturf(loc))
+	opacity_light_update(.)
+
+/// The light a movable blocks follows its opacity; `old` is what set_opacity() returned (null: nothing changed).
+/atom/movable/proc/opacity_light_update(old)
+	if(isnull(old) || !isturf(loc))
 		return
 
 	if(opacity)
@@ -167,26 +131,26 @@ SETTER(/atom, opacity)
 
 /// Setter for the light power of this atom.
 /atom/proc/set_light_power(new_power)
-	if(new_power == light_power)
+	if(new_power == glow_of(src).power)
 		return
-	. = light_power
-	light_power = new_power
+	. = glow_of(src).power
+	set_trait(src, ENTRY_LIGHT_GLOW, "power", new_power)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_power, .)
 
 /// Setter for the light range of this atom.
 /atom/proc/set_light_range(new_range)
-	if(new_range == light_range)
+	if(new_range == glow_of(src).range)
 		return
-	. = light_range
-	light_range = new_range
+	. = glow_of(src).range
+	set_trait(src, ENTRY_LIGHT_GLOW, "range", new_range)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_range, .)
 
 /// Setter for the light color of this atom.
 /atom/proc/set_light_color(new_color)
-	if(new_color == light_color)
+	if(new_color == glow_of(src).color)
 		return
-	. = light_color
-	light_color = new_color
+	. = glow_of(src).color
+	set_trait(src, ENTRY_LIGHT_GLOW, "color", new_color)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_color, .)
 
 /// Setter for whether or not this atom's light is on.

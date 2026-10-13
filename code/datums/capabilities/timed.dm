@@ -3,8 +3,8 @@
 //	timed_set(src, nameof(emp_disabled), TRUE, for_time = 90 SECONDS / severity)
 //	time_left(src, nameof(emp_disabled))
 //
-// timed_set() writes the var through its setter (set_<var>() when the type has one, else a direct
-// write plus changed()), and when for_time runs out writes the var's value from before the call back
+// timed_set() writes the var through its registered setter (TRACKED or SETTER; a var with none is refused),
+// and when for_time runs out writes the var's value from before the call back
 // the same way, so every reader (draw, should_run, UI) reacts on its own: there is no lapse hook.
 // CLOCK_OWN runs on the holder's own clock (paused in stasis or suspension) in a keyed after() that the
 // holder's teardown cancels; CLOCK_WORLD runs on real time. Setting again replaces the timer;
@@ -22,17 +22,13 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 /// The value timed_set wrote: the revert only fires while the var still holds it (M5).
 #define TIMED_SET_VALUE 4
 
-/// Writes V on D through its setter (or directly, then changed()). Framework use only.
+/// Writes V on D through its registered setter. Framework use only.
 /proc/timed_write(datum/D, var_name, value)
 	// Only a registered setter (TRACKED / SETTER): a proc merely named set_<x> may take other args.
 	if(hascall(D, "__setter_[var_name]"))
 		call(D, "set_[var_name]")(value)
-		changed(D)
 		return
-	if(D.vars[var_name] == value)
-		return
-	D.vars[var_name] = value // ALLOW(api): the timed-state writer for a var with no setter
-	changed(D, CHANGE_EXPLICIT, var_name)
+	CRASH("timed_set: [D.type].[var_name] has no registered setter (TRACKED or SETTER): a timed state is a tracked var")
 
 /proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_WORLD, keep_longer = FALSE, revert_to)
 	if(isnull(for_time))

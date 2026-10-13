@@ -133,7 +133,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	TEST_ASSERT_EQUAL(state_hash(state_serialize(first)), state_hash(state_serialize(second)), "two untouched papers should hash the same: [dq_state_first_difference(first_text, second_text)]")
 	var/list/delta = state_delta(first)
 	TEST_ASSERT(!("info" in delta), "an untouched var should not be in the delta")
-	first.info = "written on"
+	first.set_info("written on")
 	delta = state_delta(first)
 	TEST_ASSERT_EQUAL(delta["info"], "written on", "a changed var should be in the delta")
 	TEST_ASSERT(state_hash(state_serialize(first)) != state_hash(state_serialize(second)), "a changed paper should hash differently")
@@ -270,7 +270,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	qdel(listener)
 
 	var/obj/item/paper/timed = new(test_floor())
-	after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, update_icon))
+	after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, melt))
 	blockers = timed.state_collapse_blockers(1)
 	var/found_timer = FALSE
 	for(var/reason in blockers)

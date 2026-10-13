@@ -16,9 +16,6 @@
 	use_power = USE_POWER_IDLE
 	maintenance_flags = MACHINE_MAINT_WRENCH
 	maintenance_wrench_time = 2 SECONDS
-	light_power = 0.9
-	light_range = 2
-	light_color = "#B1FBBFF"
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
 	/// "rolling" while the slots spin, "winning" while the win is paid out, else null.
@@ -31,6 +28,7 @@
 	var/confetti_strength = 8
 
 CAPABILITIES(/obj/machinery/slot_machine)
+	configure(light_glow(power = 0.9, range = 2, color = "#B1FBBFF"))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
@@ -161,9 +159,6 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	anchored = 1
 	density = 1
 	use_power = USE_POWER_IDLE
-	light_power = 0.9
-	light_range = 2
-	light_color = "#B1FBBFF"
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
 	/// "rolling" while the slots spin, "winning" while the win is paid out, else null.
@@ -176,6 +171,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	var/confetti_strength = 8
 
 CAPABILITIES(/obj/machinery/station_slot_machine)
+	configure(light_glow(power = 0.9, range = 2, color = "#B1FBBFF"))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))

@@ -40,11 +40,8 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
-TRACKED(/obj/machinery/power/shield_generator, mode_changes_locked)
 
-TRACKED(/obj/machinery/power/shield_generator, offline_for)
 
-TRACKED(/obj/machinery/power/shield_generator, running)
 
 /// The power wire cut cuts the input (power_wires()).
 STAT(/obj/machinery/power/shield_generator, input_cut, ANY)

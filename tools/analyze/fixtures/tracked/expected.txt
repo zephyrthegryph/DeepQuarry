@@ -44,6 +44,7 @@ outside_setter	code/modules/trk/procs.dm	117
 outside_setter	code/modules/trk/procs.dm	118
 outside_setter	code/modules/trk/procs.dm	122
 outside_setter	code/modules/trk/procs.dm	132
+outside_setter	code/modules/trk/procs.dm	139
 outside_setter	code/modules/trk/procs.dm	144
 outside_setter	code/modules/trk/procs.dm	145
 outside_setter	code/modules/trk/procs.dm	151
@@ -70,15 +71,12 @@ outside_setter	code/modules/trk/shapes.dm	32
 outside_setter	code/modules/trk/shapes.dm	43
 outside_setter	code/modules/trk/shapes.dm	45
 outside_setter	code/modules/trk/shapes.dm	48
-outside_setter	code/modules/trk/shapes.dm	51
-outside_setter	code/modules/trk/shapes.dm	55
 outside_setter	code/modules/trk/shapes.dm	59
-outside_setter	code/modules/trk/shapes.dm	60
 outside_setter	code/modules/trk/shapes.dm	61
-outside_setter	code/modules/trk/shapes.dm	64
-outside_setter	code/modules/trk/shapes.dm	65
-outside_setter	code/modules/trk/shapes.dm	68
-outside_setter	code/modules/trk/shapes.dm	69
+outside_setter	code/modules/trk/shapes.dm	63
+outside_setter	code/modules/trk/shapes.dm	66
+outside_setter	code/modules/trk/shapes.dm	67
+outside_setter	code/modules/trk/shapes.dm	70
 outside_setter	code/modules/trk/uses_exempt_declarations.dm	3
 outside_setter	code/modules/trk/uses_exempt_declarations.dm	4
 outside_setter	code/modules/trk/uses_exempt_declarations.dm	7

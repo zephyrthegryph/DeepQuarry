@@ -67,8 +67,8 @@
 	vore_prefs.noisy_full = client.prefs_vr.noisy_full
 	vore_prefs.set_strip_pref(client.prefs_vr.strip_pref)
 	vore_prefs.set_contaminate_pref(client.prefs_vr.contaminate_pref)
-	vore_prefs.vore_sprite_color = client.prefs_vr.vore_sprite_color
-	vore_prefs.vore_sprite_multiply = client.prefs_vr.vore_sprite_multiply
+	vore_prefs.set_vore_sprite_color(client.prefs_vr.vore_sprite_color)
+	vore_prefs.set_vore_sprite_multiply(client.prefs_vr.vore_sprite_multiply)
 	vore_prefs.no_latejoin_vore_warning = client.prefs_vr.no_latejoin_vore_warning
 	vore_prefs.no_latejoin_prey_warning = client.prefs_vr.no_latejoin_prey_warning
 	vore_prefs.no_latejoin_vore_warning_time = client.prefs_vr.no_latejoin_vore_warning_time

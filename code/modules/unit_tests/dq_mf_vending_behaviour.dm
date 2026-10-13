@@ -36,7 +36,7 @@
 	var/datum/money_account/dept = p2v_own_vendor_account(0)
 	var/obj/machinery/vending/V = p2v_vendor(/obj/machinery/vending/p2v_test/priced)
 	var/datum/stored_item/vending_product/R = p2v_record(V, /obj/item/pen)
-	R.amount = 1
+	R.set_amount(1)
 	var/mob/living/carbon/human/H = p2v_actor()
 	var/mob/living/carbon/human/other = p2v_actor(get_step(p2v_spot(), SOUTH))
 	var/obj/item/card/id/C = p2v_id(H, null, 100)

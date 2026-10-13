@@ -206,15 +206,7 @@
 
 	if(W.flags & NOBLUDGEON) return OP_OK
 
-	if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
-		var/obj/item/stack/cable_coil/C = W
-		if (C.use(1))
-			play_sfx(src, SFX_EFFECTS_SPARKS1, 0.75)
-			act_message(user, src, MSG_SELF(span_notice("You begin to wire %T% for electrochromic tinting.")), \
-				MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting.")), \
-				MSG_BLIND("You hear sparks."))
-			use_tool(user, C, src, delay = 2 SECONDS, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(state))
-	else if(istype(W,/obj/item/frame) && anchored)
+	if(istype(W,/obj/item/frame) && anchored)
 		return OP_OK // its own op, frame.mount, hangs it on the window
 	else
 		user.setClickCooldown(user.get_attack_speed(W))
@@ -228,13 +220,19 @@
 			play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	return OP_OK
 
-/obj/structure/window/proc/attackby_tool_done(state)
-	if(!(state == 0))
-		return
+MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tinting."), span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting."))
+
+/// A reinforced pane, not yet fastened in, not tinted already, is wired for tint with a length of cable.
+/obj/structure/window/proc/can_polarize(datum/act/op/A)
+	return read_once(reinf && state == 0) && !istype(src, /obj/structure/window/reinforced/polarized)
+
+/obj/structure/window/proc/attackby_tool_done(datum/act/op/A)
+	if(state != 0)
+		return OP_OK
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
 	if(is_fulltile())
-		P.fulltile = TRUE
+		P.set_fulltile(TRUE)
 		P.icon_state = "fwindow"
 	P.max_integrity = max_integrity
 	P.update_integrity(get_integrity())
@@ -266,6 +264,7 @@ CAPABILITIES(/obj/structure/window)
 	param(nameof(constructed), pos = 2)
 	op("bang", hand(), stance(I_HURT), label("Bang on"), then(PROC_REF(interaction_bang)))
 	op("knock", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Knock"), then(PROC_REF(interaction_hand)))
+	op("polarize", stack(/obj/item/stack/cable_coil, 1), priority(OP_PRIORITY_PART + 1), label("Wire for tinting"), when(PROC_REF(can_polarize)), plays(SFX_EFFECTS_SPARKS1, at_start = TRUE), begins(MSG(window/wiring)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	window_construction()
 	op("tk_knock", tk(), label("Knock"), then(PROC_REF(interaction_tk)))
@@ -328,7 +327,6 @@ CAPABILITIES(/obj/structure/window)
 		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
 		grant(src, granted_verb(/atom/movable/proc/turn_around), src)
 
-TRACKED(/obj/structure/window, silicate)
 TRACKED(/obj/structure/window, tilt_sign)
 
 /// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).

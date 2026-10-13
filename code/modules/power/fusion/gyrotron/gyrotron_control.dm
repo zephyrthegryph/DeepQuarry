@@ -1,7 +1,6 @@
 /obj/machinery/computer/gyrotron_control
 	name = "gyrotron control console"
 	desc = "Used to control the R-UST stability beams."
-	light_color = COLOR_BLUE
 	circuit = /obj/item/circuitboard/gyrotron_control
 
 	icon_keyboard = "generic_key"
@@ -13,6 +12,7 @@
 
 // Its window is its monitor's (a hand on a working console opens it); a multitool sets the ident tag the monitor looks for.
 CAPABILITIES(/obj/machinery/computer/gyrotron_control)
+	configure(light_glow(color = COLOR_BLUE))
 	op("use", hand(), when(req_empty_hand()), label("Use"), wait(0), needs(req_operable()), then(PROC_REF(open_monitor)))
 	op("set_tag", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Gyrotron Control", "question" = "Enter a new ident tag.", "max_len" = MAX_NAME_LEN)),

@@ -35,9 +35,9 @@
 	if(!electronics)
 		ae = new/obj/item/airlock_electronics( src.loc )
 		if(LAZYLEN(req_access))
-			ae.conf_access = req_access
+			ae.set_conf_access(req_access)
 		else if (LAZYLEN(req_one_access))
-			ae.conf_access = req_one_access
+			ae.set_conf_access(req_one_access)
 			ae.set_one_access(1)
 	else
 		ae = electronics
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/door/window)
 
 /// It has taken damage a welder can mend.
 /obj/machinery/door/window/proc/damaged_now(datum/act/A)
-	return (get_integrity() < max_integrity) ? null : MSG(windoor/good_condition) // ALLOW(reads): a door's max_integrity is its type's constant
+	return (get_integrity() < max_integrity) ? null : MSG(windoor/good_condition)
 
 /// An energy blade slices through the glass: the door gives way as to an emag (it stays open for good).
 /obj/machinery/door/window/proc/sliced_open(datum/act/op/A)
@@ -254,9 +254,9 @@ CAPABILITIES(/obj/machinery/door/window)
 	else if(!electronics)
 		rel_set(assembly, nameof(assembly.electronics), new /obj/item/airlock_electronics(assembly))
 		if(LAZYLEN(req_access))
-			assembly.electronics.conf_access = req_access
+			assembly.electronics.set_conf_access(req_access)
 		else if(LAZYLEN(req_one_access))
-			assembly.electronics.conf_access = req_one_access
+			assembly.electronics.set_conf_access(req_one_access)
 			assembly.electronics.one_access = TRUE
 	else
 		var/obj/item/airlock_electronics/door_electronics = electronics

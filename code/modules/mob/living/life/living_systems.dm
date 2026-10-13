@@ -26,10 +26,6 @@
 /mob/living/proc/life_type_pre(datum/seq_frame/life/F)
 	return
 
-/// The root is a no-op; a variant's pre code runs every cycle.
-/mob/living/proc/life_type_pre_due()
-	return FALSE
-
 /// Code a mob subtype ran after ..() in its old Life() override. A variant starts with `..()`,
 /// which runs its parent's post code, then runs its own; code that only runs for a living mob
 /// checks `ctx.fact("alive")`.
@@ -74,8 +70,8 @@
 	if(src.glow_override)
 		return FALSE
 
-	// Determine the desired light params, then only call set_light() if they changed
-	// since last tick (this runs every Life() tick for every glowing mob).
+	// Determine the desired light params, then only call set_glow() if they differ from the light it casts
+	// (this runs every Life() tick for every glowing mob).
 	var/want_range
 	var/want_intensity
 	var/want_color
@@ -99,14 +95,13 @@
 	else
 		want_range = 0
 
-	if(want_range != src.last_glow_range || want_intensity != src.last_glow_intensity || want_color != src.last_glow_color)
+	var/datum/type_trait/light_glow/now = glow_of(src)
+	var/now_range = light_on ? now.range : 0
+	if(want_range ? (want_range != now_range || want_intensity != now.power || want_color != now.color) : now_range)
 		if(want_range)
-			src.set_light(want_range, want_intensity, want_color)
+			set_glow(src, GLOW(want_range, want_intensity, want_color))
 		else
-			src.set_light(0)
-		src.last_glow_range = want_range
-		src.last_glow_intensity = want_intensity
-		src.last_glow_color = want_color
+			set_glow(src, GLOW(0, null, null))
 
 /// Re-evaluates this mob's glow now (light system).
 /mob/living/proc/refresh_glow()
@@ -118,9 +113,10 @@
 		return FALSE
 	if(src.instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
 		return TRUE
+	var/datum/type_trait/light_glow/now = glow_of(src)
 	if(src.glow_toggle && !src.is_ventcrawling)
-		return src.last_glow_range != src.glow_range || src.last_glow_intensity != src.glow_intensity || src.last_glow_color != src.glow_color
-	return src.last_glow_range
+		return !light_on || now.range != src.glow_range || now.power != src.glow_intensity || now.color != src.glow_color
+	return light_on && now.range
 
 // --- Alive block -----------------------------------------------------------------------------------
 
@@ -215,6 +211,9 @@
 /mob/living/proc/life_environment(datum/seq_frame/life/F)
 	if(F.environment())
 		life_environment_exchange(F.environment())
+	// What wakes this step (and breathing) once it sleeps: the air it now stands in, and its body temperature.
+	src.air_watch_arm()
+	src.body_heat_watch_arm()
 
 /// Handle temperature/pressure differences between body and environment.
 /mob/living/proc/life_environment_exchange(datum/gas_mixture/environment)
@@ -257,12 +256,9 @@
 	FOR_CONTENTS(var/obj/item/grab/G, src)
 		G.periodic_step()
 
-/// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
+/// Busy while pulling or grabbing. Gravity is re-read on Moved and when the ground changes (MOB_KEY_GROUND).
 /mob/living/proc/life_movement_due()
 	return src?.pulling_target() || (locate_in_list(src, /obj/item/grab))
-
-/mob/living/proc/life_movement_rewake()
-	return src.client ? 30 SECONDS : 0
 
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
 /// disabilities and addictions systems skip this cycle.
@@ -359,7 +355,7 @@
 #define LIFE_CANMOVE_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT)
 #define LIFE_PRESENT_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI)
 // What each reaction reads: the facts its old stages woke on (their wake_on channels plus their pipeline's
-// wake_all), as change keys. The catch-all CHANGE_EXPLICIT is gone: a hand change that should redraw writes its
+// wake_all), as change keys. The catch-all channel is gone: a hand change that should redraw writes its
 // var through a setter or publishes the fact (MOB_KEY_VIEW for what the client looks through).
 /// after() keys of the rewakes.
 #define LIFE_HUD_REWAKE "life_hud"
@@ -583,3 +579,14 @@ TRACKED(/mob, ear_damage)
 /mob/living/simple_mob/var/purge = 0
 TRACKED(/mob/living/simple_mob, purge)
 
+// ---------------------------------------------------------------- identity
+
+/// Something this movable shows of its carrier's identity changed (the name on an ID or a PDA): the living mob carrying
+/// it, however deep, hears MOB_KEY_IDENTITY (its visible name step reads it). Called by those setters only.
+/atom/movable/proc/identity_changed_on_holder()
+	var/atom/A = loc
+	while(A && !isturf(A))
+		if(isliving(A))
+			PUBLISH_CHANGE(A, MOB_KEY_IDENTITY)
+			return
+		A = A.loc

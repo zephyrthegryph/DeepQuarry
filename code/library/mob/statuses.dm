@@ -40,8 +40,24 @@ STAT(/mob, godmode, ANY, virtual = TRUE)
 SOURCE_DEF(godmode)
 SOURCE_DEF(voluntary_sleep)
 SOURCE_DEF(disability_blind)
+/// A sight that is down for a reason that is not a timed dose: dead senses, no seeing eyes, a sleeping body (set_blinded()).
+SOURCE_DEF(sight_state)
+/// A rig helmet whose visor restriction blinds the wearer.
+SOURCE_DEF(rig_visor)
+/// A blindfold over the eyes.
+SOURCE_DEF(blindfold)
 SOURCE_DEF(disability_deaf)
 SOURCE_DEF(mutation_hulk)
+
+/// Blindness that is not a timed dose: a hold on STAT_BLINDED sourced SRC_SIGHT_STATE while `blind`, released otherwise. `blinded` is the status
+/// stat's own var, so it is never written directly (the served value would stop following the holds); a hold already in the wanted state raises no change.
+/mob/proc/set_blinded(blind)
+	if(!!held_by_source(src, STAT_BLINDED, SRC_SIGHT_STATE) == !!blind)
+		return
+	if(blind)
+		hold(src, STAT_BLINDED, 1, SRC_SIGHT_STATE)
+	else
+		release(src, STAT_BLINDED, SRC_SIGHT_STATE)
 
 /// Godmode's incapacitation immunities, for /mob's CAPABILITIES block (mob_defines.dm).
 /proc/godmode_immunities()
@@ -279,6 +295,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 
 /// The stat layer: status `id` started (`active`) or ended on this entity. Its hooks run, its presentation follows, and the mob's status
 /// change is announced (MOB_KEY_STATUS).
+PROC_SUMMARY(/datum/proc/status_flipped) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /datum/proc/status_flipped(id, active)
 	var/datum/status_policy/P = status_policies()["[id]"]
 	if(!P)

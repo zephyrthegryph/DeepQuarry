@@ -6,6 +6,8 @@
 	layer = ABOVE_WINDOW_LAYER
 	flags = WALL_ITEM
 	var/desiredstate = 0
+	/// TRUE for a moment after a press: the button draws pressed.
+	var/shown_pressed = FALSE
 	var/exposedwires_num = 0
 	var/wires_num = 3
 	/*
@@ -15,6 +17,7 @@
 
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
+
 
 // ---- what a remote button is, declared ----
 //
@@ -81,20 +84,24 @@ CAPABILITIES(/obj/machinery/button/remote)
 	var/mob/user = A.actor
 	add_fingerprint(user)
 	use_power(5)
-	icon_state = "doorctrl1"
+	set_shown_pressed(TRUE)
 	desiredstate = !desiredstate
 	trigger(user)
-	after(src, 1.5 SECONDS, TYPE_PROC_REF(/atom, update_icon), key = "reset_look", clock = CLOCK_WORLD)
+	after(src, 1.5 SECONDS, PROC_REF(unpress), key = "reset_look", clock = CLOCK_WORLD)
 	return OP_OK
+
+/// The picture comes back.
+/obj/machinery/button/remote/proc/unpress()
+	set_shown_pressed(FALSE)
 
 /// A lock (an access list) is there to scorch off.
 /obj/machinery/button/remote/proc/has_access_lock(datum/act/A)
-	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock) // ALLOW(reads): the access lists are read when the sequencer is tried
+	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock)
 
 /// The sequencer scorches the access lock off.
 /obj/machinery/button/remote/proc/lock_scorched(datum/act/op/A)
-	req_access = null
-	req_one_access = null
+	set_req_access(null)
+	set_req_one_access(null)
 	play_sfx(src, SFX_SPARKS, 2)
 	return OP_OK
 
@@ -104,10 +111,10 @@ CAPABILITIES(/obj/machinery/button/remote)
 /obj/machinery/button/remote/proc/appearance_powered()
 	return power_lost() ? 0 : 1
 
-/// The look (the draw sweep: from its template).
+/// The look: pressed for a moment after a press, else lit or dark with its power.
 /obj/machinery/button/remote/draw(datum/look/look)
 	..()
-	look.state("doorctrl[appearance_powered() ? "0" : "-p"]")
+	look.state(shown_pressed ? "doorctrl1" : "doorctrl[appearance_powered() ? "0" : "-p"]")
 
 /*
 	Airlock remote control
@@ -357,10 +364,10 @@ TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
 	to_chat(A.actor, span_notice("You hear a heavy mechanism open somewhere in the distance."))
 	icon_state = pressed_state
 
-/// The look (the draw sweep: from APPEARANCE_NONE).
+/// The look (the mapped sprite).
 /obj/machinery/button/remote/blast_door/single_use/slab/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	// the mapped sprite, without the parent's declared states and layers
 	look.state(null)
 
 /obj/machinery/button/remote/blast_door/single_use/slab/slab1

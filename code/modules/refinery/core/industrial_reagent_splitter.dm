@@ -41,7 +41,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
 		return 0
 
 	// Dynamically set by reagent amount, we always want half
-	amount_per_transfer_from_this = reagents.total_volume / target_list.len
+	set_amount_per_transfer_from_this(reagents.total_volume / target_list.len)
 	if(amount_per_transfer_from_this < 0.5)
 		return 0
 

@@ -27,7 +27,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/paper/admin/interim_write_actor/paper = allocate(/obj/item/paper/admin/interim_write_actor, T)
 	TEST_ASSERT_NULL(actor.get_active_hand(), "the actual administrative writer needs no held pen")
-	paper.info = "Existing."
+	paper.set_info("Existing.")
 	var/space_before = paper.free_space
 	TEST_ASSERT(test_op_handler(paper, "ui_act_write_end", actor), "the actual administrative UI handles append")
 	TEST_ASSERT_EQUAL(paper.write_actor_ref, REF(actor), "the administrative writer receives the supplied actor")
@@ -52,7 +52,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/paper/admin/interim_write_actor/paper = allocate(/obj/item/paper/admin/interim_write_actor, T)
-	paper.info = "Before<span class=\"paper_field\"></span>After"
+	paper.set_info("Before<span class=\"paper_field\"></span>After")
 	paper.fields = 1
 	var/space_before = paper.free_space
 	TEST_ASSERT(test_op_handler(paper, "ui_act_write_field", actor, null, "1"), "the actual administrative UI handles field insertion")

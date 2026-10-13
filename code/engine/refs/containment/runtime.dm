@@ -21,9 +21,6 @@
 /atom/proc/receive_containment_damage(datum/damage_packet/packet)
 	return 0
 
-/atom/movable/proc/containment_redraw()
-	return
-
 /atom/movable/proc/containment_fire(temperature, volume)
 	return
 

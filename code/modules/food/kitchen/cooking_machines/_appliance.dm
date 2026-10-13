@@ -67,7 +67,6 @@ CAPABILITIES(/obj/machinery/appliance)
 
 /// Whether or not the machine is currently operating (cooking its contents).
 /obj/machinery/appliance/var/cooking = FALSE
-TRACKED(/obj/machinery/appliance, cooking)
 
 /// The machine's running sound follows what it is doing: a type with a loop of its own syncs it here.
 /obj/machinery/appliance/proc/loop_sync(datum/act/A)

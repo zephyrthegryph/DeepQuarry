@@ -58,12 +58,10 @@
 	hci_click(H, G, G)
 	settle()
 	TEST_ASSERT(G.scanning, "in-hand use switches it on")
-	G.update_icon()
 	TEST_ASSERT_EQUAL(G.icon_state, "geiger_on_1", "on shows the level 1 state")
 	hci_click(H, G, G)
 	settle()
 	TEST_ASSERT(!G.scanning, "in-hand use switches it off")
-	G.update_icon()
 	TEST_ASSERT_EQUAL(G.icon_state, "geiger_off", "off shows the off state")
 
 /datum/unit_test/dq_hc_items/geiger_alt_resets_only_while_scanning
@@ -71,11 +69,11 @@
 /datum/unit_test/dq_hc_items/geiger_alt_resets_only_while_scanning/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/geiger/G = allocate(/obj/item/geiger, tile(2, 2))
-	G.last_perceived_radiation_danger = PERCEIVED_RADIATION_DANGER_HIGH
+	G.set_last_perceived_radiation_danger(PERCEIVED_RADIATION_DANGER_HIGH)
 	hci_click(H, G, null, I_HELP, "alt=1")
 	settle()
 	TEST_ASSERT_EQUAL(G.last_perceived_radiation_danger, PERCEIVED_RADIATION_DANGER_HIGH, "an alt-click on a counter that is off does nothing")
-	G.scanning = TRUE
+	G.set_scanning(TRUE)
 	hci_click(H, G, null, I_HELP, "alt=1")
 	settle()
 	TEST_ASSERT_NULL(G.last_perceived_radiation_danger, "an alt-click on a running counter clears the danger")
@@ -84,14 +82,12 @@
 
 /datum/unit_test/dq_hc_items/geiger_level_follows_danger/run_gate()
 	var/obj/item/geiger/G = allocate(/obj/item/geiger, tile(2, 2))
-	G.scanning = TRUE
-	G.last_perceived_radiation_danger = PERCEIVED_RADIATION_DANGER_EXTREME
-	G.update_icon()
+	G.set_scanning(TRUE)
+	G.set_last_perceived_radiation_danger(PERCEIVED_RADIATION_DANGER_EXTREME)
 	settle()
 	TEST_ASSERT_EQUAL(G.icon_state, "geiger_on_5", "extreme danger shows level 5")
 	var/obj/item/geiger/wall/W = allocate(/obj/item/geiger/wall, tile(3, 3))
-	W.last_perceived_radiation_danger = PERCEIVED_RADIATION_DANGER_LOW
-	W.update_icon()
+	W.set_last_perceived_radiation_danger(PERCEIVED_RADIATION_DANGER_LOW)
 	settle()
 	TEST_ASSERT_EQUAL(W.icon_state, "geiger_level_2", "the wall counter has its own states")
 
@@ -268,13 +264,11 @@
 	hci_click(H, C, L)
 	settle()
 	TEST_ASSERT(C.lit, "a lit lighter lights it")
-	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candle1_lit", "a lit fresh candle shows its lit state")
 	hci_click(H, C, C)
 	settle()
 	TEST_ASSERT(!C.lit, "using a lit candle in hand snuffs it")
-	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candle1", "an unlit candle shows its plain state")
 
@@ -282,15 +276,12 @@
 
 /datum/unit_test/dq_hc_items/candelabra_look_follows_wax_and_flame/run_gate()
 	var/obj/item/flame/candle/candelabra/C = allocate(/obj/item/flame/candle/candelabra, tile(2, 2))
-	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candelabra", "plain")
 	C.set_lit(TRUE)
-	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candelabra_lit", "lit")
 	C.set_wax(0) // adapter: the legacy candle read the wax var directly (C.wax = 0); the converted one tracks it
-	C.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(C.icon_state, "candelabra_melted", "melted")
 

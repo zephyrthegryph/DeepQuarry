@@ -2,7 +2,6 @@ human|none menu: Climb
 human|none menu: Search
 human|none click: Click: Search
 robot|none menu: Climb
-robot|none menu: Search (refused: )
 robot|none click: Click: Search
 @obj.structure ai|none
 ghost|none menu: Become mouse (refused: You may not respawn now.)
@@ -10,32 +9,32 @@ ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: Click: Become mouse
 @obj.structure human|/obj/item/tool/screwdriver
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/tool/wrench
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/tool/wirecutters
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/multitool
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/weldingtool
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Climb
-+4 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/stack/material/steel
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item/card/id
 +0 menu: Climb
-+4 menu: Search
++2 menu: Search
 @obj.structure human|/obj/item
 +0 menu: Climb
-+3 menu: Search
++2 menu: Search
 keys: become_mouse, climb.climb, climb.climb_menu, drag_buckle, item, melee_hit, search

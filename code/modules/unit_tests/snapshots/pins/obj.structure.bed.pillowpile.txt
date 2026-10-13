@@ -4,64 +4,34 @@ robot|none menu: Disassemble
 robot|none click: Click: Disassemble
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure.bed human|/obj/item/tool/screwdriver
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/tool/crowbar
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/tool/wrench
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/tool/wirecutters
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/multitool
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/weldingtool
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/stack/cable_coil
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+5 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/stack/material/steel
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
-@obj.structure.bed human|/obj/item/card/id
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+5 click: Click: Disassemble
-@obj.structure.bed human|/obj/item
--menu: Melt
--menu: Use
--click: Click: Use
-+0 menu: Disassemble
-+4 click: Click: Disassemble
+human|/obj/item/tool/screwdriver menu: Disassemble
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver click: Click: Disassemble
+human|/obj/item/tool/crowbar menu: Disassemble
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar click: Click: Disassemble
+human|/obj/item/tool/wrench menu: Disassemble
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench click: Click: Disassemble
+human|/obj/item/tool/wirecutters menu: Disassemble
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters click: Click: Disassemble
+human|/obj/item/multitool menu: Disassemble
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool click: Click: Disassemble
+human|/obj/item/weldingtool menu: Disassemble
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool click: Click: Disassemble
+human|/obj/item/stack/cable_coil menu: Disassemble
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil click: Click: Disassemble
+human|/obj/item/stack/material/steel menu: Disassemble
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel click: Click: Disassemble
+human|/obj/item/card/id menu: Disassemble
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id click: Click: Disassemble
+human|/obj/item menu: Disassemble
+human|/obj/item menu: Hit
+human|/obj/item click: Click: Disassemble
 keys: disassemble, melee_hit, rotatable.turn_around

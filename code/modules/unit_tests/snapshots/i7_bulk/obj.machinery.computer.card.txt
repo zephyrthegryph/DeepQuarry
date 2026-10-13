@@ -7,7 +7,7 @@ human|none click: Click: Ui open
 +2 menu: Eject ID Card (refused: There is nothing to remove from the console.)
 +3 menu: Ui open
 +5 click: Click: Ui open
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Ui open
 +2 click: Click: Ui open
@@ -15,46 +15,83 @@ human|none click: Click: Ui open
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use
+-menu: Use screwdriver
 +2 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
+-menu: Use crowbar
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/wrench
 -menu: Use
+-menu: Use wrench
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/wirecutters
 -menu: Use
+-menu: Use wirecutters
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
+-menu: Use multitool
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
+-menu: Use welding tool
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/stack/cable_coil
 -menu: Use
+-menu: Use cable coil
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/stack/material/steel
 -menu: Use
+-menu: Use steel sheet
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
-@obj.machinery.computer human|/obj/item/card/id
--menu: Use
--click: Click: Use item
-+1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
-+2 menu: Insert id
-+6 menu: Ui open
-+8 click: Click: Insert id
++5 menu: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Eject ID Card (refused: There is nothing to remove from the console.)
+human|/obj/item/card/id menu: Insert id
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use item
+human|/obj/item/card/id click: Click: Insert id
 @obj.machinery.computer human|/obj/item
 -menu: Use
 +1 menu: Eject ID Card (refused: There is nothing to remove from the console.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Ui open
 @obj human|/obj/item/gripper
 keys: access, account, assign, assign_custom, climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, insert_id, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, mode, modify, print, reg, robot_remote_blocked, scan, silicon_hand, terminate, ui_open, use_gripper, use_item

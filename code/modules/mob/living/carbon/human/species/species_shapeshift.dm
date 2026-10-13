@@ -292,7 +292,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
-	regenerate_icons()
 */
 
 /mob/living/carbon/human/proc/shapeshifter_select_colour()
@@ -321,7 +320,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	for(var/obj/item/organ/external/E in organs)
 		E.sync_colour_to_human(src)
 
-	regenerate_icons()
 
 /mob/living/carbon/human/proc/shapeshifter_select_hair_colors()
 
@@ -405,7 +403,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		else
 			spent(O)
 
-	regenerate_icons()
 /* Our own trait system, sorry.
 	if(species && mind)
 		apply_traits()
@@ -440,8 +437,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(istype(eyes))
 		eyes.update_colour()
 
-	update_icons_body()
-	update_eyes()
 
 /mob/living/carbon/human/proc/shapeshifter_select_ears()
 	set name = "Select Ears"
@@ -524,23 +519,23 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_accessory_current_color(kind, suffix)
 	switch("[kind][suffix]")
 		if("ears")
-			return rgb(r_ears, g_ears, b_ears)
+			return looks.ears_color
 		if("ears2")
-			return rgb(r_ears2, g_ears2, b_ears2)
+			return looks.ears_color2
 		if("ears3")
-			return rgb(r_ears3, g_ears3, b_ears3)
+			return looks.ears_color3
 		if("tail")
-			return rgb(r_tail, g_tail, b_tail)
+			return looks.tail_color
 		if("tail2")
-			return rgb(r_tail2, g_tail2, b_tail2)
+			return looks.tail_color2
 		if("tail3")
-			return rgb(r_tail3, g_tail3, b_tail3)
+			return looks.tail_color3
 		if("wings")
-			return rgb(r_wing, g_wing, b_wing)
+			return looks.wing_color
 		if("wings2")
-			return rgb(r_wing2, g_wing2, b_wing2)
+			return looks.wing_color2
 		if("wings3")
-			return rgb(r_wing3, g_wing3, b_wing3)
+			return looks.wing_color3
 
 /mob/living/carbon/human/proc/shapeshifter_ask_accessory_color(kind, style_path, channel, c1, c2)
 	var/list/info = shapeshifter_accessory_info(kind)
@@ -584,11 +579,11 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	var/current_alpha
 	switch(kind)
 		if("ears")
-			current_alpha = a_ears
+			current_alpha = looks.ears_alpha
 		if("tail")
-			current_alpha = a_tail
+			current_alpha = looks.tail_alpha
 		if("wings")
-			current_alpha = a_wing
+			current_alpha = looks.wing_alpha
 	open_request(src, /datum/prompt/number/shapeshift_accessory, PROC_REF(shapeshifter_accessory_alpha_picked), answerer = src, title = "[info["title"]] Alpha", question = "Set [info["noun"]] alpha (0-255):", default = current_alpha, kind = kind, style_path = style_path, c1 = c1, c2 = c2, c3 = c3)
 
 /mob/living/carbon/human/proc/shapeshifter_accessory_alpha_picked(datum/act/request/A)
@@ -605,11 +600,11 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	var/datum/sprite_accessory/style = source[style_path]
 	switch(kind)
 		if("ears")
-			set_ear_style(style)
+			rel_set(src, nameof(ear_style), style)
 		if("tail")
-			set_tail_style(style)
+			rel_set(src, nameof(tail_style), style)
 		if("wings")
-			wing_style = style
+			rel_set(src, nameof(wing_style), style)
 	var/static/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
 	for(var/key in suffixes)
 		var/new_color = colors[key]
@@ -618,13 +613,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		set_accessory_color(kind, suffixes[key], hex2rgb(new_color))
 	if(alpha)
 		set_accessory_alpha(kind, clamp(alpha, 0, 255))
-	switch(kind)
-		if("ears")
-			update_hair() //Includes Virgo ears
-		if("tail")
-			update_tail_showing()
-		if("wings")
-			update_wing_showing()
 
 /mob/living/carbon/human/proc/shapeshifter_select_secondary_ears()
 	set name = "Select Secondary Ears"
@@ -649,7 +637,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/ask = A.request
-	set_ear_secondary_style(GLOB.ear_styles_list[ask.choices[ask.value]])
+	rel_set(src, nameof(ear_secondary_style), GLOB.ear_styles_list[ask.choices[ask.value]])
 	var/list/defaults = list()
 	if(ear_secondary_style)
 		for(var/channel in 1 to ear_secondary_style.get_color_channel_count())
@@ -676,7 +664,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_next_secondary_ear_channel(list/defaults, list/new_colors, channel)
 	channel++
 	if(channel > length(defaults))
-		open_request(src, /datum/prompt/number/shapeshift_secondary_ears, PROC_REF(shapeshifter_secondary_ear_alpha_picked), answerer = src, question = "Set ear alpha (0-255):", title = "Ear Alpha", default = a_ears2, new_colors = new_colors)
+		open_request(src, /datum/prompt/number/shapeshift_secondary_ears, PROC_REF(shapeshifter_secondary_ear_alpha_picked), answerer = src, question = "Set ear alpha (0-255):", title = "Ear Alpha", default = looks.ears_alpha2, new_colors = new_colors)
 		return
 	var/channel_name = GLOB.fancy_sprite_accessory_color_channel_names[channel]
 	open_request(src, /datum/prompt/color/shapeshift_secondary_ears, PROC_REF(shapeshifter_secondary_ear_channel_picked), answerer = src, question = "Pick [channel_name]", title = "Ear Color ([channel_name])", default = defaults[channel], defaults = defaults, new_colors = new_colors, channel = channel)
@@ -700,10 +688,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_secondary_ear_colors_chosen(list/new_colors, alpha)
 	if(length(new_colors))
-		ear_secondary_colors = new_colors
+		set_ear_secondary_colors(new_colors)
 	if(alpha)
-		a_ears2 = clamp(alpha, 0, 255)
-	update_hair()
+		looks.set_ears_alpha2(clamp(alpha, 0, 255))
 
 /mob/living/carbon/human/proc/shapeshifter_select_tail()
 	set name = "Select Tail"
@@ -736,10 +723,8 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	cooldown_start(src, last_special, 5 SECONDS)
 
 	for(var/obj/item/organ/external/L as anything in src.organs)
-		L.transparent = !L.transparent
+		L.set_transparent(!L.transparent)
 	act_message(src, null, others = span_notice("%U%'s internal composition seems to change."))
-	update_icons_body()
-	update_hair()
 
 /mob/living/carbon/human/proc/shapeshifter_change_shape(new_species = null, visible = TRUE) //not sure if this needs to be moved to a separate file but
 	if(!new_species)
@@ -751,7 +736,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	set_wrapped_bodytype(new_species)
 	if (visible)
 		act_message(src, null, others = span_filter_notice(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
-		regenerate_icons()
 
 
 //////////////////// Shapeshifter copy-body powers
@@ -980,38 +964,36 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 
 /// Sets one colour channel set of an ears/tail/wings accessory. `slot` is "" / "2" / "3"; `rgb` is a hex2rgb() list.
 /mob/living/carbon/human/proc/set_accessory_color(kind, slot, list/rgb)
-	var/r = rgb[1]
-	var/g = rgb[2]
-	var/b = rgb[3]
+	var/colour = rgb(rgb[1], rgb[2], rgb[3])
 	switch("[kind][slot]")
 		if("ears")
-			r_ears = r; g_ears = g; b_ears = b
+			looks.set_ears_color(colour)
 		if("ears2")
-			r_ears2 = r; g_ears2 = g; b_ears2 = b
+			looks.set_ears_color2(colour)
 		if("ears3")
-			r_ears3 = r; g_ears3 = g; b_ears3 = b
+			looks.set_ears_color3(colour)
 		if("tail")
-			r_tail = r; g_tail = g; b_tail = b
+			looks.set_tail_color(colour)
 		if("tail2")
-			r_tail2 = r; g_tail2 = g; b_tail2 = b
+			looks.set_tail_color2(colour)
 		if("tail3")
-			r_tail3 = r; g_tail3 = g; b_tail3 = b
+			looks.set_tail_color3(colour)
 		if("wings")
-			r_wing = r; g_wing = g; b_wing = b
+			looks.set_wing_color(colour)
 		if("wings2")
-			r_wing2 = r; g_wing2 = g; b_wing2 = b
+			looks.set_wing_color2(colour)
 		if("wings3")
-			r_wing3 = r; g_wing3 = g; b_wing3 = b
+			looks.set_wing_color3(colour)
 
 /// Sets an ears/tail/wings accessory's alpha.
 /mob/living/carbon/human/proc/set_accessory_alpha(kind, alpha)
 	switch(kind)
 		if("ears")
-			a_ears = alpha
+			looks.set_ears_alpha(alpha)
 		if("tail")
-			a_tail = alpha
+			looks.set_tail_alpha(alpha)
 		if("wings")
-			a_wing = alpha
+			looks.set_wing_alpha(alpha)
 
 /datum/species/shapeshifter/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
 	. = ..()

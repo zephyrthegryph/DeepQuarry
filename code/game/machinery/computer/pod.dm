@@ -4,7 +4,6 @@
 	name = "pod launch control console"
 	desc = "A control console for launching pods. Some people prefer firing Mechas."
 	icon_screen = "mass_driver"
-	light_color = "#00b000"
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
 	var/obj/machinery/mass_driver/connected
@@ -16,11 +15,7 @@
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
 /obj/machinery/computer/pod/var/timing = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
-/datum/scheduler_field_definition/obj/machinery/computer/pod/timing
-	of = /obj/machinery/computer/pod
-	field = "timing"
-	channel = CHANGE_MACHINE_SETTINGS
+TRACKED(/obj/machinery/computer/pod, timing)
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()
@@ -62,6 +57,7 @@ TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
 MSG_DEF_SELF(pod/access_denied, "access denied")
 
 CAPABILITIES(/obj/machinery/computer/pod)
+	configure(light_glow(color = "#00b000"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	interface("PodComputer")
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))

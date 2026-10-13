@@ -352,11 +352,11 @@
 	R.laws.add_ion_law("Seed law")
 	var/ions = length(R.laws.ion_laws)
 	var/datum/ai_law/L = R.laws.ion_laws[ions]
-	press(H, M, "delete_law", list("delete_law" = "ef[L]"))
+	press(H, M, "delete_law", list("delete_law" = "\ref[L]"))
 	TEST_ASSERT_EQUAL(length(R.laws.ion_laws), ions, "a person who is not an antagonist deletes no law")
-	press(H, M, "edit_law", list("edit_law" = "ef[L]"))
+	press(H, M, "edit_law", list("edit_law" = "\ref[L]"))
 	TEST_ASSERT(!p2cl_has_question(H), "and is not asked for a new text")
-	press(H, M, "state_law", list("ref" = "ef[L]", "state_law" = 1))
+	press(H, M, "state_law", list("ref" = "\ref[L]", "state_law" = 1))
 	TEST_ASSERT(R.laws.get_state_law(L), "a law's stated flag is switched by anybody at the window")
 
 /datum/unit_test/dq_hc_tgui/camera_switch
@@ -717,7 +717,7 @@
 	press(H, P, "PRG_backtomenu")
 	TEST_ASSERT_NULL(P.error, "the error is cleared")
 	P.loaded_data = "unsaved"
-	P.is_edited = TRUE
+	P.set_is_edited(TRUE)
 	press(H, P, "PRG_openfile", list("PRG_openfile" = "doc"))
 	TEST_ASSERT(p2cl_has_question(H), "unsaved changes are asked about first")
 	p2cl_answer(H, FALSE)

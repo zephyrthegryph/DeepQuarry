@@ -255,7 +255,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Calling this proc without an oldname will only update the mob and skip updating the pda, id and records ~Carn
 /mob/proc/fully_replace_character_name(oldname,newname)
 	if(!newname)	return 0
-	real_name = newname
+	set_real_name(newname)
 	name = newname
 	if(mind)
 		mind.name = newname
@@ -281,7 +281,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			if( search_id && istype(A,/obj/item/card/id) )
 				var/obj/item/card/id/ID = A
 				if(ID.registered_name == oldname)
-					ID.registered_name = newname
+					ID.set_registered_name(newname)
 					ID.name = "[newname]'s ID Card ([ID.assignment])"
 					if(!search_pda)	break
 					search_id = 0
@@ -289,7 +289,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			else if( search_pda && istype(A,/obj/item/pda) )
 				var/obj/item/pda/PDA = A
 				if(PDA.owner == oldname)
-					PDA.owner = newname
+					PDA.set_owner(newname)
 					PDA.name = "PDA-[newname] ([PDA.ownjob])"
 					if(!search_id)	break
 					search_pda = 0
@@ -1188,7 +1188,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /atom/proc/get_light_and_color(atom/origin)
 	if(origin)
 		color = origin.color
-		set_light(origin.light_range, origin.light_power, origin.light_color)
+		set_glow(src, GLOW(glow_of(origin).range, glow_of(origin).power, glow_of(origin).color))
 
 /// We don't want to be in any mob registry; we're a dummy not a mob.
 /mob/dview/skips_registry(registry_id)

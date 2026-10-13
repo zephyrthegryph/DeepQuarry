@@ -97,7 +97,7 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 		return failed ? FALSE : result
 	// Every dispatched call marks its target (it may have written plain vars); only a success
 	// (truthy, not refused: a cancelled prompt returns null) is fingerprinted and logged.
-	changed(target)
+	refresh_dispatched(target)
 	if(dispatch_succeeded(result))
 		dispatch_record(ctx.user, target, action_name, log, null)
 	return result
@@ -108,7 +108,8 @@ GLOBAL_LIST_EMPTY(dispatch_failures)
 GLOBAL_VAR_INIT(dispatch_failure_expected, FALSE)
 /// Test builds: "[action]|[fingerprinted]|[logged]" per dispatch_record() (the dispatch tests read it).
 GLOBAL_LIST_EMPTY(dispatch_records)
-/// The last dispatch_record() call (user, target, action, log). Only unit tests write and read it.
+/// The last dispatch_record() call (user and target as handles, action, log). Only unit tests write and read it: a weak record, so the last
+/// actor and target are not kept alive until the next dispatch.
 GLOBAL_LIST_EMPTY(dispatch_last_record)
 
 /// Whether a handler's result counts as done: truthy and not UI_REFUSED.
@@ -135,7 +136,7 @@ GLOBAL_VAR(refuse_capture)
  */
 /proc/dispatch_record(mob/user, datum/target, action, log, list/details)
 #ifdef UNIT_TESTS
-	GLOB.dispatch_last_record = list("user" = user, "target" = target, "action" = action, "log" = log)
+	GLOB.dispatch_last_record = list("user" = entity_handle(user), "target" = entity_handle(target), "action" = action, "log" = log)
 #endif
 	if(isatom(target) && isliving(user))
 		var/atom/A = target

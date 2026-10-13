@@ -37,12 +37,19 @@
 
 /datum/entry_engine/every/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	activation_every_arm(A, E)
+	// A gate built only of published state (stats, capability keys, tracked vars) parks the every() while it is false, as a type-level one does:
+	// its wake is an ENTER hook of the gate on the same activation.
+	if(activation_every_parkable(A, E))
+		entry_engine_for(ENTRY_ON_CHANGE).apply(A, activation_every_wake_entry(E), C)
 	return TRUE
 
 /datum/entry_engine/every/remove(datum/activation/A, datum/entry/E)
 	var/datum/holder = A.holder
 	if(holder && !QDELETED(holder))
 		cancel_after(holder, activation_every_key(A, E))
+	if(activation_every_parkable(A, E))
+		entry_engine_for(ENTRY_ON_CHANGE).remove(A, activation_every_wake_entry(E))
+	LAZYREMOVE(A.every_parked, E.sig)
 
 /// The timer key of one every() of one activation.
 /proc/activation_every_key(datum/activation/A, datum/entry/E)
@@ -51,6 +58,7 @@
 /// The deciseconds to the next run of an every() on `holder`: its interval, or what the holder proc the interval names answers now (never below one
 /// decisecond). The proc gets a real timer context (A is the activation, null for a type-level every()), like a handler. A runtime in it is logged and
 /// the every() keeps running on a one second fallback: one fault must not end the every() for the instance's life.
+PROC_SUMMARY(/proc/every_interval) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/every_interval(datum/holder, datum/entry/E, datum/activation/A = null)
 	var/interval = E.args["interval"]
 	if(!istext(interval))
@@ -106,11 +114,21 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		return
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(activation_every_fire), list(A, E, TRUE))
+		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
 		return
 	var/gated = A.runs
 	var/cond = E.args["when"]
+	GLOB.every_gate_faulted = FALSE
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, A.def.key)
+	if(!gated)
+		GLOB.timer_fire_quiet = TRUE // a skipped run changed nothing of the holder's
+	if(!gated && A.runs && !GLOB.every_gate_faulted && activation_every_parkable(A, E))
+		LAZYOR(A.every_parked, E.sig) // parked: no timer until its gate publishes true (activation_every_wake())
+		GLOB.every_activation_parks++
+		return
+	if(gated)
+		GLOB.every_activation_runs++
 	if(gated && E.args["members"])
 		every_members_start(holder, A, E)
 		return
@@ -125,6 +143,68 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		T.release()
 	if(!A.dead)
 		activation_every_arm(A, E)
+
+/// Activation every() runs (its handler ran) and parks since boot: what a test reads to see work stop while its gate is false.
+GLOBAL_VAR_INIT(every_activation_runs, 0)
+GLOBAL_VAR_INIT(every_activation_parks, 0)
+
+/datum/activation
+	/// The signatures of the every() entries of this activation parked behind their false `when =` (no timer is pending for them).
+	var/list/every_parked
+
+/// TRUE when the every() `E` of activation `A` can park: its `when =` is built only of state whose every write publishes (a stat, a capability
+/// key, a tracked var of the holder, or a tree of those). The answer is per holder type and entry.
+/proc/activation_every_parkable(datum/activation/A, datum/entry/E)
+	var/cond = E.args["when"]
+	if(isnull(cond) || !A.holder)
+		return FALSE
+	var/static/list/known = list()
+	var/id = "[A.holder.type]|[E.sig]"
+	if(isnull(known[id]))
+		known[id] = activation_every_cond_published(A.holder, cond) ? TRUE : FALSE
+	return known[id]
+
+/// type_every_cond_tracked(), plus capability keys: key_set() publishes every change of one (capability_key_changed()).
+/proc/activation_every_cond_published(datum/holder, cond)
+	if(islist(cond))
+		var/list/tree = cond
+		if(length(tree) < 2)
+			return FALSE
+		for(var/i in 2 to length(tree))
+			if(!activation_every_cond_published(holder, tree[i]))
+				return FALSE
+		return TRUE
+	if(isnum(cond) && cond >= CAPKEY_ID_BASE)
+		return TRUE
+	return type_every_cond_tracked(holder, cond)
+
+/// The ENTER hook of a parkable activation every()'s gate, which wakes it. One flyweight per every() entry.
+/proc/activation_every_wake_entry(datum/entry/E)
+	var/static/list/made = list()
+	var/datum/entry/known = made[E.sig]
+	if(!known)
+		known = entry_make(ENTRY_ON_CHANGE, null, list("cond" = E.args["when"], "edge" = ENTER), list(then(GLOBAL_PROC_REF(activation_every_wake))))
+		made[E.sig] = known
+	return known
+
+/// The gate of a parked activation every() became true: each of the activation's parked entries whose gate holds is armed an interval from now.
+/proc/activation_every_wake(datum/act/A)
+	var/datum/activation/act = A.activation
+	if(!act || act.dead || !length(act.every_parked))
+		return
+	var/datum/holder = act.holder
+	if(!holder || QDELETED(holder))
+		return
+	for(var/list/pair as anything in act.applied)
+		var/datum/entry/E = pair[1]
+		if(E.kind != ENTRY_EVERY || !(E.sig in act.every_parked))
+			continue
+		if(!every_gate_holds(holder, E.args["when"], act.def.key))
+			continue
+		act.every_parked -= E.sig
+		activation_every_arm(act, E)
+	if(!length(act.every_parked))
+		act.every_parked = null
 
 // ---- type-level every() ----
 //
@@ -266,6 +346,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	var/datum/entry/E = C.item
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(type_every_fire), list(holder, C, index, TRUE))
+		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
 		return
 	var/gated = FALSE
 	try
@@ -276,6 +357,8 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, "type every()")
+	if(!gated)
+		GLOB.timer_fire_quiet = TRUE // a skipped (or parked) run changed nothing of the holder's
 	if(!gated && !GLOB.every_gate_faulted && type_every_parkable(holder, C))
 		type_every_park(holder, index)
 		return

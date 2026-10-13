@@ -2,7 +2,7 @@
 +0 menu: Alt
 @obj robot|none
 +0 menu: Alt
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 -click: nothing
 +0 menu: Guide
@@ -10,57 +10,57 @@
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use screwdriver (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use crowbar (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use wrench (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use wirecutters (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/multitool
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use multitool (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/weldingtool
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use welding tool (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
-+5 click: Click: Item
++3 menu: Use cable coil (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++4 click: Click: Item
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++3 menu: Use steel sheet (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 +4 click: Click: Item
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
-+5 click: Click: Item
++3 menu: Use identification card (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++4 click: Click: Item
 @obj human|/obj/item/kit
 +0 menu: Alt
-+2 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++4 menu: Use item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 @obj human|/obj/item/storage
 +0 menu: Alt
-+2 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
++4 menu: Use storage (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 human|/obj/item menu: Alt
-human|/obj/item menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
 human|/obj/item click: Click: Item
 keys: alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, spirit_board_ghost_guide, toggle_digestable

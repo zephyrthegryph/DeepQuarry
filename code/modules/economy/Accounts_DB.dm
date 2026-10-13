@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/account_database)
 
 /// The silent fund buttons ask their amount only of a central command card.
 /obj/machinery/account_database/proc/central_access(datum/act/op/A)
-	return held_card && (ACCESS_CENT_CAPTAIN in held_card.access) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens (get_access_level() 2)
+	return held_card && (ACCESS_CENT_CAPTAIN in held_card.access)
 
 /obj/machinery/account_database/proc/apply_ui_add_funds(mob/user, amount)
 	if(detailed_account_view() && isnum(amount) && amount > 0)

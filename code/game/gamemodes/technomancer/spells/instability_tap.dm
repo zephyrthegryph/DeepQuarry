@@ -14,10 +14,10 @@
 	cast_methods = CAST_USE
 	aspect = ASPECT_UNSTABLE
 
+CAPABILITIES(/obj/item/spell/instability_tap)
+	configure(light_glow(range = 3, power = 2, color = "#FA58F4"))
+
 /obj/item/spell/instability_tap
-	light_range = 3
-	light_power = 2
-	light_color = "#FA58F4"
 	light_on = TRUE
 
 /obj/item/spell/instability_tap/on_use_cast(mob/user)

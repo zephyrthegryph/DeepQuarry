@@ -154,7 +154,7 @@
 	var/before = length(S.log_entries)
 	press(H, C, "delete", list("id" = 1))
 	TEST_ASSERT_EQUAL(length(S.log_entries), before, "without the access nothing is deleted")
-	C.req_access = list()
+	C.set_req_access(list())
 	press(H, C, "delete", list("id" = 1))
 	TEST_ASSERT_EQUAL(length(S.log_entries), before - 1, "with it the entry is deleted")
 

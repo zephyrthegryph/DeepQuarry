@@ -15,17 +15,23 @@ ai|none click: Click: Ui open
 @obj.structure human|/obj/item/tool/screwdriver
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 +8 menu: Use wrench
@@ -33,36 +39,52 @@ ai|none click: Click: Ui open
 @obj.structure human|/obj/item/tool/wirecutters
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 @obj.structure human|/obj/item/multitool
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 @obj.structure human|/obj/item/weldingtool
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Climb
++2 menu: Make Cable Restraints (refused: You can't do that.)
 +3 menu: Mount bucket
++4 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Ui open
 +8 menu: Use item
 @obj.structure human|/obj/item/stack/material/steel
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 @obj.structure human|/obj/item/card/id
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Read ID Card (refused: You can't do that.)
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Ui open
 +8 menu: Use item
 @obj.structure human|/obj/item
 +0 menu: Climb
 +2 menu: Mount bucket
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Ui open
 +7 menu: Use item
 keys: alt, bag, bucket, climb.climb, climb.climb_menu, drag, drag_buckle, hand, item, melee_hit, mop, replacer, sign, spray, ui_open, use_wrench

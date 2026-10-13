@@ -64,7 +64,7 @@
 	set_edge(TRUE)
 	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON)
-	set_light(lrange, lpower, lcolor)
+	set_glow(src, GLOW(lrange, lpower, lcolor))
 	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
 
 
@@ -83,7 +83,7 @@
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
 	set_w_class(initial(w_class))
-	set_light(0,0)
+	set_glow(src, GLOW(0, 0, null))
 	set_attack_verb(null)
 
 
@@ -109,8 +109,7 @@ CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
 	return TRUE

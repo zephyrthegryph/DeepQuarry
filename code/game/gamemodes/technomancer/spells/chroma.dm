@@ -14,7 +14,6 @@
 	aspect = ASPECT_LIGHT
 	var/color_to_use = "#FFFFFF"
 
-TRACKED(/obj/item/spell/chroma, color_to_use)
 
 CAPABILITIES(/obj/item/spell/chroma)
 	look_glow(PROC_REF(chroma_glow))

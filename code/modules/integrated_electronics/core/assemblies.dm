@@ -51,7 +51,6 @@ CAPABILITIES(/obj/item/electronic_assembly)
 /obj/item/electronic_assembly/var/tmp/power_relevant = null
 TRACKED(/obj/item/electronic_assembly, power_relevant)
 TRACKED(/obj/item/electronic_assembly, opened)
-TRACKED(/obj/item/electronic_assembly, detail_color)
 
 /// Idle power every 2 s while there is power-relevant work (a battery plus a circuit that makes or draws idle power).
 /obj/item/electronic_assembly/proc/assembly_power_step(datum/act/timer/A)
@@ -219,7 +218,7 @@ CAPABILITIES(/datum/ic_export_view)
 	var/obj/item/cell/device/removed = rel_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)
 	play_sfx(T, SFX_ITEMS_CROWBAR)
-	to_chat(user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))
+	to_chat(user, span_notice("You pull \the [removed] out of \the [src]'s power supplier."))
 	return TRUE
 
 	// Circuit actions

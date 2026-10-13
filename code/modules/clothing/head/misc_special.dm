@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()
 
 /obj/item/clothing/head/welding/demon
@@ -206,11 +206,11 @@ CAPABILITIES(/obj/item/clothing/head/ushanka)
 	name = "carved pumpkin"
 	desc = "A jack o' lantern! Believed to ward off evil spirits."
 	icon_state = "hardhat0_pumpkin"//Could stand to be renamed
-	light_range = 2
 	light_overlay = "jackolantern"
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
+	configure(light_glow(range = 2))
 	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 

@@ -1,7 +1,5 @@
 @turf human|none
--menu: Graffiti
 @turf robot|none
--menu: Graffiti
 @turf ai|none
 @turf ghost|none
 @turf human|/obj/item/tool/screwdriver
@@ -13,5 +11,9 @@
 @turf human|/obj/item/stack/cable_coil
 @turf human|/obj/item/stack/material/steel
 @turf human|/obj/item/card/id
+human|/obj/item/shovel menu: Dig
+human|/obj/item/shovel menu: Touch
+human|/obj/item/shovel menu: Use shovel
+human|/obj/item/shovel click: Click: Dig
 @turf human|/obj/item
-keys: crawl_drag, dig_grave, graffiti, mineral_dig_hole, mineral_item, mineral_measure, mineral_pick, silicon_hand, turf_crawl, turf_item, turf_touch
+keys: crawl_drag, dig, dig_grave, graffiti, mineral_dig_hole, mineral_item, mineral_measure, mineral_pick, silicon_hand, turf_crawl, turf_item, turf_touch

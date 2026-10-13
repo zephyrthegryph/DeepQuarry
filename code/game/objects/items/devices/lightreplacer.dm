@@ -64,7 +64,6 @@
 TRACKED(/obj/item/lightreplacer, emagged)
 TRACKED(/obj/item/lightreplacer, uses)
 TRACKED(/obj/item/lightreplacer, max_uses)
-TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer)
 	configure(item_worn(slots = SLOT_BELT))
@@ -323,9 +322,9 @@ CAPABILITIES(/obj/item/lightpainter)
 		target.brightness_color_ns = setnightcolor
 
 	if(target.nightshift_enabled)
-		target.light_color = target.brightness_color_ns
+		target.set_light_color(target.brightness_color_ns)
 	else
-		target.light_color = target.brightness_color
+		target.set_light_color(target.brightness_color)
 
-	target.set_light(0)
+	set_glow(target, GLOW(0, null, null))
 	target.refresh_light()

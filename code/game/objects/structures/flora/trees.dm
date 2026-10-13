@@ -14,7 +14,6 @@
 	var/is_stump = FALSE // If true, suspends damage tracking and most other effects.
 	var/indestructable = FALSE // If true, the tree cannot die.
 
-TRACKED(/obj/structure/flora/tree, is_stump)
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 
@@ -133,7 +132,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	set_density(FALSE)
 	icon_state = "[base_state]_stump"
 	cut_overlays() // For the Sif tree and other future glowy trees.
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 
 /// A blast tears into the tree through its own health, ruining some of the wood.
@@ -349,7 +348,7 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	var/light_shift = 0
 
 /obj/structure/flora/tree/sif/choose_icon_state(datum/roller/R)
-	light_shift = R.number(0, 5)
+	set_light_shift(R.number(0, 5))
 	return "[base_state][light_shift]"
 
 /obj/structure/flora/tree/sif/draw(datum/look/look)

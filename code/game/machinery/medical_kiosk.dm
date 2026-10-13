@@ -238,7 +238,7 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 			medication_dispensed = TRUE
 			var/obj/item/stack/medical/bruise_pack/BP = new /obj/item/stack/medical/bruise_pack(src.loc)
 			BP.set_amount(1, TRUE)
-			BP.max_amount = 1
+			BP.set_max_amount(1)
 
 	if(problems & SERIOUS_EXTERNAL_DAMAGE)
 		problem_text += "<br>" + span_danger("SEVERITY: 'SEVERE' - Severe external damage detected - seek medical attention immediately!")
@@ -246,10 +246,10 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 			medication_dispensed = TRUE
 			var/obj/item/stack/medical/bruise_pack/BP = new /obj/item/stack/medical/bruise_pack(src.loc)
 			BP.set_amount(1, TRUE)
-			BP.max_amount = 1
+			BP.set_max_amount(1)
 			var/obj/item/stack/medical/ointment/ointment = new /obj/item/stack/medical/ointment(src.loc)
 			ointment.set_amount(1, TRUE)
-			ointment.max_amount = 1
+			ointment.set_max_amount(1)
 			if(!paracetamol_given)
 				new /obj/item/reagent_containers/pill/small_paracetamol(src.loc)
 				paracetamol_given = TRUE

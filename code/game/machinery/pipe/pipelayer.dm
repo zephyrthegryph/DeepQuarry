@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 
 /obj/machinery/pipelayer/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
-	max_metal = mb_rating * initial(max_metal)
+	set_max_metal(mb_rating * initial(max_metal))
 
 /obj/machinery/pipelayer/dismantle()
 	eject_metal()
@@ -81,10 +81,10 @@ CAPABILITIES(/obj/machinery/pipelayer)
 
 /// It runs only with metal (switching it off always works).
 /obj/machinery/pipelayer/proc/can_run(datum/act/A)
-	return (on || metal) ? null : MSG(pipelayer/no_metal) // ALLOW(reads): the store is read when it is switched, never from a cached menu
+	return (on || metal) ? null : MSG(pipelayer/no_metal)
 
 /obj/machinery/pipelayer/proc/has_metal(datum/act/A)
-	return (metal >= 1) ? null : MSG(pipelayer/empty) // ALLOW(reads): the store is read when it is touched, never from a cached menu
+	return (metal >= 1) ? null : MSG(pipelayer/empty)
 
 /obj/machinery/pipelayer/proc/toggled(datum/act/op/A)
 	set_on(!on)
@@ -106,19 +106,19 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	return (istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT) ? null : MSG(pipelayer/thin_pipe) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 
 /obj/machinery/pipelayer/proc/room_for_pipe(datum/act/A)
-	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when a pipe is fed in, never from a cached menu
+	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full)
 
 /obj/machinery/pipelayer/proc/recycled(datum/act/op/A)
 	if(!consume(A.held, A.actor))
 		return OP_FAILED
-	metal += pipe_cost
+	set_metal(metal + pipe_cost)
 	return OP_OK
 
 /obj/machinery/pipelayer/proc/held_steel(datum/act/op/A)
 	return (istype(A.held, /obj/item/stack/material/steel)) ? null : MSG(pipelayer/not_steel)
 
 /obj/machinery/pipelayer/proc/room_for_sheet(datum/act/A)
-	return (round(metal) < max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when sheets are fed in, never from a cached menu
+	return (round(metal) < max_metal) ? null : MSG(pipelayer/full)
 
 /obj/machinery/pipelayer/proc/loaded(datum/act/op/A)
 	load_metal(A.held)
@@ -150,7 +150,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 		var/to_load = max(max_metal - round(cur_amount),0)
 		if(to_load)
 			to_load = min(MM.get_amount(), to_load)
-			metal += to_load
+			set_metal(metal + to_load)
 			MM.use(to_load)
 			return to_load
 		else
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	if(!metal || metal < amount)
 		visible_message("\The [src] deactivates as its metal source depletes.")
 		return
-	metal -= amount
+	set_metal(metal - amount)
 	return 1
 
 /obj/machinery/pipelayer/proc/eject_metal()
@@ -169,7 +169,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	while (metal >= 1)
 		var/datum/material/M = get_material_by_name(MAT_STEEL)
 		var/obj/item/stack/material/S = new M.stack_type(get_turf(src), metal)
-		metal -= S.get_amount()
+		set_metal(metal - (S.get_amount()))
 		amount_ejected += S.get_amount()
 	return amount_ejected
 

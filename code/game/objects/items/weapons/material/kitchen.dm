@@ -30,7 +30,6 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 	return R.chance(60) ? R.number(0, 4) : pixel_y
 
 TRACKED(/obj/item/material/kitchen/utensil, loaded)
-TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 
 /obj/item/material/kitchen/utensil/draw(datum/look/look)
 	..()

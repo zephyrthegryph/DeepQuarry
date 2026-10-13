@@ -55,11 +55,11 @@
 +8 click: Click: Nikki hat item
 @obj.item.clothing human|/obj/item/stack/cable_coil
 -click: Click: Use
-+3 menu: Nikki hat item
-+4 menu: Nikki hat unload hand
-+5 menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-+6 menu: Remove translocator
-+9 click: Click: Nikki hat item
++2 menu: Nikki hat item
++3 menu: Nikki hat unload hand
++4 menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
++5 menu: Remove translocator
++8 click: Click: Nikki hat item
 @obj.item.clothing human|/obj/item/stack/material/steel
 -click: Click: Use
 +2 menu: Nikki hat item
@@ -72,8 +72,8 @@
 +2 menu: Nikki hat item
 +3 menu: Nikki hat unload hand
 +4 menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-+6 menu: Remove translocator
-+9 click: Click: Nikki hat item
++5 menu: Remove translocator
++8 click: Click: Nikki hat item
 @obj.item.clothing human|/obj/item/kit
 +3 menu: Nikki hat item
 +4 menu: Nikki hat unload hand
@@ -84,7 +84,7 @@
 +4 menu: Nikki hat unload hand
 +5 menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
 +6 menu: Remove translocator
-@obj.item human|/obj/item
+@obj human|/obj/item
 -click: Click: Use
 +2 menu: Nikki hat item
 +3 menu: Nikki hat unload hand

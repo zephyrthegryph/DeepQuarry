@@ -4,46 +4,26 @@ human|none click: Click: Override
 -click: Click: Use
 +1 menu: Override
 +3 click: Click: Override
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/tool/wrench
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/multitool
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/weldingtool
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+2 menu: Override
-+4 click: Click: Override
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
-@obj human|/obj/item/card/id
--click: nothing
-+1 menu: Override
-+4 click: Click: Override
-@obj human|/obj/item
--click: nothing
-+1 menu: Override
-+3 click: Click: Override
+human|/obj/item/tool/screwdriver menu: Override
+human|/obj/item/tool/screwdriver click: Click: Override
+human|/obj/item/tool/crowbar menu: Override
+human|/obj/item/tool/crowbar click: Click: Override
+human|/obj/item/tool/wrench menu: Override
+human|/obj/item/tool/wrench click: Click: Override
+human|/obj/item/tool/wirecutters menu: Override
+human|/obj/item/tool/wirecutters click: Click: Override
+human|/obj/item/multitool menu: Override
+human|/obj/item/multitool click: Click: Override
+human|/obj/item/weldingtool menu: Override
+human|/obj/item/weldingtool click: Click: Override
+human|/obj/item/stack/cable_coil menu: Override
+human|/obj/item/stack/cable_coil click: Click: Override
+human|/obj/item/stack/material/steel menu: Override
+human|/obj/item/stack/material/steel click: Click: Override
+human|/obj/item/card/id menu: Override
+human|/obj/item/card/id click: Click: Override
+human|/obj/item menu: Override
+human|/obj/item click: Click: Override
 keys: department_control_override, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

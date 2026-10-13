@@ -57,7 +57,6 @@
 	var/firing = FALSE
 	var/datum/gas_mixture/chamber_air
 
-TRACKED(/obj/machinery/material_furnace, firing)
 
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
 /obj/machinery/material_furnace/ownership()
@@ -192,7 +191,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	heat_add(chamber_air, ignition_energy, HEAT_SOURCE_DEVICE)
 	for(var/step in 1 to 3)
 		chamber_air.react()
-	set_light(3, 3, "#ff7b22")
+	set_glow(src, GLOW(3, 3, "#ff7b22"))
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
 	after(src, 6 SECONDS, PROC_REF(finish_firing), key = "firing_timer")
 	return OP_OK
@@ -220,7 +219,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 /obj/machinery/material_furnace/proc/finish_firing()
 	set_firing(FALSE)
 	icon_state = "nt_cruciforge"
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	var/datum/material_batch/batch
 	var/heat_treatment = FALSE
 	if(LAZYLEN(feedstock) == 1 && !LAZYLEN(carbon_feed) && !reagents?.total_volume)

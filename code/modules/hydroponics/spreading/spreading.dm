@@ -148,10 +148,6 @@ CAPABILITIES(/obj/effect/plant)
 		T.ex_act(prob(80) ? 3 : 2)
 
 TRACKED(/obj/effect/plant, health)
-TRACKED(/obj/effect/plant, growth_threshold)
-TRACKED(/obj/effect/plant, growth_type)
-TRACKED(/obj/effect/plant, max_growth)
-TRACKED(/obj/effect/plant, floor)
 TRACKED(/obj/effect/plant, wall_shift)
 
 /// The most stages the plant reaches: its own, held back at the fringe of its spread.

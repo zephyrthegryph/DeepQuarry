@@ -242,7 +242,6 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	/// Whether a mob is trapped inside (kept here so the look reads only the ball's own state).
 	var/holds_mob = FALSE
 
-TRACKED(/obj/item/roulette_ball/hollow, holds_mob)
 
 /obj/item/roulette_ball/hollow/examine(mob/user)
 	.=..()

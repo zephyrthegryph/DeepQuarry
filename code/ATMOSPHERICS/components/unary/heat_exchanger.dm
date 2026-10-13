@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 /// Its floor does not cover it: a pipe-level exchanger under intact tiles cannot be reached.
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/floor_clear(datum/act/A)
 	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; it stays where it was built
-	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating) // ALLOW(reads): the exchanger level is fixed by where it was built; asked when the wrench is used
+	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating)
 
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/heat_exchanger_leads()
 	if(!partner)

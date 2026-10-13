@@ -22,8 +22,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 	var/static/list/equippable_item_whitelist
 
-TRACKED(/obj/structure/janitorialcart, has_items)
-TRACKED(/obj/structure/janitorialcart, signs)
 
 CAPABILITIES(/obj/structure/janitorialcart)
 	owns_one(nameof(mybag), /obj/item/storage/bag/trash)
@@ -291,7 +289,7 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		var/obj/item/clothing/suit/caution/sign = locate_within(src, /obj/item/clothing/suit/caution)
 		if(sign)
 			user.put_in_hands(sign)
-			user.balloon_alert(user, "you take  [sign] from [src].")
+			user.balloon_alert(user, "you take \a [sign] from [src].")
 			set_signs(signs - 1)
 			if(!signs)
 				nullTguiIcon("signs")

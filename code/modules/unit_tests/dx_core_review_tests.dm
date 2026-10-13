@@ -17,7 +17,7 @@
 
 /proc/dx_review_cap(path, label, layer_order, examine_order)
 	var/datum/capability/dx_review/C = new path
-	C.label = label
+	C.set_label(label)
 	C.layer_order = layer_order
 	C.examine_order = examine_order
 	return C
@@ -26,7 +26,7 @@
 	var/tracked_value = 0
 	var/timed_flag = FALSE
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_review, tracked_value)
 
 /obj/cap_fixture/dx_review/declared_capabilities(list/into)
 	..()
@@ -119,15 +119,15 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 /// M9: the look covers color, alpha and filters, and they are part of the key.
 /datum/unit_test/dx_review_look_coverage/Run()
 	var/obj/cap_fixture/dx_review_look/F = allocate(/obj/cap_fixture/dx_review_look)
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "base", "state applied")
 	TEST_ASSERT_EQUAL(F.color, "#ff0000", "color applied")
 	TEST_ASSERT_EQUAL(F.alpha, 200, "alpha applied")
 	TEST_ASSERT(F.get_filter("outline"), "filter applied")
 	var/key = F.rx?.look_key
-	F.tint = "#00ff00"
-	changed(F)
+	F.set_tint("#00ff00")
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_key != key, "a color change changes the key")
 	TEST_ASSERT_EQUAL(F.color, "#00ff00", "the new color applied")
@@ -135,14 +135,14 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 /obj/cap_fixture/dx_review_selfmark
 
 /obj/cap_fixture/dx_review_selfmark/on_state_changed(bits)
-	changed(src) // wrong on purpose: a reactive proc marking its own entity
+	state_changed(src) // wrong on purpose: a reactive proc marking its own entity
 
 /// H5: an entity that marks itself during its own refresh is reported.
 /datum/unit_test/dx_review_self_mark/Run()
 	set_global("refresh_self_mark_expected", TRUE)
 	var/before = length(GLOB.refresh_self_marks)
 	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
-	changed(F)
+	state_changed(F)
 	// One drain, not refresh_flush(): the fixture re-marks itself forever, which flush reports as a
 	// runaway after its pass cap. One pass is enough for the detector, and the re-mark waits (deferred).
 	refresh_drain(null)
@@ -211,13 +211,13 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 /// Review 2 H4: look.glow() applies with the look and is taken back when the look stops setting it.
 /datum/unit_test/dx_review_look_light/Run()
 	var/obj/cap_fixture/dx_review_light/F = allocate(/obj/cap_fixture/dx_review_light)
-	changed(F)
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(F.light_range, 2, "the look's light applied")
-	F.lit = FALSE
-	changed(F)
+	TEST_ASSERT_EQUAL(glow_of(F).range, 2, "the look's light applied")
+	F.set_lit(FALSE)
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(!F.light_range, "the light went off when the look stopped setting it")
+	TEST_ASSERT(!glow_of(F).range, "the light went off when the look stopped setting it")
 
 /obj/cap_fixture/dx_review_interval
 	periodic_interval = 1 SECONDS
@@ -239,13 +239,13 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 	refresh_flush()
 	TEST_ASSERT(!after_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
 	F.running = TRUE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(after_pending(F, "periodic_interval"), "armed once should_run() holds")
 	scheduler_advance(2.5)
 	TEST_ASSERT(F.steps >= 2, "stepped every interval ([F.steps])")
 	F.running = FALSE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	var/steps = F.steps
 	scheduler_advance(2.5)

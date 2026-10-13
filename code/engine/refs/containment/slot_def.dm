@@ -161,14 +161,15 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 			continue
 		taken[id] = TRUE
 		var/capacity = E.args["capacity"]
-		. += declared_slot_def(holder.type, id, isnum(capacity) ? capacity : 0, E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"])
+		. += declared_slot_def(holder.type, id, isnum(capacity) ? capacity : 0, E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"], E.args["on_destroy"])
 	var/list/graph_slots = holder.construction_slot_declarations(taken, defs, length(.))
 	if(length(graph_slots))
 		. += graph_slots
 
 /// The shared declared slot of holder type `holder_type` with id `id`: `capacity` things (0: no limit), in space `at`, of type `accepts`. An
-/// `exposure` of SLOT_EXPOSURE_SEALED makes it a sealed slot (an occupant pod's): what is inside lives in the holder's shell.
-/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null)
+/// `exposure` of SLOT_EXPOSURE_SEALED makes it a sealed slot (an occupant pod's): what is inside lives in the holder's shell. An `on_destroy` of
+/// ON_DESTROY_DELETE deletes the contents with the holder; otherwise they spill.
+/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null, on_destroy = null)
 	RETURN_TYPE(/datum/relation_definition/slot)
 	var/static/list/made = list()
 	var/cache_key = "[holder_type]|[id]"
@@ -184,6 +185,8 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 	S.at = at
 	S.set_declared_accepts(accepts)
 	S.is_default = is_default
+	if(on_destroy == ON_DESTROY_DELETE) // slot(..., on_destroy =): what the slot holds goes with the holder instead of spilling
+		S.drop_policy = SLOT_DROP_DELETE
 	made[cache_key] = S
 	return S
 

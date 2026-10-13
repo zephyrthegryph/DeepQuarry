@@ -15,8 +15,6 @@
 	tk_reach = FALSE
 
 /// The smoothing code writes these through their setters (interned lists, so an unchanged shape publishes nothing); a draw reads them.
-TRACKED(/obj/structure, connections)
-TRACKED(/obj/structure, other_connections)
 
 // the base structure: leaves its parts behind.
 /obj/structure/on_destroy(force)
@@ -89,7 +87,6 @@ TRACKED(/obj/structure, other_connections)
 /obj/structure/proc/smooth_changed(mask)
 	smooth_mask = mask
 	update_connections()
-	update_icon()
 
 /obj/structure/proc/update_connections(propagate = 0)
 	if(propagate)

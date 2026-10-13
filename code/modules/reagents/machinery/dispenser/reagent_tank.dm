@@ -21,7 +21,7 @@
 
 /// Requirement: the dispenser offers transfer amounts (the old Initialize dropped the set_APTFT verb without them).
 /obj/structure/reagent_dispensers/proc/has_transfer_amounts(datum/act/op/A)
-	return !!possible_transfer_amounts // ALLOW(reads): the amounts are a type constant no code changes at run time
+	return !!possible_transfer_amounts
 
 /// Old attackby: an item is not used on the tank itself; the click goes on (a container fills from the tank in its own afterattack).
 /obj/structure/reagent_dispensers/proc/interaction_item(datum/act/op/A)
@@ -349,8 +349,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/acid)
 	var/bottle = 0
 	var/cups = 0
 	var/cupholder = 0
-TRACKED(/obj/structure/reagent_dispensers/water_cooler, cupholder)
-TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 
 /obj/structure/reagent_dispensers/water_cooler/full
 	bottle = 1
@@ -367,8 +365,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
 	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted)), req(PROC_REF(cooler_no_cupholder))),
 		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_NORMAL), label("Fasten or unfasten"), starts(PROC_REF(fingerprinted)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("remove_cupholder", tool(TOOL_SCREWDRIVER), label("Take the cup dispenser off"), when(nameof(cupholder)), wait(0), then(PROC_REF(cupholder_removed)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), when(cond_not(nameof(cupholder))), needs(req(PROC_REF(bottle_refusal), silent = TRUE)), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(2 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 /// A cooler with its bottle starts full (reagents()).
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_water()
@@ -434,37 +433,40 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 	reagents.clear_reagents()
 	set_bottle(FALSE)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/wrench_used(datum/act/op/A)
+/obj/structure/reagent_dispensers/water_cooler/proc/fingerprinted(datum/act/op/A)
+	add_fingerprint(A.actor)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	add_fingerprint(user)
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
-	return OP_OK
-
-/obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	set_anchored(!anchored)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(cupholder)
-		playsound(src, sounds_of(tool).use, 50, TRUE)
-		to_chat(user, span_notice("You take the cup dispenser off."))
-		new /obj/item/stack/material/plastic(loc)
-		for(var/i = 1 to cups)
-			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
-		cups = 0
-		set_cupholder(FALSE)
-		return OP_OK
-	if(bottle)
-		return OP_OK
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return OP_OK
 
-/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(mob/user)
+/// The screwdriver takes the cup dispenser off first.
+/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_removed(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+	to_chat(A.actor, span_notice("You take the cup dispenser off."))
+	new /obj/item/stack/material/plastic(loc)
+	for(var/i = 1 to cups)
+		new /obj/item/reagent_containers/food/drinks/sillycup(loc)
+	cups = 0
+	set_cupholder(FALSE)
+	return OP_OK
+
+/// A cooler with its bottle on is not taken apart (the click is used up, nothing is said).
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_refusal(datum/act/op/A)
+	return read_once(bottle) ? "it has a bottle on" : null
+
+/obj/structure/reagent_dispensers/water_cooler/proc/dismantle_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/dismantle_begins(datum/act/op/A)
+	return msg_text("You start taking the water-cooler apart.")
+
+/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bottle || cupholder)
 		return
 	to_chat(user, span_notice("You take the water-cooler apart."))

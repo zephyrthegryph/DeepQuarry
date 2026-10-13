@@ -68,7 +68,7 @@
 	TEST_ASSERT(built(frame, STAGE_WINDOOR_ASSEMBLY_WIRED), "actual cable insertion completes wiring")
 	TEST_ASSERT_EQUAL(cable.get_amount(), 1, "actual wiring consumes exactly one cable length")
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, T)
-	board.conf_access = list(ACCESS_SECURITY)
+	board.set_conf_access(list(ACCESS_SECURITY))
 	board.set_one_access(secure_case)
 	rc_click(actor, frame, board, I_HELP, FALSE)
 	test_time(5 SECONDS)

@@ -144,7 +144,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 /mob/living/silicon/pai/proc/start_pda(current, mapload)
 	var/obj/item/pda/ai/pai/P = new /obj/item/pda/ai/pai(src)
 	P.ownjob = "Personal Assistant"
-	P.owner = "[src]"
+	P.set_owner("[src]")
 	P.name = P.owner + " (" + P.ownjob + ")"
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 	if(M)
@@ -433,8 +433,6 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 		return
 
 	H.icon_state = SSpai.chassis_data(chassis_name).sprite_icon_state
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
 	return H
 
 /mob/living/silicon/pai/Moved(atom/oldloc, direct, forced, movetime)
@@ -569,11 +567,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-TRACKED(/mob/living/silicon/pai, chassis_name)
-TRACKED(/mob/living/silicon/pai, eye_glow)
-TRACKED(/mob/living/silicon/pai, hide_glow)
 TRACKED(/mob/living/silicon/pai, eye_color)
-TRACKED(/mob/living/silicon/pai, holo_icon_south)
 
 /mob/living/silicon/pai/draw(datum/look/look)
 	..()
@@ -674,4 +668,3 @@ TRACKED(/mob/living/silicon/pai, holo_icon_south)
 	if(stat != DEAD)
 		close_up()
 
-TRACKED(/mob/living/silicon/pai, idaccessible)

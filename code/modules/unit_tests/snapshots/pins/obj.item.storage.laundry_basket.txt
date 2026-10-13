@@ -4,7 +4,7 @@
 @obj.item.storage robot|none
 +0 menu: Empty contents
 +5 menu: Switch gathering method (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Empty contents
 +2 menu: Switch gathering method (refused: You can't do that.)
@@ -28,13 +28,13 @@
 +4 menu: Switch gathering method (refused: You can't do that.)
 @obj.item.storage human|/obj/item/stack/cable_coil
 +0 menu: Empty contents
-+5 menu: Switch gathering method (refused: You can't do that.)
++4 menu: Switch gathering method (refused: You can't do that.)
 @obj.item.storage human|/obj/item/stack/material/steel
 +0 menu: Empty contents
 +4 menu: Switch gathering method (refused: You can't do that.)
 @obj.item.storage human|/obj/item/card/id
 +0 menu: Empty contents
-+5 menu: Switch gathering method (refused: You can't do that.)
++4 menu: Switch gathering method (refused: You can't do that.)
 @obj.item.storage human|/obj/item/kit
 +1 menu: Empty contents
 +5 menu: Switch gathering method (refused: You can't do that.)

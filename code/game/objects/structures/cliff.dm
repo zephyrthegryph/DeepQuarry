@@ -48,9 +48,6 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	var/is_double_cliff = FALSE // Set to true when making the two-tile cliffs, used for projectile checks.
 	var/uphill_penalty = 30 // Odds of a projectile not making it up the cliff.
 
-TRACKED(/obj/structure/cliff, icon_variant)
-TRACKED(/obj/structure/cliff, corner)
-TRACKED(/obj/structure/cliff, ramp)
 
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
@@ -107,6 +104,9 @@ CAPABILITIES(/obj/structure/cliff)
 	density = FALSE
 	ramp = TRUE
 
+/// A cliff's lower edge made for a part that does not block (a ramp): it holds the density down from the part it was made with.
+SOURCE_DEF(cliff_ledge)
+
 // Made automatically as needed by automatic cliffs.
 /obj/structure/cliff/bottom
 	bottom = TRUE
@@ -138,7 +138,8 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	bottom.set_corner(corner)
 	bottom.set_ramp(ramp)
 	bottom.layer = layer - 0.1
-	bottom.set_density(density)
+	if(!density)
+		hold(bottom, STAT_DENSITY, FALSE, SRC_CLIFF_LEDGE, priority = PRIORITY_FORCE) // a ramp's lower edge does not block either: density is a stat, a raw write of it would leave its composed value stale
 
 /// The ledge's sprite by its facing and kind, with the ground above it cut out of a different turf's picture.
 /obj/structure/cliff/draw(datum/look/look)

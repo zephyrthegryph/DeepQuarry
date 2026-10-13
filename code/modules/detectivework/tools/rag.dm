@@ -25,7 +25,6 @@
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
 
 /obj/item/reagent_containers/glass/rag/var/rag_lit = FALSE
-TRACKED(/obj/item/reagent_containers/glass/rag, rag_lit)
 
 // A rag is not a container that is poured and drunk from: it soaks up from a tank or a bucket, wrings out into an open container (or onto the floor), wipes
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
@@ -206,13 +205,13 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 		destroyed(src, null, "explosion")
 		return
 
-	set_light(2, null, "#E38F46")
+	set_glow(src, GLOW(2, null, "#E38F46"))
 	set_rag_lit(TRUE)
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_rag_lit(FALSE)
 
 	//rags sitting around with 1 second of burn time left is dumb.

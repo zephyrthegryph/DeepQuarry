@@ -47,7 +47,7 @@
 	var/turf/start = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/carrier = allocate(/mob/living/carbon/human, start)
 	var/obj/item/pen/lamp = allocate(/obj/item/pen, start)
-	lamp.set_light(4, 1, "#ffffff", TRUE)
+	set_glow(lamp, GLOW(4, 1, "#ffffff"), TRUE)
 	var/before = GLOB.total_runtimes
 	lamp.forceMove(carrier) // the carrier is now the lamp's holder
 	qdel(carrier)

@@ -45,7 +45,7 @@ TRACKED(/obj/item/clothing/accessory, slot)
 	var/mob/living/carbon/human/H = wearer
 	if(!ishuman(H))
 		return null
-	mob_overlay = GLOB.clothing_appearance_handler.build_mob_overlay(src)
+	set_mob_overlay(GLOB.clothing_appearance_handler.build_mob_overlay(src))
 	return mob_overlay
 
 //when user attached an accessory to S
@@ -476,7 +476,7 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	. = ..()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_mask()
+		changed(src)
 
 /// Old attackby: tuck a breath mask behind the gaiter. Always falls through, as the old ..() did.
 /obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(datum/act/op/A)
@@ -624,7 +624,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
 		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
-		icon_override = sprite_sheets[H.species.get_bodytype(H)]
+		set_icon_override(sprite_sheets[H.species.get_bodytype(H)])
 		update_clothing_icon()
 
 /obj/item/clothing/accessory/choker/on_attached(obj/item/clothing/S, mob/user)
@@ -636,7 +636,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 
 /obj/item/clothing/accessory/choker/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = icon_previous_override
+	set_icon_override(icon_previous_override)
 
 /obj/item/clothing/accessory/collar
 	icon_state = "collar_blk"
@@ -660,7 +660,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
 		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
-		icon_override = sprite_sheets[H.species.get_bodytype(H)]
+		set_icon_override(sprite_sheets[H.species.get_bodytype(H)])
 		update_clothing_icon()
 
 /obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
@@ -672,7 +672,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 
 /obj/item/clothing/accessory/collar/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = icon_previous_override
+	set_icon_override(icon_previous_override)
 
 /obj/item/clothing/accessory/collar/silver
 	name = "Silver tag collar"
@@ -1448,7 +1448,7 @@ CAPABILITIES(/obj/item/clothing/accessory/antediluvian/loincloth)
 	. = ..()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	op("half_cloak_flip_self", in_hand(), label("Flip cloak"), then(PROC_REF(half_cloak_flip_self)))
@@ -1535,7 +1535,7 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	. = ..()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	op("neo_ranger_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(neo_ranger_adjust_self)))
@@ -1628,7 +1628,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bunny_tail)
 
 /obj/item/clothing/accessory/poncho/roles/cloak/blueshield/dropped(mob/user, equipping, slot) //makes the blueshield suit not kek when used by a teshari
 	..()
-	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
+	set_icon_override('icons/mob/ties_yw.dmi') //Moved to archive
 
 /// The suit the tie may be attached to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/proc/has_suit() as /obj/item/clothing

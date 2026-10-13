@@ -7,85 +7,109 @@
 -menu: Climb
 -menu: Set transfer amount
 +3 menu: Set Mixer Rotation
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.reagent_refinery ghost|none
 -menu: Climb (refused: You can't climb right now.)
 -menu: Set transfer amount (refused: You can't reach that.)
 +2 menu: Set Mixer Rotation (refused: You can't reach that.)
 @obj.machinery.reagent_refinery human|/obj/item/tool/screwdriver
 -menu: Climb
--menu: Set transfer amount
++0 menu: Move To Top
 +4 menu: Set Mixer Rotation
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 @obj.machinery.reagent_refinery human|/obj/item/tool/crowbar
 -menu: Climb
--menu: Set transfer amount
++1 menu: Move To Top
 +4 menu: Set Mixer Rotation
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 @obj.machinery.reagent_refinery human|/obj/item/tool/wrench
 -menu: Climb
--menu: Set transfer amount
++0 menu: Move To Top
 +4 menu: Set Mixer Rotation
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 @obj.machinery.reagent_refinery human|/obj/item/tool/wirecutters
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Move To Top
 +3 menu: Set Mixer Rotation
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/multitool
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Move To Top
 +3 menu: Set Mixer Rotation
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/weldingtool
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Move To Top
 +3 menu: Set Mixer Rotation
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/stack/cable_coil
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Make Cable Restraints (refused: You can't do that.)
++1 menu: Move To Top
 +4 menu: Set Mixer Rotation
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/stack/material/steel
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Move To Top
 +3 menu: Set Mixer Rotation
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/card/id
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Move To Top
++1 menu: Read ID Card (refused: You can't do that.)
 +4 menu: Set Mixer Rotation
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item
 -menu: Climb
--menu: Set transfer amount
 -click: nothing
++0 menu: Move To Top
 +3 menu: Set Mixer Rotation
++4 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/reagent_containers/glass
 -menu: Climb
++1 menu: Move To Top
++2 menu: Open or close the lid
 +5 menu: Set Mixer Rotation
++6 menu: Set transfer amount
++7 menu: Toggle Digestable (refused: You can't do that.)
 +9 menu: Use
-@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/food/drinks/glass2
+@obj human|/obj/item/reagent_containers/food/drinks/glass2
 -menu: Climb
++1 menu: Move To Top
++2 menu: Rename food
 +5 menu: Set Mixer Rotation
++6 menu: Set transfer amount
++7 menu: Toggle Digestable (refused: You can't do that.)
 +9 menu: Use
-@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/food/drinks/shaker
+@obj human|/obj/item/reagent_containers/food/drinks/shaker
 -menu: Climb
++1 menu: Move To Top
++2 menu: Rename food
 +5 menu: Set Mixer Rotation
++6 menu: Set transfer amount
++7 menu: Toggle Digestable (refused: You can't do that.)
 +9 menu: Use
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_rotation, set_rotation_2, silicon_hand, use_wrench

@@ -120,7 +120,6 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 /obj/item/storage/pill_bottle/proc/desc_at_start()
 	return desc
 
-TRACKED(/obj/item/storage/pill_bottle, wrapper_color)
 
 /// The coloured wrapper (a chem master recolours it).
 /obj/item/storage/pill_bottle/draw(datum/look/look)

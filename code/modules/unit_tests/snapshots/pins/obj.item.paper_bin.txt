@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +3 menu: Take paper
 +5 click: Click: Take paper
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -34,26 +34,24 @@
 +3 click: Click: Take paper
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+2 menu: Take paper
-+4 click: Click: Take paper
++1 menu: Take paper
++3 click: Click: Take paper
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +1 menu: Take paper
 +3 click: Click: Take paper
 @obj human|/obj/item/card/id
 -click: nothing
-+2 menu: Take paper
-+4 click: Click: Take paper
++1 menu: Take paper
++3 click: Click: Take paper
 @obj human|/obj/item/kit
 +2 menu: Take paper
 @obj human|/obj/item/storage
 -click: Click: Collect
 +2 menu: Take paper
 +4 click: Click: Take paper
-human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Move To Top
 human|/obj/item/paper menu: Put paper
-human|/obj/item/paper menu: Rename paper (refused: You can't do that.)
 human|/obj/item/paper menu: Take paper
 human|/obj/item/paper menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper click: Click: Put paper

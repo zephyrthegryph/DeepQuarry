@@ -42,7 +42,6 @@
 TRACKED(/obj/machinery/door_timer, timing)
 /// The seconds left the display shows while it counts: redraw() writes it each interval, so the display follows the clock.
 /obj/machinery/door_timer/var/shown_seconds = 0
-TRACKED(/obj/machinery/door_timer, shown_seconds)
 
 // ---- what a door timer is, declared ----
 //

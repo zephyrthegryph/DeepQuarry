@@ -64,7 +64,13 @@
 /// READS_AS(pad_occupied, OCCUPANTS_KEY, via = nameof(pad)). Generated reads do not follow the proc; readers subscribe to KEY
 /// (published with PUBLISH_CHANGE(E, KEY)). The analysis engine (tools/analyze, sem/reads) checks the accessor's own reads are covered.
 #define READS_AS(proc, key, args...)
+/// Pure numeric lookup provider; analyzer requires registry/key procs and explicit result type.
+#define READ_LOOKUP(proc, args...)
 /// First line of a global helper that a condition, requirement or output calls: the helper is followed through the arguments
 /// it names. READS_FROM(C) follows C; READS_FROM() says the helper reads no entity state. An unannotated global call in a handler
 /// is a build error (sem/reads, unannotated_global).
 #define READS_FROM(args...)
+/// Declares what a proc the generated reads cannot walk (a Verdigris FFI call, a `vars[]` dispatcher) reads and writes on its receiver:
+/// PROC_SUMMARY(/obj/machinery/proc/probe, reads = list(nameof(powered)), writes = list(nameof(cache))). The walk takes the summary in
+/// place of the body (sem/reads, ProcSummary). A global proc names `/proc/name`; its reads and writes are vars of its first argument.
+#define PROC_SUMMARY(proc, args...)

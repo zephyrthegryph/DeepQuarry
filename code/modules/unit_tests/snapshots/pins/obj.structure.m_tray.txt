@@ -5,64 +5,34 @@ robot|none menu: Use
 robot|none click: Click: Push in
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+3 menu: Place on tray
-+4 menu: Push in
-+6 click: Click: Push in
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+6 click: Click: Push in
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+2 menu: Place on tray
-+3 menu: Push in
-+5 click: Click: Push in
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Push in
+human|/obj/item/tool/screwdriver click: Click: Push in
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Push in
+human|/obj/item/tool/crowbar click: Click: Push in
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Push in
+human|/obj/item/tool/wrench click: Click: Push in
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Push in
+human|/obj/item/tool/wirecutters click: Click: Push in
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Push in
+human|/obj/item/multitool click: Click: Push in
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Push in
+human|/obj/item/weldingtool click: Click: Push in
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Push in
+human|/obj/item/stack/cable_coil click: Click: Push in
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Push in
+human|/obj/item/stack/material/steel click: Click: Push in
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Push in
+human|/obj/item/card/id click: Click: Push in
+human|/obj/item menu: Hit
+human|/obj/item menu: Push in
+human|/obj/item click: Click: Push in
 keys: drag_buckle, melee_hit, place, push_in, silicon_hand

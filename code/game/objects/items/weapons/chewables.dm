@@ -10,7 +10,6 @@
 	var/wrapped = FALSE // a wrapped one has no slot_flags until unwrapped (each wrapped type sets slot_flags = null)
 	flags = NOREACT // so it doesn't react until you light it
 
-TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 
 
 /// TRUE while worn in the mask slot by a mob with a mouth.
@@ -96,10 +95,9 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco)
 				to_chat(M, span_notice("The [name] runs out of flavor."))
 			if(M.get_equipped_item(SLOT_ID_MASK))
 				M.remove_from_mob(src) //un-equip it so the overlays can update
-				M.update_inv_wear_mask(0)
+				changed(src)
 				if(!M.equip_to_slot_if_possible(butt, SLOT_ID_MASK))
-					M.update_inv_l_hand(0)
-					M.update_inv_r_hand(1)
+					changed(src)
 					M.put_in_hands(butt)
 	consume(src)
 

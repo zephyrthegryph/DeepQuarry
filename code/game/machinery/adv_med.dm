@@ -35,7 +35,6 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/body_scanner
 	use_power = USE_POWER_IDLE
-	light_color = "#00FF00"
 	var/obj/machinery/body_scanconsole/console
 	var/printing_text = null
 	var/scan_level = SCANNABLE_DIFFICULT //By default, we start with level 2 scanning level.
@@ -46,6 +45,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 TRACKED(/obj/machinery/bodyscanner, scan_ratio)
 
 CAPABILITIES(/obj/machinery/bodyscanner)
+	configure(light_glow(color = "#00FF00"))
 	configure(uses_power(idle = 60, active = 10000))
 	blast_contents() // the patient takes the full blast
 	machine_basics(repair = NONE)

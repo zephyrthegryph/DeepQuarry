@@ -18,14 +18,12 @@
 	// Age, background, records, flavour text and kit choices: the bio profile record on /mob
 	// (/datum/record/identity, code/modules/mob/profile_records.dm).
 
-	var/voice = ""	//Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 
 
 
 
 	var/hand_blood_color
 
-	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 
 
 	var/identifying_gender // In case the human identifies as another gender than it's biological
@@ -33,7 +31,7 @@
 	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
 
 
-// Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
+	// Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
 	var/mob/living/carbon/human/vr_holder = null
 	// Used by "real" mobs after they leave a VR session
 	var/mob/living/carbon/human/vr_link = null
@@ -43,17 +41,6 @@
 
 	// Horray Furries!
 	var/datum/sprite_accessory/ears/ear_style = null
-	var/r_ears = 30
-	var/g_ears = 30
-	var/b_ears = 30
-	var/r_ears2 = 30
-	var/g_ears2 = 30
-	var/b_ears2 = 30
-	var/r_ears3 = 30 //Trust me, we could always use more colour. No japes.
-	var/g_ears3 = 30
-	var/b_ears3 = 30
-	var/a_ears = 255 //applied to the ears
-	var/a_ears2 = 255 //applied to the horns
 
 	/// secondary ears sprite accessory reference
 	var/datum/sprite_accessory/ears/ear_secondary_style
@@ -61,31 +48,11 @@
 	var/list/ear_secondary_colors
 
 	var/datum/sprite_accessory/tail/tail_style = null
-	var/r_tail = 30
-	var/g_tail = 30
-	var/b_tail = 30
-	var/r_tail2 = 30
-	var/g_tail2 = 30
-	var/b_tail2 = 30
-	var/r_tail3 = 30
-	var/g_tail3 = 30
-	var/b_tail3 = 30
-	var/a_tail = 255 //applied to the entire tail
 
 	var/wagging = 0 //UGH.
 
 	var/datum/sprite_accessory/wing/wing_style = null
-	var/r_wing = 30
-	var/g_wing = 30
-	var/b_wing = 30
-	var/r_wing2 = 30
-	var/g_wing2 = 30
-	var/b_wing2 = 30
-	var/r_wing3 = 30
-	var/g_wing3 = 30
-	var/b_wing3 = 30
 
-	var/a_wing = 255 //applied to both portions.
 
 	var/flapping = 0
 
@@ -127,8 +94,5 @@ TRACKED(/mob/living/carbon/human, vantag_pref)
 /// Limbs and organs attach and detach through the body (body/parts/attach.dm invalidates it): MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
-TRACKED(/mob/living/carbon/human, tail_style)
-
-TRACKED(/mob/living/carbon/human, ear_style)
-
-TRACKED(/mob/living/carbon/human, ear_secondary_style)
+/// The phobias step reads them.
+TRACKED(/mob/living/carbon/human, phobias)

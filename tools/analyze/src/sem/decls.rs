@@ -32,8 +32,10 @@ pub const MARKERS: &[&str] = &[
     "RESOURCE_DEF",
     "SOURCE_DEF",
     "READS_AS",
+    "READ_LOOKUP",
     "READS_FROM",
     "STATIC_ENTRY",
+    "PROC_SUMMARY",
 ];
 
 /// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).
@@ -44,6 +46,9 @@ pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GR
 /// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
 /// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
 pub const ENTRY_PROC: &str = "ENTRY_PROC";
+/// A capability datum's `entries()` whose first statement is `return list(...)`: the entries a capability gives its holder. Only handler
+/// discovery reads it (`sem::hooks`), so a `TYPE_PROC_REF(/holder, x)` a capability names is analyzed like one a CAPABILITIES block names.
+pub const CAP_ENTRIES: &str = "CAP_ENTRIES";
 /// Runtime observe calls carry the same typed requirement parts as declarations.
 pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
 
@@ -159,6 +164,9 @@ pub struct Decls {
     pub relations: HashMap<String, HashSet<String>>,
     /// type path -> tracked vars (TRACKED / SETTER / OM_FIELD ...).
     pub tracked: HashMap<String, HashSet<String>>,
+    /// `tracked` without what `analyze gen auto_tracked` itself declares (`gens::auto_tracked::AUTO_REL`): the declarations a person wrote.
+    /// The inference reads this, so the file it writes is never an input of the next run.
+    pub tracked_explicit: HashMap<String, HashSet<String>>,
     /// Every `#define NAME` in the tree.
     pub defines: HashSet<String>,
     /// KEY text -> producer sites of `PUBLISH_CHANGE(E, KEY)`.
@@ -209,12 +217,15 @@ impl Decls {
             let key = crate::incr::ctx_key(&nonempty);
             let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
             let mut d = Decls { key, ..Decls::default() };
-            for p in parts {
+            for (f, p) in files.iter().zip(parts) {
                 d.markers.extend(p.markers);
                 for (t, v) in p.relations {
                     d.relations.entry(t).or_default().insert(v);
                 }
                 for (t, v) in p.tracked {
+                    if f.rel != crate::gens::auto_tracked::AUTO_REL {
+                        d.tracked_explicit.entry(t.clone()).or_default().insert(v.clone());
+                    }
                     d.tracked.entry(t).or_default().insert(v);
                 }
                 d.defines.extend(p.defines);
@@ -382,6 +393,40 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
     String::from_utf8(out).unwrap_or_default()
 }
 
+/// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
+/// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), sets(VAR, to), parts...`. The key is `k`, else `<var>_<from>_<to>` with the var
+/// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
+pub fn stages_op_args(stages_args: &str) -> Vec<String> {
+    let args = split_args(stages_args);
+    let Some(var) = args.first() else { return Vec::new() };
+    let var = var.trim();
+    let var_name = var.strip_prefix("nameof(").and_then(|v| v.strip_suffix(')')).unwrap_or(var).trim().trim_matches('"');
+    let var_name = var_name.rsplit(|c| c == ':' || c == '.' || c == '/').next().unwrap_or(var_name).to_string();
+    let mut out = Vec::new();
+    for step in &args[1..] {
+        let step = step.trim();
+        let Some(inner) = step.strip_prefix("stage_step(").and_then(|s| s.strip_suffix(')')) else { continue };
+        let parts = split_args(inner);
+        if parts.len() < 2 {
+            continue;
+        }
+        let (from, to) = (parts[0].trim(), parts[1].trim());
+        let mut key = format!("\"{}_{}_{}\"", var_name, from.trim_matches('"'), to.trim_matches('"'));
+        let mut rest = Vec::new();
+        for p in &parts[2..] {
+            let p = p.trim();
+            match p.split_once('=') {
+                Some((name, value)) if name.trim() == "key" && !p.contains('(') => key = value.trim().to_string(),
+                _ => rest.push(p.to_string()),
+            }
+        }
+        let mut op = vec![key, format!("when(req_stage({}, {}))", var, from), format!("sets({}, {})", var, to)];
+        op.extend(rest);
+        out.push(op.join(", "));
+    }
+    out
+}
+
 /// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
 pub fn split_args(s: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -478,6 +523,23 @@ fn entry_proc(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t:
     out.push(Marker { name: ENTRY_PROC.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
 }
 
+/// The CAP_ENTRIES marker of a capability datum's `entries()` whose first statement is `return list(...)`.
+#[allow(clippy::too_many_arguments)]
+fn cap_entries(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t: &str, ty: String, head_line: u32, rel: &str, out: &mut Vec<Marker>) {
+    let Some(rest) = t.strip_prefix("return") else { return };
+    let rest = rest.trim_start();
+    let Some(after) = rest.strip_prefix("list") else { return };
+    if !after.trim_start().starts_with('(') {
+        return;
+    }
+    let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
+    let Some(close) = matching_paren(stripped, open) else { return };
+    let body = stripped[open + 1..close].to_string();
+    let mut args = vec![ty];
+    args.extend(split_args(&body));
+    out.push(Marker { name: CAP_ENTRIES.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+}
+
 fn scan_file(f: &SourceFile) -> FileDecls {
     let text = f.text();
     let stripped = strip_comments_keep_strings(text);
@@ -493,14 +555,20 @@ fn scan_file(f: &SourceFile) -> FileDecls {
     let mut entries_of: Option<String> = None;
     // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
     let mut proc_head: Option<(String, u32)> = None;
+    // A capability datum's entries() (type, header line) whose first statement has not been seen yet.
+    let mut cap_head: Option<(String, u32)> = None;
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
             proc_head = pat_match!(r"^/proc/(\w+)\([^)]*\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
+            cap_head = pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
         } else if !t.is_empty() && !t.starts_with('#') {
             if let Some((name, head_line)) = proc_head.take() {
                 entry_proc(&stripped, &starts, ln0, line, t, name, head_line, &f.rel, &mut fd.markers);
+            }
+            if let Some((ty, head_line)) = cap_head.take() {
+                cap_entries(&stripped, &starts, ln0, line, t, ty, head_line, &f.rel, &mut fd.markers);
             }
         }
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
@@ -546,7 +614,7 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                 });
             }
         }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
         if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
@@ -653,6 +721,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn stages_desugar_to_ops() {
+        let ops = stages_op_args("nameof(state), stage_step(0, 1, tool(TOOL_WRENCH), wait(0)), stage_step(1, 0, tool(TOOL_WRENCH), key = \"unanchor\")");
+        assert_eq!(ops.len(), 2);
+        assert_eq!(ops[0], "\"state_0_1\", when(req_stage(nameof(state), 0)), sets(nameof(state), 1), tool(TOOL_WRENCH), wait(0)");
+        assert_eq!(ops[1], "\"unanchor\", when(req_stage(nameof(state), 1)), sets(nameof(state), 0), tool(TOOL_WRENCH)");
+    }
+
+    #[test]
     fn splits_top_level_commas_only() {
         assert_eq!(split_args("a, f(b, c), \"x,y\", [1,2]"), vec!["a", "f(b, c)", "\"x,y\"", "[1,2]"]);
     }
@@ -719,8 +795,11 @@ mod block_tests {
     fn no_indented_line_is_no_block() {
         let f = SourceFile::from_text("code/a.dm", "CAPABILITY_DEF(x, CAP_X, key = NONE)\n\n/datum/capability/def/x/entries()\n\treturn list()\n");
         let d = scan_file(&f);
-        assert_eq!(d.markers.len(), 1);
+        // The CAPABILITY_DEF line keeps its own three arguments (no block swallows the lines below it); the second marker is the
+        // CAP_ENTRIES one the capability's `entries()` body (`return list()`) reads as.
+        assert_eq!(d.markers.len(), 2);
         assert_eq!(d.markers[0].args, vec!["x", "CAP_X", "key = NONE"]);
+        assert_eq!(d.markers[1].name, CAP_ENTRIES);
     }
 
     #[test]

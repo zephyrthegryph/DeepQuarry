@@ -13,7 +13,7 @@
 	req_access = list(ACCESS_AI_UPLOAD)
 
 /obj/machinery/ai_slipper/var/cooldown_on = FALSE
-TRACKED_BRIDGED(/obj/machinery/ai_slipper, cooldown_on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/ai_slipper, cooldown_on)
 /obj/machinery/ai_slipper/var/cooldown_stopped = FALSE
 TRACKED(/obj/machinery/ai_slipper, cooldown_stopped)
 
@@ -26,7 +26,7 @@ TRACKED(/obj/machinery/ai_slipper, cooldown_stopped)
 	look.state("liquid_dispenser[appearance_on() ? "_on" : ""]")
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
-	disabled = !enabled
+	set_disabled(!enabled)
 	src.uses = uses
 	power_change()
 
@@ -95,7 +95,7 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	return data
 
 /obj/machinery/ai_slipper/proc/ui_act_toggle_on(datum/act/op/A)
-	disabled = !disabled
+	set_disabled(!disabled)
 	return TRUE
 
 /obj/machinery/ai_slipper/proc/ui_act_toggle_use(datum/act/op/A)

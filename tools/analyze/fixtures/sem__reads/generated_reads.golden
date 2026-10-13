@@ -9,6 +9,7 @@
 #define READ_KIND_ACCESSOR 1
 #define READ_KIND_NATIVE 2
 #define READ_KIND_SYSTEM 3
+#define READ_KIND_LOOKUP 4
 
 /// Every interned name a read uses (a var, a relation hop, an accessor key). Id = index in this list.
 GLOBAL_LIST_INIT(generated_read_names, list(
@@ -47,7 +48,8 @@ GLOBAL_LIST_INIT(generated_read_roots, list(
 		list(2, 0, 4)),
 		"/obj/machinery/apc::bad_field" = list(0),
 		"/obj/machinery/apc::bad_global" = list(0,
-		list(1, 0, 5)),
+		list(1, 0, 5),
+		list(1, 0, 2, 5)),
 		"/obj/machinery/apc::calls_ctx_free" = list(0,
 		list(1, 0, 5),
 		list(1, 0, 6, 5)),

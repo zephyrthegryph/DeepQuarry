@@ -20,7 +20,7 @@
 	var/list/log = list()
 	var/list/busy = list()
 
-TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
+TRACKED(/datum/seq_test_entity, heat)
 
 /datum/seq_test_entity/seq_plan_key()
 	return plan_key
@@ -43,7 +43,7 @@ TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
 		seq_step(PROC_REF(sn), after = "T_FIRST", when = "!on", should_run = PROC_REF(sn_busy)),
 		seq_step(PROC_REF(so), after = "T_FIRST", when = "on", should_run = PROC_REF(so_busy)),
 		seq_step(PROC_REF(heat), after = "T_FIRST", reads = nameof(heat), should_run = PROC_REF(heat_hot), woken_by = "set_heat()"),
-		seq_step(PROC_REF(chan), after = "T_FIRST", reads = CHANGE_DATUM_C, should_run = PROC_REF(chan_busy)),
+		seq_step(PROC_REF(chan), after = "T_FIRST", reads = "seq_test_chan", should_run = PROC_REF(chan_busy)),
 		seq_step(PROC_REF(tail), after = "T_LAST", should_run = PROC_REF(tail_busy)),
 	)
 
@@ -127,7 +127,7 @@ SEQ_TEST_STEP(cy)
 	step = 1
 	max_catchup = 2
 	park_after = 2
-	wake_all = CHANGE_EXPLICIT
+	wake_keys = list("seq_test_wake_all")
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 	table_proc = TYPE_PROC_REF(/datum/seq_test_entity, test_steps)
 	frame_type = /datum/seq_frame/test
@@ -245,7 +245,7 @@ SEQ_TEST_STEP(cy)
 // ---------------------------------------------------------------- sleep and wake
 
 /// A step sleeps when its should_run() is FALSE after it ran. publish_change() of a key wakes the steps that read
-/// it, changed() of a channel the steps that read that, a wake_all channel every step. The sequence's reads
+/// it, a wake_keys key every step. The sequence's reads
 /// are READERS on the type, so a TRACKED setter publishes them.
 /datum/unit_test/kernel_sequence_sleep_wake
 
@@ -274,16 +274,16 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "with no work left it sleeps")
 
-	changed(E, CHANGE_DATUM_C)
-	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "changed() of a channel wakes the step that reads it")
+	publish_change(E, "seq_test_chan")
+	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "publishing its own key wakes the step that reads it")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and not the others")
 	E.set_heat(2)
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "a TRACKED setter publishes the read (READERS)")
 	E.heat = 0
 	E.log.Cut()
 	seq_run_frame_now(E, SEQ_TEST)
-	changed(E, CHANGE_EXPLICIT)
-	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_all channel wakes every step")
+	publish_change(E, "seq_test_wake_all")
+	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_keys key wakes every step")
 
 /// A woken step is asked should_run() before it runs: FALSE sends it back to sleep without running; TRUE runs it.
 /datum/unit_test/kernel_sequence_precheck
@@ -569,6 +569,45 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(AS.table.pos_of["/datum/capability/seq_test:cap_step"], "a capability of the type contributes its step: [jointext(AS.table.order, ",")]")
 	seq_run_frame_now(A, SEQ_TEST)
 	TEST_ASSERT(("cap" in A.log) && ("own" in A.log), "both ran: [jointext(A.log, ",")]")
+
+// ---------------------------------------------------------------- replan inside a frame
+
+/// An entity whose early step drops its contributor mid-frame (the table shrinks), and whose last step reads a var.
+/datum/seq_test_entity/replanner
+	var/datum/seq_test_contributor/extra
+
+/datum/seq_test_entity/replanner/test_steps()
+	. = ..()
+	. += seq_step(PROC_REF(rp), after = "T_FIRST")
+	. += seq_step(PROC_REF(late), after = "tail", reads = nameof(heat), should_run = PROC_REF(late_busy))
+
+/datum/seq_test_entity/replanner/proc/rp(datum/seq_frame/test/F)
+	log += "rp"
+	if(extra)
+		seq_extra_remove(src, SEQ_TEST, extra)
+		extra = null
+
+/datum/seq_test_entity/replanner/proc/late(datum/seq_frame/test/F)
+	log += "late"
+
+/datum/seq_test_entity/replanner/proc/late_busy()
+	return FALSE
+
+/// A step earlier in a frame can replan the entity onto a smaller table; the steps after it still run from the old table and fall asleep
+/// there. Test builds note what a sleeping step read, by its position: that note must not index the new, shorter table (it threw "list
+/// index out of bounds" from seq_snapshot_note on the Life sequence, in the operating-computer tests).
+/datum/unit_test/kernel_sequence_replan_mid_frame
+
+/datum/unit_test/kernel_sequence_replan_mid_frame/Run()
+	var/datum/seq_test_entity/replanner/E = allocate(/datum/seq_test_entity/replanner)
+	var/datum/seq_state/S = seq_start(E, SEQ_TEST)
+	E.extra = new /datum/seq_test_contributor
+	TEST_ASSERT(seq_extra_add(E, SEQ_TEST, E.extra), "the contributor is added")
+	var/datum/seq_table/old_table = S.table
+	seq_run_frame_now(E, SEQ_TEST)
+	TEST_ASSERT(("late" in E.log), "the last step ran in the frame that replanned: [jointext(E.log, ",")]")
+	TEST_ASSERT_NOTEQUAL(S.table, old_table, "the entity moved to the table without the contributor")
+	TEST_ASSERT(length(S.snaps) <= S.table.n, "no note was kept for a position past the new table")
 
 // ---------------------------------------------------------------- the audit
 

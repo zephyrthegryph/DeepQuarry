@@ -6,7 +6,7 @@
 -menu: Use Scope (refused: You can't do that.)
 +3 menu: Name Gun (refused: You can't do that.)
 +6 menu: Spin cylinder (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.gun ghost|none
 -menu: Use Scope (refused: You can't do that.)
 +2 menu: Name Gun (refused: You can't do that.)
@@ -44,8 +44,8 @@
 +5 menu: Spin cylinder (refused: You can't do that.)
 @obj.item.gun human|/obj/item/stack/cable_coil
 -menu: Use Scope (refused: You can't do that.)
-+4 menu: Name Gun (refused: You can't do that.)
-+6 menu: Spin cylinder (refused: You can't do that.)
++3 menu: Name Gun (refused: You can't do that.)
++5 menu: Spin cylinder (refused: You can't do that.)
 @obj.item.gun human|/obj/item/stack/material/steel
 -menu: Use Scope (refused: You can't do that.)
 +3 menu: Name Gun (refused: You can't do that.)
@@ -53,7 +53,7 @@
 @obj.item.gun human|/obj/item/card/id
 -menu: Use Scope (refused: You can't do that.)
 +3 menu: Name Gun (refused: You can't do that.)
-+6 menu: Spin cylinder (refused: You can't do that.)
++5 menu: Spin cylinder (refused: You can't do that.)
 @obj.item.gun human|/obj/item/kit
 -menu: Use Scope (refused: You can't do that.)
 +4 menu: Name Gun (refused: You can't do that.)

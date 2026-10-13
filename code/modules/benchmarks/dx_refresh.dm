@@ -38,7 +38,7 @@
 	var/start = REALTIMEOFDAY
 	for(var/repeat in 1 to 5)
 		for(var/obj/machinery/dx_bench_drawer/M as anything in made)
-			changed(M)
+			state_changed(M)
 	refresh_flush()
 	metric("burst_ms", REALTIMEOFDAY - start, "ms")
 	end_window("burst")

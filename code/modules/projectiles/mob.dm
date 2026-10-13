@@ -7,11 +7,10 @@
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 60 //Old 25
-	light_range = 3
-	light_power = 1
-	light_color = "#FF0D00"
 
 CAPABILITIES(/obj/item/projectile/energy/mob/heavylaser)
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
 	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/mob/midlaser
@@ -49,12 +48,12 @@ CAPABILITIES(/obj/item/projectile/energy/mob/smalllaser)
 	nodamage = 1
 	taser_effect = 1
 	injury_kind = INJURY_PAIN
-	light_color = "#FFFFFF"
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	combustion = FALSE
 	agony = 20
 
 CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
+	configure(light_glow(color = "#FFFFFF"))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/energy/mob/precursor
@@ -62,12 +61,12 @@ CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "impact_prec"
 	fire_sound = SFX_WEAPONS_MEDIUMLASER
-	light_color = "#FF0099"
 
 	hud_state = "plasma_rifle"
 	damage = 48 //Old 25
 
 CAPABILITIES(/obj/item/projectile/energy/mob/precursor)
+	configure(light_glow(color = "#FF0099"))
 	configure(item_combat(armor_penetration = 10))
 
 
@@ -133,6 +132,8 @@ CAPABILITIES(/obj/item/projectile/energy/mob/heavysniper)
 	damage = 20 //Old 10
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	icon_state = "impact_blue"
 	fire_sound = SFX_WEAPONS_LASER
+
+CAPABILITIES(/obj/item/projectile/energy/mob/ionbeam)
+	configure(light_glow(color = "#00CCFF"))

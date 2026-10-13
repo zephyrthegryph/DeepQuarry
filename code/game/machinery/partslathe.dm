@@ -136,11 +136,11 @@
 	if(queue.len == 0)
 		if (busy)
 			ping() // Job's done!
-		busy = 0
+		set_busy(0)
 		return
 	var/datum/category_item/partslathe/D = queue[1]
 	if(canBuild(D))
-		busy = 1
+		set_busy(1)
 		set_use_power(USE_POWER_ACTIVE)
 		progress += speed
 		if(progress >= D.time)
@@ -149,7 +149,7 @@
 			removeFromQueue(1)
 	else if(busy)
 		visible_message(span_notice("[icon2html(src,viewers(src))] flashes: insufficient materials: [getLackingMaterials(D)]."))
-		busy = 0
+		set_busy(0)
 		set_use_power(USE_POWER_IDLE)
 		play_sfx(src, SFX_MACHINES_CHIME, vary = FALSE)
 

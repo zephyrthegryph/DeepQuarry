@@ -262,11 +262,11 @@ CAPABILITIES(/obj/item/integrated_electronics/debugger)
 		copier.print_engineering_reading(src, user)
 		return
 	if(accepting_refs && toolmode == MULTITOOL_MODE_INTCIRCUITS && proximity)
-		ref_wiring = ic_ref(target)
+		set_ref_wiring(ic_ref(target))
 		act_message(user, src, others = span_notice("%U% slides %T% over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [target.name] \[Ref\]. The ref scanner is \
 		now off."))
-		accepting_refs = 0
+		set_accepting_refs(0)
 
 /obj/item/storage/bag/circuits
 	name = "circuit kit"
@@ -361,6 +361,9 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 	after_init(0, then(PROC_REF(fill_circuits)))
 
 /obj/item/storage/bag/circuits/mini/proc/fill_circuits(datum/act/timer/A)
+	// The plain box stocks nothing and keeps its ordinary capacity (fitting it to no contents would refuse every circuit).
+	if(!length(circuit_kinds))
+		return
 	for(var/kind in circuit_kinds)
 		for(var/obj/item/integrated_circuit/IC in GLOB.all_integrated_circuits)
 			if(!istype(IC, kind))

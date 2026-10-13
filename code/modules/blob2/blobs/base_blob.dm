@@ -3,7 +3,6 @@
 	name = "blob"
 	icon = 'icons/mob/blob.dmi'
 	desc = "A thick wall of writhing tendrils."
-	light_range = 2
 	density = FALSE // This is false because blob mob AI's walk_to() proc appears to never attempt to move onto dense objects even if allowed by CanPass().
 	opacity = FALSE
 	anchored = TRUE
@@ -23,6 +22,7 @@
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 CAPABILITIES(/obj/structure/blob)
+	configure(light_glow(range = 2))
 	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)))
 	ref_one(nameof(overmind))
 	param(nameof(overmind), pos = 1)
@@ -40,8 +40,6 @@ CAPABILITIES(/obj/structure/blob)
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
-TRACKED(/obj/structure/blob, look_title)
-TRACKED(/obj/structure/blob, look_tint)
 
 /// What the overmind gives the look: its blob type's name and colour, copied here so the look reads only this blob's own state. Called wherever the overmind
 /// or its type changes (inert blobs turn into other blobs with magic if another blob core claims one with pulsing).

@@ -1,17 +1,73 @@
-@obj.machinery.power.smes human|none
+human|none menu: Ui open
+human|none click: Click: Ui open
 @obj.machinery.power.smes robot|none
-@obj.machinery.power.smes ai|none
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Ui open
++3 click: Click: Ui open
+ai|none menu: Ui open
+ai|none menu: Use
+ai|none click: Click: Ui open
 @obj ghost|none
 @obj.machinery.power.smes human|/obj/item/tool/screwdriver
+-menu: Open controls
++0 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++3 menu: Ui open
 @obj.machinery.power.smes human|/obj/item/tool/crowbar
-@obj.machinery.power.smes human|/obj/item/tool/wrench
+-menu: Open controls
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++3 menu: Ui open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench click: Click: Ui open
 @obj.machinery.power.smes human|/obj/item/tool/wirecutters
-@obj.machinery.power.smes human|/obj/item/multitool
+-menu: Open controls
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Ui open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool click: Click: Ui open
 @obj.machinery.power.smes human|/obj/item/weldingtool
+-menu: Open controls
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Ui open
 @obj.machinery.power.smes human|/obj/item/stack/cable_coil
-@obj.machinery.power.smes human|/obj/item/stack/material/steel
-@obj.machinery.power.smes human|/obj/item/card/id
-@obj.machinery.power.smes human|/obj/item
-@obj.machinery.power.smes human|/obj/item/storage/part_replacer
-@obj.machinery.power human|/obj/item/cell
+-menu: Open controls
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Ui open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
+@obj human|/obj/item/storage/part_replacer
++0 menu: Empty contents
++1 menu: Move To Top
++3 menu: Switch gathering method (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Ui open
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Insert cell
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Ui open
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert cell
 keys: add_cable, cable_place, cut_terminal, disable, drag_buckle, ejectcell, enable, equaliseoff, equaliseon, insert_cell, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, ui_open, weld

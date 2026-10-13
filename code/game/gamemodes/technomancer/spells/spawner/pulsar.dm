@@ -13,10 +13,10 @@
 	aspect = ASPECT_EMP
 	spawner_type = /obj/effect/temporary_effect/pulse/pulsar
 
+CAPABILITIES(/obj/item/spell/spawner/pulsar)
+	configure(light_glow(range = 3, power = 2, color = "#2ECCFA"))
+
 /obj/item/spell/spawner/pulsar
-	light_range = 3
-	light_power = 2
-	light_color = "#2ECCFA"
 	light_on = TRUE
 
 /obj/item/spell/spawner/pulsar/on_ranged_cast(atom/hit_atom, mob/user)
@@ -68,10 +68,10 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse)
 	desc = "Not a real pulsar, but still emits loads of EMP."
 	icon_state = "shield2"
 	time_to_die = null
-	light_range = 4
-	light_power = 5
-	light_color = "#2ECCFA"
 	pulses_remaining = 3
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/pulsar)
+	configure(light_glow(range = 4, power = 5, color = "#2ECCFA"))
 
 /obj/effect/temporary_effect/pulse/pulsar/on_pulse()
 	empulse(src, 1, 1, 2, 2, log = 1)

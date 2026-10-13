@@ -1079,9 +1079,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 	configure(item_worn(hides = HIDEHOLSTER))
 
 /// Old verb "Roll Sleeves".
-TRACKED(/obj/item/clothing/suit/storage/flannel, rolled)
-TRACKED(/obj/item/clothing/suit/storage/flannel, tucked)
-TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 
 /obj/item/clothing/suit/storage/flannel/proc/flannel_roll_sleeves_verb(datum/act/op/A)
 	var/mob/user = A.actor

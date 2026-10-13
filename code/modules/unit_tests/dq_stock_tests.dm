@@ -53,7 +53,7 @@ CAPABILITIES(/datum/unit_test/dq_stock_vending)
 	// tgui data lists normal stock only until hacked.
 	var/list/data = V.tgui_data(null)
 	TEST_ASSERT_EQUAL(length(data["products"]), 2, "normal products listed")
-	V.categories |= CAT_HIDDEN
+	V.set_categories(V.categories | CAT_HIDDEN)
 	data = V.tgui_data(null)
 	TEST_ASSERT_EQUAL(length(data["products"]), 3, "contraband listed once hacked")
 	var/list/first = data["products"][1]

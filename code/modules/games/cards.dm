@@ -638,7 +638,6 @@ CAPABILITIES(/obj/item/hand)
 	var/jitter_x = 0
 	var/jitter_y = 0
 
-TRACKED(/obj/item/hand, concealed)
 TRACKED(/obj/item/hand, direction)
 TRACKED(/obj/item/hand, jitter_x)
 TRACKED(/obj/item/hand, jitter_y)

@@ -137,17 +137,16 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 //Redefining some robot procs...
 /mob/living/silicon/robot/drone/SetName(pickedName as text)
 	// Would prefer to call the grandparent proc but this isn't possible, so..
-	real_name = pickedName
+	set_real_name(pickedName)
 	name = real_name
 
 /mob/living/silicon/robot/drone/updatename()
 	if(name_override)
 		return
 
-	real_name = "[initial(name)] ([serial_number])"
+	set_real_name("[initial(name)] ([serial_number])")
 	name = real_name
 
-TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 
 /// A drone's look is its shell accessories and its hat; the sprite datum sheet is not used.
 /mob/living/silicon/robot/drone/look_parts(datum/look/look)
@@ -199,7 +198,7 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	if(plating)
 		LAZYADD(accessories, "[shell_state]-shell-[plating]")
 	set_shell_accessories(accessories)
-	can_pick_shell = FALSE
+	set_can_pick_shell(FALSE)
 
 MSG_DEF_SELF(drone_ability/shell_picked, "you already selected a shell or this drone type isn't customizable")
 

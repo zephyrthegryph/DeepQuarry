@@ -17,7 +17,6 @@ human|/obj/item/card/id menu: Draw
 human|/obj/item/card/id menu: Holster (refused: You can't do that.)
 human|/obj/item/card/id menu: Holster item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Accessory attached hand
@@ -45,7 +44,6 @@ human|/obj/item/stack/cable_coil menu: Alternate use
 human|/obj/item/stack/cable_coil menu: Draw
 human|/obj/item/stack/cable_coil menu: Holster (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Holster item
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use

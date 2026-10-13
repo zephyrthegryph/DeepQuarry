@@ -151,18 +151,17 @@ CAPABILITIES(/obj/item/deadringer)
 		temp.set_canremove(FALSE)
 	corpse().identifying_gender = H.identifying_gender
 	corpse().bio.flavor_texts = H.bio.flavor_texts?.Copy()
-	corpse().real_name = H.real_name
+	corpse().set_real_name(H.real_name)
 	corpse().name = H.name
 	corpse().emote("deathgasp") //Done after the name is set.
 	corpse().death(1) //Kills the new mob
 	corpse().set_species(corpse().dna.species)
 	record_copy(corpse().looks, H.looks) // the fake body looks like its wearer
 	corpse().force_update_limbs()
-	corpse().update_hair()
+	changed(src)
 	corpse().injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
 	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse().UpdateAppearance()
-	corpse().regenerate_icons()
 	var/list/corpse_organs = corpse().internal_organ_list()
 	QDEL_LIST(corpse_organs)
 

@@ -2,7 +2,7 @@
 +0 menu: Change wallet color (refused: You can't do that.)
 @obj.item.storage robot|none
 +0 menu: Change wallet color (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Change wallet color (refused: You can't do that.)
 @obj.item.storage human|/obj/item/tool/screwdriver

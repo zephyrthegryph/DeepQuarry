@@ -61,7 +61,7 @@ CAPABILITIES(/obj/item/card/id)
 
 /mob/proc/set_id_info(obj/item/card/id/id_card)
 	id_card.age = 0
-	id_card.registered_name		= real_name
+	id_card.set_registered_name(real_name)
 	id_card.sex 				= capitalize(gender)
 	id_card.species				= SPECIES_HUMAN
 	id_card.set_id_photo(src)
@@ -116,7 +116,7 @@ CAPABILITIES(/obj/item/card/id)
 	return TRUE
 
 /obj/item/card/id/GetAccess()
-	return access // ALLOW(reads): a card's access is asked when the card is used, never cached
+	return access
 
 /obj/item/card/id/GetID()
 	return src
@@ -444,7 +444,7 @@ CAPABILITIES(/obj/item/card/id/event)
 /obj/item/card/id/event/proc/copy_access_from(mob/user, obj/item/I)
 	if(istype(I, /obj/item/card/id) && !accessset)
 		var/obj/item/card/id/O = I
-		access |= O.GetAccess()
+		include_access(O.GetAccess())
 		desc = I.desc
 		rank = O.rank
 		to_chat(user, span_notice("You copy the access from \the [I] to \the [src]."))
@@ -624,3 +624,12 @@ CAPABILITIES(/obj/item/card/id/event/polymorphic/itg)
 	desc = "A small card designating affiliation with the Ironcrest Transport Group. It has a NanoTrasen insignia and a lot of very small print on the back to do with practices and regulations for contractors to use."
 	polymorphic_type = 2
 
+/// The name on the card: a wearer's visible name reads it (MOB_KEY_IDENTITY on whoever carries the card).
+/obj/item/card/id/proc/set_registered_name(value)
+	if(TRACKED_UNCHANGED(registered_name, value))
+		return FALSE
+	registered_name = value
+	tracked_changed(src, nameof(registered_name))
+	identity_changed_on_holder()
+	return TRUE
+SETTER(/obj/item/card/id, registered_name)

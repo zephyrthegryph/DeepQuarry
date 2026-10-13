@@ -5,80 +5,59 @@ human|none click: Click: Use
 @obj.machinery robot|none
 +1 menu: Force Eject
 +2 menu: Toggle flush
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Force Eject (refused: You can't reach that.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 menu: Use screwdriver
-+7 click: Click: Use screwdriver
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 click: Click: Insert
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 click: Click: Insert
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 click: Click: Insert
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 menu: Use multitool
-+7 click: Click: Use multitool
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 menu: Use welder
-+7 click: Click: Use welder
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+5 menu: Toggle flush
-+6 menu: Use
-+7 click: Click: Insert
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 click: Click: Insert
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+5 menu: Toggle flush
-+6 menu: Use
-+7 click: Click: Insert
-@obj human|/obj/item
--click: nothing
-+0 menu: Force Eject
-+1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 click: Click: Insert
+human|/obj/item/tool/screwdriver menu: Force Eject
+human|/obj/item/tool/screwdriver menu: Insert
+human|/obj/item/tool/screwdriver menu: Toggle flush
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar menu: Force Eject
+human|/obj/item/tool/crowbar menu: Insert
+human|/obj/item/tool/crowbar menu: Toggle flush
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Insert
+human|/obj/item/tool/wrench menu: Force Eject
+human|/obj/item/tool/wrench menu: Insert
+human|/obj/item/tool/wrench menu: Toggle flush
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Insert
+human|/obj/item/tool/wirecutters menu: Force Eject
+human|/obj/item/tool/wirecutters menu: Insert
+human|/obj/item/tool/wirecutters menu: Toggle flush
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Insert
+human|/obj/item/multitool menu: Force Eject
+human|/obj/item/multitool menu: Insert
+human|/obj/item/multitool menu: Toggle flush
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
+human|/obj/item/weldingtool menu: Force Eject
+human|/obj/item/weldingtool menu: Insert
+human|/obj/item/weldingtool menu: Toggle flush
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Slice the floorweld
+human|/obj/item/stack/cable_coil menu: Force Eject
+human|/obj/item/stack/cable_coil menu: Insert
+human|/obj/item/stack/cable_coil menu: Toggle flush
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Insert
+human|/obj/item/stack/material/steel menu: Force Eject
+human|/obj/item/stack/material/steel menu: Insert
+human|/obj/item/stack/material/steel menu: Toggle flush
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Insert
+human|/obj/item/card/id menu: Force Eject
+human|/obj/item/card/id menu: Insert
+human|/obj/item/card/id menu: Toggle flush
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Insert
+human|/obj/item menu: Force Eject
+human|/obj/item menu: Insert
+human|/obj/item menu: Toggle flush
+human|/obj/item menu: Use
+human|/obj/item click: Click: Insert
 keys: disengageHandle, disposal_drag_insert, disposal_dunk, disposal_flush, disposal_force_eject, disposal_insert, disposal_stuff_mob, disposal_use, drag_buckle, eject, engageHandle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pumpOff, pumpOn, robot_remote_blocked, silicon_hand, silicon_ui, use_multitool, use_screwdriver, use_welder

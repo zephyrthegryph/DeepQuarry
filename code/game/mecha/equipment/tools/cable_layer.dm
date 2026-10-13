@@ -31,7 +31,6 @@
 	occupant_message(message)
 	return
 
-TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, cable_length)
 
 MSG_DEF_SELF(mecha_cable/no_cable, "There's no more cable on the reel.")
 
@@ -133,7 +132,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	if(last_piece() && last_piece().d2 != chassis.dir)
 		last_piece().set_d1(min(last_piece().d2, chassis.dir))
 		last_piece().set_d2(max(last_piece().d2, chassis.dir))
-		changed(last_piece())
 		last_piece().power_register()
 	NC.power_register()
 	rel_set(src, nameof(last_piece), NC)

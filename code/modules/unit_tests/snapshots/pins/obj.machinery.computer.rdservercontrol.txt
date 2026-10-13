@@ -1,7 +1,7 @@
 human|none menu: Climb
 human|none click: nothing
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use

@@ -90,7 +90,8 @@
 /// observe()). TRACKED setters, timed_set and ownership writes publish only when this holds.
 #define READERS(E, KEY) rx_readers(E, KEY)
 /// Publishes the change key `KEY` of `E` when someone reads it (READERS): for a fact that is not one tracked var (a
-/// mob's equipment, its body re-deriving). A tracked var publishes itself through its setter.
-#define PUBLISH_CHANGE(E, KEY) if(READERS(E, KEY)) { publish_change(E, KEY) }
+/// mob's equipment, its body re-deriving). A tracked var publishes itself through its setter. A stat that reads the key
+/// (a READS_AS accessor in its generated reads) recomputes first (publish_key_changed(), code/engine/stats/recompute.dm).
+#define PUBLISH_CHANGE(E, KEY) publish_key_changed(E, KEY)
 
 /// WANTS(E, TYPE) and PUBLISH(E, token, ...) are the engine's (code/__defines/engine/actions.dm); the legacy PUBLISH is PUBLISH_LEGACY.

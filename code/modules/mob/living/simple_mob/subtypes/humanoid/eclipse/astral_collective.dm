@@ -477,9 +477,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 	mend(TREAT_TISSUE_REPAIR, 200)
 	mend(TREAT_BURN_CARE, 200)
 
-/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.protection_aura()

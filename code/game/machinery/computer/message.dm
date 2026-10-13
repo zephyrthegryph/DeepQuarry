@@ -4,7 +4,6 @@
 	name = "messaging monitor console"
 	desc = "Used to access and maintain data on messaging servers. Allows you to view PDA and request console messages."
 	icon_screen = "comm_logs"
-	light_color = "#00b000"
 	var/hack_icon = "error"
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
@@ -46,7 +45,6 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 			MK.set_info(MK.info + ("<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")))
 			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
-			changed(src)
 			return OP_OK
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
@@ -63,9 +61,9 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
-TRACKED(/obj/machinery/computer/message_monitor, emag)
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
+	configure(light_glow(color = "#00b000"))
 	ref_one(nameof(linkedServer), /obj/machinery/message_server)
 	extend("disconnect", needs(req(PROC_REF(cool_enough))))
 	after_init(0, then(PROC_REF(link_default_server)))
@@ -171,12 +169,10 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	else
 		var/currentKey = linkedServer().decryptkey
 		to_chat(user, span_warning("Brute-force completed! The key is '[currentKey]'."))
-	hacking = 0
-	changed(src)
+	set_hacking(0)
 
 /obj/machinery/computer/message_monitor/proc/UnmagConsole()
 	set_emag(FALSE)
-	changed(src)
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
@@ -219,7 +215,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_hack(datum/act/op/A)
 	var/mob/living/original = A.actor.mind.original_character
 	if((A.actor.mind.special_role && (original && original == A.actor)))
-		hacking = 1
+		set_hacking(1)
 		//Time it takes to bruteforce is dependant on the password length.
 		after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), with = list(A.actor))
 

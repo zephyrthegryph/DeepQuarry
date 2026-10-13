@@ -550,13 +550,12 @@
 	glide_size = initial(glide_size)
 
 /// Anchors or frees it. Anchored is a tracked base var (G8): this is its only writer. A change publishes
-/// nameof(anchored) and, as a bridge, raises the channel of the type's declared field (a machine
-/// CHANGE_MACHINE_ANCHORED; machinery_fields.dm).
+/// nameof(anchored) to its readers.
 /atom/movable/proc/set_anchored(state)
 	if(anchored == state)
 		return FALSE
 	anchored = state
-	tracked_bridged_changed(src, nameof(anchored))
+	tracked_changed(src, nameof(anchored))
 	return TRUE
 SETTER(/atom/movable, anchored)
 

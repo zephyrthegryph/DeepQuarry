@@ -2,65 +2,57 @@
 @obj.structure robot|none
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+3 click: nothing
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+3 click: nothing
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Build assembly secured
-+4 click: Click: Build assembly secured
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+3 click: nothing
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+3 click: nothing
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Dismantle
-+4 click: Click: Dismantle
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+4 click: nothing
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+1 menu: Install plating
-+4 click: Click: Install plating
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+4 click: nothing
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+3 click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Build assembly secured
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench click: Click: Build assembly secured
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Dismantle
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool click: Click: Dismantle
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Install plating
+human|/obj/item/stack/material/steel click: Click: Install plating
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Hit
+human|/obj/item click: nothing
 @obj human|/obj/item/airlock_electronics
-@obj.structure human|/obj/item/pen
--menu: Use
--click: Click: Use
-+2 menu: Rename
-+4 click: Click: Rename
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen menu: Hit
+human|/obj/item/pen menu: Rename
+human|/obj/item/pen click: Click: Rename
 @obj human|/obj/item/stack/material/glass/reinforced
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/gold
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/silver
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/diamond
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/uranium
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/phoron
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/sandstone
-@obj.structure human|/obj/item/stack/material
--menu: Use
--click: Click: Use
-+1 menu: Install plating
-+4 click: Click: Install plating
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Hit
+human|/obj/item/stack/material menu: Install plating
+human|/obj/item/stack/material click: Click: Install plating
 keys: construction.build:door_assembly_boarded, construction.build:door_assembly_finished, construction.build:door_assembly_secured, construction.build:door_assembly_wired, construction.dismantle, construction.undo:door_assembly_boarded, construction.undo:door_assembly_secured, construction.undo:door_assembly_wired, drag_buckle, melee_hit, plate, plate_bad, plate_glass, rename, rename_robot, unplate

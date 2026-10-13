@@ -41,12 +41,10 @@
 /// Seals or unseals the closet the way a construct's spell or a test fixture would (no tool).
 /proc/p2cl_set_sealed(obj/structure/closet/C, on)
 	set_welded(C, !!on)
-	C.update_icon()
 
 /// Locks or unlocks the closet with no card (a fixture, or a mapper's starting state).
 /proc/p2cl_set_locked(obj/structure/closet/C, on)
 	C.force_lock(!!on)
-	C.update_icon()
 
 /// What the closet holds, declared contents made real first.
 /proc/p2cl_contents(obj/structure/closet/C)
@@ -222,8 +220,8 @@
 	rel_set(H, nameof(H.teleop), controller)
 	if(access)
 		var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
-		card.access = access
-		card.registered_name = "P2 Tester"
+		card.set_access(access)
+		card.set_registered_name("P2 Tester")
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 		H.equip_to_slot(card, SLOT_ID_ID)
 	return H
@@ -810,8 +808,8 @@
 	var/obj/structure/closet/secure_closet/C = make(/obj/structure/closet/secure_closet/p2_test)
 	var/mob/living/carbon/human/H = person(tile(1, 2))
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
-	card.access = list(ACCESS_ENGINE)
-	card.registered_name = "P2 Tester"
+	card.set_access(list(ACCESS_ENGINE))
+	card.set_registered_name("P2 Tester")
 	touch(H, C, card)
 	TEST_ASSERT(!p2cl_locked(C), "the card in hand unlocked it")
 	touch(H, C, card)
@@ -823,8 +821,8 @@
 	var/obj/structure/closet/secure_closet/C = make(/obj/structure/closet/secure_closet/p2_test)
 	var/mob/living/carbon/human/H = person(tile(1, 2))
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
-	card.access = list(ACCESS_SECURITY)
-	card.registered_name = "P2 Tester"
+	card.set_access(list(ACCESS_SECURITY))
+	card.set_registered_name("P2 Tester")
 	touch(H, C, card)
 	TEST_ASSERT(p2cl_locked(C), "still locked")
 
@@ -911,8 +909,8 @@
 	alt_touch(H, C)
 	TEST_ASSERT(!p2cl_locked(C), "an alt-click does not lock a broken locker")
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
-	card.access = list(ACCESS_ENGINE)
-	card.registered_name = "P2 Tester"
+	card.set_access(list(ACCESS_ENGINE))
+	card.set_registered_name("P2 Tester")
 	touch(H, C, card)
 	TEST_ASSERT(!p2cl_locked(C), "nor does a card")
 
@@ -1273,13 +1271,13 @@
 	var/obj/structure/closet/secure_closet/personal/C = make(/obj/structure/closet/secure_closet/personal)
 	var/mob/living/carbon/human/H = person(tile(1, 2))
 	var/obj/item/card/id/mine = allocate(/obj/item/card/id, H.loc)
-	mine.registered_name = "Alice"
+	mine.set_registered_name("Alice")
 	touch(H, C, mine)
 	TEST_ASSERT_EQUAL(p2cl_owner_name(C), "Alice", "the swiper owns it")
 	var/was_locked = p2cl_locked(C)
 	var/mob/living/carbon/human/other = person(tile(3, 2))
 	var/obj/item/card/id/theirs = allocate(/obj/item/card/id, other.loc)
-	theirs.registered_name = "Bob"
+	theirs.set_registered_name("Bob")
 	touch(other, C, theirs)
 	TEST_ASSERT_EQUAL(p2cl_owner_name(C), "Alice", "and still does")
 	TEST_ASSERT_EQUAL(p2cl_locked(C), was_locked, "a stranger's card changes nothing")
@@ -1292,7 +1290,7 @@
 	var/obj/structure/closet/secure_closet/personal/C = make(/obj/structure/closet/secure_closet/personal)
 	var/mob/living/carbon/human/H = person(tile(1, 2))
 	var/obj/item/card/id/mine = allocate(/obj/item/card/id, H.loc)
-	mine.registered_name = "Alice"
+	mine.set_registered_name("Alice")
 	touch(H, C, mine)
 	if(p2cl_locked(C))
 		touch(H, C, mine)

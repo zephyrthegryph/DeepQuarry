@@ -16,7 +16,8 @@ TRACKED(/obj/structure/mirror, glass)
 
 CAPABILITIES(/obj/structure/mirror)
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(cond_not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("use_wrench", tool(TOOL_WRENCH), when(nameof(glass)), wait(0), then(PROC_REF(wrench_used)))
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -94,9 +95,6 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 /obj/structure/mirror/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	if(!glass)
-		use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-		return OP_OK
 	if(shattered)
 		to_chat(user, span_notice("The broken glass falls out."))
 		icon_state = "mirror_frame"
@@ -110,8 +108,11 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	new /obj/item/stack/material/glass(loc, 2)
 	return OP_OK
 
-/obj/structure/mirror/proc/wrench_act_tool_done(mob/user)
-	to_chat(user, span_notice("You unfasten the frame."))
+/obj/structure/mirror/proc/frame_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/mirror/proc/wrench_act_tool_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You unfasten the frame."))
 	replace_with(src, /obj/item/frame/mirror)
 
 /obj/structure/mirror/attack_generic(mob/user, damage)
@@ -162,6 +163,6 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	if(!newname || newname == "")
 		var/datum/language/L = GLOB.all_languages[vox.species.default_language]
 		newname = L.get_random_name()
-	vox.real_name = newname
+	vox.set_real_name(newname)
 	vox.name = vox.real_name
 	GLOB.raiders.update_access(vox)

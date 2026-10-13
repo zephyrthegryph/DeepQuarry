@@ -20,7 +20,6 @@
 	var/use_auto_lights = 1
 	var/light_power_on = 1
 	var/light_range_on = 2
-	light_color = "#64C864"
 
 	var/image/panel = null
 
@@ -29,10 +28,9 @@
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
 
-TRACKED(/obj/machinery/station_map, bogus)
-TRACKED(/obj/machinery/station_map, offsets_settled_flag)
 
 CAPABILITIES(/obj/machinery/station_map)
+	configure(light_glow(color = "#64C864"))
 	configure(uses_power(idle = 10, active = 500))
 	without("silicon_hand") // silicons can't use it by a plain click
 	ref_one(nameof(watching_mob))
@@ -59,7 +57,7 @@ CAPABILITIES(/obj/machinery/station_map)
 
 /obj/machinery/station_map/proc/setup_holomap()
 	var/turf/T = get_turf(src)
-	original_zLevel = T.z
+	set_original_zLevel(T.z)
 	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in holomaps_extraMiniMaps()))
 		set_bogus(TRUE)
 		holomap_datum.initialize_holomap_bogus()
@@ -173,9 +171,9 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 		stopWatching()
 	// TODO - Port use_auto_lights from /vg - For now implement it manually here
 	if(power_lost())
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	else
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 
 /obj/machinery/station_map/draw(datum/look/look)
 	..()

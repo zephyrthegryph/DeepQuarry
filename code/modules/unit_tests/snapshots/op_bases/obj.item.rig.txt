@@ -37,7 +37,6 @@ human|/obj/item/card/id menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/card/id menu: Engage Module (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rig item
 human|/obj/item/card/id menu: Rig shock hand
 human|/obj/item/card/id menu: Select Module (refused: You can't do that.)
@@ -92,7 +91,6 @@ human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/stack/cable_coil menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Engage Module (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Open Hardsuit Interface (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Rig item

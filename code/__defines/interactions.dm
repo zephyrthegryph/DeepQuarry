@@ -12,5 +12,3 @@
 /// The keybinding id of the Menu key.
 #define INTERACTION_MENU_BINDING "interaction_menu"
 
-/// use_tool(): the job is a timed action that has started; its on_done runs later.
-#define USE_TOOL_PENDING 2

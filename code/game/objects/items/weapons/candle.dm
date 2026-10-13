@@ -4,11 +4,9 @@
 	icon = 'icons/obj/candle.dmi'
 	icon_state = "candle1"
 	w_class = ITEMSIZE_TINY
-	light_color = "#E09D37"
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
 
-TRACKED(/obj/item/flame/candle, wax)
 
 /// 1 (fresh) to 3 (nearly gone) by remaining wax.
 /obj/item/flame/candle/proc/appearance_wax_stage()
@@ -27,6 +25,7 @@ TRACKED(/obj/item/flame/candle, wax)
 	return "[icon_type][appearance_wax_stage()][lit ? "_lit" : ""]"
 
 CAPABILITIES(/obj/item/flame/candle)
+	configure(light_glow(color = "#E09D37"))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("snuff", in_hand(), then(PROC_REF(snuffed)))
 	op("light_from", item(/obj/item), passes(), when(req(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
@@ -61,7 +60,7 @@ CAPABILITIES(/obj/item/flame/candle)
 			flavor_text = user ? span_notice("\The [user] lights the [src].") : span_notice("\The [src] lights up.")
 		set_lit(TRUE)
 		visible_message(flavor_text)
-		set_light(CANDLE_LUM)
+		set_glow(src, GLOW(CANDLE_LUM, null, null))
 
 /obj/item/flame/candle/flame_step(datum/act/timer/A)
 	if(wax > 0)
@@ -83,7 +82,7 @@ CAPABILITIES(/obj/item/flame/candle)
 /obj/item/flame/candle/proc/snuffed(datum/act/op/A)
 	if(lit)
 		set_lit(FALSE)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	return OP_OK
 
 /obj/item/flame/candle/small
@@ -121,7 +120,7 @@ CAPABILITIES(/obj/item/flame/candle)
 /// The candelabra's cups keep it: out of wax it goes out and shows melted, it is not replaced by a spent candle.
 /obj/item/flame/candle/candelabra/burn_out()
 	set_lit(FALSE)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 /obj/item/flame/candle/candelabra/proc/appearance_candelabra_suffix()
 	if(wax <= 0)

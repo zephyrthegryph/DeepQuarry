@@ -71,10 +71,10 @@ CAPABILITIES(/obj/item/multitool)
 			rel_clear(src, nameof(buffer))
 			rel_clear(src, nameof(connecting))
 			rel_clear(src, nameof(connectable))
-			ref_wiring = null
-			accepting_refs = 0
+			set_ref_wiring(null)
+			set_accepting_refs(0)
 			if(toolmode == MULTITOOL_MODE_INTCIRCUITS)
-				accepting_refs = 1
+				set_accepting_refs(1)
 		if("Switch Mode")
 			mode_switch(user)
 		else
@@ -92,7 +92,7 @@ CAPABILITIES(/obj/item/multitool)
 	toolmode = modes[mode_index]
 	to_chat(user,span_notice("\The [src] is now set to [toolmode]."))
 
-	accepting_refs = (toolmode == MULTITOOL_MODE_INTCIRCUITS)
+	set_accepting_refs((toolmode == MULTITOOL_MODE_INTCIRCUITS))
 
 	return
 

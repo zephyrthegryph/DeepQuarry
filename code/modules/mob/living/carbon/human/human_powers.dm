@@ -28,7 +28,6 @@
 	var/selected_string = A.answer.value
 	if(selected_string && looks.hair_style != selected_string)
 		looks.set_hair_style(selected_string)
-		regenerate_icons()
 		act_message(src, null, others = span_notice("%U% pauses a moment to style their hair."))
 	else
 		to_chat(src, span_notice("You're already using that style."))
@@ -349,7 +348,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 		var/obj/item/organ/external/E = src.organs_by_name[limb_type]
 
 		if(E && E.disfigured)
-			E.disfigured = 0
+			E.set_disfigured(FALSE)
 		if(E && (E.is_stump() || (E.status & (ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))))
 			E.removed()
 			spent(E)
@@ -374,7 +373,6 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 	body?.invalidate(BODY_DIRTY_ORGANS) // Update everything
 
-	update_icons_body()
 	active_regen = FALSE
 
 /mob/living/carbon/human/proc/regenerate_human_failed(datum/act/op/A)
@@ -446,7 +444,6 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 		E.eye_icon = states[choice]
 		E.eye_icon_override = TRUE
 		to_chat(src,span_warning("You set your monitor to display [choice]!"))
-		update_icons_body()
 
 
 /mob/living/carbon/human/proc/reagent_purge()
@@ -480,7 +477,6 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 		return
 
 	H.eyes_over_markings = !H.eyes_over_markings
-	update_icons_body()
 
 	if(H.robotic)
 		var/datum/robolimb/robohead = GLOB.all_robolimbs[H.model]

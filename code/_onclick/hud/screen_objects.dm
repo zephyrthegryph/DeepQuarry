@@ -122,7 +122,7 @@ CAPABILITIES(/atom/movable/screen/storage)
 	if(master)
 		var/obj/item/I = user.get_active_hand()
 		if(I)
-			user.ClickOn(master)
+			input_submit(new /datum/input_event/click(user, master))
 	return 1
 
 /atom/movable/screen/zone_sel
@@ -244,7 +244,6 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	if(choice != selecting)
 		set_selecting(choice)
 
-TRACKED(/atom/movable/screen/zone_sel, selecting)
 
 /// The selected zone is drawn over the doll.
 /atom/movable/screen/zone_sel/draw(datum/look/look)
@@ -732,9 +731,7 @@ CAPABILITIES(/atom/movable/screen/inventory)
 		if("hand")
 			user.swap_hand()
 		else
-			if(user.attack_ui(slot_id))
-				user.update_inv_l_hand(0)
-				user.update_inv_r_hand(0)
+			user.attack_ui(slot_id)
 	return 1
 
 // Hand slots are special to handle the handcuffs overlay

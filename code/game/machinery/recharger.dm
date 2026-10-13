@@ -81,7 +81,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	var/charge_phase = RECHARGER_IDLE
 	circuit = /obj/item/circuitboard/recharger
 
-TRACKED(/obj/machinery/recharger, charge_phase)
 
 CAPABILITIES(/obj/machinery/recharger)
 	configure(uses_power(idle = 4, active = 40000))
@@ -139,7 +138,7 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 	var/obj/item/held = A.held
 	if(!held)
 		return MSG(req_failed)
-	for(var/type in (small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices)) // ALLOW(reads): the lists are constants and an item's type is fixed for its life
+	for(var/type in (small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices))
 		if(istype(held, type))
 			return null
 	return MSG(req_failed)
@@ -218,7 +217,6 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 		return OP_REFUSED
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You remove [device] from %T%."), MSG_OTHERS("%U% removes [device] from %T%."))
-	device.update_icon()
 	varslot_take(src, nameof(charging), user, op_carrier(A)) // a cyborg's gripper carries it
 	return OP_OK
 

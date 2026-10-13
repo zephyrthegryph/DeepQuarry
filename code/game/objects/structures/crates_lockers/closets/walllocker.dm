@@ -41,14 +41,14 @@ CAPABILITIES(/obj/structure/closet/walllocker/emerglocker)
 	return !istype(A.actor, /mob/living/silicon/ai)
 
 /obj/structure/closet/walllocker/emerglocker/proc/has_supplies(datum/act/A)
-	return (amount > 0) ? null : /datum/msg/emerglocker/empty // ALLOW(reads): how many sets are left is read when the entry is offered and when it is picked
+	return (amount > 0) ? null : /datum/msg/emerglocker/empty
 
 
 /// A set of supplies comes out onto the tile.
 /obj/structure/closet/walllocker/emerglocker/proc/supplies_taken(datum/act/op/A)
 	for(var/path in spawnitems)
 		new path(src.loc)
-	amount--
+	set_amount(amount - 1)
 	return OP_OK
 
 /obj/structure/closet/walllocker/emerglocker/north

@@ -331,7 +331,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The door can move now: it is not mid-swing, and the closet lets it (an open one can be shut, a shut one opened).
 /obj/structure/closet/proc/door_ready(datum/act/A)
-	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge // ALLOW(reads): what a door lets through is asked of the closet's own procs at the click; the menu entry is advisory
+	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge
 
 
 /// An empty hand works the door (a held thing has its own ops), and so does the menu's pick whatever is held.
@@ -542,7 +542,7 @@ CAPABILITIES(/obj/structure/closet)
 	vis_contents |= door_obj
 	door_obj.icon = decor.icon
 	door_obj.icon_state = "door_front"
-	is_animating_door = TRUE
+	set_is_animating_door(TRUE)
 	var/num_steps = decor.door_anim_time / world.tick_lag
 	for(var/I in 0 to num_steps)
 		var/angle = decor.door_anim_angle * (closing ? 1 - (I/num_steps) : (I/num_steps))
@@ -561,7 +561,7 @@ CAPABILITIES(/obj/structure/closet)
 	after(src, decor.door_anim_time, PROC_REF(end_door_animation), key = "door_animation", with = list(closing))
 
 /obj/structure/closet/proc/end_door_animation(closing = FALSE)
-	is_animating_door = FALSE
+	set_is_animating_door(FALSE)
 	if(closing)
 		// There's not really harm in leaving it on, but, one less atom to send to clients to render when lockers are closed
 		vis_contents -= door_obj

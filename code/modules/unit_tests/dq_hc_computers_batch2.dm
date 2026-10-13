@@ -3,14 +3,14 @@
 /// A card that can change IDs (the operator's).
 /datum/unit_test/dq_hc_computers/proc/hc_operator_card()
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
-	I.access = list(ACCESS_CHANGE_IDS)
+	I.set_access(list(ACCESS_CHANGE_IDS))
 	return I
 
 /// A plain card with a name and one access.
 /datum/unit_test/dq_hc_computers/proc/hc_subject_card()
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
-	I.registered_name = "Test Subject"
-	I.access = list(ACCESS_ENGINE)
+	I.set_registered_name("Test Subject")
+	I.set_access(list(ACCESS_ENGINE))
 	return I
 
 /// Puts the card in the person's active hand.
@@ -57,7 +57,7 @@
 	var/obj/machinery/computer/card/C = R[1]
 	var/mob/living/carbon/human/H = R[2]
 	var/obj/item/card/id/subject = R[4]
-	subject.access = list()
+	subject.set_access(list())
 	press(H, C, "access", list("access_target" = ACCESS_ENGINE, "allowed" = 0))
 	TEST_ASSERT(ACCESS_ENGINE in subject.access, "an access the card lacks is granted")
 	press(H, C, "access", list("access_target" = ACCESS_ENGINE, "allowed" = 1))
@@ -149,8 +149,8 @@
 	var/obj/machinery/computer/guestpass/C = hc_console(/obj/machinery/computer/guestpass)
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/giver = hc_subject_card()
-	giver.registered_name = "Giver"
-	giver.access = list(ACCESS_ENGINE, ACCESS_CHANGE_IDS)
+	giver.set_registered_name("Giver")
+	giver.set_access(list(ACCESS_ENGINE, ACCESS_CHANGE_IDS))
 	var/passes = 0
 	for(var/obj/item/card/id/guest/G in C.loc)
 		passes++
@@ -233,7 +233,7 @@
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
 	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
-	G.expired = 0
+	G.set_expired(0)
 	G.icon_state = "guest"
 	H.set_combat_mode(TRUE)
 	hc_hold(H, G)

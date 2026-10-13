@@ -457,7 +457,7 @@ struct ReactiveFacts {
 
 fn reactive_facts(tree: &Tree, f: &SourceFile, procs: &[Proc]) -> ReactiveFacts {
     let needs_re = pat!(r"\bneeds\s*=\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\))");
-    let tracked_re = pat_match!(r"\s*(?:TRACKED(?:_BRIDGED)?\(\s*/[\w/]+\s*,\s*(\w+)\s*[,)]|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))");
+    let tracked_re = pat_match!(r"\s*(?:TRACKED\(\s*/[\w/]+\s*,\s*(\w+)\s*[,)]|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))");
     let watch_re = pat!(r"^\s*REL\w*\(\s*/[\w/]+\s*,\s*(\w+)\b[^\n]*\bWATCH\w*|\brel\(\s*nameof\(\s*(?:[\w.]+\.|/[\w/]+::)?(\w+)\s*\)[^\n]*\bwatch\s*=");
     let mut needs: HashSet<String> = HashSet::new();
     let mut tracked: HashSet<String> = HashSet::new();
@@ -520,6 +520,15 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
         ctx.watched.extend(fs.watched.iter().cloned());
         for (n, p) in &fs.timed {
             ctx.timed.entry(n.clone()).or_default().insert(p.clone());
+        }
+    }
+    // The vars read-driven tracking gives a generated setter (gens/auto_tracked.rs) are tracked as the TRACKED() lines they replace were.
+    if let Some(auto) = tree.get(crate::gens::auto_tracked::AUTO_REL) {
+        let line = crate::pat!(r"^TRACKED\(/[A-Za-z0-9_/]+, (\w+)\)");
+        for l in auto.raw().lines() {
+            if let Some(m) = line.captures(l) {
+                ctx.tracked.insert(m.s(1).to_string());
+            }
         }
     }
     // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/game/atom/_atom.dm), so a draw

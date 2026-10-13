@@ -1,6 +1,6 @@
 @obj.item.clothing.suit.storage.vest human|none
 @obj.item.clothing.suit.storage.vest robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.suit.storage.vest ghost|none
 @obj.item.clothing.suit.storage.vest human|/obj/item/tool/screwdriver
 @obj.item.clothing.suit.storage.vest human|/obj/item/tool/crowbar

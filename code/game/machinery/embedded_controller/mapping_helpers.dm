@@ -73,8 +73,8 @@ CAPABILITIES(/obj/effect/map_helper/airlock)
 		keyed_set_id(my_airlock, nameof(my_airlock.id_tag), controller.id_tag + tag_addon) // airlocks are keyed targets by id_tag
 		my_airlock.frequency = controller.frequency
 		my_airlock.set_frequency(controller.frequency)
-		my_airlock.req_access = controller.req_access
-		my_airlock.req_one_access = controller.req_one_access
+		my_airlock.set_req_access(controller.req_access)
+		my_airlock.set_req_one_access(controller.req_one_access)
 	else if(istype(device, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/my_pump = device
 		my_pump.set_frequency(controller.frequency) // the setters re-tune it and re-key it in its area
@@ -85,8 +85,8 @@ CAPABILITIES(/obj/effect/map_helper/airlock)
 		my_sensor.master_tag = controller.id_tag
 		my_sensor.frequency = controller.frequency
 		my_sensor.set_frequency(controller.frequency)
-		my_sensor.req_access = controller.req_access
-		my_sensor.req_one_access = controller.req_one_access
+		my_sensor.set_req_access(controller.req_access)
+		my_sensor.set_req_one_access(controller.req_one_access)
 		if(command)
 			my_sensor.command = command
 	else if(istype(device, /obj/machinery/access_button))
@@ -94,8 +94,8 @@ CAPABILITIES(/obj/effect/map_helper/airlock)
 		my_button.master_tag = controller.id_tag
 		my_button.frequency = controller.frequency
 		my_button.set_frequency(controller.frequency)
-		my_button.req_access = controller.req_access
-		my_button.req_one_access = controller.req_one_access
+		my_button.set_req_access(controller.req_access)
+		my_button.set_req_one_access(controller.req_one_access)
 		if(command)
 			my_button.command = command
 

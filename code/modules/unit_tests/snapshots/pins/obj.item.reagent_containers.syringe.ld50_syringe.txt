@@ -2,7 +2,7 @@
 -menu: Rename food
 @obj.item.reagent_containers robot|none
 -menu: Rename food
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers ghost|none
 -menu: Rename food (refused: You can't cook!)
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver
@@ -38,8 +38,8 @@
 @obj.item.reagent_containers human|/obj/item/stack/cable_coil
 -menu: Rename food
 -click: nothing
-+2 menu: Pick up
-+4 click: Click: Pick up
++1 menu: Pick up
++3 click: Click: Pick up
 @obj.item.reagent_containers human|/obj/item/stack/material/steel
 -menu: Rename food
 -click: nothing
@@ -49,7 +49,7 @@
 -menu: Rename food
 -click: nothing
 +1 menu: Pick up
-+4 click: Click: Pick up
++3 click: Click: Pick up
 @obj.item.reagent_containers human|/obj/item/kit
 -menu: Rename food
 +2 menu: Pick up

@@ -1,11 +1,8 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
--click: nothing
-+2 menu: Use screwdriver
-+3 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 @obj human|/obj/item/tool/wrench
 @obj human|/obj/item/tool/wirecutters

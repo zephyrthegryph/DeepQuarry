@@ -1,5 +1,5 @@
 // Light as a look part (doc/rewrite/final_api.html section 13, "Light is a look part"): look.glow(range, power, color), GLOW(), GLOW_OFF and the
-// look_glow() entry. The engine applies the light when the look is applied; a draw never calls set_light().
+// look_glow() entry. The engine applies the light when the look is applied; a draw never calls set_glow().
 
 /// A probe that declares its light: steady, or from a proc over a tracked colour.
 /obj/structure/dq_glow_probe
@@ -69,28 +69,28 @@ TRACKED(/obj/structure/dq_glow_drawn, strength)
 	var/obj/structure/dq_glow_drawn/P = allocate(/obj/structure/dq_glow_drawn, test_floor())
 	P.set_strength(3)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_range, 3, "the draw's light is applied")
-	TEST_ASSERT_EQUAL(P.light_color, "#00ff00", "in its colour")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 3, "the draw's light is applied")
+	TEST_ASSERT_EQUAL(glow_of(P).color, "#00ff00", "in its colour")
 	TEST_ASSERT(P.light_on, "and it is on")
 	P.set_strength(-1)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_range, 0, "GLOW_OFF turns it off")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 0, "GLOW_OFF turns it off")
 	P.set_strength(2)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_range, 2, "a tracked read relights it")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 2, "a tracked read relights it")
 	P.set_strength(0)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_range, 0, "a look that names no light turns the earlier light off")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 0, "a look that names no light turns the earlier light off")
 
 /// A look_glow() entry lights the holder from its proc, follows the proc's tracked reads and its condition.
 /datum/unit_test/dq_look_glow/entry_applies/Run()
 	var/obj/structure/dq_glow_probe/P = allocate(/obj/structure/dq_glow_probe, test_floor())
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_range, 3, "the declared light is applied at its first draw")
-	TEST_ASSERT_EQUAL(P.light_color, "#ff0000", "in the colour the proc read")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 3, "the declared light is applied at its first draw")
+	TEST_ASSERT_EQUAL(glow_of(P).color, "#ff0000", "in the colour the proc read")
 	P.set_shade("#0000ff")
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_color, "#0000ff", "a tracked var the proc reads redraws the light")
+	TEST_ASSERT_EQUAL(glow_of(P).color, "#0000ff", "a tracked var the proc reads redraws the light")
 	P.set_lit(FALSE)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(P.light_range, 0, "the light goes out while its condition fails")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 0, "the light goes out while its condition fails")
