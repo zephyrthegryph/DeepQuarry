@@ -615,6 +615,9 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             .map_err(initializer_lowering_error)?;
     warnings
         .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    // Body-edit patches keep initializer and callable warnings (line-shifted),
+    // recompute local warnings and rebind unit warnings.
+    let initializer_warning_count = warnings.len();
     warnings.extend(crate::local_warnings::capture(frontend).map_err(initializer_lowering_error)?);
     drop(detail_phase);
     let detail_phase = dm_profile::detail_timer("init.release_classified");
@@ -700,13 +703,18 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         census.prepared(&contributions);
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    let mut unit_warnings = Vec::with_capacity(contributions.len());
     for contribution in &contributions {
-        warnings.extend(
-            contribution
-                .current_warnings(frontend.snapshot.tree.symbols())
-                .map_err(ColdError::InitializerInvariant)?,
-        );
+        let current = contribution
+            .current_warnings(frontend.snapshot.tree.symbols())
+            .map_err(ColdError::InitializerInvariant)?;
+        unit_warnings.push((contribution.identity(), current.clone()));
+        warnings.extend(current);
     }
+    let patch_warnings = crate::body_patch::PatchWarnings::new(
+        warnings[..initializer_warning_count].to_vec(),
+        unit_warnings,
+    );
     let body_types: Vec<_> = contributions
         .iter()
         .flat_map(|value| value.required_types().iter().copied())
@@ -845,6 +853,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         startup: Some(startup.facts()),
         query_abi: None,
         patch_records,
+        patch_warnings: Some(patch_warnings),
         timings: ColdTimings {
             abi_preparation: Duration::ZERO,
             lowering,

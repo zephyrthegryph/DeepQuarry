@@ -749,3 +749,70 @@ pub(crate) use prepared_contribution::PreparedPatchRecord;
 #[cfg(test)]
 #[path = "symbolic_tests.rs"]
 mod tests;
+
+/// Position-bearing code kept for body-edit patches (see `crate::body_patch`):
+/// an initializer procedure whose debug lines must follow a line shift.
+#[derive(Clone)]
+pub(crate) struct PositionedCode {
+    pub key: Key,
+    frozen: Arc<FrozenProc>,
+    origins: crate::debug_sources::FrozenDebugOrigins,
+    image_owner: Arc<latest_image::LatestImage>,
+}
+impl PositionedCode {
+    /// Relink with every debug line mapped through `shift(path, line)`.
+    /// `None` when no line moves (the retained code list is still exact);
+    /// otherwise the new words and this code with its shifted origins, which
+    /// the next patch must start from.
+    pub(crate) fn relink_shifted(
+        &self,
+        tables: &LinkTables,
+        mobs: &dm_link::MobBindings,
+        shift: &dyn Fn(&str, u32) -> u32,
+    ) -> Result<Option<(Arc<Vec<u32>>, Self)>, IntegrationError> {
+        let mut origins = self.origins.to_owned_origins();
+        let mut moved = false;
+        for origin in &mut origins.entries {
+            let line = shift(&origin.semantic_path, origin.line);
+            moved |= line != origin.line;
+            origin.line = line;
+        }
+        if !moved {
+            return Ok(None);
+        }
+        let origins: crate::debug_sources::FrozenDebugOrigins = origins.into();
+        let image = tables
+            .link_from(self.frozen.code(), &origins)
+            .map_err(IntegrationError::Link)?;
+        let words = latest_image::LatestImage::wire_image(
+            &self.image_owner,
+            image,
+            self.frozen.code(),
+            tables,
+            mobs,
+        )?
+        .words;
+        Ok(Some((
+            words,
+            Self {
+                key: self.key,
+                frozen: Arc::clone(&self.frozen),
+                origins,
+                image_owner: Arc::clone(&self.image_owner),
+            },
+        )))
+    }
+}
+impl FrozenBatch {
+    pub(crate) fn initializer_patch_code(&self) -> Vec<PositionedCode> {
+        self.initializers
+            .iter()
+            .map(|unit| PositionedCode {
+                key: Key::Initializer(unit.identity),
+                frozen: Arc::clone(&unit.frozen),
+                origins: unit.debug_origins.clone(),
+                image_owner: Arc::clone(&unit.image_owner),
+            })
+            .collect()
+    }
+}

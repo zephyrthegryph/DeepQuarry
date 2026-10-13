@@ -551,7 +551,11 @@ fn compose_records_access(
         dm_link::MobBindings::new()
     };
     if let Some(generation) = generation {
-        generation.capture_patch_link(&batch.tables, &mob_bindings);
+        generation.capture_patch_link(
+            &batch.tables,
+            &mob_bindings,
+            batch.initializer_patch_code(),
+        );
     }
     let linked_records_profile = dm_profile::stage("composition.linked_records");
     if let Some(index) = builtin_global_vars {
@@ -923,6 +927,7 @@ mod procedure_plan;
 
 mod generation;
 pub use generation::RetainedGeneration;
+pub(crate) use generation::PatchImage;
 
 mod procedure_metadata_recipe;
 pub(crate) use procedure_metadata_recipe::ProcedureMetadataRecipe;

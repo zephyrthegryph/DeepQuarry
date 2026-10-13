@@ -817,8 +817,9 @@ fn run_build_attempt(
                 match attempt {
                     Ok(patched) => {
                         dmbc::daemon_eprintln!(
-                            "native body patch: applied changed_bodies={} patched_rows={} {:.3}s",
+                            "native body patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
                             patched.changed_bodies,
+                            patched.shifted_initializers,
                             patched.patched_rows,
                             patch_started.elapsed().as_secs_f64()
                         );
@@ -916,7 +917,7 @@ fn run_build_attempt(
                     .map_err(|error|dmbc::cold::ColdError::InitializerInvariant(format!("query host capture: {error}")))?;
             } else { drop(resolver); }
 
-            let patch_records = patch_shape.as_ref().map(|_| prepared.take_patch_records());
+            let patch_records = patch_shape.as_ref().and_then(|_| prepared.take_patch_records());
             let composition = prepared.seal(
                 &frontend,
                 Arc::clone(bytes),
@@ -1067,13 +1068,13 @@ fn run_build_attempt(
         };
         dm_profile::request_mark("publication.pair_stored");
         // A full build leaves the patch base for the next body edit.
-        if let (Some(generation), Some(shape), Some(records)) = (&generation, &patch_shape, patch_records) {
+        if let (Some(generation), Some(shape), Some((records, warnings))) = (&generation, &patch_shape, patch_records) {
             match dmbc::body_patch::BodyPatchBase::of_full_build(
                 Arc::clone(shape),
                 records,
                 publication_inputs.clone(),
                 publication.archive.identity(),
-                output.warnings.clone(),
+                warnings,
                 output.dmb.content_hash(),
             ) {
                 Some(base) => {

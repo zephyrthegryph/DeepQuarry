@@ -29,6 +29,8 @@ impl CertifiedGenerationInputs {
 pub(crate) struct PatchLink {
     pub tables: dm_link::LinkTables,
     pub mobs: dm_link::MobBindings,
+    /// Initializer procedures, relinked when a line shift moves their origins.
+    pub initializers: Vec<crate::symbolic::PositionedCode>,
 }
 /// The published image of a patch base, detached from its model: list-row
 /// ranges for splicing and each procedure's code list.
@@ -249,12 +251,14 @@ impl RetainedGeneration {
         &self,
         tables: &dm_link::LinkTables,
         mobs: &dm_link::MobBindings,
+        initializers: Vec<crate::symbolic::PositionedCode>,
     ) {
         self.attempt.with_pending(|_| {
             *self.patch.lock().unwrap_or_else(|e| e.into_inner()) = PatchSlot {
                 link: Some(Arc::new(PatchLink {
                     tables: tables.clone(),
                     mobs: mobs.clone(),
+                    initializers,
                 })),
                 base: None,
                 image: None,
@@ -316,6 +320,7 @@ impl RetainedGeneration {
         image: &PatchImage,
         rows: &[(usize, Arc<Vec<u32>>)],
         base: crate::body_patch::BodyPatchBase,
+        initializers: Option<Vec<crate::symbolic::PositionedCode>>,
     ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
         self.attempt
             .with_pending(|_| {
@@ -331,6 +336,14 @@ impl RetainedGeneration {
                 validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
                 let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
                 slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
+                if let (Some(initializers), Some(link)) = (initializers, slot.link.as_ref()) {
+                    // Shifted initializer origins are the next patch's baseline.
+                    slot.link = Some(Arc::new(PatchLink {
+                        tables: link.tables.clone(),
+                        mobs: link.mobs.clone(),
+                        initializers,
+                    }));
+                }
                 slot.image = Some(Arc::new(PatchImage {
                     rows: spliced,
                     proc_code: Arc::clone(&image.proc_code),

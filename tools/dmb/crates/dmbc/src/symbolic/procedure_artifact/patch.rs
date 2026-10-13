@@ -82,12 +82,6 @@ impl PatchRecord {
                 h.update(format!("{:?}", self.abi).as_bytes());
             }),
             part("features", |h| h.update(format!("{:?}", artifact.features).as_bytes())),
-            part("warnings", |h| {
-                h.update(format!("{:?}", artifact.warnings).as_bytes());
-                for helper in &artifact.helpers {
-                    h.update(format!("{:?}", helper.warnings).as_bytes());
-                }
-            }),
             part("inventory", |h| inventory(h, &artifact.inventory)),
             part("value_strings", |h| {
                 for id in super::super::string_order::value_string_registrations(
@@ -109,27 +103,49 @@ impl PatchRecord {
                     h.update(format!("{:?}", helper.instances).as_bytes());
                 }
             }),
-            // Helper code is compared exactly; a changed helper is not patched.
+            // Helper code lists are patched like the unit's own; their link
+            // inputs (frame, features, inventory, prefix) must be unchanged.
             part("helpers", |h| {
                 for helper in &artifact.helpers {
                     h.update(&helper.argument.to_le_bytes());
                     h.update(format!("{:?}", helper.local_names).as_bytes());
-                    h.update(&helper.frozen.code().canonical_bytes());
-                    h.update(format!("{:?}", helper.frozen.labels()).as_bytes());
+                    h.update(&helper.frozen.referenced_argument_prefix().to_le_bytes());
                     h.update(format!("{:?}", helper.features).as_bytes());
                     inventory(h, &helper.inventory);
-                }
-                for origins in &self.helpers {
-                    h.update(format!("{:?}", origins.to_owned_origins()).as_bytes());
                 }
             }),
         ]
     }
-    /// Whether any warning is attached; warning output is rendered from the
-    /// full build and is not rebound by a patch.
-    pub(crate) fn has_warnings(&self) -> bool {
-        !self.artifact.warnings.is_empty()
-            || self.artifact.helpers.iter().any(|helper| !helper.warnings.is_empty())
+    /// Linked words of each argument-source helper, keyed by its table key.
+    pub(crate) fn helper_words(
+        &self,
+        tables: &LinkTables,
+        mobs: &dm_link::MobBindings,
+    ) -> Result<Vec<(dm_link::Key, Arc<Vec<u32>>)>, IntegrationError> {
+        if self.artifact.helpers.len() != self.helpers.len() {
+            return Err(IntegrationError::InvalidInitializer(
+                "helper origins incomplete".into(),
+            ));
+        }
+        self.artifact
+            .helpers
+            .iter()
+            .zip(&self.helpers)
+            .map(|(helper, origins)| {
+                let image = tables
+                    .link_from(helper.frozen.code(), origins)
+                    .map_err(IntegrationError::Link)?;
+                let words = latest_image::LatestImage::wire_image(
+                    &helper.image_owner,
+                    image,
+                    helper.frozen.code(),
+                    tables,
+                    mobs,
+                )?
+                .words;
+                Ok((helper_key(self.artifact.identity, helper.argument), words))
+            })
+            .collect()
     }
     /// Current linked words of this procedure against retained tables, wired
     /// exactly as composition wires a unit (`BatchAccess::unit_words`).
