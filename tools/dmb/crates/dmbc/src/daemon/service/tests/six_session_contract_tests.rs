@@ -314,6 +314,49 @@ fn subtype_leaf_variable_and_define_edits_match_fresh_bytes_and_revert() {
     }
 }
 
+#[test]
+fn leading_line_shift_edits_match_fresh_bytes_and_revert() {
+    // Inserting a blank or comment line near the top shifts every later line
+    // without changing any declaration or macro expansion. Retained output
+    // must still equal a fresh compile (debug line info included), and the
+    // revert must return to the initial bytes exactly.
+    let tree = format!("#define BONUS 3
+{SOURCE}/proc/uses_bonus()
+    return BONUS * 2
+");
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    for index in 0..6 {
+        roots.edit(index, &tree);
+    }
+    let initial = compare_revision(&shared, &roots);
+    let edits = [
+        ("blank line", format!("
+{tree}")),
+        ("comment line", format!("// shifted
+{tree}")),
+        ("line after define", tree.replacen("#define BONUS 3
+", "#define BONUS 3
+
+", 1)),
+    ];
+    for (label, source) in &edits {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        compare_revision(&shared, &roots);
+        for index in 0..6 {
+            roots.edit(index, &tree);
+        }
+        assert_eq!(
+            compare_revision(&shared, &roots),
+            initial,
+            "reverting the {label} edit must reproduce the initial bytes"
+        );
+    }
+}
+
 // This captures the production daemon diagnostic byte stream, without replacing
 // the compiler or introducing a diagnostic/cache implementation in the fixture.
 fn run_captured(
