@@ -1286,5 +1286,7 @@
 	SSsupply.buy()
 	TEST_ASSERT(order.status == SUP_ORDER_SHIPPED, "buy() shipped the order an event queued on the shopping list")
 	TEST_ASSERT(!(order in SSsupply.shoppinglist), "a shipped order leaves the shopping list")
+	for(var/turf/T in get_area(run_loc_floor_bottom_left))
+		own_turf_contents(T) // the delivered crate lands on a clear turf of the area: the test owns it
 	SSsupply.shuttle = real_shuttle
 	qdel(fake_shuttle)
