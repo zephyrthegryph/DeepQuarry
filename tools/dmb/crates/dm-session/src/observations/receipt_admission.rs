@@ -72,6 +72,51 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         *cell.get_or_init(|| self.host.version_for_admission(domain))
     }
 
+    /// [`Self::current_version`] for a whole roster, split across scoped threads.
+    /// Every answer still goes through the same per-domain once-cell; only the
+    /// order of host callbacks changes, and results keep the input order.
+    pub fn current_versions(&self, domains: Vec<D>) -> Vec<(D, Option<u128>)>
+    where
+        D: Clone + Send + Sync,
+        Self: Sync,
+    {
+        const MIN_CHUNK: usize = 4096;
+        let threads = std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .min(8)
+            .min(domains.len().div_ceil(MIN_CHUNK).max(1));
+        if threads <= 1 {
+            return domains
+                .into_iter()
+                .map(|domain| {
+                    let version = self.current_version(&domain);
+                    (domain, version)
+                })
+                .collect();
+        }
+        let chunk = domains.len().div_ceil(threads);
+        let versions: Vec<Vec<Option<u128>>> = std::thread::scope(|scope| {
+            let handles: Vec<_> = domains
+                .chunks(chunk)
+                .map(|part| {
+                    scope.spawn(move || {
+                        part.iter()
+                            .map(|domain| self.current_version(domain))
+                            .collect::<Vec<_>>()
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|handle| handle.join().expect("domain version worker"))
+                .collect()
+        });
+        domains
+            .into_iter()
+            .zip(versions.into_iter().flatten())
+            .collect()
+    }
+
     /// The ordinary artifact admission rule with request-shared certificate
     /// checks. Every uncertified answer is replayed in canonical order, including
     /// observable hosts. Partial or certificate-only success never seeds the

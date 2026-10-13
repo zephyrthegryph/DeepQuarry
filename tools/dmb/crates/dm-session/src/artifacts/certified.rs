@@ -88,15 +88,13 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     pub fn unchanged_candidates<'request, 'host, H: ObservationHost<Q, A, D>>(
         &self,
         request: &'request ReceiptAdmission<'host, Q, A, D, H>,
-    ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
+    ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>>
+    where
+        D: Send + Sync,
+        ReceiptAdmission<'host, Q, A, D, H>: Sync,
+    {
         self.candidates_with_local_domain(request, None, |domains| {
-            domains
-                .into_iter()
-                .map(|domain| {
-                    let version = request.current_version(&domain);
-                    (domain, version)
-                })
-                .collect()
+            request.current_versions(domains)
         })
     }
     /// Route candidates whose only unversioned domain is independently licensed
@@ -106,15 +104,13 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         request: &'request ReceiptAdmission<'host, Q, A, D, H>,
         local: D,
-    ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
+    ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>>
+    where
+        D: Send + Sync,
+        ReceiptAdmission<'host, Q, A, D, H>: Sync,
+    {
         self.candidates_with_local_domain(request, Some(Arc::new(local)), |domains| {
-            domains
-                .into_iter()
-                .map(|domain| {
-                    let version = request.current_version(&domain);
-                    (domain, version)
-                })
-                .collect()
+            request.current_versions(domains)
         })
     }
     fn candidates_with_local_domain<'request, 'host, H: ObservationHost<Q, A, D>>(
@@ -292,7 +288,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     pub fn unchanged_candidate_roster<'request, 'host, H: ObservationHost<Q, A, D>>(
         &self,
         request: &'request ReceiptAdmission<'host, Q, A, D, H>,
-    ) -> UnchangedCandidates<'request, 'host, T, Q, A, D, H> {
+    ) -> UnchangedCandidates<'request, 'host, T, Q, A, D, H> where
+        D: Send + Sync,
+        ReceiptAdmission<'host, Q, A, D, H>: Sync,
+    {
         let mut candidates = self.unchanged_candidates(request);
         candidates.sort_by(|a, b| a.key.cmp(&b.key));
         UnchangedCandidates { candidates }
@@ -334,7 +333,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         request: &'request ReceiptAdmission<'host, Q, A, D, H>,
         local: D,
-    ) -> UnchangedCandidates<'request, 'host, T, Q, A, D, H> {
+    ) -> UnchangedCandidates<'request, 'host, T, Q, A, D, H> where
+        D: Send + Sync,
+        ReceiptAdmission<'host, Q, A, D, H>: Sync,
+    {
         let mut candidates = self.unchanged_candidates_with_local_inputs(request, local);
         candidates.sort_by(|a, b| a.key.cmp(&b.key));
         UnchangedCandidates { candidates }

@@ -289,9 +289,11 @@ impl RetainedMetadata {
                 order.iter().copied(),
             );
         }
+        let structural_timer = dm_profile::detail_timer("tree.metadata.structural_apply");
         let structural_dirty = structural.and_then(|(prior, declarations)| {
             prior.apply(tree, declarations, members, current_projection, order)
         });
+        drop(structural_timer);
         if let Some(dirty) = &structural_dirty {
             Self::count(&self.structurally_dirty_members, dirty.len());
             Self::count(
@@ -299,6 +301,7 @@ impl RetainedMetadata {
                 order.len().saturating_sub(dirty.len()),
             );
         }
+        let keys_timer = dm_profile::detail_timer("tree.metadata.keys_and_retain");
         let keys: Vec<_> = normalized.keys().map(|&owner| key(owner)).collect();
         let mut keys = keys;
         keys.extend(tree.types.iter().map(|node| hierarchy::key(node.path)));
@@ -307,6 +310,8 @@ impl RetainedMetadata {
         keys.extend(self.demanded_keys(tree));
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
+        drop(keys_timer);
+        let _owner_loop_timer = dm_profile::detail_timer("tree.metadata.owner_loop");
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {
             tree.types[index].parent.map(|id| id.index())
         });
