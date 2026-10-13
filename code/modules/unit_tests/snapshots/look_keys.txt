@@ -9733,7 +9733,7 @@
 /obj/item/hailer	4c42b17a83ce89cb	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/haircomb	2df4eea3210609c7	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/halogen_counter	a23b3937fffaa662	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/hand	48f1e17a2e3e6cf1	cards,carried_afflictions,concealed,direction,economic_adoption,identity,jitter_x,jitter_y,mind_host,possessed_voice
+/obj/item/hand	60fbf68e65da7a16	cards,carried_afflictions,concealed,direction,economic_adoption,identity,jitter_x,jitter_y,mind_host,possessed_voice
 /obj/item/hand_labeler	b0c43621bc6efd24	carried_afflictions,economic_adoption,identity,label,mind_host,possessed_voice
 /obj/item/hand_tele	7f25e8ebda50eb93	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/handcuffs	4c1d5085e1e6cb7a	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
