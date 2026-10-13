@@ -716,7 +716,7 @@ CAPABILITIES(/obj/item/organ)
 /// cell calls this; heatsinks dissipate it.
 /obj/item/organ/proc/apply_robobody_heat()
 	if(owner && owner.is_alive())
-		owner.adjust_bodytemperature(round(owner.robobody_count * ROBOBODY_WASTE_HEAT_PER_PART, 0.1))
+		owner.adjust_bodytemperature(round(owner.robobody_count() * ROBOBODY_WASTE_HEAT_PER_PART, 0.1))
 
 #undef ROBOBODY_WASTE_HEAT_PER_PART
 

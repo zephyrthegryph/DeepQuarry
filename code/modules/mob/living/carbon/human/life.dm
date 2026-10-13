@@ -436,7 +436,6 @@
 			to_chat(src, span_warning("Your hair falls out."))
 			src.looks.set_hair_style("Bald")
 			src.looks.set_facial_style("Shaved")
-			src.update_hair()
 	if(prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //Rare chance of vomiting.
 		life_radiation_vomit()
 
@@ -1049,7 +1048,7 @@
 		return TRUE
 	if(isnull(src.species.body_temperature))
 		return FALSE
-	if(src.stat != DEAD && src.robobody_count)
+	if(src.stat != DEAD && src.robobody_count())
 		return TRUE
 	return !stat_value(src, STAT_ON_FIRE) && abs(src.thermal_setpoint() - src.body_temperature()) >= 0.5
 
@@ -1078,12 +1077,12 @@
 		return //this species doesn't have metabolic thermoregulation
 
 	// FBPs will overheat when alive, prosthetic limbs are fine.
-	if(src.stat != DEAD && src.robobody_count)
+	if(src.stat != DEAD && src.robobody_count())
 		if(!src.nif || !src.nif.flag_check(NIF_O_HEATSINKS,NIF_FLAGS_OTHER))
-			watts += round(src.robobody_count*1.15) * per_kelvin
+			watts += round(src.robobody_count()*1.15) * per_kelvin
 		var/obj/item/organ/internal/robotic/heatsink/HS = src.organ_in(O_HEATSINK)
 		if(!HS || HS.is_broken()) // However, NIF Heatsinks will not compensate for a core FBP component (your heatsink) being lost.
-			watts += round(src.robobody_count*0.5) * per_kelvin
+			watts += round(src.robobody_count()*0.5) * per_kelvin
 
 	var/body = src.body_temperature()
 	var/setpoint = src.thermal_setpoint()
@@ -1433,11 +1432,6 @@
 	var/obj/item/gloves = src.get_equipped_item(SLOT_ID_GLOVES)
 	if(gloves && src.germ_level > gloves.germ_level && prob(10))
 		gloves.germ_level += 1
-
-/mob/living/carbon/human/set_stat(new_stat)
-	. = ..()
-	if(. && stat)
-		update_skin(1)
 
 
 /// A24: nothing for others to see (no hud_updateflag) and nothing on our own screen that moves

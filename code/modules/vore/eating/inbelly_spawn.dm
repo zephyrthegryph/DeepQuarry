@@ -254,7 +254,6 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 
 	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 

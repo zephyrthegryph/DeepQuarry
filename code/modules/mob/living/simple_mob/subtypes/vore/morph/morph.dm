@@ -129,7 +129,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	set_density(target.density)
 
 	if(isobj(target))
-		size_multiplier = 1
+		set_size_multiplier(1)
 		icon_scale_x = target.icon_scale_x
 		icon_scale_y = target.icon_scale_y
 		update_transform()
@@ -182,7 +182,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 	maptext = null
 
-	size_multiplier = our_size_multiplier
+	set_size_multiplier(our_size_multiplier)
 	resize(size_multiplier, ignore_prefs = TRUE)
 
 	//Baseline stats

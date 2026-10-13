@@ -108,6 +108,7 @@
 
 /// The shared definition for `path`.
 /proc/body_effect_def(path)
+	READS_FROM()
 	RETURN_TYPE(/datum/body_effect)
 	var/static/list/defs = list()
 	var/datum/body_effect/def = defs[path]
@@ -296,8 +297,6 @@
 			record_genetic_effect(path, TRUE)
 		if(def.changes_icon_scale())
 			update_transform()
-		if(def.mob_overlay_state)
-			update_modifier_visuals()
 		if(def.client_color)
 			update_client_color()
 		if(LAZYLEN(def.filter_parameters))
@@ -398,8 +397,6 @@
 		return
 	if(def.changes_icon_scale())
 		update_transform()
-	if(def.mob_overlay_state)
-		update_modifier_visuals()
 	if(def.client_color)
 		update_client_color()
 	if(LAZYLEN(def.filter_parameters))

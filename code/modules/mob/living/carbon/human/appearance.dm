@@ -29,7 +29,6 @@
 	src.gender = gender
 	// reset_hair() // Remove - Don't just randomize hair on gender swaps for prometheans.
 	update_dna()
-	update_icons_body()
 	return 1
 
 /mob/living/carbon/human/proc/change_gender_identity(identifying_gender)
@@ -51,7 +50,6 @@
 
 	looks.set_hair_style(hair_style)
 
-	update_hair()
 	return 1
 
 /mob/living/carbon/human/proc/change_hair_gradient(hair_gradient)
@@ -66,7 +64,6 @@
 
 	looks.set_grad_style(hair_gradient)
 
-	update_hair()
 	return 1
 
 /mob/living/carbon/human/proc/change_facial_hair(facial_hair_style)
@@ -81,7 +78,6 @@
 
 	looks.set_facial_style(facial_hair_style)
 
-	update_hair()
 	return 1
 
 /mob/living/carbon/human/proc/reset_hair()
@@ -100,35 +96,29 @@
 		//this shouldn't happen
 		looks.set_facial_style("Shaved")
 
-	update_hair()
 
 /mob/living/carbon/human/proc/change_eye_color(colour)
 	if(!looks.set_eyes_color(colour))
 		return
 
-	update_eyes()
-	update_icons_body()
 	return 1
 
 /mob/living/carbon/human/proc/change_hair_color(colour)
 	if(!looks.set_hair_color(colour))
 		return
 
-	update_hair()
 	return 1
 
 /mob/living/carbon/human/proc/change_grad_color(colour)
 	if(!looks.set_grad_color(colour))
 		return
 
-	update_hair()
 	return 1
 
 /mob/living/carbon/human/proc/change_facial_hair_color(colour)
 	if(!looks.set_facial_color(colour))
 		return
 
-	update_hair()
 	return 1
 
 /mob/living/carbon/human/proc/change_skin_color(colour)
@@ -136,7 +126,6 @@
 		return
 
 	force_update_limbs()
-	update_icons_body()
 	return 1
 
 /mob/living/carbon/human/proc/change_skin_tone(tone)
@@ -146,7 +135,6 @@
 	looks.set_skin_tone(tone)
 
 	force_update_limbs()
-	update_icons_body()
 	return 1
 
 /mob/living/carbon/human/proc/update_dna()
@@ -240,4 +228,3 @@
 /mob/living/carbon/human/proc/force_update_limbs()
 	for(var/obj/item/organ/external/O in organs)
 		O.sync_colour_to_human(src)
-	update_icons_body(FALSE)

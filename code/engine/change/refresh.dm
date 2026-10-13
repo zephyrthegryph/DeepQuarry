@@ -788,6 +788,13 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	LAZYINITLIST(theirs.look_watchers)
 	theirs.look_watchers[key] = (theirs.look_watchers[key] || 0) + 1
 
+/// TRUE while `composer`'s draw composes `target`'s look (look.watch_look(target)). A draw that shows the atom wearing or holding it asks this, so two
+/// atoms that compose each other (a human holding the doll that shows them) do not chase each other's looks round and round.
+/proc/look_composes(atom/composer, atom/target)
+	READS_FROM()
+	var/list/watching = cap_engine_state_of(composer)?.look_watching_looks
+	return !!(watching && (OWN_KEY(target) in watching))
+
 /proc/look_unsubscribe(atom/target, atom/watcher)
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(target)
 	if(!theirs?.look_watchers)
@@ -815,7 +822,9 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 		if(!isatom(watcher) || QDELING(watcher))
 			LAZYADD(gone, key)
 			continue
-		state_changed(watcher)
+		// Its draw is queued and nothing else: a state_changed() would also reach whatever watches the watcher through a relation, which for two atoms that
+		// compose each other (a human holding the doll that shows them) marks the one whose look was just published, during its own refresh.
+		refresh_mark(watcher, DEP_DRAW)
 	if(gone)
 		engine.look_watchers -= gone
 		UNSETEMPTY(engine.look_watchers)

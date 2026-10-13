@@ -178,7 +178,7 @@ GLOBAL_LIST_EMPTY(mannequins)
 			continue
 
 		S = new T
-		S.race_key = rkey //Used in mob icon caching.
+		S.set_race_key(rkey) //Used in mob icon caching.
 		GLOB.all_species[S.name] = S
 
 	//Shakey shakey shake

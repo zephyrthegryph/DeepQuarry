@@ -1,0 +1,21 @@
+icon: 
+state: nothing
+dir: 2
+overlay: ::-32767 x3
+overlay: ::8:#000000
+overlay: icons/misc/win32.dmi::-100
+overlay: icons/mob/hud.dmi:hudblank:19
+overlay: icons/mob/hud.dmi:hudblank:20
+overlay: icons/mob/hud.dmi:hudblank:21
+overlay: icons/mob/hud.dmi:hudblank:22
+overlay: icons/mob/hud.dmi:hudblank:23
+overlay: icons/mob/hud.dmi:hudhealthy:15
+overlay: icons/mob/hud.dmi:hudhealthy:17
+overlay: icons/mob/hud.dmi:hudhealthy:24
+overlay: icons/mob/hud_jobs_vr.dmi:hudunknown:18
+overlay: icons/mob/hud_med.dmi:100:16
+overlay: icons/mob/hud_med_vr.dmi:100:26
+overlay: icons/mob/hud_vr.dmi:hudblank:27
+overlay: icons/mob/hud_vr.dmi:hudblank:28
+overlay: icons/mob/hud_vr.dmi:hudblank:29
+

@@ -25,10 +25,6 @@
 			remove_from_mob(M.get_equipped_item(SLOT_ID_HEAD))
 		if(istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
 			remove_from_mob(M.get_equipped_item(SLOT_ID_SHOES))
-		M.update_inv_wear_suit()
-		M.update_inv_head()
-		M.update_hair()
-		M.update_inv_shoes()
 		return 1
 
 	if(M.get_equipped_item(SLOT_ID_HEAD) || M.get_equipped_item(SLOT_ID_SUIT)) //Make sure our slots aren't full
@@ -46,10 +42,6 @@
 
 	changeling.chem_charges -= chem_cost
 	play_sfx(src, SFX_EFFECTS_BLOBATTACK)
-	M.update_inv_wear_suit()
-	M.update_inv_head()
-	M.update_hair()
-	M.update_inv_shoes()
 	return 1
 
 /mob/proc/changeling_generic_equip_all_slots(list/stuff_to_equip, cost)

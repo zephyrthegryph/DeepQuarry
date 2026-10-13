@@ -2,8 +2,6 @@
 	if(!returning)
 		if(updating_fullness)
 			return
-	var/previous_stomach_fullness = vore_fullness_ex["stomach"]
-	var/previous_taur_fullness = vore_fullness_ex["taur belly"]
 	var/list/new_fullness = ..(TRUE)
 	. = new_fullness
 	for(var/datum/category_group/underwear/undergarment_class in GLOB.global_underwear.categories)
@@ -16,16 +14,12 @@
 			//Welllll okay then. If the former then something went wrong, if None was selected then...
 			if(istype(undergarment_class.items_by_name[new_fullness[undergarment_class.name + "-ifnone"]], /datum/category_item/underwear))
 				UWI = undergarment_class.items_by_name[new_fullness[undergarment_class.name + "-ifnone"]]
-				LAZYSET(all_underwear, undergarment_class.name, UWI)
+				set_all_underwear_at(undergarment_class.name, UWI)
 		if(UWI && UWI.has_color && new_fullness[undergarment_class.name + "-color"])
 			all_underwear_metadata[undergarment_class.name]["[GLOB.gear_tweak_free_color_choice]"] = new_fullness[undergarment_class.name + "-color"]
 		if(UWI && UWI.name != "None" && hide_underwear[undergarment_class.name] != new_fullness[undergarment_class.name])
-			hide_underwear[undergarment_class.name] = new_fullness[undergarment_class.name]
-			update_underwear(1)
-	if(vore_fullness_ex["stomach"] != previous_stomach_fullness)
-		update_vore_belly_sprite()
-	if(vore_fullness_ex["taur belly"] != previous_taur_fullness)
-		update_vore_tail_sprite()
+			set_hide_underwear_at(undergarment_class.name, new_fullness[undergarment_class.name])
+	underwear_edited() // the loop above edits the underwear lists in place
 
 /mob/living/carbon/human/vs_animate(belly_to_animate)
 	if(belly_to_animate == "stomach")
