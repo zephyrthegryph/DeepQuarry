@@ -418,16 +418,8 @@ CAPABILITIES(/obj/item/paint_palette)
 /// A frame built on a wall (its constructor param).
 /obj/structure/sign/painting/var/building = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a persistent painting frame joins the persistence system's frames, and a built one sits on its wall
-/obj/structure/sign/painting/Initialize(mapload)
-	. = ..()
-	if(persistence_id)
-		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
-
-/// Phase 2: leaves the persistent painting frames.
-/obj/structure/sign/painting/lifecycle_dematerialize()
-	. = ..()
-	SSpersistence.painting_frames -= src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
+/// Every painting frame (the persistence system saves and loads those with a persistence_id): a registry, so a deleted frame leaves it.
+REGISTRY_MEMBERSHIP(/obj/structure/sign/painting, REGISTRY_PAINTING_FRAMES)
 
 CAPABILITIES(/obj/structure/sign/painting)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

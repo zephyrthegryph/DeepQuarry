@@ -105,7 +105,6 @@ SYSTEM_ACCESSOR(nerdle, nerdle_player_attempts, nameof(player_attempts))
 SYSTEM_ACCESSOR(nerdle, nerdle_target_word, nameof(target_word))
 SYSTEM_ACCESSOR(overlays, overlays_stats, nameof(stats))
 SYSTEM_ACCESSOR(persistence, persistence_all_paintings, nameof(all_paintings))
-SYSTEM_ACCESSOR(persistence, persistence_painting_frames, nameof(painting_frames))
 SYSTEM_ACCESSOR(persistence, persistence_tracking_values, nameof(tracking_values))
 SYSTEM_ACCESSOR(persistence, persistence_unpicked_paintings, nameof(unpicked_paintings))
 SYSTEM_ACCESSOR(planets, planets_planets, nameof(planets))
@@ -123,7 +122,6 @@ SYSTEM_ACCESSOR(robot_sprites, robot_sprites_cyborg_sprites_by_module, nameof(cy
 SYSTEM_ACCESSOR(shuttles, shuttles_block_init_queue, nameof(block_init_queue))
 SYSTEM_ACCESSOR(shuttles, shuttles_overmap_halted, nameof(overmap_halted))
 SYSTEM_ACCESSOR(shuttles, shuttles_registered_shuttle_landmarks, nameof(registered_shuttle_landmarks))
-SYSTEM_ACCESSOR(shuttles, shuttles_ships, nameof(ships))
 SYSTEM_ACCESSOR(shuttles, shuttles_shuttle_areas, nameof(shuttle_areas))
 SYSTEM_ACCESSOR(shuttles, shuttles_shuttles, nameof(shuttles))
 SYSTEM_ACCESSOR(sqlite, sqlite_sqlite_db, nameof(sqlite_db))
@@ -169,3 +167,16 @@ SYSTEM_ACCESSOR(transcore, transcore_databases, nameof(databases))
 SYSTEM_ACCESSOR(xenoarch, xenoarch_artifact_spawning_turfs, nameof(artifact_spawning_turfs))
 SYSTEM_ACCESSOR(xenoarch, xenoarch_digsite_spawning_turfs, nameof(digsite_spawning_turfs))
 SYSTEM_ACCESSOR(mapping, mapping_engine_loader, nameof(engine_loader))
+
+// ---- Readers of registries that replaced a system's list of the same name ----
+
+/// The live overmap ships (the registry's own list: read only, copy before deleting members).
+/proc/shuttles_ships()
+	return REGISTRY_MEMBERS(REGISTRY_OVERMAP_SHIPS)
+
+/// The painting frames that persist their canvas (a persistence_id): a copy.
+/proc/persistence_painting_frames()
+	. = list()
+	for(var/obj/structure/sign/painting/P as anything in REGISTRY_MEMBERS(REGISTRY_PAINTING_FRAMES))
+		if(P.persistence_id)
+			. += P

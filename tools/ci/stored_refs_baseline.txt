@@ -1374,7 +1374,6 @@ var	code/modules/xenoarcheaology/tools/artifact_harvester.dm	var/tmp/obj/item/an
 var	code/modules/xenoarcheaology/tools/geosample_scanner.dm	var/tmp/obj/item/scanned_item
 var	code/modules/xenoarcheaology/tools/suspension_generator.dm	var/tmp/obj/item/card/id/auth_card
 var	code/modules/xenoarcheaology/tools/tools.dm	var/tmp/datum/depth_scan/current
-list	code/ATMOSPHERICS/SSair.dm	var/list/hotspots = list()
 list	code/ATMOSPHERICS/SSair.dm	var/list/planetary = list() //Lets cache static planetary mixes
 list	code/ATMOSPHERICS/SSair.dm	var/list/strings_to_mix = list()
 list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/immutable_air = list()
@@ -1430,7 +1429,6 @@ list	code/controllers/subsystems/contracts.dm	var/list/definitions
 list	code/controllers/subsystems/contracts.dm	var/list/subject_identities
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_rules
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_windows
-list	code/controllers/subsystems/holomaps.dm	var/static/list/station_holomaps = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/pages = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/ores = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/materials = list()
@@ -1451,10 +1449,8 @@ list	code/controllers/subsystems/lighting.dm	var/static/list/sunlight_queue = li
 list	code/controllers/subsystems/lighting.dm	var/list/planet_shandlers = list() // Precomputed lighting values for tiles only affected by the sun
 list	code/controllers/subsystems/lighting.dm	var/list/z_to_pshandler = list()
 list	code/controllers/subsystems/persistence.dm	var/list/persistence_datums = list()
-list	code/controllers/subsystems/persistence.dm	var/list/obj/structure/sign/painting/painting_frames = list()
 list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/cells = list()
 list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/eyes = list()
-list	code/controllers/subsystems/shuttles.dm	var/list/ships = list() // List of all ships.
 list	code/controllers/subsystems/shuttles.dm	var/list/shuttles = list() // Maps shuttle tags to shuttle datums, so that they can be looked up.
 list	code/controllers/subsystems/shuttles.dm	var/list/sectors_to_initialize // Used to find all sector objects at the appropriate time.
 list	code/controllers/subsystems/tgui.dm	var/list/asset_generations = list()
@@ -1618,7 +1614,6 @@ list	code/modules/heat/heat_bind_batch.dm	GLOBAL_LIST_EMPTY(dq_heat_bind_pending
 list	code/modules/lighting/lighting_corner.dm	var/list/datum/light_source/affecting // Light sources affecting us.
 list	code/modules/lighting/lighting_fake_sun.dm	var/static/world_suns = list() //List of all the fake_suns in the world, used for checking for family members
 list	code/modules/lighting/lighting_source.dm	var/list/datum/lighting_corner/effect_str
-list	code/modules/maps/map_load.dm	GLOBAL_LIST_EMPTY(map_load_queue)
 list	code/modules/maps/reader.dm	GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special eviction
 list	code/modules/materials/engineering/material_templates.dm	var/static/list/interned
 list	code/modules/materials/engineering/material_templates.dm	GLOBAL_REAL_VAR(list/GLOB_material_mix_registry)
@@ -1641,6 +1636,4 @@ list	code/modules/shuttles/emergency_shuttle_service.dm	var/list/escape_pods = l
 list	code/modules/surgery/surgery_ops.dm	GLOBAL_LIST_EMPTY(surgery_op_steps)
 list	code/modules/tgs_commands/vorestation.dm	GLOBAL_LIST_EMPTY(tgs_flow_senders)
 list	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
-list	code/modules/tgui/modal.dm	GLOBAL_LIST(tgui_modals)
-list	code/modules/tgui/ui_push.dm	var/list/pending
 list	code/modules/vore/eating/bellymodes_datum.dm	GLOBAL_LIST_INIT(digest_modes, list())
