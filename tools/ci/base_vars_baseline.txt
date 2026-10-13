@@ -163,9 +163,6 @@ base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slo
 base_var	code/game/objects/items.dm	var/zoomdevicename = null //name used for message when binoculars/scope is used
 base_var	code/game/objects/items.dm	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 base_var	code/game/objects/items.dm	var/embed_chance = -1 //0 won't embed, and 100 will always embed
-base_var	code/game/objects/items.dm	var/icon_override = null //Used to override hardcoded clothing dmis in human clothing proc.
-base_var	code/game/objects/items.dm	var/list/item_state_slots //overrides the default item_state for particular slots.
-base_var	code/game/objects/items.dm	var/list/item_icons
 base_var	code/game/objects/items.dm	var/list/sprite_sheets
 base_var	code/game/objects/items.dm	var/list/sprite_sheets_obj
 base_var	code/game/objects/items.dm	var/worn_layer //Default on-mob layer

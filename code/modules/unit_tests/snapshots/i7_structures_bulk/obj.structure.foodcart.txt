@@ -44,5 +44,10 @@ human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: nothing
-@obj.structure human|/obj/item/reagent_containers/food
+human|/obj/item/reagent_containers/food menu: Hit
+human|/obj/item/reagent_containers/food menu: Move To Top
+human|/obj/item/reagent_containers/food menu: Rename food
+human|/obj/item/reagent_containers/food menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food menu: Use
+human|/obj/item/reagent_containers/food click: Click: Use
 keys: drag_buckle, grab_food, melee_hit, stock

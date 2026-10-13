@@ -96,19 +96,7 @@ human|/obj/item menu: Put in cycler (refused: needs a grab)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Open controls
 @obj human|/obj/item/clothing/head/helmet/space/void
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Ui open
--click: Click: Ui open
-+3 menu: Open controls
-+6 click: Click: Open controls
-human|/obj/item/clothing/suit/space/void menu: Eject Cycler
-human|/obj/item/clothing/suit/space/void menu: Fit helmet (refused: needs a void helmet)
-human|/obj/item/clothing/suit/space/void menu: Fit voidsuit (refused: the suit cycler is locked)
-human|/obj/item/clothing/suit/space/void menu: Open controls
-human|/obj/item/clothing/suit/space/void menu: Put in cycler (refused: needs a grab)
-human|/obj/item/clothing/suit/space/void menu: Use
-human|/obj/item/clothing/suit/space/void click: Click: Open controls
+@obj human|/obj/item/clothing/suit/space/void
 @obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use cryptographic sequencer

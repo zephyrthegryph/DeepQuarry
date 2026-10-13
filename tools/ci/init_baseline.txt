@@ -926,7 +926,7 @@ init_lines	code/game/objects/items/stacks/sandbags.dm	update_slowdown()
 init_lines	code/game/objects/items/stacks/stack.dm	if(!stacktype)
 init_lines	code/game/objects/items/stacks/stack.dm	stacktype = type
 init_lines	code/game/objects/items/stacks/stack.dm	if(!no_variants)
-init_lines	code/game/objects/items/stacks/stack.dm	item_state = initial(icon_state) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
+init_lines	code/game/objects/items/stacks/stack.dm	set_item_state(initial(icon_state)) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
 init_lines	code/game/objects/items/stacks/stack.dm	var/starting_amount = amount_at_make
 init_lines	code/game/objects/items/stacks/stack.dm	if(!isnull(starting_amount)) // Could be 0
 init_lines	code/game/objects/items/stacks/stack.dm	if(starting_amount < 0)
@@ -1519,12 +1519,12 @@ init_lines	code/modules/clothing/clothing.dm	)
 init_lines	code/modules/clothing/clothing.dm	MakeHood()
 init_lines	code/modules/clothing/clothing.dm	set_toggleicon("[initial(icon_state)]")
 init_lines	code/modules/clothing/clothing.dm	if(worn_state)
-init_lines	code/modules/clothing/clothing.dm	LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+init_lines	code/modules/clothing/clothing.dm	set_item_state_slots_at(slot_w_uniform_str, worn_state)
 init_lines	code/modules/clothing/clothing.dm	else
 init_lines	code/modules/clothing/clothing.dm	worn_state = icon_state
 init_lines	code/modules/clothing/clothing.dm	if(rolled_down < 0)
 init_lines	code/modules/clothing/clothing.dm	if((icon_exists(icon, "[worn_state]_d") || icon_exists(rolled_down_icon, worn_state) || icon_exists(icon_override, "[worn_state]_d")))
-init_lines	code/modules/clothing/clothing.dm	rolled_down = 0
+init_lines	code/modules/clothing/clothing.dm	set_rolled_down(0)
 init_lines	code/modules/clothing/clothing.dm	if(!ishuman(loc))
 init_lines	code/modules/clothing/clothing.dm	var/mob/living/carbon/human/H = loc
 init_lines	code/modules/clothing/clothing.dm	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
@@ -1591,7 +1591,7 @@ init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	var/d
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	if(!vision)
 init_lines	code/modules/clothing/spacesuits/rig/modules/specific/vision.dm	rel_set(src, nameof(vision), vision_datum)
 init_lines	code/modules/clothing/spacesuits/rig/rig.dm	suit_state = icon_state
-init_lines	code/modules/clothing/spacesuits/rig/rig.dm	item_state = icon_state
+init_lines	code/modules/clothing/spacesuits/rig/rig.dm	set_item_state(icon_state)
 init_lines	code/modules/clothing/spacesuits/rig/rig.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 init_lines	code/modules/clothing/spacesuits/rig/rig.dm	locked = 0
 init_lines	code/modules/clothing/spacesuits/rig/rig.dm	power_system.cooling_on = cooling_on
@@ -2568,12 +2568,12 @@ init_lines	code/modules/pda/pda.dm	icon = 'icons/obj/pda_holo.dmi'
 init_lines	code/modules/pda/pda.dm	model_name = "LunaCorp Holo-PDAssistant"
 init_lines	code/modules/pda/pda.dm	if(6)
 init_lines	code/modules/pda/pda.dm	icon = 'icons/obj/pda_wrist.dmi'
-init_lines	code/modules/pda/pda.dm	item_state = icon_state
-init_lines	code/modules/pda/pda.dm	item_icons = list(
+init_lines	code/modules/pda/pda.dm	set_item_state(icon_state)
+init_lines	code/modules/pda/pda.dm	set_item_icons(list(
 init_lines	code/modules/pda/pda.dm	slot_belt_str = 'icons/mob/pda_wrist.dmi',
 init_lines	code/modules/pda/pda.dm	slot_wear_id_str = 'icons/mob/pda_wrist.dmi',
 init_lines	code/modules/pda/pda.dm	slot_gloves_str = 'icons/mob/pda_wrist.dmi'
-init_lines	code/modules/pda/pda.dm	)
+init_lines	code/modules/pda/pda.dm	))
 init_lines	code/modules/pda/pda.dm	desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
 init_lines	code/modules/pda/pda.dm	if(7)
 init_lines	code/modules/pda/pda.dm	icon = 'icons/obj/pda_slider.dmi'
@@ -3263,14 +3263,14 @@ init_lines	code/modules/vore/fluffstuff/custom_items.dm	new /obj/item/material/k
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	new /obj/item/reagent_containers/glass/bottle/poppy(hold)
 init_lines	code/modules/vore/resizing/holder_micro.dm	var/mob/living/carbon/human/H = held_mob
 init_lines	code/modules/vore/resizing/holder_micro.dm	if(istype(H) && H.species.is_micro_carry(H))
-init_lines	code/modules/vore/resizing/holder_micro.dm	item_icons = list(
+init_lines	code/modules/vore/resizing/holder_micro.dm	set_item_icons(list(
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_back_str = 'icons/mob/toy_worn.dmi',
-init_lines	code/modules/vore/resizing/holder_micro.dm	slot_head_str = 'icons/mob/toy_worn.dmi')
-init_lines	code/modules/vore/resizing/holder_micro.dm	icon_override = null
+init_lines	code/modules/vore/resizing/holder_micro.dm	slot_head_str = 'icons/mob/toy_worn.dmi'))
+init_lines	code/modules/vore/resizing/holder_micro.dm	set_icon_override(null)
 init_lines	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
-init_lines	code/modules/vore/resizing/holder_micro.dm	item_state = "teshariplushie_white"
+init_lines	code/modules/vore/resizing/holder_micro.dm	set_item_state("teshariplushie_white")
 init_lines	code/modules/xenoarcheaology/anomaly_container.dm	var/obj/machinery/artifact/A = locate_within(loc, /obj/machinery/artifact)
 init_lines	code/modules/xenoarcheaology/anomaly_container.dm	if(A)
 init_lines	code/modules/xenoarcheaology/anomaly_container.dm	contain(A)

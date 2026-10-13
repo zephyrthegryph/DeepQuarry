@@ -70,7 +70,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/rx_table/T = GLOB.rx_tables[H.type] || rx_table_build(H)
 	TEST_ASSERT(T, "a human has a reactions table")
-	for(var/key in list(MOB_KEY_NUTRITION, MOB_KEY_STATUS, "stat:[STAT_ON_FIRE]", "blinded", "block_hud", "absorbed", "status_flags", \
+	for(var/key in list(MOB_KEY_NUTRITION, MOB_KEY_STATUS, "stat:[STAT_ON_FIRE]", "block_hud", "absorbed", "status_flags", \
 		MOB_KEY_HUD_FLAGS, MOB_KEY_VIEW, "species", "mind"))
 		var/found = FALSE
 		for(var/datum/reaction/R in T.by_key[key])

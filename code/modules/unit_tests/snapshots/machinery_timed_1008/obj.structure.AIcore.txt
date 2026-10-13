@@ -3,51 +3,20 @@
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
--click: Click: Use
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
--click: Click: Use
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Use crowbar
-+5 click: Click: Use crowbar
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Anchor frame
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+5 click: Click: Anchor frame
++3 click: Click: Anchor frame
 @obj.structure human|/obj/item/tool/wirecutters
--click: Click: Use
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Use wirecutter
-+5 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
 +0 menu: Dismantle frame
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+5 click: Click: Dismantle frame
++3 click: Click: Dismantle frame
 @obj.structure human|/obj/item/stack/cable_coil
-+1 menu: Make Cable Restraints (refused: You can't do that.)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/stack/material/steel
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/card/id
-+1 menu: Move To Top
-+2 menu: Read ID Card (refused: You can't do that.)
-+3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/stack/material
-keys: add_cables, add_panel, ai_core_install, anchor, dismantle, drag_buckle, melee_hit, unanchor, use_crowbar, use_screwdriver, use_wirecutter, welder_wrong_stage, wrench_wrong_stage
+keys: add_cables, add_panel, ai_core_install, anchor, connect_monitor, dismantle, drag_buckle, melee_hit, remove_board, remove_brain, state_1_2, state_2_1, state_3_2, state_4_3, unanchor
