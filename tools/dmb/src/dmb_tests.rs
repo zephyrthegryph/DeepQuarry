@@ -63,11 +63,6 @@ fn finalized_list_compaction_preserves_semantics_and_roundtrip() {
     dmb.procs[0].code_locals_args[0] = duplicate;
     dmb.lists.push(vec![0xdead_beef]);
     assert!(dmb.compact_lists().unwrap() >= 2);
-    #[cfg(feature = "inspection")]
-    {
-        assert!(crate::compare::compare_dmbs(&before, &dmb, &Default::default()).is_empty());
-        assert!(crate::compare::compare_maps(&before, &dmb, 100).is_empty());
-    }
     for index in 0..before.procs.len() {
         assert_eq!(before.proc_code_words(index), dmb.proc_code_words(index));
     }

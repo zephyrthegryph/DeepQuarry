@@ -1,11 +1,11 @@
 # Native DM Compiler Design
 
 Revision 5, 7 October 2026. Status: **in implementation** on `codex/native-v2`. The plan in §9 was
-revised after the review in `REVIEW_20261007.md`, and that plan is binding. Supersedes
+revised after the review in `archive/REVIEW_20261007.md`, and that plan is binding. Supersedes
 `ARCHITECTURE.md` and
 `REVISED_ARCHITECTURE.md` for the incremental layer, persistence, output publication and process
-model. The format notes (`FORMAT.md`, `BYTECODE_ISSUES.md`, `OPENDREAM_OPCODE_MATRIX.md`,
-`CLIENT_HEADER_PROBES.md`, `TRANSLATION_GAPS.md`) remain authoritative for the BYOND format.
+model. The format notes (`FORMAT.md`, `crates/dmb-opendream/doc/BYTECODE_ISSUES.md`, `OPENDREAM_OPCODE_MATRIX.md`,
+`CLIENT_HEADER_PROBES.md`, `crates/dmb-opendream/doc/TRANSLATION_GAPS.md`) remain authoritative for the BYOND format.
 
 This design replaces the architecture on `codex/compiler-architecture`. It keeps the parser,
 preprocessor, code generator and DMB writer that compiled the whole project on 1 October. It
@@ -28,7 +28,7 @@ makes stage throughput the next phase, requires a profiler that needs no elevati
 performance by CPU time rather than wall time, moves the daemon ahead of further disk-cache work,
 and freezes the cache code until then.
 
-Implementing agent: read `REVIEW_20261007.md`, then §5 (correctness contracts), §8 (engineering
+Implementing agent: read `archive/REVIEW_20261007.md`, then §5 (correctness contracts), §8 (engineering
 rules) and §9 (plan) before writing code. Work resumes at the Phase 0 close-out in §9.
 
 ## Acceptance targets
@@ -118,7 +118,7 @@ Start from `ac1af55d1a`, the last commit with a green Rust test suite (1,199 tes
 | `dm-resources` | Keep | Asset identity and RSC entries. |
 | `dm-output` | Keep encoding only | Drop generations, install journals and output proofs. Publication follows §4.8. |
 | `dm-store`, `dm-work`, `dm-compiled`, `dm-host` | Delete | Replaced by the daemon (§3.1), the cache (§3.4) and a rayon pool. |
-| Format notes | Keep | `FORMAT.md`, `BYTECODE_ISSUES.md`, `OPENDREAM_OPCODE_MATRIX.md`, `CLIENT_HEADER_PROBES.md`, `TRANSLATION_GAPS.md`. |
+| Format notes | Keep | `FORMAT.md`, `crates/dmb-opendream/doc/BYTECODE_ISSUES.md`, `OPENDREAM_OPCODE_MATRIX.md`, `CLIENT_HEADER_PROBES.md`, `crates/dmb-opendream/doc/TRANSLATION_GAPS.md`. |
 | `FULL_SUITE_COMPARISON.md` and its records | Keep | Seeds the frozen parity baseline (§5.3). |
 | Dated benchmark and migration logs | Archive | Move out of the tool directory. |
 
@@ -999,7 +999,7 @@ The phases below replace the original Phases 1–3. Phases 4–6 are unchanged.
   new features until Phase 3. Bug fixes needed by the oracle are allowed.
 - Remove the tree disk admission (the tree key and payload path) and every byte limit that causes
   a skip rather than an eviction. Output must be unchanged with and without `--no-cache`.
-- Fold `PHASE2_PROGRESS.md` into `STATUS.md` (current state only). Move per-cohort numbers into
+- Fold `archive/PHASE2_PROGRESS.md` into `STATUS.md` (current state only). Move per-cohort numbers into
   `results.jsonl` and the narrative to `archive/`.
 - Run the full `cargo test --workspace` once in release mode and record the counts in `STATUS.md`.
   Fix or list every failure.
@@ -1208,6 +1208,7 @@ its budget.
 | D30 | The shared cache defaults to `E:\.dmbd\cache\` (user decision, 7 Oct) | `%LOCALAPPDATA%` on C:: population filled the drive. |
 | D28 | A memo kind stays enabled only while its measured full-hit cost is at most one tenth of cold recomputation; hits are read in place | Decoding and copying records on hit: measured 3–44 s to reuse procedures that lower cold in 6.3 s. |
 | D29 | No admission budgets or skip-on-limit paths in the cache; no tree persistence without a trace | Admission budgets and a 32 MiB key limit: population lost 31,272 records, and the tree cache silently skipped itself. |
+| D31 | 2026-10-12, user decision: Phase 1 is closed. Cold release at 8 workers is about 11 s critical path, 12.5-15 s wall, and 1.55 GB peak against the 1.5 GB budget, accepted as is. Ownership of the compiler moves to Claude. Priorities in order: release-profile measurement, retained memory, incremental short-circuits, cleanup | Holding Phase 1 open for the last 50 MB and 2-4 s: the remaining risk is in retained memory and edit latency, which the phase-2 targets measure. |
 
 ## Appendix B: Revision history
 
@@ -1233,7 +1234,7 @@ its budget.
   - Non-text includes and canonical paths (§3.3, §4.1).
   - A normalized baseline with a nondeterminism policy (§5.3).
   - End-to-end budgets including validation and publication (§3.2, §6).
-- **r5, 7 Oct 2026.** After the first measurements and `REVIEW_20261007.md`:
+- **r5, 7 Oct 2026.** After the first measurements and `archive/REVIEW_20261007.md`:
   - Measured results and binding per-stage cold budgets (§6.0). The r4 stage hypotheses were
     10–50× too optimistic for the whole-program stages.
   - Memory measured at 3.0–3.5 GB against a 0.45–0.6 GB estimate; budget 1.5 GB (§2.2).

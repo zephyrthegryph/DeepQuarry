@@ -667,6 +667,10 @@ impl ProjectResolver<'_> {
 mod tests;
 
 #[cfg(test)]
+#[path = "lower_resolver_member_tests.rs"]
+mod member_tests;
+
+#[cfg(test)]
 #[path = "parent_warning_tests.rs"]
 mod parent_warning_tests;
 

@@ -1,6 +1,6 @@
 # BYOND compiled format tooling
 
-## Native v2 (Phase 0/1 integration)
+## Native v2 (Phase 1 closed 2026-10-12)
 
 [DESIGN.md](DESIGN.md) defines the replacement architecture;
 [STATUS.md](STATUS.md) records current evidence and unfinished gates.
@@ -35,12 +35,13 @@ binding authority. Throughput, memory, concurrency and BYOND correctness gates
 remain open; retained support is not a completion or readiness claim. See the
 measured receipts in `phase0/migration_checkpoint_20261009.json` for validation scopes.
 
-### Format dependency boundary
+### Crate boundary
 
-Native compiler crates use the format library with default features disabled.
-That provides DMB/RSC codecs, operands and bytecode without building inspection
-or the OpenDream translator. `inspection` and `opendream-translation` are optional
-features; both remain enabled by default for the existing `dmb-inspect` tool.
+`byond-dmb` (the root crate) is the codec only: DMB/RSC readers and writers, operands, bytecode,
+hash and ids. Native compiler crates depend on it directly. `crates/dmb-opendream` holds the old
+OpenDream-output translator (`od_lower`, `od_emit`, `translate`), the structural comparator
+(`compare`), the `dmb-inspect` tool and the format-investigation examples
+(`cargo run -p dmb-opendream --example NAME`). There are no Cargo features to select.
 
 On Windows, pairs share `%LOCALAPPDATA%/dmbd/pairs` on that drive and
 `<drive>:\.dmbd\pairs` on other drives.
@@ -106,14 +107,14 @@ From the repository root:
 
 ```powershell
 python tools/dmb/check_source_shape.py
-cargo test --manifest-path tools/dmb/Cargo.toml
-cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-info deepquarry.rsc
-cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-copy deepquarry.rsc copied.rsc
-cargo run --manifest-path tools/dmb/Cargo.toml -- dmb-info deepquarry.dmb
-cargo run --manifest-path tools/dmb/Cargo.toml -- dmb-copy deepquarry.dmb copied.dmb
-cargo run --manifest-path tools/dmb/Cargo.toml -- pair-info deepquarry.dmb deepquarry.rsc
-cargo run --manifest-path tools/dmb/Cargo.toml -- opcode-audit deepquarry.dmb
-cargo run --manifest-path tools/dmb/Cargo.toml -- rsc-id-audit deepquarry.rsc
+cargo test --manifest-path tools/dmb/Cargo.toml -p byond-dmb -p dmb-opendream
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- rsc-info deepquarry.rsc
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- rsc-copy deepquarry.rsc copied.rsc
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- dmb-info deepquarry.dmb
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- dmb-copy deepquarry.dmb copied.dmb
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- pair-info deepquarry.dmb deepquarry.rsc
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- opcode-audit deepquarry.dmb
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- rsc-id-audit deepquarry.rsc
 ```
 
 The source fixture in `fixtures/v516_builtins.dme` can be compiled with
@@ -167,7 +168,7 @@ separate from lossless file round trips.
 `dmb-inspect od-to-dmb` accepts OpenDream's compiled JSON, an OpenDream
 baseline JSON, a Dream Maker native scaffold DMB, a resource root, and output
 paths. It builds DMB/RSC tables, remaps IDs, and lowers the OpenDream
-instructions currently understood by `src/od_lower.rs`. Unsupported
+instructions currently understood by `crates/dmb-opendream/src/od_lower.rs`. Unsupported
 instructions and values produce errors with the procedure and byte offset.
 This is a **partial translator**: a successful write confirms container and
 reference validity. Runtime behavior must be checked for the translated
@@ -196,7 +197,7 @@ try {
 For a program compiled by that OpenDream build, run from the repository root:
 
 ```powershell
-cargo run --manifest-path tools/dmb/Cargo.toml -- od-to-dmb `
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- od-to-dmb `
     C:\path\to\program.json `
     "$stage\native_template.json" `
     "$stage\native_template.dmb" `
@@ -242,7 +243,7 @@ The full translated DM suite completes with 982 passed, 34 failed, and 58 skippe
 Remaining structural bytecode differences are under review. The exporter
 preserves the original length mutations and native extension instructions.
 See [`doc/audits/PARITY_REPORT.md`](doc/audits/PARITY_REPORT.md) for the current integration results
-and [`TRANSLATION_GAPS.md`](TRANSLATION_GAPS.md) for historical snapshots and
+and [`TRANSLATION_GAPS.md`](crates/dmb-opendream/doc/TRANSLATION_GAPS.md) for historical snapshots and
 remaining limits.
 
 Compare captured native and translated server errors with
@@ -303,7 +304,7 @@ Ordered paired tests check procedure bodies and argument metadata as well as pat
 Constant `file()` and `icon()` declaration initializers receive native hidden
 markers; constructors depending on runtime globals retain null defaults.
 The Rust loader accepts both old and extended JSON. See
-[`TRANSLATION_GAPS.md`](TRANSLATION_GAPS.md) for exact coverage and
+[`TRANSLATION_GAPS.md`](crates/dmb-opendream/doc/TRANSLATION_GAPS.md) for exact coverage and
 remaining limitations.
 
 The earlier full static diagnostic snapshot emitted 189 warnings; this count is historical. Modified type
@@ -353,7 +354,7 @@ procedures, arguments, locals, and normalized bytecode without starting
 DreamDaemon. Optional path prefixes restrict the report to authored code:
 
 ```powershell
-cargo run --manifest-path tools/dmb/Cargo.toml -- dmb-compare `
+cargo run --manifest-path tools/dmb/Cargo.toml -p dmb-opendream --bin dmb-inspect -- dmb-compare `
     C:\path\to\reference.dmb C:\path\to\output.dmb /world/New /obj/my_type
 ```
 
@@ -428,3 +429,15 @@ and stops the process it started:
     -DreamDaemon 'D:\Program Files (x86)\BYOND516\bin\dd.exe' `
     -ExpectedLog 'CALLS 8 8'
 ```
+
+## Documents
+
+Current: [STATUS.md](STATUS.md) (state, numbers, lanes), [DESIGN.md](DESIGN.md) (binding design and
+decision record), contract files [PREPROCESS.md](PREPROCESS.md), [LINK.md](LINK.md),
+[PUBLISH.md](PUBLISH.md), [QUERY.md](QUERY.md), [PARALLEL.md](PARALLEL.md),
+[PERFORMANCE.md](PERFORMANCE.md), and the format notes [FORMAT.md](FORMAT.md),
+[RSC_TIMESTAMPS.md](RSC_TIMESTAMPS.md), [RESOURCE_FILENAME_ENCODING.md](RESOURCE_FILENAME_ENCODING.md),
+[HUB_PASSWORD_FORMAT.md](HUB_PASSWORD_FORMAT.md), [CLIENT_HEADER_PROBES.md](CLIENT_HEADER_PROBES.md),
+[OPENDREAM_OPCODE_MATRIX.md](OPENDREAM_OPCODE_MATRIX.md). Translator-era notes live beside the
+translator in `crates/dmb-opendream/doc/`. Superseded plans, the pre-2026-10-12 status log and the
+7 October review are in `archive/`.

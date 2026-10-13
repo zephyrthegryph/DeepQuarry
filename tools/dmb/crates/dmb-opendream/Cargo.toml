@@ -1,0 +1,117 @@
+[package]
+name = "dmb-opendream"
+version = "0.1.0"
+edition = "2021"
+description = "OpenDream-output translator, structural DMB comparator and the dmb-inspect tool"
+license = "GPL-3.0-only"
+
+[lib]
+name = "dmb_opendream"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dmb-inspect"
+path = "src/main.rs"
+
+[dependencies]
+byond-dmb = { path = "../.." }
+dm-exec = { path = "../dm-exec" }
+dm-profile = { path = "../dm-profile" }
+md5 = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+# Format investigations retained as explicit Cargo examples.
+
+[[example]]
+name = "anonymous_proc_audit"
+path = "dev-scripts/anonymous_proc_audit.rs"
+
+[[example]]
+name = "argument_default_audit"
+path = "dev-scripts/argument_default_audit.rs"
+
+[[example]]
+name = "argument_sources_audit"
+path = "dev-scripts/argument_sources_audit.rs"
+
+[[example]]
+name = "branch_route_dump"
+path = "dev-scripts/branch_route_dump.rs"
+
+[[example]]
+name = "branch_target_audit"
+path = "dev-scripts/branch_target_audit.rs"
+
+[[example]]
+name = "equality_contexts"
+path = "dev-scripts/equality_contexts.rs"
+
+[[example]]
+name = "flag_branch_witnesses"
+path = "dev-scripts/flag_branch_witnesses.rs"
+
+[[example]]
+name = "global_owner_audit"
+path = "dev-scripts/global_owner_audit.rs"
+
+[[example]]
+name = "initializer_identity_audit"
+path = "dev-scripts/initializer_identity_audit.rs"
+
+[[example]]
+name = "inspect_hub"
+path = "dev-scripts/inspect_hub.rs"
+
+[[example]]
+name = "inspect_marker"
+path = "dev-scripts/inspect_marker.rs"
+
+[[example]]
+name = "inspect_marker_strings"
+path = "dev-scripts/inspect_marker_strings.rs"
+
+[[example]]
+name = "inspect_proc_code"
+path = "dev-scripts/inspect_proc_code.rs"
+
+[[example]]
+name = "inspect_static_flags"
+path = "dev-scripts/inspect_static_flags.rs"
+
+[[example]]
+name = "inspect_string_defaults"
+path = "dev-scripts/inspect_string_defaults.rs"
+
+[[example]]
+name = "inspect_stub_calls"
+path = "dev-scripts/inspect_stub_calls.rs"
+
+[[example]]
+name = "inspect_tag41"
+path = "dev-scripts/inspect_tag41.rs"
+
+[[example]]
+name = "inspect_type_tags"
+path = "dev-scripts/inspect_type_tags.rs"
+
+[[example]]
+name = "inspect_variable_names"
+path = "dev-scripts/inspect_variable_names.rs"
+
+[[example]]
+name = "inspect_verb_sources"
+path = "dev-scripts/inspect_verb_sources.rs"
+
+[[example]]
+name = "keyed_switch_audit"
+path = "dev-scripts/keyed_switch_audit.rs"
+
+[[example]]
+name = "list_usage"
+path = "dev-scripts/list_usage.rs"
+
+[[example]]
+name = "var_pair"
+path = "dev-scripts/var_pair.rs"

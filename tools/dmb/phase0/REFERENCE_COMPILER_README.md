@@ -7,7 +7,7 @@ These instructions describe commit ac1af55d1a. The commands below require that r
 The following commands and performance documents describe the older compiler
 retained for baseline comparison, rather than completion of the native v2 design.
 
-See [implementation status](IMPLEMENTATION_STATUS.md) for verified native
+See [implementation status](../archive/IMPLEMENTATION_STATUS.md) for verified native
 frontend coverage, measured cache performance, and remaining integration work.
 See [iteration performance](PERFORMANCE.md) for cache validation and timings,
 and [parallel workers](PARALLEL.md) for bounded daemon concurrency.

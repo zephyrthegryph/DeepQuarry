@@ -1,6 +1,6 @@
 # Investigation records
 
-These reports capture compiler and format investigations at the time they were written. For the current API and workflow, start with the top-level README, FORMAT and COMPILER_PROTOTYPE documents.
+These reports capture compiler and format investigations at the time they were written. For the current API and workflow, start with the top-level README and FORMAT documents.
 
 - [Branch Route Audit](BRANCH_ROUTE_AUDIT.md)
 - [Cache Mutation Audit](CACHE_MUTATION_AUDIT.md)
