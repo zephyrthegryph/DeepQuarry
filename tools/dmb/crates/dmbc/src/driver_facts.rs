@@ -490,9 +490,8 @@ fn prepare_source_abi_mode_on_executor(
     // Whole-batch replay validates the union of every unit's reads in one
     // sequential receipt (~3.2 s on DeepQuarry, hit or miss); the per-unit
     // scheduler below admits the same retained rows in ~0.5 s. Opt in with
-    // DMB_ABI_BATCH_REPLAY=1.
-    let batch_replay = std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1");
-    if let (true, Some(store), Some(inputs)) = (batch_replay, artifacts, batch_inputs.as_ref()) {
+    // DMB_ABI_BATCH_REPLAY=1 (`AbiArtifacts::batch_replay`).
+    if let (Some(store), Some(inputs)) = (artifacts.filter(|store| store.batch_replay), batch_inputs.as_ref()) {
         if let Some(prepared) =
             abi_artifacts::batch::replay(store, inputs, evaluator.resolver, frontend, issued_units)
         {

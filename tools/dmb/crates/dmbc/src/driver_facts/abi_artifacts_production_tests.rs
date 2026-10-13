@@ -119,7 +119,7 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
     )
     .unwrap();
     let engine = &owner.snapshot;
-    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let store = AbiArtifacts::with_engine_owner(owner.clone()).with_retained_shortcuts();
     let mut state = dm_tree::frontend::RetainedSemanticTree::new();
     // Certificates are process-local issuer proofs: exercise the actual retained frontend.
     let first=retained_frontend("/datum/a/proc/p(x=1)\n    set invisibility = 7\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n",engine, &mut state);
@@ -182,7 +182,7 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
     )
     .unwrap();
     let engine = &engine_owner.snapshot;
-    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner));
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner)).with_retained_shortcuts();
     let original=frontend("/var/const/C = 7\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
     for body in original.bodies.iter() {
         let proof = original
@@ -465,7 +465,7 @@ fn abi_batch_signature_away_and_back_keeps_actual_chosen_unit_and_receipt() {
     )
     .unwrap();
     let engine = &owner.snapshot;
-    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let store = AbiArtifacts::with_engine_owner(owner.clone()).with_retained_shortcuts();
     let original = frontend(
         "/var/const/C = 7\n/datum/probe/proc/p(x=C)\n    return x\n",
         engine,
@@ -513,7 +513,7 @@ fn symbolic_abi_batch_rebinds_variable_insert_remove_and_unrelated_type() {
     )
     .unwrap();
     let engine = &owner.snapshot;
-    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let store = AbiArtifacts::with_engine_owner(owner.clone()).with_retained_shortcuts();
     let original = frontend(
         "/datum/a/proc/p(x=1)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n",
         engine,
@@ -622,7 +622,7 @@ fn batch_binding_survives_request_drop_and_replacement_releases_old_binding() {
         0,
     )
     .unwrap();
-    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let store = AbiArtifacts::with_engine_owner(owner.clone()).with_retained_shortcuts();
     let first = frontend("/datum/a/proc/p(x=1)\n    return x\n", &owner.snapshot);
     let request = prepared(&first, &owner.snapshot, Some(&store));
     let weak = Arc::downgrade(request.prepared.units_owner());

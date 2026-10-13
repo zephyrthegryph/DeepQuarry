@@ -10,7 +10,7 @@ fn compact_abi_replays_actual_unit_owners_and_current_changed_inputs() {
         0,
     )
     .unwrap();
-    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine));
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine)).with_retained_shortcuts();
     let old = frontend(
         "/datum/a/proc/p(x=3)\n    return x\n/datum/b/proc/q()\n    return 2\n",
         &engine.snapshot,

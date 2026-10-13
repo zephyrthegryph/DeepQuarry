@@ -133,8 +133,7 @@ pub(super) fn admitted(
     // The incidence-qualified roster walks every retained receipt (~3 s on
     // DeepQuarry); full per-row validation below costs a fraction of that.
     // DMB_ABI_QUALIFIED_ROSTER=1 restores it.
-    let use_qualified = std::env::var_os("DMB_ABI_QUALIFIED_ROSTER").is_some_and(|value| value == "1");
-    let mut qualified = admission.filter(|_| use_qualified).map(|request| {
+    let mut qualified = admission.filter(|_| store.qualified_roster).map(|request| {
         store
             .store
             .unchanged_local_candidate_roster(request, Domain::Inputs)

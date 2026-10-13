@@ -34,6 +34,12 @@ pub struct AbiArtifacts {
     pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
     pub(super) provisional_reused: AtomicUsize,
+    /// Whole-batch replay and the incidence-qualified roster: both validate
+    /// every retained receipt sequentially (~3 s each on DeepQuarry); the
+    /// parallel per-unit admission is the default. DMB_ABI_BATCH_REPLAY=1 /
+    /// DMB_ABI_QUALIFIED_ROSTER=1 restore them.
+    pub(super) batch_replay: bool,
+    pub(super) qualified_roster: bool,
     batch_reused: AtomicUsize,
     pub(super) scheduled_reused: AtomicUsize,
     pub(super) qualified_reused: AtomicUsize,
@@ -50,6 +56,8 @@ impl Default for AbiArtifacts {
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
             provisional_reused: AtomicUsize::new(0),
+            batch_replay: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1"),
+            qualified_roster: std::env::var_os("DMB_ABI_QUALIFIED_ROSTER").is_some_and(|value| value == "1"),
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
             qualified_reused: AtomicUsize::new(0),
@@ -73,6 +81,14 @@ impl AbiArtifacts {
             engine_owner: Some(engine_owner),
             ..Self::default()
         }
+    }
+
+    /// Enable whole-batch replay and the qualified roster (their own tests).
+    #[cfg(test)]
+    pub(crate) fn with_retained_shortcuts(mut self) -> Self {
+        self.batch_replay = true;
+        self.qualified_roster = true;
+        self
     }
 
     pub(crate) fn with_disk(
