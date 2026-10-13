@@ -338,5 +338,8 @@
 /obj/item/rig/interim_wire_actor_probe state: 
 /obj/item/rig/interim_wire_actor_probe dir: 2
 /obj/item/rig/interim_wire_actor_probe overlay: icons/obj/rig_modules.dmi::8:#000000
-/obj/item/rig/nikki runtime: OWN: /obj/item/rig/nikki.chest is declared /obj/item/clothing/suit/space/rig, refused a /obj/item/clothing/suit/fluff/nikki%//%["code/engine/refs/lifecycle_links.dm",54]%//%
+/obj/item/rig/nikki icon: icons/vore/custom_clothes_vr.dmi
+/obj/item/rig/nikki state: nikkicape
+/obj/item/rig/nikki dir: 2
+/obj/item/rig/nikki overlay: icons/vore/custom_clothes_vr.dmi:nikkicape:8:#000000
 

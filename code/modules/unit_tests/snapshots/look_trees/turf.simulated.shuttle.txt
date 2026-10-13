@@ -23,7 +23,7 @@
 /turf/simulated/shuttle/floor/black state: floor_black
 /turf/simulated/shuttle/floor/black dir: 2
 /turf/simulated/shuttle/floor/alien icon: icons/turf/flooring/shuttle.dmi
-/turf/simulated/shuttle/floor/alien state: alienpod4
+/turf/simulated/shuttle/floor/alien state: alienpod5
 /turf/simulated/shuttle/floor/alien dir: 2
 /turf/simulated/shuttle/floor/alienplating icon: icons/turf/flooring/shuttle.dmi
 /turf/simulated/shuttle/floor/alienplating state: alienplating

@@ -201,10 +201,6 @@
 	var/explosion_delay_lower	= 0 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 1 SECONDS	// Upper bound.
 
-CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
-	configure(mob_kind(attack_cooldown = 8))
-
-
 	loot_list = list(/obj/item/gun/projectile/automatic/z8 = 1)
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
@@ -216,6 +212,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
 	say_list_type = /datum/say_list/merc
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
+	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s explosive implant lets out a shrill beep!!!")))
