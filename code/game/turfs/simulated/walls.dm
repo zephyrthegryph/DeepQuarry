@@ -45,6 +45,8 @@ CAPABILITIES(/turf/simulated/wall)
 	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
 	on_change(nameof(material), ANY, then(PROC_REF(smooth_inputs_changed)))
 	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
+	ref_one(nameof(material), /datum/material)
+	setup(PROC_REF(wall_take_materials))
 	param(nameof(wall_material_key), pos = 1)
 	param(nameof(reinf_material_key), pos = 2)
 	param(nameof(girder_material_key), pos = 3)
@@ -59,17 +61,16 @@ CAPABILITIES(/turf/simulated/wall)
 /turf/simulated/wall/var/reinf_material_key
 /turf/simulated/wall/var/girder_material_key
 
-// ALLOW(init/INSTANCE_STATE): a wall takes its materials (the type's forced ones first), girder and radioactivity
-/turf/simulated/wall/Initialize(mapload)
+/// A wall takes its materials (the type's forced ones first), girder and radioactivity once its Initialize() chain has returned.
+/turf/simulated/wall/proc/wall_take_materials()
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)
 		wall_material_key = forced_materials[1]
 		reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
 		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
-	. = ..()
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
-	set_material(get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
+	rel_set(src, nameof(material), get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
 	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
 	if(!isnull(reinf_material_key))
 		set_reinf_material(get_material_by_name(reinf_material_key))
@@ -245,7 +246,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 			O.forceMove(src)
 
 	clear_plants()
-	set_material(get_material_by_name("placeholder"))
+	rel_set(src, nameof(material), get_material_by_name("placeholder"))
 	set_reinf_material(null)
 	girder_material = null
 	update_connections(1)

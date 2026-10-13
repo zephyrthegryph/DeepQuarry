@@ -45,6 +45,7 @@
 
 CAPABILITIES(/turf/simulated/floor)
 	extend(/datum/act/hit/blob, instead())
+	ref_one(nameof(flooring), /datum/decl/flooring)
 	param(nameof(floortype_at_make), pos = 1)
 	op("floor_item_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(floor_item_help)))
 	op("floor_item_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_disarm)))

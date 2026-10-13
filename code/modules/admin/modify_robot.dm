@@ -735,7 +735,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 		target().laws = new /datum/ai_laws/syndicate_override
 		if(target().bolt)
 			if(!target().bolt.malfunction)
-				target().bolt.malfunction = MALFUNCTION_PERMANENT
+				target().bolt.set_malfunction(MALFUNCTION_PERMANENT)
 		to_chat(target(), span_danger("Laws updated!\n") + target().laws.get_formatted_laws())
 		target().hud_used?.update_robot_modules_display()
 	return OP_OK

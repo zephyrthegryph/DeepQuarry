@@ -215,6 +215,7 @@
 TRACKED(/mob, incorporeal_move)
 
 CAPABILITIES(/mob)
+	ref_one(nameof(mind), /datum/mind)
 	// Who the character says they are (profile_records.dm).
 	profile(nameof(bio), /datum/record/identity)
 	// The player's vore preferences (code/modules/vore/eating/vore_profile.dm).
