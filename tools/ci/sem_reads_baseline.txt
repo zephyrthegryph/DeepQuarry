@@ -46,19 +46,16 @@ unknown_read	code/datums/chat_message.dm	return maptext_height
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
-unknown_read	code/engine/refs/containment/ledger.dm	return rx?.containment_ledger
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
-unknown_read	code/engine/stats/recompute.dm	var/list/direct = E.rx?.stats?.hop_in?[hop.rel_var]
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	var/list/icon_dimensions = get_icon_dimensions(icon)
 unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
-unknown_read	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
 unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
 unknown_read	code/modules/body/body.dm	if(gained && owner)
 unknown_read	code/modules/body/plans/humanoid.dm	var/obj/item/organ/torso = H.organs_by_name?[BP_TORSO]
@@ -69,9 +66,7 @@ unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identi
 unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	appearance_flags |= PIXEL_SCALE
 unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	if(isnull(rest_dir))
 unknown_read	code/modules/mob/living/silicon/ai/life.dm	if(APU_power)
-unknown_read	code/modules/mob/living/silicon/robot/robot.dm	if(bolt && !bolt.malfunction)
 unknown_read	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
-unknown_read	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
 unknown_read	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
 unknown_read	code/modules/tgui/states.dm	if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
 unknown_read	code/modules/tgui/states.dm	if(!cell || cell.charge <= 0 || lockcharge)
@@ -172,24 +167,10 @@ hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_locat
 hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
 hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
 hop_not_relation	code/game/objects/items/weapons/RCD.dm	return module.holder.cell
-hop_not_relation	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.is_plating)
-hop_not_relation	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.can_engrave)
-hop_not_relation	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
-hop_not_relation	code/library/mob/statuses.dm	var/datum/stat_record/rec = rx?.stats
-hop_not_relation	code/modules/assembly/assembly.dm	return loc.tgui_host()
 hop_not_relation	code/modules/body/body.dm	if(gained && owner)
 hop_not_relation	code/modules/body/body.dm	PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
 hop_not_relation	code/modules/body/limb_state.dm	var/mob/living/carbon/human/H = owner
 hop_not_relation	code/modules/body/plans/humanoid.dm	var/mob/living/carbon/human/H = owner
-hop_not_relation	code/modules/integrated_electronics/_defines.dm	return assembly
-hop_not_relation	code/modules/integrated_electronics/core/assemblies.dm	return access_card
-hop_not_relation	code/modules/integrated_electronics/core/assemblies/clothing.dm	return clothing
-hop_not_relation	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
-hop_not_relation	code/modules/integrated_electronics/core/integrated_circuit.dm	return loc.tgui_host()
-hop_not_relation	code/modules/mob/holder.dm	return held_mob?.GetIdCard()
-hop_not_relation	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if(user == myprotean)
-hop_not_relation	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
-hop_not_relation	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
 unknown_field	code/_onclick/hud/alert.dm	WARNING("[src] threw alert [category] with new_master [new_master] while already having that alert with master [master]")
 unknown_field	code/game/objects/structures/low_wall.dm	switch(G.material.name)
 unknown_field	code/game/objects/structures/low_wall.dm	switch(G.material.name)

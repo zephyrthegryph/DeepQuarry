@@ -10,6 +10,9 @@
 	max_complexity = IC_COMPLEXITY_BASE / 2
 	var/tmp/obj/item/implant/integrated_circuit/implant
 
+CAPABILITIES(/obj/item/electronic_assembly/implant)
+	ref_one(nameof(implant), /obj/item/implant/integrated_circuit)
+
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
 

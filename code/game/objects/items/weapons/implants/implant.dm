@@ -14,6 +14,8 @@
 	var/initialize_loc = BP_TORSO
 	var/known_implant = FALSE
 
+TRACKED(/obj/item/implant, malfunction)
+
 /// The implant site slot is keyed by implant type (organ_external.dm): at
 /// most one implant of a given kind per organ.
 /obj/item/implant/slot_key()
@@ -67,7 +69,7 @@
 	name = "melted implant"
 	desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 	icon_state = "implant_melted"
-	malfunction = MALFUNCTION_PERMANENT
+	set_malfunction(MALFUNCTION_PERMANENT)
 
 /obj/item/implant/proc/implant_loadout(mob/living/carbon/human/H)
 	. = istype(H) && handle_implant(H, initialize_loc)
@@ -130,7 +132,7 @@ CAPABILITIES(/obj/item/implant/tracking)
 			name = "melted implant"
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"
-			malfunction = MALFUNCTION_PERMANENT
+			set_malfunction(MALFUNCTION_PERMANENT)
 			set_tracking_active(FALSE)
 	return 1
 
@@ -156,7 +158,7 @@ Implant Specifics:<BR>"}
 	var/datum/damage_packet/packet = A.packet
 	if(malfunction) //no, dawg, you can't malfunction while you are malfunctioning
 		return HOOK_DECLINE
-	malfunction = MALFUNCTION_TEMPORARY
+	set_malfunction(MALFUNCTION_TEMPORARY)
 
 	var/delay = 20
 	switch(packet.severity)
@@ -351,7 +353,7 @@ CAPABILITIES(/obj/item/implant/explosive)
 	var/datum/damage_packet/packet = A.packet
 	if(malfunction)
 		return HOOK_DECLINE
-	malfunction = MALFUNCTION_TEMPORARY
+	set_malfunction(MALFUNCTION_TEMPORARY)
 	switch (packet.severity)
 		if (4)	//Weak EMP will make implant tear limbs off.
 			if (prob(25))
@@ -443,7 +445,7 @@ CAPABILITIES(/obj/item/implant/chem)
 	var/datum/damage_packet/packet = A.packet
 	if(malfunction)
 		return HOOK_DECLINE
-	malfunction = MALFUNCTION_TEMPORARY
+	set_malfunction(MALFUNCTION_TEMPORARY)
 
 	switch(packet.severity)
 		if(1)
@@ -606,14 +608,14 @@ CAPABILITIES(/obj/item/implant/death_alarm)
 	var/datum/damage_packet/packet = A.packet
 	if(malfunction) //so I'm just going to add a meltdown chance here
 		return HOOK_DECLINE
-	malfunction = MALFUNCTION_TEMPORARY
+	set_malfunction(MALFUNCTION_TEMPORARY)
 	if(prob(40)) // Make the malfunction a probability because annoying
 		activate("emp")	//let's shout that this dude is dead
 	if(packet.severity == 1)
 		if(prob(40))	//small chance of obvious meltdown
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
-			malfunction = MALFUNCTION_PERMANENT
+			set_malfunction(MALFUNCTION_PERMANENT)
 		set_alarm_armed(FALSE)
 
 	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
@@ -941,7 +943,7 @@ CAPABILITIES(/obj/item/implanter/compliance)
 
 /// after() target: one step of a temporary malfunction wears off.
 /obj/item/implant/proc/malfunction_recover()
-	malfunction--
+	set_malfunction(malfunction - 1)
 
 /obj/item/implant/explosive/proc/small_boom_goes()
 	if (ishuman(imp_in()) && part)

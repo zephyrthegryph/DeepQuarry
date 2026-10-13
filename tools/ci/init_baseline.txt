@@ -1318,19 +1318,6 @@ init_lines	code/game/turfs/simulated/wall_types.dm	else
 init_lines	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
 init_lines	code/game/turfs/simulated/wall_types.dm	if(takes_underlays)
 init_lines	code/game/turfs/simulated/wall_types.dm	underlay_update()
-init_lines	code/game/turfs/simulated/walls.dm	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
-init_lines	code/game/turfs/simulated/walls.dm	if(forced_materials)
-init_lines	code/game/turfs/simulated/walls.dm	wall_material_key = forced_materials[1]
-init_lines	code/game/turfs/simulated/walls.dm	reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
-init_lines	code/game/turfs/simulated/walls.dm	girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
-init_lines	code/game/turfs/simulated/walls.dm	if(!damage_overlays[1]) //list hasn't been populated
-init_lines	code/game/turfs/simulated/walls.dm	generate_overlays()
-init_lines	code/game/turfs/simulated/walls.dm	set_material(get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
-init_lines	code/game/turfs/simulated/walls.dm	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
-init_lines	code/game/turfs/simulated/walls.dm	if(!isnull(reinf_material_key))
-init_lines	code/game/turfs/simulated/walls.dm	set_reinf_material(get_material_by_name(reinf_material_key))
-init_lines	code/game/turfs/simulated/walls.dm	update_material()
-init_lines	code/game/turfs/simulated/walls.dm	check_radioactive()
 init_lines	code/game/turfs/simulated/water.dm	handle_fish()
 init_lines	code/game/turfs/space/space.dm	space_appearance()
 init_lines	code/game/turfs/space/transit.dm	toggle_transit(GLOB.reverse_dir[pushdirection])

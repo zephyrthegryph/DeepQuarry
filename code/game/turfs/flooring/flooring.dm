@@ -118,7 +118,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	if(!LAZYACCESS(flooring_cache, cache_key))
 		var/image/I = image(icon = icon, icon_state = icon_base, dir = icon_dir)
 		I.layer = layer
-		LAZYSET(flooring_cache, cache_key, I)
+		set_flooring_cache_at(cache_key, I)
 	return LAZYACCESS(flooring_cache, cache_key)
 
 /// The edge and inner-corner overlays for a floor of this flooring with borders on `has_border`

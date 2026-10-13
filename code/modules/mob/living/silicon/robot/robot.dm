@@ -1049,7 +1049,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(isnull(bolt))
 		return OP_FAILED
 	act_message(src, null, MSG_SELF(span_warning("You successfully break your [bolt].")), MSG_OTHERS(span_danger("%U% manages to break the [bolt]!")))
-	bolt.malfunction = MALFUNCTION_PERMANENT
+	bolt.set_malfunction(MALFUNCTION_PERMANENT)
 	return OP_OK
 
 /mob/living/silicon/robot/proc/module_reset(notify = TRUE)
@@ -1471,7 +1471,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(line[2])
 		to_chat(src, span_danger(line[2]))
 	else if(bolt && !bolt.malfunction)
-		bolt.malfunction = MALFUNCTION_PERMANENT
+		bolt.set_malfunction(MALFUNCTION_PERMANENT)
 		to_chat(src, span_danger("RESTRAINING BOLT DISABLED"))
 	var/list/next_line = step < length(lines) ? lines[step + 1] : null
 	var/delay = next_line ? next_line[1] : 0

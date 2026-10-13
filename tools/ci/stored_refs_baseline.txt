@@ -837,14 +837,10 @@ var	code/modules/hydroponics/spreading/spreading.dm	var/tmp/obj/effect/plant/par
 var	code/modules/identification/identification.dm	var/tmp/obj/holder // The thing the datum is 'attached' to.
 var	code/modules/instruments/songs/_song.dm	var/tmp/atom/parent
 var	code/modules/instruments/songs/_song.dm	var/tmp/atom/music_player
-var	code/modules/integrated_electronics/_defines.dm	var/tmp/obj/item/electronic_assembly/assembly // Reference to the assembly holding this circuit, if any.
 var	code/modules/integrated_electronics/core/assemblies.dm	var/tmp/obj/item/card/id/locked_by // The ID that locked this assembly
-var	code/modules/integrated_electronics/core/assemblies.dm	var/tmp/obj/item/card/id/access_card // ID card for door access
 var	code/modules/integrated_electronics/core/assemblies.dm	var/tmp/obj/item/electronic_assembly/host_assembly
-var	code/modules/integrated_electronics/core/assemblies/clothing.dm	var/tmp/obj/item/clothing/clothing
 var	code/modules/integrated_electronics/core/assemblies/clothing.dm	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
 var	code/modules/integrated_electronics/core/assemblies/device.dm	var/tmp/obj/item/assembly/electronic_assembly/holder
-var	code/modules/integrated_electronics/core/assemblies/implant.dm	var/tmp/obj/item/implant/integrated_circuit/implant
 var	code/modules/integrated_electronics/core/pins.dm	var/tmp/obj/item/integrated_circuit/holder
 var	code/modules/integrated_electronics/core/printer.dm	var/tmp/obj/item/electronic_assembly/queued_assembly // The assembly being cloned.
 var	code/modules/integrated_electronics/core/tools.dm	var/datum/integrated_io/selected_io = null
@@ -928,7 +924,6 @@ var	code/modules/mob/dead/observer/observer.dm	var/datum/hud/living/carbon/hud =
 var	code/modules/mob/freelook/ai/eye.dm	var/obj/machinery/hologram/holopad/holo = null
 var	code/modules/mob/freelook/chunk.dm	var/datum/obfuscation/obfuscation = new()
 var	code/modules/mob/freelook/eye.dm	var/datum/visualnet/visualnet
-var	code/modules/mob/holder.dm	var/mob/living/held_mob
 var	code/modules/mob/holder.dm	/obj/item/holder/var/tmp/mob/held_at_make
 var	code/modules/mob/language/language_panel.dm	var/mob/host
 var	code/modules/mob/living/bot/bot.dm	var/atom/target = null
@@ -953,7 +948,6 @@ var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	var/mo
 var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	var/datum/form/current
 var	code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm	var/obj/item/rig/protean/rig
 var	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/datum/protean_power/power
-var	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	var/mob/living/carbon/human/myprotean
 var	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	var/mob/living/carbon/human/soaking_wearer
 var	code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm	/datum/trait_state/var/mob/living/owner
 var	code/modules/mob/living/carbon/human/species/station/traits/states/crowd_detection.dm	VAR_PROTECTED/mob/living/carbon/human/human_parent
@@ -1075,7 +1069,6 @@ var	code/modules/mob/living/simple_mob/subtypes/xenomorph_abilities.dm	var/mob/l
 var	code/modules/mob/living/turfslip.dm	var/mob/living/owner
 var	code/modules/mob/mind_host.dm	var/obj/item/owner
 var	code/modules/mob/mind_host.dm	var/obj/item/organ/internal/brain/tissue
-var	code/modules/mob/mob_defines.dm	var/datum/mind/mind
 var	code/modules/mob/mob_defines.dm	var/tmp/mob/living/carbon/LAssailant = null
 var	code/modules/mob/mob_defines.dm	var/tmp/datum/click_intercept
 var	code/modules/mob/mob_defines.dm	var/tmp/datum/focus //What receives our keyboard inputs. src by default

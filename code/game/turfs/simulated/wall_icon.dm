@@ -70,7 +70,7 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 
 /// Gives the wall these materials (the tracked material and reinforcement redraw it and make the walls around it join it again).
 /turf/simulated/wall/proc/apply_materials(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
-	set_material(newmaterial)
+	rel_set(src, nameof(material), newmaterial)
 	set_reinf_material(newrmaterial)
 	if(!newgmaterial)
 		girder_material = DEFAULT_WALL_MATERIAL
