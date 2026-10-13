@@ -108,3 +108,54 @@
 			reported++
 	TEST_ASSERT_EQUAL(reported, length(naive), "table_compile reported exactly the all-pairs clashes")
 	log_world("DQ_TABLE_CACHE: synthetic clash fixture: [length(naive)] clashing pairs, [length(candidates)] of [length(plans) * (length(plans) - 1) / 2] pairs compared")
+
+/// The original of type_trait_table_build(): `T in built_of_table` scans the keys, so it is quadratic in the tables. Reference for the equality test.
+/proc/type_trait_table_scan(list/by_type, kind, trait_type)
+	var/list/built_of_table = list()
+	var/list/table = list()
+	for(var/type in by_type)
+		var/datum/type_table/T = by_type[type]
+		if(!(T in built_of_table))
+			var/datum/centry/C = static_find(T, kind)
+			var/datum/entry/E = C?.item
+			var/datum/type_trait/made = null
+			if(E)
+				made = new trait_type
+				made.kind = kind
+				made.apply_args(E.args)
+			built_of_table[T] = made
+		var/datum/type_trait/known = built_of_table[T]
+		if(known)
+			table[type] = known
+	return table
+
+/// Per static kind, the table built by the lookup version equals the scanning original: the same types, equal traits, and the same sharing
+/// (types under one declaring table read one trait object in both).
+/datum/unit_test/dq_type_trait_tables_equal_scan
+
+/datum/unit_test/dq_type_trait_tables_equal_scan/Run()
+	var/list/by_type = SSstatic_entries.tables_by_type
+	TEST_ASSERT(length(by_type) > 100, "the static tables are built ([length(by_type)] types)")
+	var/kinds = 0
+	for(var/datum/entry_engine/type_trait/engine_type as anything in subtypesof(/datum/entry_engine/type_trait))
+		var/datum/entry_engine/type_trait/engine = entry_engine_for(engine_type::kind)
+		if(!engine)
+			continue
+		var/list/fast = type_trait_table_build(by_type, engine.kind, engine.trait_type)
+		var/list/slow = type_trait_table_scan(by_type, engine.kind, engine.trait_type)
+		var/list/live = GLOB.type_trait_tables[engine.kind]
+		TEST_ASSERT_EQUAL(length(fast), length(slow), "[engine.kind]: the same number of types")
+		TEST_ASSERT_EQUAL(length(live), length(slow), "[engine.kind]: the boot table has the same number of types")
+		var/list/first_fast = list()
+		var/list/first_slow = list()
+		for(var/type in slow)
+			TEST_ASSERT(!isnull(fast[type]), "[engine.kind]: [type] is in the lookup table")
+			TEST_ASSERT_EQUAL(datum_signature(fast[type]), datum_signature(slow[type]), "[engine.kind]: [type] has equal trait values")
+			if(!first_fast[fast[type]])
+				first_fast[fast[type]] = type
+			if(!first_slow[slow[type]])
+				first_slow[slow[type]] = type
+			TEST_ASSERT_EQUAL(first_fast[fast[type]], first_slow[slow[type]], "[engine.kind]: [type] shares its trait with the same types")
+		kinds++
+	log_world("DQ_TABLE_CACHE: type trait tables equal the scanning build over [kinds] kinds")
+	TEST_ASSERT(kinds > 0, "there are type trait kinds")
