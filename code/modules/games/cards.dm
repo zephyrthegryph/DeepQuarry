@@ -494,6 +494,9 @@ CAPABILITIES(/obj/item/pack)
 	user.put_in_active_hand(H)
 	return TRUE
 
+// The cards a hand shows are state its draw reads: declared, so the list mutators exist whatever else writes the var.
+TRACKED(/obj/item/hand, cards)
+
 /obj/item/hand
 	name = "hand of cards"
 	desc = "Some playing cards."
