@@ -239,7 +239,7 @@ CAPABILITIES(/obj/item/spellbook/oneuse)
 
 /obj/item/spellbook/oneuse/mindswap/onlearned()
 	spellname = pick("fireball","smoke","blind","forcewall","knock","horses","charge")
-	icon_state = "book[spellname]"
+	set_icon_state("book[spellname]")
 	name = "spellbook of [spellname]" //Note, desc doesn't change by design
 	..()
 

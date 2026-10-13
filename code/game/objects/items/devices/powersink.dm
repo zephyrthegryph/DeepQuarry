@@ -50,7 +50,7 @@ TRACKED(/obj/item/powersink, mode)
 	act_message(A.actor, src, others = span_notice("%U% detaches %T% from the cable!"))
 	set_glow(src, GLOW(0, null, null))
 	playsound(src, sounds_of(A.held).use, 50, 1)
-	icon_state = "powersink0"
+	set_icon_state("powersink0")
 	return OP_OK
 
 
@@ -74,12 +74,12 @@ CAPABILITIES(/obj/item/powersink)
 		if(1)
 			act_message(user, src, others = span_notice("%U% activates %T%!"))
 			set_mode(2)
-			icon_state = "powersink1"
+			set_icon_state("powersink1")
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			act_message(user, src, others = span_notice("%U% deactivates %T%!"))
 			set_mode(1)
 			set_glow(src, GLOW(0, null, null))
-			icon_state = "powersink0"
+			set_icon_state("powersink0")
 		
 	return TRUE
 /obj/item/powersink/pwr_drain()

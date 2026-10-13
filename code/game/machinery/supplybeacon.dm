@@ -97,16 +97,16 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 		if(user) to_chat(user, span_notice("The connected wire doesn't have enough current."))
 		return
 	set_glow(src, GLOW(3, 3, "#00CCAA"))
-	icon_state = "beacon_active"
+	set_icon_state("beacon_active")
 	set_use_power(USE_POWER_IDLE)
 	if(user) to_chat(user, span_notice("You activate the beacon. The supply drop will be dispatched soon."))
 
 /obj/machinery/power/supply_beacon/proc/deactivate(mob/user, permanent)
 	if(permanent)
 		set_expended(TRUE)
-		icon_state = "beacon_depleted"
+		set_icon_state("beacon_depleted")
 	else
-		icon_state = "beacon"
+		set_icon_state("beacon")
 	set_glow(src, GLOW(0, null, null))
 	set_use_power(USE_POWER_OFF)
 	cancel_after(src, "drop")

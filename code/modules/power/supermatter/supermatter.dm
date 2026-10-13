@@ -450,11 +450,11 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		if (oxygen > 0.8)
 			//If chain reacting at oxygen == 1, we want the power at 800 K to stabilize at a power level of 400
 			equilibrium_power = 400
-			icon_state = "[base_icon_state]_glow"
+			set_icon_state("[base_icon_state]_glow")
 		else
 			//If chain reacting at oxygen == 1, we want the power at 800 K to stabilize at a power level of 250
 			equilibrium_power = 250
-			icon_state = base_icon_state
+			set_icon_state(base_icon_state)
 
 		temp_factor = ( (equilibrium_power/DECAY_FACTOR)**3 )/800
 		power = max( (removed.return_temperature() * temp_factor) * oxygen + power, 0)

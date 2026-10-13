@@ -99,7 +99,7 @@ Buildable meters
 /obj/item/pipe/proc/update()
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	name = "[initial(fakeA.name)] fitting"
-	icon_state = initial(fakeA.pipe_state)
+	set_icon_state(initial(fakeA.pipe_state))
 
 /obj/item/pipe/proc/do_a_flip()
 	set_dir(turn(dir, -180))
@@ -111,7 +111,7 @@ Buildable meters
 	// We may switch to this later, but for now gotta do some magic.
 	mirrored = !mirrored
 	var/obj/machinery/atmospherics/fakeA = pipe_type
-	icon_state = "[initial(fakeA.pipe_state)][mirrored ? "m" : ""]"
+	set_icon_state("[initial(fakeA.pipe_state)][mirrored ? "m" : ""]")
 
 /obj/item/pipe/handle_rotation_verbs(angle, mob/user)
 	. = ..()

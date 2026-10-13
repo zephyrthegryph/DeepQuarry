@@ -1532,8 +1532,8 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	var/mob/user = A.actor
 	if(sawn_off)
 		return
-	icon_state = "sawnshotgun"
-	item_state = "sawnshotgun"
+	set_icon_state("sawnshotgun")
+	set_item_state("sawnshotgun")
 	desc = "Omar's coming!"
 	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
 
@@ -1545,7 +1545,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))//but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off shotgun"
 	desc += " The barrel seems to be crudely sawn in half."
-	icon_state = "sawnshotgun[shotgun_variant]"
+	set_icon_state("sawnshotgun[shotgun_variant]")
 	icon_expected_width = 32
 	update_transform()
 

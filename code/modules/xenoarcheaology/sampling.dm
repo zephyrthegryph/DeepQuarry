@@ -164,7 +164,7 @@ CAPABILITIES(/obj/item/core_sampler)
 			filled_bag.name = "sample bag"
 			filled_bag.desc = "a bag for holding research samples."
 
-			icon_state = "sampler1"
+			set_icon_state("sampler1")
 			--num_stored_bags
 
 			//put in a rock sliver
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/core_sampler)
 		if(!success)
 			filled_bag.forceMove(get_turf(src))
 		rel_take(src, nameof(filled_bag))
-		icon_state = "sampler0"
+		set_icon_state("sampler0")
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
 

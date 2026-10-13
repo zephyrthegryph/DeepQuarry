@@ -359,7 +359,7 @@ CAPABILITIES(/obj/item/card/id/event)
 		show_id_card(user)
 		return OP_OK
 	if(polymorphic_type == 1)
-		icon_state = user.job
+		set_icon_state(user.job)
 		base_icon_state = user.job
 	else if(polymorphic_type == 2)
 		var/static/list/jobs_to_icon = list( //ITG only has a few kinds of icons so we have to group them up!
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/item/card/id/event)
 			to_chat(user, span_notice("ITG Cards do not seem to be able to accept the access codes for your ID."))
 			return OP_OK
 		else
-			icon_state = guess
+			set_icon_state(guess)
 			base_icon_state = guess
 
 	if(!preset_rank)
@@ -587,7 +587,7 @@ CAPABILITIES(/obj/item/card/id/event)
 	var/gimmeicon = icon
 	. = ..()
 	icon = gimmeicon
-	icon_state = base_icon_state + "_digested"
+	set_icon_state(base_icon_state + "_digested")
 
 /obj/item/card/id/event/polymorphic/altcard
 	icon = 'icons/obj/card_alt.dmi'

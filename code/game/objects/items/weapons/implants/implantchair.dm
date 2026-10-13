@@ -93,7 +93,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 	if(injecting)
 		implant(leaving)
 		injecting = 0
-	icon_state = "implantchair"
+	set_icon_state("implantchair")
 	return
 
 
@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 		to_chat(user, span_warning("\The [src] won't take [M]!"))
 		return
 	src.add_fingerprint(user)
-	icon_state = "implantchair_on"
+	set_icon_state("implantchair_on")
 	return 1
 
 

@@ -16,11 +16,11 @@ CAPABILITIES(/obj/machinery/giga_drill)
 	var/mob/user = A.actor
 	if(active)
 		set_active(0)
-		icon_state = "gigadrill"
+		set_icon_state("gigadrill")
 		to_chat(user, span_notice("You press a button and \the [src] slowly spins down."))
 	else
 		set_active(1)
-		icon_state = "gigadrill_mov"
+		set_icon_state("gigadrill_mov")
 		to_chat(user, span_notice("You press a button and \the [src] shudders to life."))
 	return TRUE
 

@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/deadringer)
 					to_chat(watchowner(), span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
 				else
 					to_chat(watchowner(), span_blue("You fade into nothingness, leaving behind a fake body!"))
-				icon_state = "deadringer_cd"
+				set_icon_state("deadringer_cd")
 				set_timer(5)
 				return
 	if(timer > 0)
@@ -191,7 +191,7 @@ CAPABILITIES(/obj/item/deadringer)
 		if(corpse())
 			replace_with(corpse(), /obj/effect/effect/smoke/chem)
 	if(timer == 0)
-		icon_state = "deadringer"
+		set_icon_state("deadringer")
 	return
 
 /// the watchowner this refers to (a relation view: null once it is deleted).

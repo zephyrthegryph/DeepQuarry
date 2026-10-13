@@ -111,7 +111,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	if(setToHidden && known) //
 		name = unknown_name
 		icon = 'icons/obj/overmap.dmi'
-		icon_state = unknown_state
+		set_icon_state(unknown_state)
 		color = null
 		desc = "Scan this to find out more information."
 		known = FALSE
@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		desc = (real_desc ? real_desc : initial(desc))
 		if(real_icon)  //Only true if GMs/Admins want a non-standard icon from outside 'icons/obj/overmap.dmi'
 			icon = real_icon
-		icon_state = (real_icon_state ? real_icon_state : initial(icon_state))
+		set_icon_state((real_icon_state ? real_icon_state : initial(icon_state)))
 	return ..()
 
 /obj/effect/overmap/visitable/proc/get_space_zlevels()

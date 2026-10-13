@@ -1474,9 +1474,9 @@ CAPABILITIES(/datum/vore_look)
 		if(istype(body_backup, /mob/living/simple_mob))
 			var/mob/living/simple_mob/sm = body_backup
 			if(sm.icon_rest && sm.resting)
-				sm.icon_state = sm.icon_rest
+				sm.set_icon_state(sm.icon_rest)
 			else
-				sm.icon_state = sm.icon_living
+				sm.set_icon_state(sm.icon_living)
 		announce_ghost_joinleave(T.mind, 0, "They now occupy their body again.")
 
 /// Reform an MMI prey: its body backup is revived around it.

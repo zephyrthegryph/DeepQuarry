@@ -37,7 +37,7 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 	if(powered(power_of(src).channel))
 		if(!previous_power_state)
 			previous_power_state = 1
-			icon_state = "cellold1"
+			set_icon_state("cellold1")
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] suddenly comes to life!"))
 
 		//slowly grow a mob
@@ -49,7 +49,7 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 			time_spent_spawning = 0
 			set_use_power(USE_POWER_IDLE)
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] pings!"))
-			icon_state = "cellold1"
+			set_icon_state("cellold1")
 			desc = "It's full of a bubbling viscous liquid, and is lit by a mysterious glow."
 			if(spawn_type)
 				new spawn_type(src.loc)
@@ -57,18 +57,18 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 		//if we're getting close to finished, kick into overdrive power usage
 		if(time_spent_spawning / time_per_spawn > 0.75)
 			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "cellold2"
+			set_icon_state("cellold2")
 			desc = "It's full of a bubbling viscous liquid, and is lit by a mysterious glow. A dark shape appears to be forming inside..."
 		else
 			set_use_power(USE_POWER_IDLE)
-			icon_state = "cellold1"
+			set_icon_state("cellold1")
 			desc = "It's full of a bubbling viscous liquid, and is lit by a mysterious glow."
 
 		time_spent_spawning = time_spent_spawning + world.time - last_process
 	else
 		if(previous_power_state)
 			previous_power_state = 0
-			icon_state = "cellold0"
+			set_icon_state("cellold0")
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] suddenly shuts down."))
 
 		//cloned mob slowly breaks down

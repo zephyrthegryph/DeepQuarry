@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/detective45)
 	var/choice = A.step_value("sprite")
 	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
-		icon_state = options[choice]
+		set_icon_state(options[choice])
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
 		return OP_OK
 	return OP_DECLINE

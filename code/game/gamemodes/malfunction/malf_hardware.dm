@@ -61,7 +61,7 @@
 /datum/malf_hardware/strong_turrets/install()
 	..()
 	for(var/obj/machinery/porta_turret/T as anything in REGISTRY_MEMBERS(REGISTRY_TURRETS))
-		T.max_integrity = round(initial(T.max_integrity) * 1.4)
+		T.set_max_integrity(round(initial(T.max_integrity) * 1.4))
 		T.repair_damage(T.max_integrity)
 		T.shot_delay = round(initial(T.shot_delay) / 2)
 		T.set_auto_repair(TRUE)

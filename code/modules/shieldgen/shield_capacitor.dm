@@ -151,7 +151,7 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 
 /obj/machinery/shield_capacitor/power_change()
 	if(broken_now())
-		icon_state = "broke"
+		set_icon_state("broke")
 	else
 		..()
 

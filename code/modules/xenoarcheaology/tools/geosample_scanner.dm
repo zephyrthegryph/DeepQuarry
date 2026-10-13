@@ -220,7 +220,7 @@ TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 	scan_progress = CLAMP(scan_progress + (completion_delta * COMPLETION_DELTA_MODIFIER), 0, 100)
 
 /obj/machinery/radiocarbon_spectrometer/proc/start_scanning()
-	icon_state = "analyser_processing"
+	set_icon_state("analyser_processing")
 	set_scanning(TRUE)
 	scan_progress = 0
 	scanner_rpm_delta = 0
@@ -229,7 +229,7 @@ TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 	heat = 0
 
 /obj/machinery/radiocarbon_spectrometer/proc/stop_scanning()
-	icon_state = "analyser"
+	set_icon_state("analyser")
 	set_scanning(FALSE)
 	scan_progress = 0
 	scanner_rpm_delta = 0

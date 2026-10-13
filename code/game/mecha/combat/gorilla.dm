@@ -46,7 +46,7 @@ TYPE_TABLE(/obj/mecha/combat/gorilla, mecha_starting_equipment, list( \
 	return result
 
 /obj/mecha/combat/gorilla/mechturn(direction)
-	dir = direction
+	set_dir(direction)
 	var/turnsound = rand(1,2)
 	switch(turnsound)
 		if(1)

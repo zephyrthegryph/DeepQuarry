@@ -30,7 +30,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/honkpet)
 
 /// Old attack_hand: disarm swaps the sprite instead of the normal touch.
 /mob/living/simple_mob/animal/passive/honkpet/proc/honkpet_interaction_hand(datum/act/op/A)
-	icon_state = pick("c_pet", "m_pet")
+	set_icon_state(pick("c_pet", "m_pet"))
 	return TRUE
 
 /mob/living/simple_mob/animal/passive/mimepet
@@ -62,5 +62,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mimepet)
 
 /// Old attack_hand: disarm reshuffles Dave's sprite, then the normal touch follows.
 /mob/living/simple_mob/animal/passive/mimepet/proc/mimepet_interaction_hand(datum/act/op/A)
-	icon_state = pick("dave1", "dave2", "dave3", "dave5" , "dave6" , "dave7" , "dave8" , "dave9" , "dave10")
+	set_icon_state(pick("dave1", "dave2", "dave3", "dave5" , "dave6" , "dave7" , "dave8" , "dave9" , "dave10"))
 	return OP_DECLINE

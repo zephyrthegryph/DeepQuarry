@@ -264,25 +264,25 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/proc/replace_icon(inhand)
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(inhand)
-		icon_state = "mg-backpack-deployed"
-		item_state = "mg-backpack-deployed-onmob"
+		set_icon_state("mg-backpack-deployed")
+		set_item_state("mg-backpack-deployed-onmob")
 		if(is_twohanded())
-			medigun.icon_state = "medblaster"
+			medigun.set_icon_state("medblaster")
 			medigun.base_icon_state = "medblaster"
 			medigun.wielded_item_state = "medblaster-wielded"
 		else
-			medigun.icon_state = "medblaster_cmo"
+			medigun.set_icon_state("medblaster_cmo")
 			medigun.base_icon_state = "medblaster_cmo"
 			medigun.wielded_item_state = ""
 	else if(is_twohanded())
-		icon_state = "mg-backpack"
-		item_state = "mg-backpack-onmob"
-		medigun.icon_state = "medblaster"
+		set_icon_state("mg-backpack")
+		set_item_state("mg-backpack-onmob")
+		medigun.set_icon_state("medblaster")
 		medigun.base_icon_state = "medblaster"
 	else
-		icon_state = "mg-backpack_cmo"
-		item_state = "mg-backpack_cmo-onmob"
-		medigun.icon_state = "medblaster_cmo"
+		set_icon_state("mg-backpack_cmo")
+		set_item_state("mg-backpack_cmo-onmob")
+		medigun.set_icon_state("medblaster_cmo")
 		medigun.base_icon_state = "medblaster_cmo"
 
 
@@ -295,7 +295,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 
 	if(!is_twohanded())
 		medigun.beam_range = 4
-		medigun.icon_state = "medblaster_cmo"
+		medigun.set_icon_state("medblaster_cmo")
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
 

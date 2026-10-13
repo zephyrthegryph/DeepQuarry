@@ -44,7 +44,7 @@
 		rel_take(src, nameof(electronics))
 		ae.forceMove(src.loc)
 	if(operating == -1)
-		ae.icon_state = "door_electronics_smoked"
+		ae.set_icon_state("door_electronics_smoked")
 		set_operating(0)
 	set_density(FALSE)
 	play_sfx(src, SFX_SHATTER)

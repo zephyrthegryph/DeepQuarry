@@ -13,9 +13,9 @@
 
 /obj/item/implantcase/proc/update()
 	if (imp)
-		icon_state = text("implantcase-[]", imp.implant_color)
+		set_icon_state(text("implantcase-[]", imp.implant_color))
 	else
-		icon_state = "implantcase-0"
+		set_icon_state("implantcase-0")
 	return
 
 /// Labelling a case with a pen. Re-checked on the answer: the pen is still in hand, the case still in reach.

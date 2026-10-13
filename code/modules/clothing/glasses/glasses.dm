@@ -68,7 +68,7 @@ BLIND     // can't see anything
 /obj/item/clothing/glasses/proc/toggle_active(mob/living/user)
 	if(active)
 		active = FALSE
-		icon_state = off_state
+		set_icon_state(off_state)
 		changed(src)
 		flash_protection = FLASH_PROTECTION_NONE
 		tint = TINT_NONE
@@ -77,7 +77,7 @@ BLIND     // can't see anything
 
 	else
 		active = TRUE
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		changed(src)
 		flash_protection = initial(flash_protection)
 		tint = initial(tint)
@@ -212,9 +212,9 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
 
 	eye = !eye
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 
 /obj/item/clothing/glasses/eyepatchwhite
@@ -237,9 +237,9 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 
 	eye = !eye
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 
 /obj/item/clothing/glasses/monocle
@@ -381,11 +381,11 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/bigshot)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.ar)
 			src.ar = !src.ar
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 			to_chat(user, "You press a small button on \the [src] and deactivate the AR mode.")
 		else
 			src.ar = !src.ar
-			icon_state = "[initial(icon_state)]_fzz"
+			set_icon_state("[initial(icon_state)]_fzz")
 			to_chat(user, "You press a small button on \the [src] and activate the AR mode.")
 		update_clothing_icon()
 	return TRUE
@@ -424,7 +424,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 			src.up = !src.up
 			set_flags_inv(worn_of(src).hides | (HIDEEYES))
 			set_body_parts_covered(worn_of(src).covers | (EYES))
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 			flash_protection = initial(flash_protection)
 			tint = initial(tint)
 			to_chat(user, "You flip \the [src] down to protect your eyes.")
@@ -432,7 +432,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 			src.up = !src.up
 			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
 			set_body_parts_covered(worn_of(src).covers & (~EYES))
-			icon_state = "[initial(icon_state)]up"
+			set_icon_state("[initial(icon_state)]up")
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
 			to_chat(user, "You push \the [src] up out of your face.")
@@ -670,13 +670,13 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 			src.up = !src.up
 			set_flags_inv(worn_of(src).hides | (HIDEEYES))
 			set_body_parts_covered(worn_of(src).covers | (EYES))
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
 			set_body_parts_covered(worn_of(src).covers & (~EYES))
-			icon_state = "[initial(icon_state)]up"
+			set_icon_state("[initial(icon_state)]up")
 			to_chat(user, "You push \the [src] up from in front of your eyes.")
 		update_clothing_icon()
 		user.update_mob_action_buttons()
@@ -787,7 +787,7 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
 	var/choice = A.step_value("pattern")
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
 	if(choice && options[choice] && !user.incapacitated() && in_range(user, src))
-		icon_state = options[choice]
+		set_icon_state(options[choice])
 		changed(src)
 		user.update_mob_action_buttons()
 		to_chat(user, span_notice("Your [src] now displays [choice] ."))

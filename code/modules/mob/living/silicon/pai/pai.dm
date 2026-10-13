@@ -432,7 +432,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 	if(!istype(H))
 		return
 
-	H.icon_state = SSpai.chassis_data(chassis_name).sprite_icon_state
+	H.set_icon_state(SSpai.chassis_data(chassis_name).sprite_icon_state)
 	return H
 
 /mob/living/silicon/pai/Moved(atom/oldloc, direct, forced, movetime)

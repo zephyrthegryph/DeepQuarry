@@ -44,7 +44,7 @@
 		return FALSE
 
 	// Case 4: They're unlinked
-	B.dir = get_dir(get_turf(B), get_turf(M))
+	B.set_dir(get_dir(get_turf(B), get_turf(M)))
 	rel_set(B, nameof(B.top), T)
 	rel_set(B, nameof(B.middle), M)
 	T.dir	 = B.dir
@@ -296,7 +296,7 @@ CAPABILITIES(/obj/structure/stairs/middle)
 	// The middle stair has some further special logic, in that it can be climbed, and so is technically valid if only the top exists
 	// T is enforced by a prior if
 	rel_set(T, nameof(T.middle), src) // pair: sets our top too
-	src.dir = T.dir
+	set_dir(T.dir)
 	return TRUE
 
 /// Old MouseDrop_T.
@@ -513,9 +513,9 @@ CAPABILITIES(/obj/structure/stairs/spawner)
 	if(!isopenspace(O))
 		O = new(O)
 
-	B.dir = dir
-	M.dir = dir
-	T.dir = dir
+	B.set_dir(dir)
+	M.set_dir(dir)
+	T.set_dir(dir)
 	B.check_integrity(B, M, T, O)
 
 // For ease of spawning. While you *can* spawn the base type and set its dir, this is useful for adminbus and a little bit quicker to map in

@@ -146,7 +146,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		return
 	else
 		set_isactive(TRUE)
-		icon_state = "arfg_on"
+		set_icon_state("arfg_on")
 		new field_type (src.loc)
 		src.visible_message(span_warning("The ARF-G crackles to life!"),span_warning("You hear an ARF-G coming online!"))
 		set_use_power(USE_POWER_ACTIVE)
@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		if(alwaysactive == TRUE && operable()) //If we're not damaged, don't turn off if we're always on.
 			return
 		else
-			icon_state = "arfg_off"
+			set_icon_state("arfg_off")
 			for(var/obj/structure/atmospheric_retention_field/F in contents_of(loc))
 				spent(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")

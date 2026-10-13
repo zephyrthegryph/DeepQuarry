@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/grenade)
 	if(user)
 		msg_admin_attack("[key_name_admin(user)] primed \a [src.name]")
 
-	icon_state = initial(icon_state) + "_active"
+	set_icon_state(initial(icon_state) + "_active")
 	active = 1
 	playsound(src, arm_sound, 75, 1, -3)
 

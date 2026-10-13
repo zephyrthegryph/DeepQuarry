@@ -9,7 +9,7 @@
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/obj/item/thing = allocate(/obj/item, test_floor())
-	thing.dir = WEST
+	thing.set_dir(WEST)
 	thing.dir_sequence(list(NORTH, EAST, SOUTH), 2)
 	TEST_ASSERT_EQUAL(thing.dir, WEST, "nothing turns before the first deadline")
 	test_time(1)

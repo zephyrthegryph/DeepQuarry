@@ -364,6 +364,12 @@ function runDreamDaemonWithWatchdog(
 ): Promise<DDResult> {
   const watchdogFile = options.watchdogFile as string;
   const graceMs = options.watchdogGraceMs ?? 30_000;
+  // Once the world has stamped its clean marker (finished_run.lk, written after its logs and results are flushed)
+  // only the process exit is left. The child 'exit' event resolves the run the moment the daemon really exits, so
+  // this is only the wait before a force-kill of a daemon that does not (the Windows zombie case). It was a fixed
+  // 5 s; 1.5 s still leaves the daemon time to close its handles. DQ_DD_CLEAN_GRACE_MS overrides it.
+  const cleanGraceMs = Math.min(graceMs, Number(process.env.DQ_DD_CLEAN_GRACE_MS) || 1_500);
+  let cleanSeenAt = 0;
   // The full normal tier is about 6700 s of summed DreamDaemon CPU (2026-10-04),
   // so one unsharded world can need well over an hour on a busy, contended
   // machine (many concurrent DreamDaemons across worktrees/shards); the
@@ -386,7 +392,7 @@ function runDreamDaemonWithWatchdog(
     }
     let settled = false;
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
-    const poll = setInterval(checkDone, 1_000);
+    const poll = setInterval(checkDone, 250);
     const hardTimer = setTimeout(() => finish(true, 'hard timeout', true), hardTimeoutMs);
 
     function finish(forceKill: boolean, reason: string, isHardTimeout: boolean) {
@@ -455,8 +461,10 @@ function runDreamDaemonWithWatchdog(
         // Waiting for the world to finish writing: once its clean marker is there only the zombie is left.
         if (options.watchdogCleanFile && !cleanSeen && fs.existsSync(options.watchdogCleanFile)) {
           cleanSeen = true;
+          cleanSeenAt = Date.now();
+          Juke.logger.info(`DreamDaemon watchdog: clean marker seen; force-kill in ${cleanGraceMs} ms if the daemon has not exited.`);
           clearTimeout(graceTimer);
-          graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), Math.min(graceMs, 5_000));
+          graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanGraceMs);
         }
         return;
       }
@@ -465,11 +473,15 @@ function runDreamDaemonWithWatchdog(
         // if the daemon is still alive (the Windows zombie case).
         const finishGraceMs = options.watchdogCleanFile ? Math.max(graceMs, (Number(process.env.DQ_DD_FINISH_GRACE_SEC) || 180) * 1000) : graceMs;
         cleanSeen = !!options.watchdogCleanFile && fs.existsSync(options.watchdogCleanFile);
-        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanSeen ? Math.min(graceMs, 5_000) : finishGraceMs);
+        if (cleanSeen) cleanSeenAt = Date.now();
+        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanSeen ? cleanGraceMs : finishGraceMs);
       }
     }
 
     child.on('exit', (code, signal) => {
+      if (graceTimer && cleanSeenAt && !settled) {
+        Juke.logger.info(`DreamDaemon watchdog: daemon exited ${Date.now() - cleanSeenAt} ms after the clean marker (no force-kill needed).`);
+      }
       if (!settled && !graceTimer) {
         // Exited before the tests finished: record how, so a crash (e.g. an
         // NTSTATUS such as 0xC0000005 / 0xC0000409) is distinguishable from

@@ -76,7 +76,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 /obj/machinery/keycard_auth/power_change()
 	. = ..()
 	if(power_lost())
-		icon_state = "auth_off"
+		set_icon_state("auth_off")
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;
 // Topic event/reset actions move to tgui_act.
@@ -167,12 +167,12 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	screen = 1
 	confirmed = 0
 	rel_clear(src, nameof(event_source))
-	icon_state = "auth_off"
+	set_icon_state("auth_off")
 	rel_clear(src, nameof(event_triggered_by))
 	rel_clear(src, nameof(event_confirmed_by))
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
-	icon_state = "auth_on"
+	set_icon_state("auth_on")
 	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
@@ -196,12 +196,12 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
 	release_busy(src, PROC_REF(receive_window_closed))
 	set_active(1)
-	icon_state = "auth_on"
+	set_icon_state("auth_on")
 	hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
 	rel_clear(src, nameof(event_source))
-	icon_state = "auth_off"
+	set_icon_state("auth_off")
 	set_active(0)
 
 /obj/machinery/keycard_auth/proc/trigger_event(mob/user)

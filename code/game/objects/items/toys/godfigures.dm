@@ -51,7 +51,7 @@
 	var/datum/prompt/choice/prompt = A.answer
 	var/list/options = prompt.choices
 	var/choice = A.answer.value
-	icon_state = options[choice]
+	set_icon_state(options[choice])
 	if(options[choice] == "frobe")
 		desc = "A painted holy figure of a plain looking human woman in a robe."
 	else if(options[choice] == "mrobe")

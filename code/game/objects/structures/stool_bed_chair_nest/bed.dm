@@ -361,12 +361,12 @@ CAPABILITIES(/obj/item/roller_holder)
 		M.pixel_y = 6
 		M.old_y = 6
 		set_density(TRUE)
-		icon_state = "[initial(icon_state)]_up"
+		set_icon_state("[initial(icon_state)]_up")
 	else
 		M.pixel_y = 0
 		M.old_y = 0
 		set_density(FALSE)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 	return ..()
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dragged onto its user, the bed

@@ -73,7 +73,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
+			set_icon_state("[initial(icon_state)]-broken")
 			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/proc/attackpylon(mob/user as mob, damage)
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
+			set_icon_state("[initial(icon_state)]-broken")
 			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
@@ -104,7 +104,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 		to_chat(user, "You repair \the [src].")
 		set_isbroken(FALSE)
 		set_density(TRUE)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		set_glow(src, GLOW(5, null, null))
 
 // Returns 1 if the pylon does something special.

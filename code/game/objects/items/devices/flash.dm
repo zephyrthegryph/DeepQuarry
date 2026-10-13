@@ -189,7 +189,7 @@ TRACKED(/obj/item/flash, broken)
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
-		animation.icon_state = "blank"
+		animation.set_icon_state("blank")
 		animation.icon = 'icons/mob/mob.dmi'
 		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
@@ -279,7 +279,7 @@ TRACKED(/obj/item/flash, broken)
 	if(istype(user, /mob/living/silicon/robot))
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
-		animation.icon_state = "blank"
+		animation.set_icon_state("blank")
 		animation.icon = 'icons/mob/mob.dmi'
 		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)

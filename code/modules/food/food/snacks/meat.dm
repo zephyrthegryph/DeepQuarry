@@ -12,7 +12,7 @@
 /obj/item/reagent_containers/food/snacks/meat/cook()
 
 	if (!isnull(cooked_icon))
-		icon_state = cooked_icon
+		set_icon_state(cooked_icon)
 		flat_icon = null //Force regenating the flat icon for coatings, since we've changed the icon of the thing being coated
 	..()
 

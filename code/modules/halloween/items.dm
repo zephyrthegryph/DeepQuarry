@@ -143,14 +143,14 @@ CAPABILITIES(/obj/structure/candybowl)
 	var/newname = "empty " + initial(name)
 	name = newname
 	desc = "An empty bowl! Someone took too many candies..."
-	icon_state = "nocandy"
+	set_icon_state("nocandy")
 	set_has_candy(FALSE)
 
 
 /obj/structure/candybowl/proc/fill()
 	name = initial(name)
 	desc = initial(desc)
-	icon_state = "fullcandy"
+	set_icon_state("fullcandy")
 	set_has_candy(TRUE)
 
 

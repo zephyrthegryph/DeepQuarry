@@ -1215,15 +1215,15 @@ MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 
 /// Overrides sink's interaction_wash(): splash animation around the wash.
 /obj/structure/sink/puddle/interaction_wash(datum/act/op/A)
-	icon_state = "puddle-splash"
+	set_icon_state("puddle-splash")
 	. = ..()
-	icon_state = "puddle"
+	set_icon_state("puddle")
 
 /// Overrides sink's interaction_item(): splash animation around the item use.
 /obj/structure/sink/puddle/interaction_item(datum/act/op/A)
-	icon_state = "puddle-splash"
+	set_icon_state("puddle-splash")
 	. = ..()
-	icon_state = "puddle"
+	set_icon_state("puddle")
 
 #undef SHOWER_FREEZING
 #undef SHOWER_TEMP_FREEZING

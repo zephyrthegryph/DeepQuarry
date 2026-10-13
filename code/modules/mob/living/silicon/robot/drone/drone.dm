@@ -191,7 +191,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 	shell_customize_finish(shell_state, A.step_value("eyes") || "", A.step_value("plating") || "")
 
 /mob/living/silicon/robot/drone/proc/shell_customize_finish(shell_state, eyes, plating)
-	icon_state = shell_state
+	set_icon_state(shell_state)
 	var/list/accessories
 	if(eyes)
 		LAZYADD(accessories, "[shell_state]-eyes-[eyes]")
