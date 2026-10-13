@@ -4880,3 +4880,13 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+## Power leaf move gate: hand-card key from master 852173317d
+
+The fresh power leaf lane-ready run on e632e47d3fa9 records /obj/item/hand's look
+key as 60fbf68e65da7a16 instead of 48f1e17a2e3e6cf1. Master 852173317d explicitly
+declares TRACKED(/obj/item/hand, cards) for cold generation. The same cards and
+other dependency names remain recorded; no look behavior row or refusal is
+re-blessed. The four power files are byte-identical moves and do not cause this
+metadata change. The post-merge run passed both mandatory pins and incremental
+look tests before the key was recorded.
