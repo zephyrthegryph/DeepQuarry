@@ -113,6 +113,8 @@ GLOBAL_LIST_EMPTY(mannequins)
 /proc/make_datum_reference_lists()
 	var/list/paths
 
+	chameleon_choices_build()
+
 	//Hair - Initialise all /datum/sprite_accessory/hair into an list indexed by hair-style name
 	paths = subtypesof(/datum/sprite_accessory/hair)
 	for(var/path in paths)

@@ -33,6 +33,20 @@
 				name += " \[[i++]\]"
 			.[name] = O
 
+/// Every chameleon item's appearance choices, built once at boot (make_datum_reference_lists) so no instance, and no
+/// test creating one, ever mutates a global. Each list leaves out the chameleon type itself (it would disguise as itself)
+/// and the types that break the illusion.
+/proc/chameleon_choices_build()
+	GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, list(/obj/item/clothing/under/chameleon, /obj/item/clothing/under/gimmick))
+	GLOB.chamelion_head_choices = generate_chameleon_choices(/obj/item/clothing/head, list(/obj/item/clothing/head/chameleon))
+	GLOB.chamelion_suit_choices = generate_chameleon_choices(/obj/item/clothing/suit, list(/obj/item/clothing/suit/chameleon, /obj/item/clothing/suit/cyborg_suit, /obj/item/clothing/suit/justice, /obj/item/clothing/suit/greatcoat))
+	GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, list(/obj/item/clothing/shoes/chameleon, /obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/shoes/cyborg))
+	GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, list(/obj/item/storage/backpack/chameleon, /obj/item/storage/backpack/satchel/withwallet))
+	GLOB.chamelion_glove_choices = generate_chameleon_choices(/obj/item/clothing/gloves, list(/obj/item/clothing/gloves/chameleon))
+	GLOB.chamelion_mask_choices = generate_chameleon_choices(/obj/item/clothing/mask, list(/obj/item/clothing/mask/chameleon))
+	GLOB.chamelion_belt_choices = generate_chameleon_choices(/obj/item/storage/belt, list(/obj/item/storage/belt/chameleon))
+	GLOB.chamelion_accessory_choices = generate_chameleon_choices(/obj/item/clothing/accessory, list(/obj/item/clothing/accessory/chameleon, /obj/item/clothing/accessory/storage))
+
 /obj/item/clothing/under/chameleon
 //starts off as black
 	name = "black jumpsuit"
@@ -40,12 +54,6 @@
 	worn_state = "black"
 	desc = "It's a plain jumpsuit. It seems to have a small dial on the wrist."
 
-
-/obj/item/clothing/under/chameleon/on_materialize()
-	if(!GLOB.chamelion_jumpsuit_choices)
-		var/blocked = list(src.type, /obj/item/clothing/under/gimmick)//Prevent infinite loops and bad jumpsuits.
-		GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, blocked)
-	. = ..()
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/under/chameleon/proc/chameleon_emp_reveal(datum/act/A)
@@ -83,12 +91,6 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 	icon_state = "greysoft"
 	desc = "It looks like a plain hat, but upon closer inspection, there's an advanced holographic array installed inside. It seems to have a small dial inside."
 
-/obj/item/clothing/head/chameleon/on_materialize()
-	if(!GLOB.chamelion_head_choices)
-		var/blocked = list(src.type)//Prevent infinite loops and bad hats.
-		GLOB.chamelion_head_choices = generate_chameleon_choices(/obj/item/clothing/head, blocked)
-	. = ..()
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/head/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "grey cap"
@@ -125,12 +127,6 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 	icon_state = "armor"
 	desc = "It appears to be a vest of standard armor, except this is embedded with a hidden holographic cloaker, allowing it to change it's appearance, but offering no protection.. It seems to have a small dial inside."
 
-/obj/item/clothing/suit/chameleon/on_materialize()
-	if(!GLOB.chamelion_suit_choices)
-		var/blocked = list(src.type, /obj/item/clothing/suit/cyborg_suit, /obj/item/clothing/suit/justice, /obj/item/clothing/suit/greatcoat)
-		GLOB.chamelion_suit_choices = generate_chameleon_choices(/obj/item/clothing/suit, blocked)
-	. = ..()
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/suit/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "armor"
@@ -165,12 +161,6 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 	icon_state = "black"
 	desc = "They're comfy black shoes, with clever cloaking technology built in. It seems to have a small dial on the back of each shoe."
 
-/obj/item/clothing/shoes/chameleon/on_materialize()
-	if(!GLOB.chamelion_shoe_choices)
-		var/blocked = list(src.type, /obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/shoes/cyborg)//prevent infinite loops and bad shoes.
-		GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, blocked)
-	. = ..()
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black shoes"
@@ -204,12 +194,6 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 	name = "backpack"
 	icon_state = "backpack"
 	desc = "A backpack outfitted with cloaking tech. It seems to have a small dial inside, kept away from the storage."
-
-/obj/item/storage/backpack/chameleon/Initialize(mapload)
-	. = ..()
-	if(!GLOB.chamelion_back_choices)
-		var/blocked = list(src.type, /obj/item/storage/backpack/satchel/withwallet)
-		GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, blocked)
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/storage/backpack/chameleon/proc/chameleon_emp_reveal(datum/act/A)
@@ -264,11 +248,6 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 	icon_state = "black"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
 
-/obj/item/clothing/gloves/chameleon/on_materialize()
-	if(!GLOB.chamelion_glove_choices)
-		GLOB.chamelion_glove_choices = generate_chameleon_choices(/obj/item/clothing/gloves, list(src.type))
-	. = ..()
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black gloves"
@@ -303,11 +282,6 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 	name = "gas mask"
 	icon_state = "gas_alt" // file change
 	desc = "It looks like a plain gask mask, but on closer inspection, it seems to have a small dial inside."
-
-/obj/item/clothing/mask/chameleon/on_materialize()
-	if(!GLOB.chamelion_mask_choices)
-		GLOB.chamelion_mask_choices = generate_chameleon_choices(/obj/item/clothing/mask, list(src.type))
-	. = ..()
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/mask/chameleon/proc/chameleon_emp_reveal(datum/act/A)
@@ -383,11 +357,6 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 	desc = "Can hold various things.  It also has a small dial inside one of the pouches."
 	icon_state = "utilitybelt"
 
-/obj/item/storage/belt/chameleon/Initialize(mapload)
-	. = ..()
-	if(!GLOB.chamelion_belt_choices)
-		GLOB.chamelion_belt_choices = generate_chameleon_choices(/obj/item/storage/belt, list(src.type))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/storage/belt/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "belt"
@@ -428,12 +397,6 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 	desc = "Looks like a black tie, but his one also has a dial inside."
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "blacktie"
-
-/obj/item/clothing/accessory/chameleon/on_materialize()
-	if(!GLOB.chamelion_accessory_choices)
-		var/blocked = list(src.type, /obj/item/clothing/accessory/storage)
-		GLOB.chamelion_accessory_choices = generate_chameleon_choices(/obj/item/clothing/accessory, blocked)
-	. = ..()
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/act/A)
