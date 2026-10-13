@@ -1641,4 +1641,5 @@ list	code/modules/surgery/surgery_ops.dm	GLOBAL_LIST_EMPTY(surgery_op_steps)
 list	code/modules/tgs_commands/vorestation.dm	GLOBAL_LIST_EMPTY(tgs_flow_senders)
 list	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
 list	code/modules/tgui/modal.dm	GLOBAL_LIST(tgui_modals)
+list	code/modules/tgui/ui_push.dm	var/list/pending
 list	code/modules/vore/eating/bellymodes_datum.dm	GLOBAL_LIST_INIT(digest_modes, list())
