@@ -71,6 +71,8 @@ SYSTEM_DEF(tgui)
 	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
+	/// The current modal of each host datum, keyed by REF(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
+	var/list/modals
 	/// The HTML base used for all UIs.
 	var/basehtml
 	/// interface name -> list of code-split chunk files (`*.chunk.js`/`.css`) that
@@ -98,6 +100,7 @@ SYSTEM_DEF(tgui)
 	var/asset_generation_sequence = 0
 
 CAPABILITIES(/datum/system/tgui)
+	owns_many(nameof(modals), /datum/tgui_modal)
 	ref_many(nameof(autoupdating), /datum/tgui)
 	ref_many(nameof(all_uis), /datum/tgui)
 
@@ -728,3 +731,18 @@ CAPABILITIES(/datum/system/tgui)
 /// The chunk asset bundle of this generation: its own for a live build, else the registry singleton.
 /datum/tgui_asset_generation/proc/chunk_assets() as /datum/asset/simple/namespaced
 	return live_chunk_assets || get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+
+// ---- Modals of host datums (code/modules/tgui/modal.dm): the one place that touches `modals` ----
+
+/// The modal `host` shows now, or null.
+/proc/tgui_modal_current(datum/host)
+	RETURN_TYPE(/datum/tgui_modal)
+	return LAZYACCESS(SStgui.modals, REF(host))
+
+/// Takes `host`'s modal out of SStgui without disposing of it.
+/proc/tgui_modal_detach(datum/host)
+	return rel_take(SStgui, nameof(SStgui.modals), key = REF(host))
+
+/// Makes `modal` the one `host` shows; SStgui owns it from here.
+/proc/tgui_modal_attach(datum/host, datum/tgui_modal/modal)
+	return rel_add(SStgui, nameof(SStgui.modals), modal, REF(host))
