@@ -160,6 +160,8 @@
 	relation_z_generation_bump(z)
 	. = rel_drop_z(z)
 	for(var/turf/T as anything in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
+		if(T.own_key_text)
+			GLOB.om_turf_pos -= T.own_key_text // the level's plain turf handles stop resolving (its generation moved on): drop their cached positions
 		for(var/datum/relation_edge/edge as anything in T.om_rec?.edges?.Copy())
 			edge.unlink_reason = RELATION_Z_RELEASED
 			relation_unlink_edge(edge)
