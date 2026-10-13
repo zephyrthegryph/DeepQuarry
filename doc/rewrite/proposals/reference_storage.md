@@ -66,9 +66,23 @@ Seeded 2026-10-12: 1,768 sites (var 1,391, list 377); 1,737 after generated outp
 
 `/datum/unit_test/dq_gc_sweep` (normal tier, `code/modules/unit_tests/dq_gc_sweep_tests.dm`) creates and
 deletes a representative set (machines, items, a human with an outfit, simple mobs, a window datum opened
-and closed, HUD screens, lights) and checks each deleted object's reference count right after its delete,
-against a control datum measured the same way. A surplus reference fails the test and runs the reference
-finder on that object, so the log names the holder. No waiting for the collector's five-minute check.
+and closed, HUD screens, lights) and, once the collector's filter pass has run, checks that no subject is
+left in its check queue with any reference besides the queue's own. A surplus reference fails the test and
+runs the reference finder on that object, so the log names the holder. No waiting for the collector's
+five-minute check. The judgement is plain zero for every subject: there are no per-family baselines.
+
+Two things the test depends on, both learned the hard way:
+
+- Count in a proc of its own, before reading anything from the object. A frame that has read a var of an
+  object (`D.gc_destroyed`) holds one more reference to it until the frame returns, so a count taken in
+  the middle of a loop that also reads the object is one too high for every subject. That once looked like
+  a hidden reference in machines, bags and living mobs (none of them had one) and was worked around with
+  per-family baselines, a dropped cat and a throwaway last mob. `dq_gc_sweep_controls()` proves the count
+  is exact (zero for a datum only its queue entry names, one for a datum a variable also holds) before the
+  sweep trusts it.
+- The sweep also checks `GLOB.latency_sweep_holders`: a deleted holder leaves it in
+  `lifecycle_dematerialize()`, so the list does not keep dead machines, bags or mobs for the sweep cursor
+  to prune.
 
 ## Waves
 
