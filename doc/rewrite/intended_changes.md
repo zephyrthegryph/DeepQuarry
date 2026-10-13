@@ -4880,3 +4880,9 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+### Master Graffiti requirement: pin refresh during native endpoint validation
+
+Master commit `54ee97e79a` (2026-10-12, 18:11:39 -05:00), merged through `e23dd2b9d7`, adds `when(req(TYPE_PROC_REF(/turf, engraved_by_held)))` to the floor and wall Graffiti ops. The requirement checks that the held item is sharp and the surface permits engraving. Unsuitable held items and empty hands therefore no longer see an inert Graffiti menu row. This fixes master's `dq_gameplay/wall_menu`; it is unrelated to native endpoint requirements.
+
+The refreshed classes are `/turf/simulated/floor` (11 removed rows), `/turf/simulated/floor/holofloor` (11), `/turf/simulated/floor/outdoors/fur` (13), `/turf/simulated/floor/water/digestive_enzymes/nanites` (11), and `/turf/simulated/wall` (11). All 57 expanded-row removals are `menu: Graffiti`; no click, other menu, refusal, or added row changed. Captures came from the focused run on `d493139fca`; each factored golden was expanded and compared before updating, then encoded against the unchanged shared bases.

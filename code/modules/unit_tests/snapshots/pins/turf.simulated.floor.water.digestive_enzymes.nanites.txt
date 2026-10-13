@@ -1,5 +1,7 @@
 @turf human|none
+-menu: Graffiti
 @turf robot|none
+-menu: Graffiti
 ai|none menu: Interface
 ai|none click: Click: Interface
 @turf ghost|none
@@ -16,17 +18,15 @@ ai|none click: Click: Interface
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 @turf human|/obj/item/tool/wrench
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 @turf human|/obj/item/tool/wirecutters
 -menu: Dig
 -click: Click: Dig
@@ -40,45 +40,39 @@ ai|none click: Click: Interface
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 @turf human|/obj/item/weldingtool
 -menu: Dig
 -click: Click: Dig
 +0 menu: Cut through the plating
 +1 menu: Draw graffiti
 +2 menu: Fill
-+3 menu: Graffiti
-+4 menu: Hit the floor
-+7 click: Click: Cut through the plating
++3 menu: Hit the floor
++6 click: Click: Cut through the plating
 @turf human|/obj/item/stack/cable_coil
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 @turf human|/obj/item/stack/material/steel
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 @turf human|/obj/item/card/id
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 human|/obj/item/shovel menu: Draw graffiti
 human|/obj/item/shovel menu: Fill
-human|/obj/item/shovel menu: Graffiti
 human|/obj/item/shovel menu: Hit the floor
 human|/obj/item/shovel menu: Touch
 human|/obj/item/shovel menu: Use shovel
@@ -88,9 +82,8 @@ human|/obj/item/shovel click: Click: Fill
 -click: Click: Dig
 +0 menu: Draw graffiti
 +1 menu: Fill
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+6 click: Click: Fill
++2 menu: Hit the floor
++5 click: Click: Fill
 human|/obj/item/material/fishing_rod menu: Cast a line
 human|/obj/item/material/fishing_rod menu: Draw graffiti
 human|/obj/item/material/fishing_rod menu: Fill
