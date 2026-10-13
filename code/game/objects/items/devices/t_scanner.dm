@@ -11,7 +11,7 @@
 
 	var/scan_range = 1
 
-	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
+	var/list/active_scanned //assoc list of handles (entity_handle) of the objects being scanned, mapped to their overlay
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
@@ -55,23 +55,33 @@ CAPABILITIES(/obj/item/t_scanner)
 
 	//get all objects in scan range
 	var/list/scanned = get_scanned_objects(scan_range)
-	var/list/update_add = scanned - active_scanned
-	var/list/update_remove = active_scanned - scanned
+	var/list/scanned_by_h = list()
+	for(var/obj/O in scanned)
+		var/object_h = entity_handle(O)
+		if(object_h)
+			scanned_by_h[object_h] = O
+	var/list/update_remove = list()
+	for(var/object_h in active_scanned)
+		if(!scanned_by_h[object_h])
+			update_remove += object_h
 
 	//Add new overlays
-	for(var/obj/O in update_add)
+	for(var/object_h in scanned_by_h)
+		if(LAZYACCESS(active_scanned, object_h))
+			continue
+		var/obj/O = scanned_by_h[object_h]
 		var/image/overlay = get_overlay(O)
-		LAZYSET(active_scanned, O, overlay)
+		LAZYSET(active_scanned, object_h, overlay)
 		user_client().images += overlay
 
 	//Remove stale overlays
-	for(var/obj/O in update_remove)
-		user_client().images -= LAZYACCESS(active_scanned, O)
-		LAZYREMOVE(active_scanned, O)
+	for(var/object_h in update_remove)
+		user_client().images -= LAZYACCESS(active_scanned, object_h)
+		LAZYREMOVE(active_scanned, object_h)
 
 	//Flicker effect
-	for(var/obj/O in active_scanned)
-		var/image/overlay = LAZYACCESS(active_scanned, O)
+	for(var/object_h in active_scanned)
+		var/image/overlay = LAZYACCESS(active_scanned, object_h)
 		if(flicker)
 			overlay.alpha = 0
 		else

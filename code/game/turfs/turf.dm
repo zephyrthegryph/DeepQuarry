@@ -48,7 +48,7 @@
 
 	var/block_tele = FALSE      // If true, most forms of teleporting to or from this turf tile will fail.
 	var/can_build_into_floor = FALSE // Used for things like RCDs (and maybe lattices/floor tiles in the future), to see if a floor should replace it.
-	var/list/dangerous_objects // List of 'dangerous' objs that the turf holds that can cause something bad to happen when stepped on, used for AI mobs.
+	var/list/dangerous_objects // List of handles (entity_handle) of the 'dangerous' objs that the turf holds that can cause something bad to happen when stepped on, used for AI mobs.
 	var/tmp/changing_turf
 
 	var/blocks_nonghost_incorporeal = FALSE
@@ -516,8 +516,9 @@ CAPABILITIES(/turf)
 // Returns false if stepping into a tile would cause harm (e.g. open space while unable to fly, water tile while a slime, lava, etc).
 /turf/proc/is_safe_to_enter(mob/living/L)
 	if(LAZYLEN(dangerous_objects))
-		for(var/obj/O in dangerous_objects)
-			if(!O.is_safe_to_step(L))
+		for(var/danger_handle in dangerous_objects)
+			var/obj/O = resolve_handle(danger_handle)
+			if(O && !O.is_safe_to_step(L)) // a deleted object stops resolving
 				return FALSE
 	return TRUE
 
@@ -526,13 +527,13 @@ CAPABILITIES(/turf)
 /turf/proc/register_dangerous_object(obj/O)
 	if(!istype(O))
 		return FALSE
-	LAZYADD(dangerous_objects, O)
+	LAZYDISTINCTADD(dangerous_objects, entity_handle(O))
 
 // Similar to above, for when the dangerous object stops being dangerous/gets deleted/moved/etc.
 /turf/proc/unregister_dangerous_object(obj/O)
 	if(!istype(O))
 		return FALSE
-	LAZYREMOVE(dangerous_objects, O)
+	LAZYREMOVE(dangerous_objects, entity_handle_of(O))
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
 
 /turf/occult_act(mob/living/user)

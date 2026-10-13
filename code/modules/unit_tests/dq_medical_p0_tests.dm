@@ -61,7 +61,7 @@
 	TEST_ASSERT_EQUAL(H.mind.get_identity(), body_identity, "the new mind should adopt the body's identity")
 	TEST_ASSERT_EQUAL(H.identity(), body_identity, "the body should keep its identity")
 	TEST_ASSERT(H.identity().has_genetic_effect(/datum/body_effect/no_clone), "no_clone must survive mind_initialize()")
-	SSticker?.minds -= H.mind
+	rel_remove(SSticker, nameof(SSticker.minds), H.mind)
 
 /// A7: Notify Transcore from a brain with no mind or no record answers instead of runtiming.
 /datum/unit_test/dq_p0_brain_backup_ping_no_record

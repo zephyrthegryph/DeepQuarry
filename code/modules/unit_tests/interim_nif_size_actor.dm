@@ -17,7 +17,7 @@
 /datum/unit_test/dq_eg2/interim_nif_size_actor/proc/install_size(mob/living/carbon/human/human)
 	human.mind_initialize()
 	own(human.mind)
-	SSticker?.minds -= human.mind
+	rel_remove(SSticker, nameof(SSticker.minds), human.mind)
 	var/obj/item/nif/implant = allocate(/obj/item/nif/interim_size_actor, run_loc_floor_bottom_left)
 	var/obj/item/organ/brain = human.organ_in(O_BRAIN)
 	TEST_ASSERT(brain, "the real human has a brain to determine implantation location")

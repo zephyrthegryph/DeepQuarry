@@ -53,7 +53,7 @@
 	/// The native hook's own arguments by name (location, control, src_location, over_location, src_control, over_control, params).
 	var/list/native
 
-/// The input that fell through to the native parent right now (INPUT_FALLTHROUGH): list(holder, input). A parent type's generated override
+/// The input that fell through to the native parent right now (INPUT_FALLTHROUGH): list(holder handle, input). A parent type's generated override
 /// that the fall reaches must not run the same (inherited or replaced) entry a second time; input_fell() clears it when the native chain returns.
 GLOBAL_REAL_VAR(list/input_falling)
 
@@ -62,7 +62,7 @@ GLOBAL_REAL_VAR(list/input_falling)
 /proc/input_dispatch(atom/holder, mob/actor, input, params = null, atom/over = null, entered = FALSE, list/native = null)
 	if(!holder || QDELETED(holder))
 		return FALSE
-	if(input_falling && input_falling[1] == holder && input_falling[2] == input)
+	if(input_falling && entity_handle_is(input_falling[1], holder) && input_falling[2] == input)
 		return FALSE // a subtype's generated override already ran this holder's entry and fell through to its parent
 	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
 	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
@@ -90,7 +90,7 @@ GLOBAL_REAL_VAR(list/input_falling)
 			var/reply = call(holder, handler)(A)
 			A.release()
 			if(reply == INPUT_FALLTHROUGH) // the native override goes on to ..(): a parent's generated override must not run it again
-				input_falling = list(holder, input)
+				input_falling = list(entity_handle(holder), input)
 				return FALSE
 			return TRUE
 		if(istext(handler))
@@ -100,7 +100,7 @@ GLOBAL_REAL_VAR(list/input_falling)
 
 /// The native chain of a generated override returned: the fall-through mark of `holder` is over.
 /proc/input_fell(atom/holder)
-	if(input_falling && input_falling[1] == holder)
+	if(input_falling && entity_handle_is(input_falling[1], holder))
 		input_falling = null
 
 /// The tooltip of `holder` for `user`: opened on enter, closed on exit.

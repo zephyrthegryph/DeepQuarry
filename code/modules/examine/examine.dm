@@ -66,7 +66,7 @@
 	description_holders["interactions"] = A.get_description_interaction()
 
 	description_holders["name"] = "[A.name]"
-	description_holders["icon"] = A
+	description_holders["icon"] = entity_handle(A) // a handle: a deleted atom stops resolving instead of being kept by the client
 	description_holders["desc"] = A.desc
 
 //override examinate verb to update description holders when things are examined

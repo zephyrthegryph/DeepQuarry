@@ -40,6 +40,7 @@ CAPABILITIES(/datum/ntnet)
 	owns_many(nameof(available_news))
 	owns_many(nameof(available_station_software))
 	owns_many(nameof(email_accounts))
+	ref_many(nameof(chat_channels), /datum/ntnet_conversation) // a channel deleted by its operator leaves the list
 
 
 // If new NTNet datum is spawned, it replaces the old one.

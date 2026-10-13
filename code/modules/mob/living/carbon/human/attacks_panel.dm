@@ -1,5 +1,6 @@
 // Check Attacks — structured TGUI for default unarmed-attack selection.
 
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
 GLOBAL_LIST_EMPTY(dq_attacks_panels)
 
 /datum/attacks_panel
@@ -76,9 +77,9 @@ CAPABILITIES(/datum/attacks_panel)
 	set category = VERB_CAT_IC_GAME
 	set src = usr
 	var/key = "[REF(src)]"
-	var/datum/attacks_panel/panel = LAZYACCESS(GLOB.dq_attacks_panels, key)
+	var/datum/attacks_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_attacks_panels, key))
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_attacks_panels[key] = panel
+		GLOB.dq_attacks_panels[key] = entity_handle(panel)
 	panel.tgui_interact(src)
 

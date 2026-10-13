@@ -18,7 +18,7 @@
 		source.mind_initialize()
 		original_mind = source.mind
 		own(original_mind)
-		SSticker?.minds -= original_mind
+		rel_remove(SSticker, nameof(SSticker.minds), original_mind)
 		TEST_ASSERT_NOTNULL(original_mind, "The real supported mind initialization creates an actual original mind")
 		TEST_ASSERT_EQUAL(original_mind.current, source, "The real original mind genuinely controls its original juvenile body")
 	else

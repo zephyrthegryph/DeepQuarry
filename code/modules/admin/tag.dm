@@ -9,7 +9,7 @@
 		to_chat(owner(), span_warning("[target_datum] is already tagged!"))
 		return
 
-	LAZYADD(tagged_datums, target_datum)
+	rel_add(src, nameof(tagged_datums), target_datum)
 	observe(target_datum, /datum/notice/qdeleting, src, then(PROC_REF(handle_tagged_del)))
 	to_chat(owner(), span_notice("[target_datum] has been tagged."))
 
@@ -34,7 +34,7 @@
 		return
 
 	if(LAZYFIND(tagged_datums, target_datum))
-		LAZYREMOVE(tagged_datums, target_datum)
+		rel_remove(src, nameof(tagged_datums), target_datum)
 		if(!silent)
 			to_chat(owner(), span_notice("[target_datum] has been untagged."))
 	else if(!silent)

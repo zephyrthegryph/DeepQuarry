@@ -4,8 +4,11 @@ SYSTEM_DEF(mail)
 	periodic_runlevels = RUNLEVELS_DEFAULT
 	var/mail_waiting = 0					// Pending mail
 	var/mail_per_process = 0.55				// Mail to be generated
-	var/admin_mail = list()					// Mail added by Spawn Mail
+	var/list/admin_mail						// Mail added by Spawn Mail
 	var/list/banned_jobs = list(JOB_OUTSIDER,JOB_ANOMALY,JOB_VR,JOB_MAINT_LURKER,JOB_TALON_CAPTAIN,JOB_TALON_DOCTOR,JOB_TALON_ENGINEER,JOB_TALON_GUARD,JOB_TALON_PILOT,JOB_TALON_MINER) // Jobs that can't receive mail
+
+CAPABILITIES(/datum/system/mail)
+	ref_many(nameof(admin_mail), /obj/item/mail)
 
 /datum/system/mail/reactions()
 	. = ..()
@@ -53,6 +56,6 @@ SYSTEM_DEF(mail)
 	if(admin_mail)
 		for(var/obj/item/mail/ad_mail in admin_mail)
 			ad_mail.forceMove(mailcrate)
-		clearlist(admin_mail)
+		rel_clear(src, nameof(admin_mail))
 	mail_waiting = 0
 	return mailcrate
