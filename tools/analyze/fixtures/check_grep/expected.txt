@@ -163,6 +163,7 @@ mixed_tab_space_indentation	code/modules/fx/indent_fx.dm	6
 nutrition_writes	code/modules/fx/body_fx.dm	17
 nutrition_writes	code/modules/fx/body_fx.dm	18
 nutrition_writes	code/modules/fx/body_fx.dm	20
+objects_ratchet_on_tool_act_overrides	(count)	4
 old_style_hrefs	code/modules/fx/html_fx.dm	8
 old_style_hrefs	code/modules/fx/html_fx.dm	10
 one_mitigation_pipeline	code/modules/fx/weapon_fx.dm	19

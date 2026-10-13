@@ -271,7 +271,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //If underfloor, hide the cable
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+		hide_under_floor(src, i)
 	changed(src)
 
 /obj/structure/cable/hides_under_flooring()
