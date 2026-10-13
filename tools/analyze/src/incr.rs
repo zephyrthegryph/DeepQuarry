@@ -101,12 +101,19 @@ fn load(name: &str, ctx: Hash) -> (StoreFile, Option<(PathBuf, String)>) {
     (st, Some((path, stamp)))
 }
 
+/// A scratch name no other writer shares: threads of one process often save the same store path (same content key), so
+/// the pid alone let two writers truncate and rename each other's half-written file.
+fn unique_tmp(path: &std::path::Path) -> PathBuf {
+    static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    path.with_extension(format!("tmp{}-{}", std::process::id(), SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)))
+}
+
 fn save(path: &std::path::Path, st: &StoreFile) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
     if let Ok(bytes) = ser(st) {
-        let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+        let tmp = unique_tmp(path);
         if std::fs::write(&tmp, &bytes).is_ok() {
             let _ = std::fs::rename(&tmp, path);
         } else {
@@ -307,7 +314,7 @@ fn write_atomic(path: &std::path::Path, bytes: &[u8]) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+    let tmp = unique_tmp(path);
     if std::fs::write(&tmp, bytes).is_ok() {
         let _ = std::fs::rename(&tmp, path);
     } else {

@@ -265,6 +265,7 @@
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
 #include "dq_gc_sweep_tests.dm"
+#include "dq_table_ref_hold_tests.dm"
 #include "dq_hc_bots_behaviour.dm"
 #include "dq_hc_mobs_behaviour.dm"
 #include "dq_hc_silicon_behaviour.dm"
