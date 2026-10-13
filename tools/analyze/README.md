@@ -303,8 +303,30 @@ every read as `(root, hops, var, owning type, kind)`, context fields read throug
 relations (list relations read `name[]`); procs of the same type and of a hop's type, and `..()`; global helpers through
 `READS_FROM`; `READS_AS` accessors (not followed); `native("x")`; system accessors; `A.actor/held/target` as typed hops (root
 `actor`, ...). A static over-approximation: every read in the body counts, whichever branch it sits in. Not followed, by
-design: engine-internal dirs (`handlers::OPAQUE_DIRS`: dispatchers that read `vars[]`), a subtype's override of a proc, anything
-behind a hop that is not a declared relation (the read of the far var is kept, flagged `hop_ok = false`).
+design: anything behind a hop that is not a declared relation (the read of the far var is kept, flagged `hop_ok = false`).
+
+Two walks. The lints (`sem/reads`, `untracked_inputs`) use the lints' walk: it skips the engine-internal dirs
+(`handlers::OPAQUE_DIRS`) and follows a call on the receiver's static type only, because their baselines were taken that way. The
+generated subscriptions (`reads.dm`) use the **closed walk** (`ReadsEngine::closed()`): engine bodies are entered, and a call on a
+typed receiver is the union of that proc and every override in the receiver's subtypes (recursion ends on the visited set, which is
+keyed by proc, root, hops and argument roots). A proc the walk cannot enter carries `PROC_SUMMARY(/type/proc/name, reads = list(nameof(v)),
+writes = list(nameof(w)))` (`code/__defines/engine/markers.dm`; a global proc applies it to its first tracked argument): the walk takes
+the summary in place of the body. A Verdigris FFI call (`code/__defines/verdigris/`) is reported as `ffi_call` until it has one. What
+the closed walk cannot resolve is a diagnostic flagged `closed_only` when it sits in an engine body or in an override only a virtual
+call reaches; those never fail `analyze gen` (they are the engine's, or not yet judged by a baseline). `ReadSet::writes()` is the
+transitive write set of the same walk. `analyze sem closure [--write]` diffs the two walks' untracked inputs and writes
+`doc/rewrite/reads_closure_newly_visible.md`; those sites are in no baseline, and switching a lint to the closed walk needs the
+baseline decision that file asks for.
+
+### Tracked lists (`gens/tracked_lists.rs`)
+
+A `TRACKED(T, v)` / `TRACKED_BRIDGED(T, v, CHANNEL)` on a `list` var gets, in `tracked_lists.dm`, the procs `add_v(x)`, `include_v(x)`
+(add when absent), `remove_v(x)`, `set_v_at(i, x)`, `clear_v()`, `insert_v(i, x)`, `swap_v(a, b)`, `cut_v(from, to)` and a `v_version`
+counter. Each publishes through the setter's path, bumps the version, and returns TRUE when the list changed. The `tracked` lint's
+`list_mutation` rule bans `LAZYADD/LAZYREMOVE/LAZYOR/LAZYDISTINCTADD/LAZYSET/LAZYCLEARLIST/LAZYNULL`, `v.Add/Remove/Cut/
+Insert/Swap(...)` and `v[i] = x` on such a var outside the generated procs (`+=`, `-=`, `|=`, `&=` are already `outside_setter`).
+`analyze fix [--apply] [--tests] [--path PREFIX]` rewrites the statement-level forms and lists the rest; a nested element edit
+(`v[i]["k"] = x`) is not a change of the list and is not matched.
 
 Diagnostics (rules of `sem/reads`): `unknown_read` (a var that is not tracked, a relation, a stat, derived or constant),
 `unannotated_global`, `dynamic_read` (`vars[]`, `call()`), `hop_not_relation`, `unknown_field`, `condition_cycle` (same-entity

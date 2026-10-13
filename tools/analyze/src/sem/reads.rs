@@ -21,8 +21,12 @@ use dreammaker::ast::{AssignOp, Block, Expression, Follow, Statement, Term, VarT
 use dreammaker::objtree::ProcRef;
 
 use super::ast::{as_ident, stmt_blocks, stmt_exprs, strip_parens};
-use super::decls::Decls;
+use super::decls::{split_args, Decls};
 use super::Sem;
+
+/// Engine-internal directories the lints' walk does not enter (dispatchers that read `vars[]` by design, the tgui plumbing, the Verdigris
+/// bindings). The closed walk ([`ReadsEngine::closed`]) enters them; what it finds there or beneath them is `closed_only`.
+pub const ENGINE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
 /// Maximum depth of followed procs (a guard against pathological recursion, not a semantic limit).
 const MAX_DEPTH: usize = 24;
@@ -121,8 +125,10 @@ impl Read {
 /// Something the analysis could not resolve, or a rule violation found while walking a body.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Diag {
-    /// `unannotated_global`, `dynamic_read`, `unknown_field`, `unknown_call`, `hop_not_relation`.
+    /// `unannotated_global`, `dynamic_read`, `unknown_field`, `unknown_call`, `hop_not_relation`, `ffi_call`.
     pub rule: &'static str,
+    /// Found only by the closed walk: in an override a virtual call reaches, or beneath an engine-internal body the lints' walk skips.
+    pub closed_only: bool,
     pub rel: String,
     pub line: u32,
     pub msg: String,
@@ -164,6 +170,23 @@ impl ReadSet {
     pub fn keys(&self) -> BTreeSet<String> {
         self.reads.iter().map(|r| r.key()).collect()
     }
+
+    /// The vars the walked bodies write, as `owner.var` (a `set_<v>` call is a write of `v`).
+    pub fn writes(&self) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for e in &self.effects {
+            match e.kind {
+                "assign" => {
+                    out.insert(format!("{}.{}", e.owner, e.name));
+                }
+                "call" if e.name.starts_with("set_") => {
+                    out.insert(format!("{}.{}", e.owner, &e.name[4..]));
+                }
+                _ => {}
+            }
+        }
+        out
+    }
 }
 
 /// `READS_AS` and `READS_FROM` annotations, resolved to procs.
@@ -181,6 +204,16 @@ pub struct Annotations {
     /// The accessor `cap_keys(CAP_X, KEY = ...)` generates for each state key (`cover_open`): proc -> the key's id name (`COVER_OPEN`).
     /// A call stands for a read of that key on its first argument; the global proc behind it is not followed.
     pub capkey_accessors: HashMap<String, String>,
+    /// `PROC_SUMMARY(path, reads = list(...), writes = list(...))`: what a proc the walk cannot enter (a Verdigris FFI call, a `vars[]`
+    /// dispatcher) reads and writes on its receiver, declared by hand. The walk takes the summary instead of the body.
+    pub summaries: HashMap<(String, String), ProcSummary>,
+}
+
+/// A declared summary of a proc that is not walked (see [`Annotations::summaries`]): var names on the receiver.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProcSummary {
+    pub reads: Vec<String>,
+    pub writes: Vec<String>,
 }
 
 impl Annotations {
@@ -210,6 +243,24 @@ impl Annotations {
                     break;
                 }
             }
+        }
+        for m in decls.markers_named("PROC_SUMMARY") {
+            let Some(first) = m.args.first() else { continue };
+            let Some((ty, name)) = first.rsplit_once('/') else { continue };
+            let ty = ty.strip_suffix("/proc").unwrap_or(ty);
+            let ty = if ty.is_empty() { "/".to_string() } else { ty.to_string() };
+            let list = |key: &str| -> Vec<String> {
+                m.args
+                    .iter()
+                    .skip(1)
+                    .find_map(|a| a.split_once('=').filter(|(k, _)| k.trim() == key).map(|(_, v)| v.trim().to_string()))
+                    .and_then(|v| v.strip_prefix("list(").and_then(|r| r.strip_suffix(')')).map(|r| r.to_string()))
+                    .map(|inner| {
+                        split_args(&inner).into_iter().map(|x| x.trim().trim_start_matches("nameof(").trim_end_matches(')').trim().to_string()).filter(|x| !x.is_empty()).collect()
+                    })
+                    .unwrap_or_default()
+            };
+            a.summaries.insert((ty, name.to_string()), ProcSummary { reads: list("reads"), writes: list("writes") });
         }
         for m in decls.markers_named("READ_LOOKUP") {
             let Some(path) = m.args.first() else { continue };
@@ -342,6 +393,11 @@ pub struct ReadsEngine<'a> {
     /// Directory prefixes whose procs are engine internals: followed by nobody (a dispatcher that
     /// reads `vars[]` by design, the tgui plumbing). Their own correctness is the engine's.
     pub opaque_dirs: Vec<String>,
+    /// A call on a typed receiver also runs every override in the receiver's subtypes (the union over all of them): a virtual call reads
+    /// whatever any override reads. Off for the lints, whose baselines were taken without it; on for the generated subscriptions.
+    pub virtual_dispatch: bool,
+    overrides_cache: std::sync::Mutex<HashMap<(String, String), std::sync::Arc<Vec<String>>>>,
+    definers: std::sync::OnceLock<HashMap<String, Vec<String>>>,
 }
 
 struct Frame<'a> {
@@ -365,11 +421,51 @@ struct Walk<'a, 'e> {
     mute: u32,
     /// The file of the body being walked (the call site of an opaque crossing).
     rel: String,
+    /// Greater than zero inside the body of an override reached only through a virtual call.
+    override_depth: u32,
+    /// Greater than zero beneath a proc of an engine-internal directory ([`ENGINE_DIRS`]) a closed walk entered.
+    engine_depth: u32,
 }
 
 impl<'a> ReadsEngine<'a> {
     pub fn new(sem: &'a Sem, decls: &'a Decls, ann: &'a Annotations) -> ReadsEngine<'a> {
-        ReadsEngine { sem, decls, ann, opaque_dirs: Vec::new() }
+        ReadsEngine { sem, decls, ann, opaque_dirs: Vec::new(), virtual_dispatch: false, overrides_cache: Default::default(), definers: Default::default() }
+    }
+
+    /// The closed walk: nothing is skipped (engine bodies are walked, or carry a `PROC_SUMMARY`) and a virtual call is the union of its
+    /// overrides. This is what a handler's subscriptions are generated from.
+    pub fn closed(mut self) -> Self {
+        self.opaque_dirs.clear();
+        self.virtual_dispatch = true;
+        self
+    }
+
+    /// The subtypes of `ty` (not `ty` itself) that define their own `name`, sorted.
+    pub fn overrides(&self, ty: &str, name: &str) -> std::sync::Arc<Vec<String>> {
+        let key = (ty.to_string(), name.to_string());
+        if let Some(v) = self.overrides_cache.lock().unwrap().get(&key) {
+            return v.clone();
+        }
+        let definers = self.definers.get_or_init(|| {
+            let mut m: HashMap<String, Vec<String>> = HashMap::new();
+            for t in self.sem.objtree.iter_types() {
+                let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
+                for p in t.iter_self_procs() {
+                    if !p.is_builtin() && p.get().code.is_some() {
+                        m.entry(p.name().to_string()).or_default().push(path.clone());
+                    }
+                }
+            }
+            for v in m.values_mut() {
+                v.sort();
+                v.dedup();
+            }
+            m
+        });
+        let out: Vec<String> = definers.get(name).map(|d| d.iter().filter(|o| o.as_str() != ty && self.sem.is_subtype(o, ty)).cloned().collect()).unwrap_or_default();
+        let out = std::sync::Arc::new(out);
+        self.overrides_cache.lock().unwrap().insert(key, out.clone());
+        out
     }
 
     pub fn with_opaque(mut self, dirs: &[&str]) -> Self {
@@ -381,7 +477,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new() };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -393,7 +489,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new() };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -596,13 +692,15 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn diag(&mut self, rule: &'static str, rel: &str, line: u32, msg: String) {
-        if !self.out.diags.iter().any(|d| d.rule == rule && d.rel == rel && d.line == line && d.msg == msg) {
-            self.out.diags.push(Diag { rule, rel: rel.to_string(), line, msg });
+        let closed_only = self.override_depth > 0 || self.engine_depth > 0;
+        match self.out.diags.iter_mut().find(|d| d.rule == rule && d.rel == rel && d.line == line && d.msg == msg) {
+            Some(d) => d.closed_only &= closed_only,
+            None => self.out.diags.push(Diag { rule, closed_only, rel: rel.to_string(), line, msg }),
         }
     }
 
     fn lookup_diag(&mut self, rule: &'static str, rel: &str, line: u32, msg: String) {
-        let diagnostic = Diag { rule, rel: rel.to_string(), line, msg: msg.clone() };
+        let diagnostic = Diag { rule, closed_only: false, rel: rel.to_string(), line, msg: msg.clone() };
         if !self.out.lookup_diags.contains(&diagnostic) {
             self.out.lookup_diags.push(diagnostic);
         }
@@ -623,6 +721,10 @@ impl<'a, 'e> Walk<'a, 'e> {
             return;
         }
         self.out.followed.insert(format!("{}::{}", owner, p.name()));
+        if let Some(summary) = self.eng.ann.summaries.get(&(owner.clone(), p.name().to_string())) {
+            self.apply_summary(&owner, p.name(), summary, &this, bind);
+            return;
+        }
         let value = p.get();
         if !self.eng.opaque_dirs.is_empty() {
             let rel = self.eng.sem.rel(value.location);
@@ -658,10 +760,55 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         collect_narrowing(code, &mut fr.narrow);
         let outer_rel = std::mem::replace(&mut self.rel, fr.rel.clone());
+        let in_engine = self.eng.virtual_dispatch && ENGINE_DIRS.iter().any(|d| fr.rel.starts_with(d));
+        self.engine_depth += in_engine as u32;
         self.depth += 1;
         self.block(&mut fr, code);
         self.depth -= 1;
+        self.engine_depth -= in_engine as u32;
         self.rel = outer_rel;
+    }
+
+    /// A proc with a declared `PROC_SUMMARY`: its reads and writes land on the receiver (a type proc) or on the first tracked argument
+    /// (a global proc), and the body is not walked.
+    fn apply_summary(&mut self, owner: &str, name: &str, summary: &ProcSummary, this: &Val, bind: &[Val]) {
+        let entity = if owner == "/" { bind.iter().find(|v| v.tracked()).cloned() } else { Some(this.clone()) };
+        let Some(entity) = entity else { return };
+        let (rel, line) = (self.rel.clone(), self.line);
+        let ty = entity.ty.clone().unwrap_or_else(|| owner.to_string());
+        if entity.tracked() {
+            for var in &summary.reads {
+                let var_owner = self.eng.sem.var_owner(&ty, var).unwrap_or_else(|| ty.clone());
+                let r = Read { root: entity.root_name(), hops: entity.hops.clone(), var: var.clone(), owner: var_owner, kind: ReadKind::Var, hop_ok: entity.hop_ok };
+                self.add_read(r, &rel, line);
+            }
+        }
+        for var in &summary.writes {
+            self.out.effects.push(Effect { kind: "assign", name: var.clone(), owner: ty.clone(), proc: name.to_string(), rel: rel.clone(), line });
+        }
+    }
+
+    /// Follows `p` (the proc `name` resolves to on `ty`), and, for a closed walk, every override of it in `ty`'s subtypes.
+    fn run_virtual(&mut self, p: ProcRef<'a>, ty: &str, name: &str, this: Val, bind: &[Val]) {
+        self.run_proc(p, this.clone(), bind, false);
+        if !self.eng.virtual_dispatch || !this.tracked() {
+            return;
+        }
+        let declaring = {
+            let o = &p.ty().get().path;
+            if o.is_empty() { "/".to_string() } else { o.clone() }
+        };
+        for sub in self.eng.overrides(ty, name).iter() {
+            if *sub == declaring {
+                continue;
+            }
+            let Some(op) = self.eng.sem.proc_ref(sub, name) else { continue };
+            let mut v = this.clone();
+            v.ty = Some(sub.clone());
+            self.override_depth += 1;
+            self.run_proc(op, v, bind, false);
+            self.override_depth -= 1;
+        }
     }
 
     fn block(&mut self, fr: &mut Frame<'a>, b: &Block) {
@@ -1114,7 +1261,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         }
         let _ = owner;
-        self.run_proc(p, v, &argv, false);
+        self.run_virtual(p, &ty, name, v, &argv);
         Val::local(None)
     }
 
@@ -1222,7 +1369,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                         { let r = Read { root: this.root_name(), hops, var: k.0.clone(), owner: String::new(), kind: ReadKind::Accessor, hop_ok: this.hop_ok }; self.add_read(r, &rel, line); }
                         return Val::local(None);
                     }
-                    self.run_proc(p, this, &argv, false);
+                    self.run_virtual(p, &ty, name, this, &argv);
                 }
                 return Val::local(None);
             }
@@ -1230,6 +1377,15 @@ impl<'a, 'e> Walk<'a, 'e> {
         // A global proc.
         if let Some(p) = sem.global_proc(name) {
             if p.is_builtin() {
+                return Val::local(None);
+            }
+            if let Some(summary) = self.eng.ann.summaries.get(&("/".to_string(), name.to_string())) {
+                self.apply_summary("/", name, summary, &Val::local(None), &argv);
+                return Val::local(None);
+            }
+            if self.eng.virtual_dispatch && self.eng.sem.rel(p.get().location).starts_with("code/__defines/verdigris/") {
+                // A Verdigris FFI binding: Rust-owned state the walk cannot see. A PROC_SUMMARY on it declares what it touches.
+                self.diag("ffi_call", &rel, line, format!("`{}` is a Verdigris FFI call: declare what it reads and writes with PROC_SUMMARY(/proc/{}, ...)", name, name));
                 return Val::local(None);
             }
             if let Some(params) = self.eng.ann.reads_from.get(name) {
@@ -1422,4 +1578,81 @@ mod global_accessor_tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+}
+
+#[cfg(test)]
+mod closed_walk_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+    fn model(files: &[(&str, &str)]) -> (std::path::PathBuf, Tree, Sem) {
+        let root = std::env::temp_dir().join(format!("dq-closed-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        let mut loaded = Vec::new();
+        for (rel, text) in files {
+            let path = root.join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(&path, text).unwrap();
+            loaded.push(SourceFile::from_text(rel, text));
+        }
+        let mut tree = Tree::from_files(loaded);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        (root, tree, sem)
+    }
+
+    const MACROS: &str = "#define TRACKED(T, V)\n#define READS_FROM(A)\n#define PROC_SUMMARY(P, A...)\n";
+
+    #[test]
+    fn a_virtual_call_reads_the_union_of_its_overrides() {
+        let content = "/datum/shape\n\tvar/w = 1\n\tvar/h = 2\n\tvar/depth = 3\nTRACKED(/datum/shape, w)\nTRACKED(/datum/shape, h)\nTRACKED(/datum/shape, depth)\n/datum/shape/proc/area()\n\treturn w\n/datum/shape/proc/probe()\n\treturn area()\n/datum/shape/wide/proc/area()\n\treturn w + h\n/datum/shape/wide/deep/proc/area()\n\treturn ..() + depth\n/datum/shape/wide/deep/deeper\n/datum/shape/other/proc/unrelated()\n\treturn depth\n";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let static_walk = ReadsEngine::new(&sem, &decls, &ann).analyze("/datum/shape", "probe").keys();
+        assert_eq!(static_walk, BTreeSet::from(["w".to_string()]), "the lints' walk follows the static type's proc only");
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let set = closed.analyze("/datum/shape", "probe");
+        assert_eq!(set.keys(), BTreeSet::from(["depth".to_string(), "h".to_string(), "w".to_string()]), "the union over every override, `..()` included");
+        assert_eq!(closed.overrides("/datum/shape", "area").as_slice(), ["/datum/shape/wide".to_string(), "/datum/shape/wide/deep".to_string()]);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_recursive_virtual_call_terminates() {
+        let content = "/datum/node\n\tvar/n = 0\n\tvar/datum/node/next\nTRACKED(/datum/node, n)\n/datum/node/proc/walk()\n\treturn n + walk()\n/datum/node/leaf/proc/walk()\n\treturn n + ..()\n";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let set = ReadsEngine::new(&sem, &decls, &ann).closed().analyze("/datum/node", "walk");
+        assert_eq!(set.keys(), BTreeSet::from(["n".to_string()]));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn engine_bodies_are_walked_and_a_summary_replaces_a_body_that_cannot_be() {
+        let engine = "/datum/probe/proc/peek()\n\treturn vars[\"hidden\"]\n/datum/probe/proc/plain()\n\treturn shown\n";
+        let content = "/datum/probe\n\tvar/shown = 1\n\tvar/hidden = 2\nTRACKED(/datum/probe, shown)\nTRACKED(/datum/probe, hidden)\n/datum/probe/proc/via_peek()\n\treturn peek()\n/datum/probe/proc/via_plain()\n\treturn plain()\n";
+        let summarized = format!("{}PROC_SUMMARY(/datum/probe/proc/peek, reads = list(nameof(hidden)), writes = list(nameof(shown)))\n", MACROS);
+        for (with_summary, defines) in [(false, MACROS.to_string()), (true, summarized)] {
+            let (root, tree, sem) = model(&[("code/defines.dm", &defines), ("code/engine/probe.dm", engine), ("code/content.dm", content)]);
+            let decls = Decls::get(&tree);
+            let ann = Annotations::get(&sem, &decls);
+            assert_eq!(ann.summaries.contains_key(&("/datum/probe".to_string(), "peek".to_string())), with_summary);
+            let skipped = ReadsEngine::new(&sem, &decls, &ann).with_opaque(&["code/engine/"]).analyze("/datum/probe", "via_plain");
+            assert!(skipped.reads.is_empty() && skipped.opaque.contains_key("/datum/probe::plain"), "the lints' walk stops at the engine directory");
+            let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+            assert_eq!(closed.analyze("/datum/probe", "via_plain").keys(), BTreeSet::from(["shown".to_string()]), "the closed walk enters it");
+            let peek = closed.analyze("/datum/probe", "via_peek");
+            if with_summary {
+                assert_eq!(peek.keys(), BTreeSet::from(["hidden".to_string()]), "the summary stands for the body");
+                assert!(peek.diags.is_empty(), "{:?}", peek.diags);
+                assert_eq!(peek.writes(), BTreeSet::from(["/datum/probe.shown".to_string()]));
+            } else {
+                assert!(peek.diags.iter().any(|d| d.rule == "dynamic_read" && d.closed_only), "an unsummarized vars[] body is reported: {:?}", peek.diags);
+            }
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
 }

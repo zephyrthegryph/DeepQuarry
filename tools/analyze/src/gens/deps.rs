@@ -25,7 +25,7 @@ use crate::sem::handlers;
 use crate::sem::reads::{Annotations, ReadKind, ReadSet, ReadsEngine, VarClass, WriteIndex};
 
 /// The diagnostics of a reads walk that leave a consumer's inputs incomplete.
-pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "hop_not_relation"];
+pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "hop_not_relation", "ffi_call"];
 
 /// Engine procs a consumer may call whose reads the runtime registers itself, so the opaque crossing hides nothing: the stat and capability-key
 /// readers resolve to inputs the stat layer indexes (stat_value of a literal id is a stat read; cap_key_get a capability key read).
@@ -165,14 +165,20 @@ pub struct DepsAnalysis {
 }
 
 pub fn analyzed(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAnalysis>> {
-    tree.memo("gen/deps", || compute(tree))
+    tree.memo("gen/deps", || compute(tree, false))
 }
 
-fn compute(tree: &crate::tree::Tree) -> Option<DepsAnalysis> {
+/// The same analysis over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual calls the union of their overrides. What it
+/// finds beyond [`analyzed`] is `doc/rewrite/reads_closure_newly_visible.md` (`analyze sem closure`); no lint reads it yet.
+pub fn analyzed_closed(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAnalysis>> {
+    tree.memo("gen/deps-closed", || compute(tree, true))
+}
+
+fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let sem = crate::sem::sem_for(tree)?;
     let decls = Decls::get(tree);
     let ann = Annotations::get(&sem, &decls);
-    let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS);
+    let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed() } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let written = WriteIndex::build(&sem);
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     if let Some(an) = handlers::analyzed(tree) {
@@ -180,8 +186,14 @@ fn compute(tree: &crate::tree::Tree) -> Option<DepsAnalysis> {
             if !a.h.role.reads_covered() || a.h.cap_proc {
                 continue;
             }
-            let Some(set) = &a.set else { continue };
-            consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| untracked_of(set, &eng, &written));
+            let Some(status_quo) = &a.set else { continue };
+            consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
+                if closed {
+                    untracked_of(&eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path()), &eng, &written)
+                } else {
+                    untracked_of(status_quo, &eng, &written)
+                }
+            });
         }
     }
     // A capability's entries() (CAP_ENTRIES) names holder procs too (powered()'s TYPE_PROC_REF(/obj/machinery, power_available)): judged here only,

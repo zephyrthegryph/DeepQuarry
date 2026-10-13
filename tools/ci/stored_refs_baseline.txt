@@ -1501,7 +1501,6 @@ list	code/datums/locations/locations.dm	var/list/children = list() // ALLOW(inst
 list	code/datums/native/entities.dm	var/list/bound = list() // ALLOW(instance_list): singleton system, one instance
 list	code/datums/native/entities.dm	var/list/entities_by_index = list() // ALLOW(instance_list): singleton system, one instance
 list	code/datums/operations/req.dm	GLOBAL_LIST_EMPTY(reqs_interned)
-list	code/datums/properties/constraints.dm	var/list/constraint_overrides
 list	code/datums/registries.dm	var/list/members
 list	code/datums/registries.dm	var/list/member_keys
 list	code/datums/registries.dm	var/list/present
