@@ -116,6 +116,7 @@ CAPABILITIES(/mob/living/silicon/robot)
 	configure(mob_movement(bump = ROBOT, swap = ~HEAVY, push = ~HEAVY))
 	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
 	ref_one(nameof(cell))
+	ref_one(nameof(connected_ai), /mob/living/silicon/ai)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	on_change(nameof(sprite_datum), ANY, then(PROC_REF(sprite_changed)))
 	every(0.8 SECONDS, then(PROC_REF(transform_animation_sounds)), when = nameof(transform_sounds_left))

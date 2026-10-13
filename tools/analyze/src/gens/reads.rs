@@ -285,7 +285,7 @@ pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
 
 /// A declared capability accessor reads the actual numeric key published by capability_key_changed.
 /// Keep its define as DM interpolation so the generated name uses the authoritative compile-time ID.
-fn canonical_read_key(kind: &ReadKind, name: &str, capability_keys: &BTreeSet<String>, defines: &BTreeSet<String>) -> String {
+pub(crate) fn canonical_read_key(kind: &ReadKind, name: &str, capability_keys: &BTreeSet<String>, defines: &BTreeSet<String>) -> String {
     if *kind == ReadKind::Accessor && capability_keys.contains(name) {
         format!("capkey:[{name}]")
     } else if *kind == ReadKind::Accessor && defines.contains(name) {

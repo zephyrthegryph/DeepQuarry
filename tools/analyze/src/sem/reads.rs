@@ -572,14 +572,38 @@ impl<'a> ReadsEngine<'a> {
         if self.is_tracked(owner, var) || self.is_relation(owner, var) {
             return VarClass::Reactive;
         }
-        if self.is_stat(owner, var) || self.is_derived(owner, var) {
+        if self.is_stat(owner, var) || self.is_derived(owner, var) || self.is_published_builtin(owner, var) {
             return VarClass::Reactive;
+        }
+        // `type` and `parent_type` are fixed for the life of the thing (BYOND does not let a running world change them)
+        if matches!(var, "type" | "parent_type") {
+            return VarClass::Constant;
         }
         // a `var/const` never changes, whatever other types name a var the same
         if !written.is_written(var) || self.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
             return VarClass::Constant;
         }
         VarClass::Unknown
+    }
+
+    /// The hop kind a read of `name` crosses when it is followed to another entity, or `None` when the var is not one of the closed kinds
+    /// (doc/rewrite/final_api.html section 7, "Hop kinds"). A relation is a hop; so is `loc`, the container hop: the movement choke point
+    /// (`doMove()`, `Moved()`) publishes it and the container's own vars reach the contents that read them (`stat_hop_attach`, the ops'
+    /// `op_query_read_pairs`, `hooks_change_hop_published`). The other kinds (area, turf neighbour, contents) arrive with their publishers.
+    pub fn hop_kind(&self, ty_used: &str, owner: &str, name: &str) -> Option<&'static str> {
+        if self.is_relation(ty_used, name) || self.is_relation(owner, name) {
+            return Some("relation");
+        }
+        if name == "loc" && (self.sem.is_subtype(owner, "/atom") || self.sem.is_subtype(ty_used, "/atom")) {
+            return Some("container");
+        }
+        None
+    }
+
+    /// A BYOND built-in var the engine publishes from its own choke point, so a read of it is reactive without being a TRACKED var:
+    /// `loc` from `doMove()` / `Moved()` (the container hop's publisher).
+    pub fn is_published_builtin(&self, owner: &str, var: &str) -> bool {
+        var == "loc" && self.sem.is_subtype(owner, "/atom")
     }
 
     /// A relation declared with a macro or in a `relations()` body, on the type or an ancestor.
@@ -1466,7 +1490,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             // A global var (`SSair`, `world`): never a read of the holder; not reactive by contract.
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
-        let is_rel = self.eng.is_relation(&ty_used, name) || self.eng.is_relation(&owner, name);
+        let is_rel = self.eng.hop_kind(&ty_used, &owner, name).is_some();
         let (is_static, is_const) = (sig.is_static, sig.is_const);
         if !is_static || true {
             { let r = Read { root: v.root_name(), hops: v.hops.clone(), var: name.to_string(), owner: owner.clone(), kind: ReadKind::Var, hop_ok: v.hop_ok }; self.add_read(r, &rel, line); }
@@ -1484,7 +1508,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 // Followed anyway (the reads stay complete); flagged so classification can say why a hop does not subscribe.
                 let engine_hop = self.eng.virtual_dispatch && self.internal_read(&rel, &Read { root: String::new(), hops: Vec::new(), var: name.to_string(), owner: owner.clone(), kind: ReadKind::Var, hop_ok: true });
                 if !engine_hop {
-                    let msg = format!("hop through `{}` ({}) which is not a declared relation", name, owner);
+                    let msg = format!("hop through `{}` ({}) which is not a declared relation or another hop kind", name, owner);
                     self.diag("hop_not_relation", &rel, line, msg);
                 }
             }
@@ -1546,6 +1570,15 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
             return Val::local(None);
         };
+        // A call on a container of unbounded type (`loc.return_air()`, `loc?.tgui_host()`): which proc runs depends on what the thing is in, so
+        // the union of every override is all of /atom. Type the container (`var/obj/x/B = loc`) and the call is followed.
+        if self.eng.virtual_dispatch && v.tracked() && v.hops.last().map(|h| h == "loc").unwrap_or(false) && matches!(ty.as_str(), "/atom" | "/atom/movable" | "/datum") && !p.is_builtin() {
+            // (The framework's own code asking a container what it is (the containment ledger, the latent contents) is not an input of a value.)
+            if self.mute == 0 && !framework_file(&rel) {
+                self.diag("hop_not_relation", &rel, line, format!("`{}()` is called on a container of unbounded type ({})", name, ty));
+            }
+            return Val::local(None);
+        }
         if matches!(v.root, Root::Global(_)) {
             // A proc on a global singleton (`SSair.x()`, `GLOB.thing.x()`): followed, its reads classified as global reads.
             if self.eng.virtual_dispatch && !p.is_builtin() {
@@ -2100,6 +2133,44 @@ TRACKED(/datum/thing, charge)
         let set = closed.analyze("/datum/thing", "probe");
         assert!(set.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "the argument is read; the setter body is not: {:?}", set.diags);
         assert_eq!(set.diags.iter().filter(|d| d.rule == "untracked_global").count(), 1, "{:?}", set.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn the_container_is_a_hop_kind_and_a_call_on_an_unbounded_container_is_not_followed() {
+        let content = "/atom/proc/glow()
+	return 0
+/obj/crate
+	var/lit = 0
+TRACKED(/obj/crate, lit)
+/obj/crate/glow()
+	return lit
+/obj/lamp
+	var/charge = 0
+TRACKED(/obj/lamp, charge)
+/obj/lamp/proc/typed()
+	var/obj/crate/C = loc
+	return C.lit + charge
+/obj/lamp/proc/bare()
+	return istype(loc, /obj/crate)
+/obj/lamp/proc/unbounded()
+	return loc.glow()
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let typed = eng.analyze("/obj/lamp", "typed");
+        assert_eq!(typed.keys(), BTreeSet::from(["charge".to_string(), "loc".to_string(), "loc.lit".to_string()]), "a typed container is followed: its var is a hop read");
+        assert!(typed.diags.iter().all(|d| d.rule != "hop_not_relation"), "{:?}", typed.diags);
+        assert!(typed.reads.iter().all(|r| r.hop_ok), "the container hop is a hop kind: {:?}", typed.reads);
+        let bare = eng.analyze("/obj/lamp", "bare");
+        assert!(bare.diags.iter().all(|d| d.rule != "hop_not_relation"), "reading loc itself is not a hop finding: {:?}", bare.diags);
+        assert_eq!(eng.classify("/atom/movable", "loc", &WriteIndex::build(&sem)), VarClass::Reactive, "loc is published by the move choke point");
+        let unbounded = eng.analyze("/obj/lamp", "unbounded");
+        assert!(unbounded.diags.iter().any(|d| d.rule == "hop_not_relation"), "a call on /atom could run any override: {:?}", unbounded.diags);
+        assert!(!unbounded.keys().contains("loc.lit"), "and it is not followed");
+        // The legacy walk still calls the container a hop that is not a relation only when it is not a kind: it is one now.
         std::fs::remove_dir_all(root).unwrap();
     }
 }
