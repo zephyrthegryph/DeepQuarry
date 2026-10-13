@@ -34,6 +34,7 @@ pub fn check(frontend: &ColdFrontend) -> Vec<Diagnostic> {
                 .unwrap_or_default()
         })
         .collect();
+    dm_profile::request_mark("source_checks.bodies");
     let mut errors = Vec::new();
     for (body, found) in bodies.iter().zip(found) {
         for (offset, message, location) in found {
@@ -42,7 +43,9 @@ pub fn check(frontend: &ColdFrontend) -> Vec<Diagnostic> {
         }
     }
     errors.extend(text_errors(frontend));
+    dm_profile::request_mark("source_checks.text");
     errors.extend(unclosed_braces(frontend));
+    dm_profile::request_mark("source_checks.braces");
     errors
 }
 
@@ -50,22 +53,62 @@ pub fn check(frontend: &ColdFrontend) -> Vec<Diagnostic> {
 /// reports the line after the including directive. Directive lines (macro
 /// bodies included) are not code and are skipped.
 fn unclosed_braces(frontend: &ColdFrontend) -> Vec<Diagnostic> {
+    // First occurrence of each DM file, in include order.
+    let mut seen = HashSet::new();
+    let candidates: Vec<(usize, usize, &str)> = frontend
+        .plan
+        .occurrences
+        .iter()
+        .enumerate()
+        .filter_map(|(index, occurrence)| {
+            let parent = occurrence.parent?;
+            let extension = occurrence.path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+            if !extension.eq_ignore_ascii_case("dm") || !seen.insert(occurrence.path.as_ref()) {
+                return None;
+            }
+            let text = frontend.plan.source_texts.get(occurrence.path.as_ref())?;
+            Some((index, parent, text.as_str()))
+        })
+        .collect();
+    // Open-brace state per file text, cached by text digest: an edit relexes
+    // only the files it changed.
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<u128, bool>>> =
+        std::sync::OnceLock::new();
+    let cache = CACHE.get_or_init(Default::default);
+    let open: Vec<bool> = candidates
+        .par_iter()
+        .map(|(_, _, text)| {
+            let digest = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
+            if let Some(&open) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(&digest) {
+                return open;
+            }
+            let open = braces_open(text);
+            let mut cache = cache.lock().unwrap_or_else(|e| e.into_inner());
+            if cache.len() > 1 << 18 {
+                cache.clear();
+            }
+            cache.insert(digest, open);
+            open
+        })
+        .collect();
     let mut errors = Vec::new();
-    for (index, occurrence) in frontend.plan.occurrences.iter().enumerate() {
-        let Some(parent) = occurrence.parent else {
-            continue;
-        };
-        let extension = occurrence.path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
-        if !extension.eq_ignore_ascii_case("dm") {
-            continue;
+    for ((index, parent, _), open) in candidates.into_iter().zip(open) {
+        if open {
+            let occurrence = &frontend.plan.occurrences[index];
+            let mut location = frontend.bodies.first().map(|body| body.source.clone());
+            if let Some(location) = location.as_mut() {
+                location.semantic_path = frontend.plan.occurrences[parent].semantic_path.clone();
+                location.line = occurrence.directive_line + 1;
+            }
+            errors.push(source_error("inconsistent indentation or missing '}'".into(), location));
         }
-        if frontend.plan.occurrences[..index].iter().any(|earlier| earlier.path == occurrence.path) {
-            continue;
-        }
-        let Some(text) = frontend.plan.source_texts.get(occurrence.path.as_ref()) else {
-            continue;
-        };
-        let text = text.as_str();
+    }
+    errors
+}
+
+/// Whether a file's `{` blocks are still open at its end.
+fn braces_open(text: &str) -> bool {
+    {
         let lexed = dm_syntax::lex_spans(text);
         let mut depth = 0isize;
         let mut line_start = true;
@@ -98,16 +141,8 @@ fn unclosed_braces(frontend: &ColdFrontend) -> Vec<Diagnostic> {
                 _ => {}
             }
         }
-        if depth > 0 {
-            let mut location = frontend.bodies.first().map(|body| body.source.clone());
-            if let Some(location) = location.as_mut() {
-                location.semantic_path = frontend.plan.occurrences[parent].semantic_path.clone();
-                location.line = occurrence.directive_line + 1;
-            }
-            errors.push(source_error("inconsistent indentation or missing '}'".into(), location));
-        }
+        depth > 0
     }
-    errors
 }
 
 fn source_error(message: String, location: Option<SourceLocation>) -> Diagnostic {
@@ -392,7 +427,146 @@ fn collapsed(text: &str) -> String {
 }
 
 /// Undefined text escapes and constant division by zero, over all code.
+/// Per-piece screen for `text_errors`, cached by the piece's text digest.
+/// Pieces are the expanded text cut at body boundaries (a body is a complete
+/// statement block, so no token crosses a cut). A piece with any possible
+/// error, or a boundary that could complete one, sends the request to the
+/// exact whole-text pass; a clean tree never does.
+#[derive(Clone)]
+struct PieceScreen {
+    candidate: bool,
+    /// First two and last two significant tokens, for cross-cut lookbehind.
+    head: Vec<(TokenKind, String)>,
+    tail: Vec<(TokenKind, String)>,
+}
+
+fn screen_piece(text: &str) -> PieceScreen {
+    let lexed = dm_syntax::lex_spans(text);
+    let tokens: Vec<Token<'_>> = lexed
+        .tokens
+        .iter()
+        .filter(|token| !matches!(token.kind, TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment))
+        .map(|token| (token.kind, token.text(text), token.span.start))
+        .collect();
+    let mut candidate = false;
+    for (index, token) in tokens.iter().enumerate() {
+        match token.0 {
+            TokenKind::String | TokenKind::Interpolation if token.1.starts_with('"') || token.1.starts_with("{\"") => {
+                let quote = if token.1.starts_with('{') { 2 } else { 1 };
+                let body = &token.1[quote..token.1.len().saturating_sub(quote).max(quote)];
+                let mut at = 0;
+                while let Some(found) = body[at..].find('\\') {
+                    let position = at + found;
+                    let after = &body[position + 1..];
+                    if after.starts_with('\\') {
+                        at = position + 2;
+                        continue;
+                    }
+                    if !valid_escape(after) {
+                        candidate = true;
+                        break;
+                    }
+                    at = position + 1;
+                }
+            }
+            TokenKind::Number if is_zero(token.1) && index >= 2 => {
+                let operator = tokens[index - 1].1;
+                let left = tokens[index - 2];
+                candidate |= operator == "%" || (operator == "/" && left.0 == TokenKind::Number);
+            }
+            _ => {}
+        }
+        if candidate {
+            break;
+        }
+    }
+    let owned = |token: &Token<'_>| (token.0, token.1.to_owned());
+    PieceScreen {
+        candidate,
+        head: tokens.iter().take(2).map(owned).collect(),
+        tail: tokens.iter().rev().take(2).rev().map(owned).collect(),
+    }
+}
+
+fn piece_cache() -> &'static std::sync::Mutex<std::collections::HashMap<u128, PieceScreen>> {
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<u128, PieceScreen>>> =
+        std::sync::OnceLock::new();
+    CACHE.get_or_init(Default::default)
+}
+
+/// Whether the exact text pass could report anything.
+fn text_may_error(frontend: &ColdFrontend) -> bool {
+    let text = frontend.expanded.text.as_str();
+    let mut spans: Vec<_> = frontend.bodies.iter().map(|body| body.expanded_span.range()).collect();
+    spans.sort_by_key(|span| (span.start, span.end));
+    let mut cuts = vec![0];
+    for span in spans {
+        let (start, end) = (span.start.min(text.len()), span.end.min(text.len()));
+        if start >= *cuts.last().unwrap() && end >= start {
+            cuts.push(start);
+            cuts.push(end);
+        }
+    }
+    cuts.push(text.len());
+    cuts.dedup();
+    let pieces: Vec<&str> = cuts
+        .windows(2)
+        .filter_map(|pair| text.get(pair[0]..pair[1]))
+        .collect();
+    let digests: Vec<u128> = pieces
+        .par_iter()
+        .map(|piece| xxhash_rust::xxh3::xxh3_128(piece.as_bytes()))
+        .collect();
+    let cached: Vec<Option<PieceScreen>> = {
+        let cache = piece_cache().lock().unwrap_or_else(|e| e.into_inner());
+        digests.iter().map(|digest| cache.get(digest).cloned()).collect()
+    };
+    let screens: Vec<PieceScreen> = pieces
+        .par_iter()
+        .zip(cached)
+        .map(|(piece, cached)| cached.unwrap_or_else(|| screen_piece(piece)))
+        .collect();
+    {
+        let mut cache = piece_cache().lock().unwrap_or_else(|e| e.into_inner());
+        if cache.len() > 1 << 20 {
+            cache.clear();
+        }
+        for (digest, screen) in digests.iter().zip(&screens) {
+            cache.entry(*digest).or_insert_with(|| screen.clone());
+        }
+    }
+    let mut previous: Vec<(TokenKind, String)> = Vec::new();
+    for screen in &screens {
+        if screen.candidate {
+            return true;
+        }
+        // A zero among a piece's first two tokens may complete `% 0` or
+        // `number / 0` with tokens of the preceding pieces.
+        let mut window = previous.clone();
+        window.extend(screen.head.iter().cloned());
+        let base = previous.len();
+        for index in base..window.len() {
+            if index >= 2 && window[index].0 == TokenKind::Number && is_zero(&window[index].1) {
+                let operator = window[index - 1].1.as_str();
+                if operator == "%" || (operator == "/" && window[index - 2].0 == TokenKind::Number) {
+                    return true;
+                }
+            }
+        }
+        if !screen.tail.is_empty() {
+            let mut last = previous;
+            last.extend(screen.tail.iter().cloned());
+            let keep = last.len().saturating_sub(2);
+            previous = last.split_off(keep);
+        }
+    }
+    false
+}
+
 fn text_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
+    if !text_may_error(frontend) {
+        return Vec::new();
+    }
     let text = frontend.expanded.text.as_str();
     let lexed = dm_syntax::lex_spans(text);
     let tokens: Vec<Token<'_>> = lexed
