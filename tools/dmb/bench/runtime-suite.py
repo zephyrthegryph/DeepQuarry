@@ -22,6 +22,7 @@ from upgrade_owned_job import OwnedJob
 HEX = re.compile(r"^[0-9a-f]{64}$")
 COMPILE_SECONDS = 300
 COHORT_SECONDS = 1800
+COHORT_MAX_SECONDS = 21600
 JOB_BYTES = 4_000_000_000
 
 
@@ -65,7 +66,7 @@ def parser():
     value.add_argument('--job-memory-bytes', type=int, default=JOB_BYTES,
                        help='owned Job cap, 512 MiB..8 GiB; default 4,000,000,000 bytes')
     value.add_argument('--seconds', type=int,
-                       help='owned cohort watchdog, 1..1800 seconds; interrupted worlds are excluded')
+                       help='owned cohort watchdog, 1..21600 seconds, default 1800; interrupted worlds are excluded')
     value.add_argument('--security', choices=['trusted', 'safe', 'ultrasafe'], required=True)
     value.add_argument('--focus', action='append', default=[])
     value.add_argument('--tier', choices=['normal', 'all', 'exhaustive'])
@@ -89,8 +90,8 @@ def validate(args):
         raise ValueError('owned Job memory cap must be 512 MiB..8 GiB')
     if args.seconds is None:
         args.seconds = COMPILE_SECONDS if args.suite_compiled_output or args.focused_compiled_output else COHORT_SECONDS
-    if not 1 <= args.seconds <= COHORT_SECONDS:
-        raise ValueError('cohort seconds must be1..1800')
+    if not 1 <= args.seconds <= COHORT_MAX_SECONDS:
+        raise ValueError('cohort seconds must be 1..21600')
     suite_replay = bool(args.suite_compiled_output)
     if suite_replay != bool(args.suite_compiled_output_sha256):
         raise ValueError('suite compiled output requires both path and SHA256')

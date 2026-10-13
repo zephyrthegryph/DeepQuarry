@@ -9,8 +9,8 @@ ancestors. The runner never recursively deletes them.
 ## Pins and scope
 
 Supply SHA256 pins for the actual Bash executable, DreamMaker executable, and
-**`dreamdaemon.exe` frontend beside DreamMaker**. Do not supply the smaller
-`dd.exe` worker used by tiny standalone fixtures. Native mode additionally needs
+**`dd.exe` console daemon beside DreamMaker** (the script rejects any other path). Do not supply the GUI
+`dreamdaemon.exe` frontend. Native mode additionally needs
 the native compiler and engine template pins. There are no executable defaults.
 
 These pins authenticate the named files only. They do not certify the spawned
@@ -22,7 +22,7 @@ result is produced.
 The Windows Job limits aggregate owned-tree commit to 4,000,000,000 bytes. Job
 commit counters are not private-byte or working-set peaks. Compilation has a
 300-second deadline until actual compiler evidence appears; the existing build
-runner bounds each DreamDaemon to 300 seconds; the cohort stops at 1800 seconds.
+runner bounds each DreamDaemon to 300 seconds; the cohort stops at 1800 seconds by default (`--seconds` up to 21600 for a full suite).
 The owned Job is terminated and reaped on every exit. No foreign PID/name-wide
 termination is used.
 
