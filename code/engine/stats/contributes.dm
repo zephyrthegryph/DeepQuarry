@@ -112,6 +112,7 @@
 		return info
 	return stat_type_build(E)
 
+PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_type_build(datum/E)
 	var/datum/type_table/T = table_of(E)
 	if(T == table_empty())
@@ -193,6 +194,7 @@
 	return I
 
 /// The compiled contribution of one contributes() / contributes_to() entry. null (reported) when it is malformed.
+PROC_SUMMARY(/proc/stat_contrib_from) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_contrib_from(datum/E, datum/entry/entry, datum/centry/C, datum/stat_type_info/I, datum/type_table/T)
 	var/datum/stat_contrib/contrib = new
 	contrib.stat_id = entry.args["stat"]
@@ -264,6 +266,7 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 
 /// Registers the inputs of a contribution (its value spec, its when() conditions, its reads) in the type's index: each input key points at the stat
 /// (or contributes_to entry) to recompute when it changes.
+PROC_SUMMARY(/proc/stat_index_inputs) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_index_inputs(datum/E, datum/stat_type_info/I, datum/stat_contrib/contrib, stat_id)
 	var/list/keys = list()
 	var/list/untracked = list()
@@ -311,6 +314,7 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 			stat_collect_tree_inputs(E, spec, keys, untracked)
 
 /// The inputs of a condition tree or a leaf (a var name, a stat or key id, cond_not/all/any of those, a PROC_REF: its generated reads).
+PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_collect_tree_inputs(datum/E, cond, list/keys, list/untracked)
 	if(islist(cond))
 		var/list/tree = cond
@@ -583,6 +587,7 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 
 /// The types that declare a FORMULA stat (STAT(type, x, FORMULA)), read from the generated /datum/stat_decl rows so it works while the
 /// globals initialize too (type tables are statics and may be built then).
+PROC_SUMMARY(/proc/stat_formula_types) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_formula_types()
 	var/static/list/types // ALLOW(sys_static_getter): read while the globals initialize (type tables build then), so it cannot be a GLOBAL_LIST_INIT
 	if(!types)

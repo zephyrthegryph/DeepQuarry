@@ -28,6 +28,7 @@ GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> unca
 GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
+PROC_SUMMARY(/proc/stat_call) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_call(datum/holder, proc_name)
 	lookup_reads_prepare(holder)
 	// One context for every contribution handler: a handler may not keep it, and a recompute inside a handler puts the outer holder back.
@@ -42,6 +43,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	ctx.holder = outer
 
 /// The value of stat `stat_id` on E: its var, or (a virtual stat) what the record holds, or what it composes to now.
+PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_value(datum/E, stat_id)
 	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat_id)
@@ -81,6 +83,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 		publish_change(E, key)
 
 /// Writes a stat's settled value where it lives.
+PROC_SUMMARY(/proc/stat_store) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_store(datum/E, datum/stat_def/def, value, datum/stat_type_info/I)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
 		E.vars[def.name] = value // ALLOW(api): the stat layer is the one writer of a stat's var
@@ -96,6 +99,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
  * The composed value of `def` on E now: the stat's base, the type's constant (the var's initial value, or the map's edit of it) as a contribution at
  * default priority, the type's contributes() entries whose gates hold, and the holds, combined by the rule. A status reads 0 while its immunity holds.
  */
+PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_compute(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
 	var/value
 	var/override_set = FALSE
@@ -206,6 +210,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	return TRUE
 
 /// What one contribution contributes: its constant, a var read, another stat, a capability key, a holder proc, or a condition tree.
+PROC_SUMMARY(/proc/stat_contrib_value) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_contrib_value(datum/E, datum/stat_def/def, datum/stat_contrib/C)
 	var/value
 	switch(C.value_kind)
@@ -224,6 +229,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	return stat_boolean_normal(def, value)
 
 /// Recomputes one stat on E and writes it when it changed. TRUE when it changed.
+PROC_SUMMARY(/proc/stat_recompute) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_recompute(datum/E, datum/stat_def/def, silent = FALSE, datum/stat_type_info/I = null)
 	if(isnull(I))
 		I = stat_type_of(E)
@@ -275,6 +281,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	return TRUE
 
 /// The value a stat holds now, without computing it.
+PROC_SUMMARY(/proc/stat_value_now) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_value_now(datum/E, datum/stat_def/def, has_var)
 	if(isnull(has_var))
 		has_var = (def.name in E.vars)
@@ -289,6 +296,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 
 /// Captures a map's edit of each stat var as the stat's constant. Only the engine writes a stat var, so until the first recompute the var still holds
 /// what the map set. Runs before an entity's first computation, from init or from the first hold.
+PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_ensure_inited(datum/E, datum/stat_type_info/I)
 	var/datum/stat_record/rec = stat_record_of(E)
 	if(rec.inited)
@@ -553,6 +561,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
  * Re-evaluates one contributes_to entry of E: what it contributes to the stat of the entity its relation names, now. The row on the target is E's
  * (source E, untimed, so E's deletion releases it); it moves when the relation changes and goes when the gate stops holding.
  */
+PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_ct_update(datum/E, datum/stat_contrib/ct)
 	if(QDELETED(E))
 		return
@@ -771,6 +780,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 // ---- the reverse index of one-relation hops ----
 
 /// Records that reader E's relation var `rel_var` names what it names now: E joins the new target's hop_in[rel_var] and leaves the old one's.
+PROC_SUMMARY(/proc/stat_hop_attach) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_hop_attach(datum/E, rel_var)
 	var/datum/stat_record/rec = stat_record_of(E)
 	var/datum/old = rec.hop_targets?[rel_var]

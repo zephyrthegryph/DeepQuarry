@@ -27,6 +27,10 @@ pub struct Analyzed {
     pub def: Option<(String, u32)>,
     pub params: Vec<Vec<String>>,
     pub set: Option<ReadSet>,
+    /// The same handler over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual calls the union of their overrides,
+    /// global procs walked, global state classified. `sem/reads`, `untracked_inputs` and the generated subscriptions judge this one;
+    /// `set` (the targeted walk) is what the purity and context checks of `sem/handlers` read.
+    pub closed: Option<ReadSet>,
     /// Return-protocol violations of the top-level body (conditions and requirements).
     pub returns: Vec<super::checks::Found>,
     /// Reads of a var that is not tracked, a relation, a stat, a derived value or constant:
@@ -68,6 +72,7 @@ pub fn analyzed(tree: &Tree) -> Option<Arc<Analysis>> {
 }
 
 fn compute(tree: &Tree) -> Analysis {
+    let started = std::time::Instant::now();
     let decls = Decls::get(tree);
     let refs: Vec<HandlerRef> = hooks::discover(&decls);
     let has_reads_as = decls.markers_named("READS_AS").next().is_some();
@@ -78,6 +83,7 @@ fn compute(tree: &Tree) -> Analysis {
     let Some(sem) = super::sem_for(tree) else { return an };
     let ann = Annotations::get(&sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
+    let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed();
     let written = super::reads::WriteIndex::build(&sem);
     let mut seen = std::collections::HashSet::new();
     // The typed fields every ACTION() declares.
@@ -85,6 +91,25 @@ fn compute(tree: &Tree) -> Analysis {
         .markers_named("ACTION")
         .flat_map(|m| m.args.iter().skip(1).filter(|a| a.as_str() != "FIXED" && !a.contains('=')).map(|a| a.rsplit('/').next().unwrap_or(a).trim().to_string()).collect::<Vec<_>>())
         .collect();
+    // The walks are the cost, and each is independent: do the distinct ones in parallel first. Only a handler whose reads are covered needs
+    // the closed walk.
+    let mut job_ix: std::collections::HashMap<(String, String, String), usize> = std::collections::HashMap::new();
+    let mut jobs: Vec<(String, String, String, bool)> = Vec::new();
+    for h in &refs {
+        let on = if h.cap_proc { h.cap_type.clone() } else { h.owner.clone() };
+        if on.is_empty() || h.cap_proc || !sem.proc_ref(&on, &h.proc).map(|p| !p.is_builtin()).unwrap_or(false) {
+            continue;
+        }
+        let key = (on.clone(), h.proc.clone(), h.ctx.type_path().to_string());
+        let i = *job_ix.entry(key).or_insert_with(|| {
+            jobs.push((on.clone(), h.proc.clone(), h.ctx.type_path().to_string(), false));
+            jobs.len() - 1
+        });
+        jobs[i].3 |= h.role.reads_covered();
+    }
+    let walked: Vec<(ReadSet, Option<ReadSet>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
+        (eng.analyze_handler(on, proc, ctx), closed.then(|| closed_eng.analyze_handler(on, proc, ctx)))
+    });
     for h in refs {
         let on = if h.cap_proc { h.cap_type.clone() } else { h.owner.clone() };
         if on.is_empty() {
@@ -112,11 +137,13 @@ fn compute(tree: &Tree) -> Analysis {
             }
             _ => (false, None, Vec::new(), Vec::new()),
         };
-        let set = if proc_found && !h.cap_proc { Some(eng.analyze_handler(&on, &h.proc, h.ctx.type_path())) } else { None };
+        let walk = if proc_found && !h.cap_proc { job_ix.get(&(on.clone(), h.proc.clone(), h.ctx.type_path().to_string())).map(|&i| &walked[i]) } else { None };
+        let set = walk.map(|w| w.0.clone());
+        let closed = if h.role.reads_covered() { walk.and_then(|w| w.1.clone()) } else { None };
         let mut unknown = Vec::new();
-        if let (Some(set), true) = (&set, h.role.reads_covered()) {
+        if let (Some(set), true) = (&closed, h.role.reads_covered()) {
             for r in &set.reads {
-                if r.kind == super::reads::ReadKind::Var && eng.classify(&r.owner, &r.var, &written) == super::reads::VarClass::Unknown {
+                if r.kind == super::reads::ReadKind::Var && !set.internal.contains(r) && eng.classify(&r.owner, &r.var, &written) == super::reads::VarClass::Unknown {
                     let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
                     unknown.push((r.key(), r.var.clone(), r.owner.clone(), rel, line));
                 }
@@ -153,7 +180,7 @@ fn compute(tree: &Tree) -> Analysis {
                 }
             }
         }
-        an.handlers.push(Analyzed { h, on, proc_found, def, params, set, returns, unknown, impure, type_found, bad_ctx });
+        an.handlers.push(Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx });
     }
     let graph = DepGraph::from_derives(&sem, &eng);
     an.cycles = graph.cycles();
@@ -179,6 +206,7 @@ fn compute(tree: &Tree) -> Analysis {
     an.accessor_gaps.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
     let footprint = sem.footprint();
     if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        eprintln!("analyze: sem/handlers walked {} handlers (targeted + closed) in {:.1?}", an.handlers.len(), started.elapsed());
         eprintln!("analyze: sem footprint: {} handlers, {} files consulted", an.handlers.len(), footprint.len());
     }
     super::incremental::capture(tree, &sem, footprint);

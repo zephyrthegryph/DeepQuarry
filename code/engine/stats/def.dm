@@ -74,6 +74,7 @@ GLOBAL_LIST_EMPTY(stat_type_index) // type -> /datum/stat_type_info
 	return rule == STAT_RULE_ALL || rule == STAT_RULE_ANY
 
 /// Builds the registry from the STAT lines. Called on first use.
+PROC_SUMMARY(/proc/stat_defs_build) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_defs_build()
 	GLOB.stat_defs_built = TRUE
 	for(var/decl_type in subtypesof(/datum/stat_decl))
