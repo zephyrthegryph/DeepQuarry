@@ -171,7 +171,7 @@ SYSTEM_ACCESSOR(mapping, mapping_engine_loader, nameof(engine_loader))
 // ---- Readers of registries that replaced a system's list of the same name ----
 
 /// The live overmap ships (the registry's own list: read only, copy before deleting members).
-/proc/shuttles_ships()
+/proc/shuttles_ships() as /list
 	return REGISTRY_MEMBERS(REGISTRY_OVERMAP_SHIPS)
 
 /// The painting frames that persist their canvas (a persistence_id): a copy.
