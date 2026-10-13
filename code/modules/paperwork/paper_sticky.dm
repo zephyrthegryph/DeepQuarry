@@ -14,8 +14,6 @@
 	var/written_text
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
-TRACKED(/obj/item/sticky_pad, written_text)
-TRACKED(/obj/item/sticky_pad, papers)
 
 /// The look (the draw sweep: from its template).
 /obj/item/sticky_pad/draw(datum/look/look)

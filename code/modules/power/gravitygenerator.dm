@@ -122,7 +122,6 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 	/// The charge overlay the main part shows on this, its middle part.
 	var/shown_overlay
 
-TRACKED(/obj/machinery/gravity_generator/part, shown_overlay)
 
 CAPABILITIES(/obj/machinery/gravity_generator/part)
 	ref_one(nameof(main_part), /obj/machinery/gravity_generator/main)
@@ -192,7 +191,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 	/// GRAVGEN_IDLE, GRAVGEN_UP or GRAVGEN_DOWN: spinning up or down (spin_step()) or settled.
 	var/charging_state = GRAVGEN_IDLE
 
-TRACKED(/obj/machinery/gravity_generator/main, charging_state)
 TRACKED(/obj/machinery/gravity_generator/main, broken_state)
 TRACKED(/obj/machinery/gravity_generator/main, current_overlay)
 
@@ -257,7 +255,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 			part.set_density(FALSE)
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
-		part.sprite_number = count
+		part.set_sprite_number(count)
 		rel_set(part, nameof(part.main_part), src)
 		rel_add(src, nameof(parts), part)
 

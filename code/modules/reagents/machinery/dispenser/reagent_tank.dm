@@ -21,7 +21,7 @@
 
 /// Requirement: the dispenser offers transfer amounts (the old Initialize dropped the set_APTFT verb without them).
 /obj/structure/reagent_dispensers/proc/has_transfer_amounts(datum/act/op/A)
-	return !!possible_transfer_amounts // ALLOW(reads): the amounts are a type constant no code changes at run time
+	return !!possible_transfer_amounts
 
 /// Old attackby: an item is not used on the tank itself; the click goes on (a container fills from the tank in its own afterattack).
 /obj/structure/reagent_dispensers/proc/interaction_item(datum/act/op/A)
@@ -349,8 +349,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/acid)
 	var/bottle = 0
 	var/cups = 0
 	var/cupholder = 0
-TRACKED(/obj/structure/reagent_dispensers/water_cooler, cupholder)
-TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 
 /obj/structure/reagent_dispensers/water_cooler/full
 	bottle = 1

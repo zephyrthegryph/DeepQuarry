@@ -256,7 +256,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 			M.has_recoloured = TRUE
 		if(isrobot(target()))
 			var/mob/living/silicon/robot/R = target()
-			R.has_recoloured = TRUE
+			R.set_has_recoloured(TRUE)
 	return TRUE
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.

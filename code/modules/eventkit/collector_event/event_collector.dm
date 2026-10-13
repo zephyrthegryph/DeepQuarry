@@ -48,7 +48,6 @@
 	var/list/disabling_sources //what things are disabling us?
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
-TRACKED(/obj/structure/event_collector, current_step)
 
 /// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (its every()).
 /obj/structure/event_collector/var/awaiting_next_recipe = FALSE

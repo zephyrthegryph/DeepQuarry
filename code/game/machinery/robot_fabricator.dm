@@ -50,7 +50,6 @@
 
 TRACKED(/obj/machinery/robotic_fabricator, metal_amount)
 TRACKED(/obj/machinery/robotic_fabricator, operating)
-TRACKED(/obj/machinery/robotic_fabricator, inserting)
 
 MSG_DEF_SELF(robot_fabricator/busy, "The fabricator is already building a part.")
 MSG_DEF_SELF(robot_fabricator/metal, "The fabricator does not have enough metal.")

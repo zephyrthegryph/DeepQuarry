@@ -54,7 +54,6 @@
 	var/update_adjacent_tiles = TRUE
 
 TRACKED(/obj/machinery/door, operating)
-TRACKED(/obj/machinery/door, reinforcing)
 TRACKED(/obj/machinery/door, autoclose)
 TRACKED(/obj/machinery/door, normalspeed)
 
@@ -332,7 +331,7 @@ CAPABILITIES(/obj/machinery/door)
 
 /// A door that has taken no damage (reinforcing it is allowed).
 /obj/machinery/door/proc/not_damaged(datum/act/A)
-	return (!broken_now() && get_integrity() >= max_integrity) ? null : MSG(door/repair_first) // ALLOW(reads): a door's max_integrity is its type's constant
+	return (!broken_now() && get_integrity() >= max_integrity) ? null : MSG(door/repair_first)
 
 /// Fits sheets of plasteel on the door (up to two in all, over as many visits as it takes).
 /obj/machinery/door/proc/add_plasteel(datum/act/op/A)
@@ -376,7 +375,7 @@ CAPABILITIES(/obj/machinery/door)
 
 /// Damaged, with no sheets fitted: a welder repairs it.
 /obj/machinery/door/proc/repairable(datum/act/A)
-	return !reinforcing && get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+	return !reinforcing && get_integrity() < max_integrity
 
 /// The repair takes as many deciseconds as the door is damaged.
 /obj/machinery/door/proc/repair_time(datum/act/A)

@@ -342,7 +342,6 @@ CAPABILITIES(/obj/item/storage/box/tgmc_mre)
 		if(consume(src, user) && T)
 			new /obj/item/trash/tgmc_mre(T)
 
-TRACKED(/obj/item/storage/box/tgmc_mre, isopened)
 
 /// The first thing that moves in or out opens the wrapper.
 /obj/item/storage/box/tgmc_mre/on_slot_changed(slot_id, atom/movable/thing, inserted)

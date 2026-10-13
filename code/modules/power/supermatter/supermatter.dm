@@ -119,7 +119,6 @@
 	var/critwarn = FALSE
 	var/causalitywarn = FALSE
 	var/stationcrystal = FALSE
-TRACKED(/obj/machinery/power/supermatter, final_countdown)
 
 // The crystal (doc/rewrite/final_api.html section 16): its reaction runs every machine service interval while it sits on a turf (sm_step(); in a
 // crate or an exosuit it waits), whatever touches it is consumed (the touch ops and the bump), and silicons read its monitor window from afar. Its

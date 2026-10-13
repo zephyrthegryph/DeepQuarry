@@ -22,7 +22,6 @@ MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUN
 	var/mounted = FALSE
 
 TRACKED(/obj/item/geiger, scanning)
-TRACKED(/obj/item/geiger, last_perceived_radiation_danger)
 
 CAPABILITIES(/obj/item/geiger)
 	configure(item_worn(slots = SLOT_BELT, flags = NOBLUDGEON))

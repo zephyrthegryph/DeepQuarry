@@ -122,7 +122,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	return empty ? null : starts_with
 
 /obj/item/storage/latent_generator_clear()
-	starts_with = null
+	set_starts_with(null)
 
 /// Latent only for plain spawns: a variant needs apply_variant(), so it is made now.
 /obj/item/storage/latent_spawn_ok(path, value)

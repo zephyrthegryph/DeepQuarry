@@ -567,11 +567,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-TRACKED(/mob/living/silicon/pai, chassis_name)
-TRACKED(/mob/living/silicon/pai, eye_glow)
-TRACKED(/mob/living/silicon/pai, hide_glow)
 TRACKED(/mob/living/silicon/pai, eye_color)
-TRACKED(/mob/living/silicon/pai, holo_icon_south)
 
 /mob/living/silicon/pai/draw(datum/look/look)
 	..()
@@ -672,4 +668,3 @@ TRACKED(/mob/living/silicon/pai, holo_icon_south)
 	if(stat != DEAD)
 		close_up()
 
-TRACKED(/mob/living/silicon/pai, idaccessible)

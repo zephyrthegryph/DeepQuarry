@@ -396,15 +396,6 @@
 /// Rebuilds unarmed_attacks from unarmed_types. Call it on a mob's private copy
 /// (proto_private(H, "species")), never on the registered species.
 // What a human's look reads off its species (the species is the human's own copy, changed with these setters).
-TRACKED(/datum/species, appearance_flags)
-TRACKED(/datum/species, blood_color)
-TRACKED(/datum/species, damage_overlays)
-TRACKED(/datum/species, has_glowing_eyes)
-TRACKED(/datum/species, has_limbs)
-TRACKED(/datum/species, has_organ)
-TRACKED(/datum/species, race_key)
-TRACKED(/datum/species, tail)
-TRACKED(/datum/species, vore_belly_default_variant)
 
 /datum/species/proc/update_attack_types()
 	rel_clear(src, nameof(unarmed_attacks))
@@ -1096,4 +1087,3 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		return TRUE
 	return FALSE
 
-TRACKED(/datum/species, base_species)

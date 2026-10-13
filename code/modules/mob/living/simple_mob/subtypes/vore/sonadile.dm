@@ -88,7 +88,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/sonadile)
 	if(vore_fullness)
 		after(src, 10 SECONDS, PROC_REF(settle_full_icon), key = "settle_full_icon")
 
-TRACKED(/mob/living/simple_mob/vore/sonadile, settled)
 
 /mob/living/simple_mob/vore/sonadile/proc/settle_full_icon()
 	if(vore_fullness)

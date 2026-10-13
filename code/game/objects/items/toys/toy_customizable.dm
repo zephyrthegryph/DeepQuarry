@@ -9,8 +9,6 @@
 	var/list/possible_overlays
 	var/list/added_overlays
 
-TRACKED(/obj/item/toy/plushie/customizable, fabric_color)
-TRACKED(/obj/item/toy/plushie/customizable, added_overlays)
 
 /obj/item/toy/plushie/customizable/draw(datum/look/look)
 	..()

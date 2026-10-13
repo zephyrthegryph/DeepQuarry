@@ -34,7 +34,7 @@
 		else if(P.client || P.key)
 			to_chat(user, span_notice("You rename \the [P] to [label]."))
 			to_chat(P, span_notice("\The [user] renames you to [label]."))
-			P.custom_name = label
+			P.set_custom_name(label)
 			P.SetName(P.custom_name)
 		else
 			to_chat(user, span_warning("\The [src] is inactive and cannot be renamed."))

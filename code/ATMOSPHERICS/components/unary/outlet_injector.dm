@@ -136,7 +136,6 @@
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)
 	update_underlays()
 
-TRACKED(/obj/machinery/atmospherics/unary/outlet_injector, volume_rate)
 TRACKED(/obj/machinery/atmospherics/unary/outlet_injector, id)
 
 MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")

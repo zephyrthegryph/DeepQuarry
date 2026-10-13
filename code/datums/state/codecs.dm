@@ -29,7 +29,7 @@
 		A.create_reagents(encoded["max"])
 	var/datum/reagents/holder = A.reagents
 	holder.clear_reagents()
-	holder.maximum_volume = encoded["max"]
+	holder.set_maximum_volume(encoded["max"])
 	for(var/list/entry as anything in encoded["list"])
 		// safety = TRUE: the saved mix was stable, so adding it back must not react.
 		holder.add_reagent(entry[1], entry[2], ctx.decode_value(entry[3]), TRUE)

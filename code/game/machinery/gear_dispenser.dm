@@ -157,7 +157,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
-TRACKED(/obj/machinery/gear_dispenser, dispenser_flags)
 
 CAPABILITIES(/obj/machinery/gear_dispenser)
 	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))

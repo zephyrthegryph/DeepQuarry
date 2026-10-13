@@ -53,14 +53,14 @@
 /// Its ID card opens what its type says (owns_one(starts =)).
 /mob/living/bot/proc/start_botcard(current, mapload)
 	var/obj/item/card/id/card = new /obj/item/card/id(src)
-	card.access = botcard_access.Copy()
+	card.set_access(botcard_access.Copy())
 	return card
 
 /// What it checks for access before taking orders (owns_one(starts =)).
 /mob/living/bot/proc/start_access_scanner(current, mapload)
 	var/obj/scanner = new /obj(src)
-	scanner.req_access = req_access.Copy()
-	scanner.req_one_access = req_one_access.Copy()
+	scanner.set_req_access(req_access.Copy())
+	scanner.set_req_one_access(req_one_access.Copy())
 	return scanner
 
 /// A map that has bots stay put keeps every bot from patrolling (rolls(): the map's setting, read as it is made).

@@ -101,7 +101,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /// The sheets repairing `E` takes (integrity is the damage system's, read whole).
 /proc/emitter_repair_sheets(obj/machinery/power/emitter/E)
 	READS_FROM(E)
-	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1) // ALLOW(reads): an emitter's max_integrity is its type's constant
+	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1)
 
 /// The stack in hand holds `n` (a stack's count is its own business, read whole).
 /proc/emitter_stack_holds(obj/item/stack/S, n)

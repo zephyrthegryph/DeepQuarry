@@ -21,7 +21,6 @@ CAPABILITIES(/obj/item/fusion_coil)
 	configure(light_glow(color = "#30B5E6"))
 	configure(item_combat(force = 15))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_GASCAN))
-TRACKED(/obj/item/fusion_coil, coil_damaged)
 
 /obj/item/fusion_coil/draw(datum/look/look)
 	..()

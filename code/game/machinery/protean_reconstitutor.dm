@@ -79,7 +79,6 @@
 	return broken_now() ? "-broken" : "-nopower"
 
 TRACKED(/obj/machinery/protean_reconstitutor, processing_revive)
-TRACKED(/obj/machinery/protean_reconstitutor, nanomass_reserve)
 
 /obj/machinery/protean_reconstitutor/proc/appearance_brain()
 	return (appearance_live() && protean_brain) ? 1 : 0

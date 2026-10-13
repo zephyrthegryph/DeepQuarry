@@ -101,7 +101,7 @@
 		H.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(H), SLOT_ID_SHOES)
 	if(access)
 		var/obj/item/card/id/card = new(H)
-		card.access = access
+		card.set_access(access)
 		card.set_registered_name("Gameplay Tester")
 		H.equip_to_slot_or_del(card, SLOT_ID_ID)
 	refresh_flush()

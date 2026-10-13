@@ -231,7 +231,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	else
 		..()
 
-TRACKED(/mob/living/simple_mob/vore/morph, morphed)
 
 /// A morphed mob wears its copied form's appearance, so it draws nothing (the look stays untouched); in its own form it is an ordinary simple mob.
 /mob/living/simple_mob/vore/morph/draw(datum/look/look)

@@ -986,7 +986,6 @@ CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
 	destroyed(src, null, "explosion")
 	return TRUE
 
-TRACKED(/mob/living/silicon/ai, aiRestorePowerRoutine)
 
 /mob/living/silicon/ai/draw(datum/look/look)
 	..()

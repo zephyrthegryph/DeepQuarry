@@ -15,7 +15,6 @@
 		/obj/item/clothing/suit/space/void
 		)
 
-TRACKED(/obj/item/modkit, parts)
 
 CAPABILITIES(/obj/item/modkit)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

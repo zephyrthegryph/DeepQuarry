@@ -336,7 +336,7 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 /datum/unit_test/dq_forms_ui_push_coalesced/Run()
 	var/datum/dq_forms_ui_host/host = new
 	var/datum/tgui/dq_forms_probe/probe = new
-	LAZYADD(host.open_tguis, probe)
+	host.add_open_tguis(probe)
 	ui_push_flush()
 	TEST_ASSERT_EQUAL(ui_push_mark(host), 1, "one window queued")
 	ui_push_mark(host)
@@ -349,7 +349,7 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	refresh_mark(host, DEP_UI)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(probe.pushes, 2, "two refresh marks in one frame: one more push")
-	LAZYREMOVE(host.open_tguis, probe)
+	host.remove_open_tguis(probe)
 
 /// ui_rights: the admin state, and a refused (audited) action for anyone without the rights.
 /datum/unit_test/dq_forms_ui_rights/Run()

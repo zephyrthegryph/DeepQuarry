@@ -215,13 +215,13 @@
 	var/obj/item/tool/wrench/wrench = dq_fast_tool(/obj/item/tool/wrench, T)
 	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
-	mech.state = MECHA_OPERATING
+	mech.set_state(MECHA_OPERATING)
 	dq_use(H, mech, wrench)
 	TEST_ASSERT_EQUAL(mech.state, MECHA_OPERATING, "an operating exosuit offers no steps")
 	if(!mech.cell)
 		rel_set(mech, nameof(mech.cell), new /obj/item/cell/high(mech))
 	var/obj/item/cell/cell = mech.cell
-	mech.state = MECHA_BOLTS_SECURED
+	mech.set_state(MECHA_BOLTS_SECURED)
 
 	var/list/forward = list(list(wrench, MECHA_PANEL_LOOSE), list(crowbar, MECHA_CELL_OPEN), list(screwdriver, MECHA_CELL_OUT))
 	for(var/list/step in forward)

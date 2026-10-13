@@ -13,13 +13,13 @@
 	door.set_anchored(TRUE)
 	door.name = "Configured airlock"
 	door.glass = TRUE
-	door.req_access = null
-	door.req_one_access = list(ACCESS_SECURITY)
+	door.set_req_access(null)
+	door.set_req_one_access(list(ACCESS_SECURITY))
 	var/obj/item/airlock_electronics/board
 	if(has_installed_board)
 		board = allocate(/obj/item/airlock_electronics, door)
 		board.set_conf_access(list(ACCESS_SECURITY))
-		board.one_access = TRUE
+		board.set_one_access(TRUE)
 		rel_set(door, nameof(door.electronics), board)
 	else
 		TEST_ASSERT_NULL(door.electronics, "The generated-board case must start without installed electronics")

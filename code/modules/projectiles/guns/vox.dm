@@ -18,7 +18,6 @@
 	fire_sound_text = "a strange noise"
 
 /obj/item/gun/launcher/spikethrower/var/spikes = 5
-TRACKED(/obj/item/gun/launcher/spikethrower, spikes)
 /// Regrows spikes every 2 s while short of them; full, the gate keeps it idle.
 CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	every(2 SECONDS, then(PROC_REF(spikethrower_step)), when = PROC_REF(spikes_short))

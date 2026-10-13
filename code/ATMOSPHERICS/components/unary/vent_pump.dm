@@ -203,7 +203,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
 	if(!istype(T))
 		return
 	var/vent_icon = "vent"
-	// ALLOW(sys_dx_untracked_read): a pipe's level and a floor's plating are fixed while the vent stands on them; a change of either rebuilds the pipes
 	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
 		vent_icon += "h"
 	if(weld_shut_welded(src, null))

@@ -30,7 +30,6 @@ MSG_DEF_SELF(shutoff/circuit_off, "You disable the automatic shutoff circuit.")
 MSG_DEF_SELF(shutoff/opened, "You manually open the valve.")
 MSG_DEF_SELF(shutoff/closed, "You manually close the valve.")
 
-TRACKED(/obj/machinery/atmospherics/valve/shutoff, close_on_leaks)
 
 CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	silicon_hand()

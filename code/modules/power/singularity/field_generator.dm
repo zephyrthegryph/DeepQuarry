@@ -50,8 +50,6 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 	/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
 	var/warming_up = 0
 
-TRACKED(/obj/machinery/field_generator, Varedit_start)
-TRACKED(/obj/machinery/field_generator, warming_up)
 TRACKED(/obj/machinery/field_generator, power)
 
 CAPABILITIES(/obj/machinery/field_generator)

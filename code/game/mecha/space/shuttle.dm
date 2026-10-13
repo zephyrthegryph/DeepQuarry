@@ -48,10 +48,6 @@
 	if(central_paint)
 		look.overlay(look_appearance(icon, "[base]-mask+central", color = central_paint, layer = layer + 2))
 
-TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, base_paint)
-TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, engine_paint)
-TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, central_paint)
-TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, front_paint)
 
 CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), then(PROC_REF(interaction_shuttlecraft_paint)))

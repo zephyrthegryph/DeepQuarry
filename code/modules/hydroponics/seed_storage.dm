@@ -99,15 +99,15 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/proc/lockdown_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
 	if(N.mended)
-		lockdown = TRUE
-		req_access = list()
-		req_one_access = list()
+		set_lockdown(TRUE)
+		set_req_access(list())
+		set_req_one_access(list())
 	else
-		req_access = initial(req_access)
-		req_one_access = initial(req_one_access)
+		set_req_access(initial(req_access))
+		set_req_one_access(initial(req_one_access))
 
 /obj/machinery/seed_storage/proc/lockdown_wire_pulsed(datum/act/A)
-	lockdown = !lockdown
+	set_lockdown(!lockdown)
 
 /// The contraband seed batch a hacked storage shows: one of six weighted batches, each with some form of ambrosia.
 /obj/machinery/seed_storage/proc/roll_contraband_seeds(datum/roller/R)
@@ -244,7 +244,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 /// The seed bay refuses while it is locked down.
 /obj/machinery/seed_storage/proc/not_locked_down_holds(datum/act/op/A)
-	return lockdown ? "it's locked down" : null // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return lockdown ? "it's locked down" : null
 
 /obj/machinery/seed_storage/proc/interaction_insert_seeds(datum/act/op/A)
 	var/mob/user = A.actor
@@ -484,10 +484,10 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	set_emagged(1)
 	if(lockdown)
 		to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
-		lockdown = 0
+		set_lockdown(0)
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
-		req_access = list()
-		req_one_access = list()
+		set_req_access(list())
+		set_req_one_access(list())
 		to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
 		fx_sparks(src, 3, FALSE)
 		visible_message(span_warning("\The [src]'s panel sparks!"))

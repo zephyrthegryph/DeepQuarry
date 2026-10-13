@@ -17,9 +17,6 @@
 	var/base_reagent = 0
 	var/product_potion = 0
 	var/expected_base = 0
-TRACKED(/obj/machinery/alembic, bubbling)
-TRACKED(/obj/machinery/alembic, potion_reagent)
-TRACKED(/obj/machinery/alembic, base_reagent)
 
 /// The icon_state suffix for the alembic's fill/bubbling stage.
 /obj/machinery/alembic/proc/appearance_stage()

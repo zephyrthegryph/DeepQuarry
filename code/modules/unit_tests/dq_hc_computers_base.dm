@@ -78,7 +78,7 @@
 /datum/unit_test/dq_hc_computers/proc/hc_boss(turf/T)
 	var/mob/living/carbon/human/H = hc_actor(T)
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
-	I.access = SSaccess.get_all_station_access()
+	I.set_access(SSaccess.get_all_station_access())
 	H.equip_to_slot_or_del(allocate(/obj/item/clothing/under/color/grey, hc_side()), SLOT_ID_UNIFORM)
 	H.equip_to_slot_or_del(I, SLOT_ID_ID)
 	ASSERT(H.get_equipped_item(SLOT_ID_ID) == I)

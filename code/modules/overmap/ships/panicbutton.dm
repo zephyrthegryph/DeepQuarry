@@ -10,7 +10,6 @@
 
 	var/glass = TRUE
 	var/launched = FALSE
-TRACKED(/obj/structure/panic_button, launched)
 TRACKED(/obj/structure/panic_button, glass)
 
 // In case we're annihilated by a meteor

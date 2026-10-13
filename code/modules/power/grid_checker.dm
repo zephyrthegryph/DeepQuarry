@@ -14,7 +14,6 @@
 	var/wire_allow_manual_2 = FALSE
 	var/wire_allow_manual_3 = FALSE
 	var/opened = FALSE
-TRACKED(/obj/machinery/power/grid_checker, power_failing)
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's

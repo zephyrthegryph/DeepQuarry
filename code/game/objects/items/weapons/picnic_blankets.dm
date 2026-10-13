@@ -41,7 +41,6 @@ CAPABILITIES(/obj/item/picnic_blankets_carried)
 	var/list/attached_blankets
 	anchored = TRUE
 
-TRACKED(/obj/structure/picnic_blanket_deployed, blanket_type)
 
 CAPABILITIES(/obj/structure/picnic_blanket_deployed)
 	owns_many(nameof(attached_blankets))

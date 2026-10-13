@@ -298,7 +298,7 @@
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(T.ran, 1, "while the condition does not hold the op runs at once, with no question")
 	TEST_ASSERT_NULL(T.asked_value, "and there is no answer")
-	T.want = TRUE
+	T.set_want(TRUE)
 	test_ui(H, T, "ask")
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(T.ran, 1, "while it holds the op waits for the answer")
@@ -351,7 +351,7 @@
 	TEST_ASSERT_EQUAL(loud?.outcome, ACT_REFUSED, "the same guard without silent is refused too")
 	TEST_ASSERT(!!reason_text(loud?.reason), "and says why")
 	TEST_ASSERT_EQUAL(T.pressed, 0, "neither ran the handler")
-	T.open = TRUE
+	T.set_open(TRUE)
 	test_ui(H, T, "press")
 	TEST_ASSERT_EQUAL(T.pressed, 1, "once the guard holds the press runs")
 

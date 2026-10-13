@@ -9,7 +9,6 @@
 	var/rating_modifier = 0 // rating of installed capacitor + manipulator
 	var/loading = FALSE
 
-TRACKED(/obj/item/gun/magnetic/matfed, mat_storage)
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))

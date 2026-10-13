@@ -22,13 +22,13 @@
 /obj/item/sample/proc/copy_evidence(atom/supplied)
 	var/list/fibre_data = supplied.forensic_data.get_fibres()
 	if(fibre_data && fibre_data.len)
-		evidence = fibre_data.Copy()
+		set_evidence(fibre_data.Copy())
 		supplied.forensic_data.clear_fibres()
 
 /obj/item/sample/proc/merge_evidence(obj/item/sample/supplied, mob/user)
 	if(!supplied.evidence || !length(supplied.evidence))
 		return 0
-	if(length(supplied.evidence)) LAZYOR(evidence, supplied.evidence)
+	if(length(supplied.evidence)) include_evidence(supplied.evidence)
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You transfer the contents of \the [supplied] into \the [src]."))
 	return 1
@@ -38,9 +38,9 @@
 		return 0
 	for(var/print in supplied.evidence)
 		if(LAZYACCESS(evidence, print))
-			LAZYSET(evidence, print, stringmerge(LAZYACCESS(evidence, print),LAZYACCESS(supplied.evidence, print)))
+			set_evidence_at(print, stringmerge(LAZYACCESS(evidence, print),LAZYACCESS(supplied.evidence, print)))
 		else
-			LAZYSET(evidence, print, LAZYACCESS(supplied.evidence, print))
+			set_evidence_at(print, LAZYACCESS(supplied.evidence, print))
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You overlay \the [src] and \the [supplied], combining the print records."))
 	return 1
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/sample/print)
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
 	var/fullprint = H.get_full_print()
-	LAZYSET(evidence, fullprint, fullprint)
+	set_evidence_at(fullprint, fullprint)
 	name = "[initial(name)] (\the [H])"
 	icon_state = "fingerprint1"
 	return OP_OK
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/sample/print)
 			return ITEM_INTERACT_FAILURE
 		act_message(user, H, others = "%U% takes a copy of %T%'s fingerprints.")
 		var/fullprint = H.get_full_print()
-		LAZYSET(evidence, fullprint, fullprint)
+		set_evidence_at(fullprint, fullprint)
 		copy_evidence(src)
 		name = "[initial(name)] (\the [H])"
 		icon_state = "fingerprint1"
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/item/sample/print)
 	var/list/print_data = supplied.forensic_data.get_prints()
 	if(print_data && print_data.len)
 		for(var/print in print_data)
-			LAZYSET(evidence, print, print_data[print])
+			set_evidence_at(print, print_data[print])
 		supplied.forensic_data.clear_prints()
 
 /obj/item/forensics/sample_kit

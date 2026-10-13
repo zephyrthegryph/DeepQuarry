@@ -146,7 +146,7 @@
 	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe) in T, "a pipe is dispensed")
 	for(var/obj/item/pipe/P in T)
 		qdel(P)
-	D.unwrenched = 1
+	D.set_unwrenched(1)
 	press(H, D, "dispense_pipe", list("ref" = "\ref[recipe]"))
 	TEST_ASSERT_NULL(locate(/obj/item/pipe) in T, "an unwrenched dispenser gives nothing")
 
@@ -416,7 +416,7 @@
 /datum/unit_test/dq_hc_struct/robotic_fabricator_builds_when_idle/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/robotic_fabricator/F = mach(/obj/machinery/robotic_fabricator, tile(3, 2))
-	F.metal_amount = 100000
+	F.set_metal_amount(100000)
 	F.set_operating(TRUE)
 	press(H, F, "build_l_arm")
 	TEST_ASSERT_EQUAL(F.metal_amount, 100000, "a busy fabricator takes no order")
@@ -551,7 +551,7 @@
 	TEST_ASSERT_EQUAL(B.sim_mode, 2, "the mode button sets the mode")
 	press(H, B, "set_can_pressure", list("pressure" = 1e9))
 	TEST_ASSERT(B.sim_canister_output <= ONE_ATMOSPHERE * 10, "the canister pressure is clamped")
-	B.simulating = 1
+	B.set_simulating(1)
 	press(H, B, "set_mode", list("mode" = 1))
 	TEST_ASSERT_EQUAL(B.sim_mode, 2, "a running simulation takes no new mode")
 
@@ -597,7 +597,7 @@
 	press(H, U, "door")
 	TEST_ASSERT(U.isopen != open_before, "the door button works the door")
 	var/open_now = U.isopen
-	U.isbroken = TRUE
+	U.set_isbroken(TRUE)
 	press(H, U, "door")
 	TEST_ASSERT_EQUAL(U.isopen, open_now, "a broken unit answers no button")
 
@@ -757,7 +757,7 @@
 	var/mob/living/carbon/human/H = person(tile(3, 3))
 	var/turf/T = tile(3, 2)
 	var/obj/item/camera_assembly/C = allocate(/obj/item/camera_assembly, T)
-	C.state = 3
+	C.set_state(3)
 	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, H)
 	H.put_in_active_hand(S)
 	C.interaction_tool_act(H, S, TOOL_SCREWDRIVER)

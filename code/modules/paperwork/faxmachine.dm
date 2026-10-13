@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 
 /obj/machinery/photocopier/faxmachine/proc/register_department(datum/act/timer/A)
-	if(!destination) destination = "[using_map.boss_name]"
+	if(!destination) set_destination("[using_map.boss_name]")
 	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
 
@@ -48,7 +48,7 @@ MSG_DEF_SELF(faxmachine/no_scan, "there is no ID card to remove")
 
 /// A silicon's touch logs it in under its own name and opens the window (borgs use fax machines: the Unity and Clerical modules).
 /obj/machinery/photocopier/faxmachine/proc/silicon_open_ui(datum/act/op/A)
-	authenticated = A.actor.name
+	set_authenticated(A.actor.name)
 	tgui_interact(A.actor)
 	return OP_OK
 
@@ -61,7 +61,7 @@ MSG_DEF_SELF(faxmachine/no_scan, "there is no ID card to remove")
 	if(ishuman(L) && !L.get_active_hand())
 		L.put_in_hands(scan)
 		rel_take(src, nameof(scan))
-	authenticated = null
+	set_authenticated(null)
 	return TRUE
 
 MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still recalibrating. Try again later or relay your request in written form for processing.")
@@ -246,13 +246,13 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 /obj/machinery/photocopier/faxmachine/proc/log_in_as(mob/user, login_type)
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
-			authenticated = scan.registered_name
+			set_authenticated(scan.registered_name)
 			rank = scan.assignment
 	else if(login_type == LOGIN_TYPE_AI && isAI(user))
-		authenticated = user.name
+		set_authenticated(user.name)
 		rank = JOB_AI
 	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(user))
-		authenticated = user.name
+		set_authenticated(user.name)
 		var/mob/living/silicon/robot/R = user
 		rank = "[R.modtype] [R.braintype]"
 
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		if(ishuman(user) && !user.get_active_hand())
 			user.put_in_hands(scan)
 		rel_take(src, nameof(scan))
-	authenticated = null
+	set_authenticated(null)
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/ui_act_remove(datum/act/op/A)
@@ -279,10 +279,10 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	return TRUE
 
 /obj/machinery/photocopier/faxmachine/proc/fax_logged_in(datum/act/op/A)
-	return !!authenticated // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return !!authenticated
 
 /obj/machinery/photocopier/faxmachine/proc/can_title(datum/act/op/A)
-	return authenticated && copyitem // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return authenticated && copyitem
 
 /obj/machinery/photocopier/faxmachine/proc/paper_title_default(datum/act/op/A)
 	return copyitem?.name
@@ -340,9 +340,9 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	if(!authenticated)
 		return
 	var/lastdestination = destination
-	destination = selected_department
+	set_destination(selected_department)
 	if(!destination)
-		destination = lastdestination
+		set_destination(lastdestination)
 	return TRUE
 
 /// Returns TRUE on "Cancel", an invalid newname or while the questions wait (their answers re-run the
@@ -350,12 +350,12 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 /// Extracted to its own procedure for easier logic handling with paper bundles.
 /// Sending this fax to an admin department, under its default title (or a bundle under its first page's): the send asks to rename it.
 /obj/machinery/photocopier/faxmachine/proc/default_title_to_admins(datum/act/op/A)
-	if(!authenticated || !copyitem || !(destination in GLOB.admin_departments)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	if(!authenticated || !copyitem || !(destination in GLOB.admin_departments))
 		return FALSE
 	if(istype(copyitem, /obj/item/paper_bundle))
 		var/obj/item/paper_bundle/B = copyitem
 		if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-			var/atom/page1 = B.pages[1] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+			var/atom/page1 = B.pages[1]
 			var/atom/page2 = B.pages[2]
 			return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 		return TRUE
@@ -393,7 +393,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 			return OP_OK
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		play_sfx(loc, SFX_MACHINES_CLICK)
-		toner += refill_amount
+		set_toner(toner + refill_amount)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)

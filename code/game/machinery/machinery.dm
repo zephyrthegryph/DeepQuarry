@@ -132,7 +132,6 @@ Class Procs:
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
-TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")

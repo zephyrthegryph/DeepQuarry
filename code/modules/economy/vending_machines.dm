@@ -675,7 +675,7 @@ CAPABILITIES(/obj/machinery/vending/hydronutrients)
 
 			product.price = (entry in prices) ? prices[entry] : 0
 			product.set_amount((current_list[1][entry]) ? current_list[1][entry] : 1)
-			product.category = category
+			product.set_category(category)
 
 			rel_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1

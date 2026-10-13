@@ -36,7 +36,7 @@
 	if(QDELETED(a) || QDELETED(b) || a.caliber != b.caliber)
 		return null
 	var/obj/item/ammo_magazine/handful/H = new(get_turf(a))
-	H.caliber = a.caliber
+	H.set_caliber(a.caliber)
 	H.name = "handful of [a.caliber] rounds"
 	for(var/obj/item/ammo_casing/C in list(a, b))
 		move_into(H, nameof(H.stored_ammo), C, user)

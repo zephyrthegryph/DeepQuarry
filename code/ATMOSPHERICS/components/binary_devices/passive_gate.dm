@@ -241,8 +241,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 	icon_state = "on"
 
 
-TRACKED(/obj/machinery/atmospherics/binary/passive_gate, unlocked)
-TRACKED(/obj/machinery/atmospherics/binary/passive_gate, flowing)
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, target_pressure)
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, set_flow_rate)
 TRACKED(/obj/machinery/atmospherics/binary/passive_gate, regulate_mode)

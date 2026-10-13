@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/paper_bin)
 
 /// The paper question is asked only when there is no custom paper on top.
 /obj/item/paper_bin/proc/no_custom_paper(datum/act/op/A)
-	return !length(papers) // ALLOW(reads): the bin's papers are read when it is reached into, never cached
+	return !length(papers)
 
 /// Old attack_hand.
 /obj/item/paper_bin/proc/interaction_hand(datum/act/op/A)
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/paper_bin)
 			add_fingerprint(user)
 			return TRUE
 	if(amount >= 1)
-		amount--
+		set_amount(amount - 1)
 
 		var/obj/item/paper/P
 		if(length(papers) > 0) //If there's any custom paper on the stack, use that instead of creating a new paper.
@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/paper_bin)
 		return OP_PASS
 	to_chat(user, span_notice("You put [i] in [src]."))
 	rel_add(src, nameof(papers), i)
-	amount++
+	set_amount(amount + 1)
 	return OP_PASS
 
 

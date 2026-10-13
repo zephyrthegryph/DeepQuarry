@@ -46,7 +46,7 @@ CAPABILITIES(/obj/effect/effect/foam)
 /obj/effect/effect/foam/proc/harden(datum/act/A)
 	if(metal)
 		var/obj/structure/foamedmetal/M = new(src.loc)
-		M.metal = metal
+		M.set_metal(metal)
 	flick("[icon_state]-disolve", src)
 	expire(5)
 

@@ -47,7 +47,6 @@
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	return
-TRACKED(/mob/living/simple_mob/slime/xenobio, is_adult)
 // TRUE while it is feeding on something.
 /mob/living/simple_mob/slime/xenobio
 	var/consuming = FALSE

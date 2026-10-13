@@ -22,7 +22,7 @@
 /datum/decl/hierarchy/outfit/job/assign_access(obj/item/card/id/C, rank)
 	var/datum/job/J = SSjob.get_job(rank)
 	if(J)
-		C.access = J.get_access()
+		C.set_access(J.get_access())
 
 /datum/decl/hierarchy/outfit/job/equip_id(mob/living/carbon/human/H, rank, assignment)
 	var/obj/item/card/id/C = ..()

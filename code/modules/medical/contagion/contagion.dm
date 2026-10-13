@@ -98,12 +98,9 @@
 /datum/affliction/contagion/var/tmp/mob/living/carbon/human/host
 /// DISEASE_SPREAD_* routes.
 /datum/affliction/contagion/var/spread_flags = DISEASE_SPREAD_AIRBORNE
-TRACKED(/datum/affliction/contagion, spread_flags)
 /// Strain modifier bits (NEEDS_ALL_CURES, DORMANT, SPREAD_DEAD, PROCESSING, ...).
 /datum/affliction/contagion/var/virus_modifiers = NEEDS_ALL_CURES
-TRACKED(/datum/affliction/contagion, virus_modifiers)
 /datum/affliction/contagion/var/infectivity = 10
-TRACKED(/datum/affliction/contagion, infectivity)
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 

@@ -101,7 +101,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	var/mob/living/carbon/human/human_user = A.actor
 	if(check_unlocked())
 		to_chat(human_user, span_notice("You [open ? "close" : "open"] [src]."))
-		open = !open
+		set_open(!open)
 	else
 		to_chat(human_user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
 	return TRUE

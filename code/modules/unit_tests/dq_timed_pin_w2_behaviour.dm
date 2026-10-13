@@ -344,7 +344,7 @@
 /datum/unit_test/dq_timed_pin_w2/janicart_wrench/extra_pin()
 	setup_scene()
 	var/obj/structure/janitorialcart/C = target
-	C.has_items = TRUE
+	C.set_has_items(TRUE)
 	start_click()
 	TEST_ASSERT_NULL(running(user), "a wrench on a cart that holds things starts nothing")
 	clear_scene()
@@ -359,7 +359,7 @@
 /datum/unit_test/dq_timed_pin_w2/droppod_wrench/setup_scene()
 	user = person()
 	var/obj/structure/drop_pod/P = allocate(/obj/structure/drop_pod, run_loc_floor_bottom_left)
-	P.finished = TRUE
+	P.set_finished(TRUE)
 	target = P
 	held = hold(/obj/item/tool/wrench)
 
@@ -369,7 +369,7 @@
 /datum/unit_test/dq_timed_pin_w2/droppod_wrench/extra_pin()
 	setup_scene()
 	var/obj/structure/drop_pod/P = target
-	P.finished = FALSE
+	P.set_finished(FALSE)
 	start_click()
 	TEST_ASSERT_NULL(running(user), "a wrench on a pod that has not been opened starts nothing")
 	TEST_ASSERT(said(user, "hasn't been opened yet"), "and says why")
@@ -419,7 +419,7 @@
 	clear_scene()
 	setup_scene()
 	T = target
-	T.refilling = TRUE
+	T.set_refilling(TRUE)
 	start_click()
 	TEST_ASSERT_NULL(running(user), "a wrench on a toilet that is refilling starts nothing")
 	TEST_ASSERT(said(user, "Wait for"), "and says to wait")
@@ -488,7 +488,7 @@
 /datum/unit_test/dq_timed_pin_w2/tree_sticks/extra_pin()
 	setup_scene()
 	var/obj/structure/flora/tree/T = target
-	T.sticks = FALSE
+	T.set_sticks(FALSE)
 	start_click()
 	TEST_ASSERT_NULL(running(user), "a tree with no sticks starts nothing")
 	TEST_ASSERT(said(user, "You don't see any loose sticks"), "and says so")
@@ -611,7 +611,7 @@
 /datum/unit_test/dq_timed_pin_w2/mirror_add_glass/setup_scene()
 	user = person()
 	var/obj/structure/mirror/M = allocate(/obj/structure/mirror, run_loc_floor_bottom_left)
-	M.glass = 0
+	M.set_glass(0)
 	M.shattered = 0
 	target = M
 	sheets = allocate(/obj/item/stack/material/glass, run_loc_floor_bottom_left, 5)

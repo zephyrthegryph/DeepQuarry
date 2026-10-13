@@ -299,4 +299,3 @@
 
 
 
-TRACKED(/obj, w_class)
