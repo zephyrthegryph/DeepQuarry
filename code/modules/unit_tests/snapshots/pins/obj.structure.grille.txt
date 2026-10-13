@@ -32,8 +32,8 @@ robot|none click: Click: Kick
 +1 menu: Kick
 @obj.structure human|/obj/item
 +1 menu: Kick
-human|/obj/item/stack/material menu: Hit
-human|/obj/item/stack/material menu: Kick
-human|/obj/item/stack/material menu: Use
-human|/obj/item/stack/material click: Click: Place a window
+@obj.structure human|/obj/item/stack/material
+-click: Click: Use
++1 menu: Kick
++3 click: Click: Place a window
 keys: drag_buckle, hand, item, melee_hit, place_window, use_screwdriver, use_wirecutter

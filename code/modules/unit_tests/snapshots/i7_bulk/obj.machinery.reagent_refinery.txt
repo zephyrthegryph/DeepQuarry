@@ -89,16 +89,15 @@ human|/obj/item/tool/wrench click: Click: Secure
 +3 menu: Set transfer amount
 +4 menu: Toggle Digestable (refused: You can't do that.)
 +5 menu: Turn Around
-@obj human|/obj/item/reagent_containers/glass
--menu: Eject Beaker
--menu: Insert container
--menu: Use
--click: Click: Insert container
-+0 menu: Drain (refused: it's empty; there is nothing to drain)
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+7 menu: Turn Around
-+8 click: Click: Drain
+human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there is nothing to drain)
+human|/obj/item/reagent_containers/glass menu: Move To Top
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Rotate Clockwise
+human|/obj/item/reagent_containers/glass menu: Rotate Counter Clockwise
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/glass menu: Turn Around
+human|/obj/item/reagent_containers/glass click: Click: Drain
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Drain (refused: it's empty; there is nothing to drain)
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Move To Top
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rename food
