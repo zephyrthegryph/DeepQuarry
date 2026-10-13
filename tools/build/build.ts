@@ -1356,6 +1356,10 @@ async function runIsolatedTestWorld(
       for (let attempt = 1; ; attempt++) {
       const attemptStart = Date.now();
       daemonError = null;
+      // boot_profile=1 (DQ_WORLD_PARAMS): the world logs its own launch-to-world/New time from launch_tod, and DreamDaemon profiles
+      // global variable initialisation and the compiled map load too (they run before any DM code could start the profiler).
+      // BYOND numbers are 32-bit floats, so the stamp is deciseconds since midnight UTC (what world.timeofday counts), not epoch time.
+      if (params.boot_profile) params.launch_tod = String(Math.round((Date.now() % 86_400_000) / 100));
       try {
       const result = await DreamDaemon(
         {
@@ -1371,6 +1375,7 @@ async function runIsolatedTestWorld(
         '-close',
         ddSecurityFlag(),
         '-verbose',
+        ...(params.boot_profile ? ['-profile'] : []),
         '-params',
         new URLSearchParams(params).toString(),
       );
