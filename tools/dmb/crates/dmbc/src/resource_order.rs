@@ -118,6 +118,94 @@ fn visit(index: usize, groups: &[Group], out: &mut Vec<usize>) {
 /// Literal uses must have exact parser/AST encounter ordering and archive aliases
 /// from captured resource resolution. Prefix imports are verified DMS/interface
 /// imports; map-only uses are supplied as suffix imports after code groups.
+/// Everything `collect` reads, without source positions: each ledger event's
+/// kind and symbols (positions only locate events), the text of explicit
+/// parent values (which decide the resolver's parent answers), the resource
+/// uses by event, roots and imports. Equal keys give equal phase orders, so a
+/// body edit that moves code but keeps these reuses the last order.
+fn collect_key(
+    ledger: &AllocationLedger,
+    text: &str,
+    uses: &[ResourceUse],
+    known_roots: &BTreeSet<SymbolId>,
+    prefix_imports: &[Arc<str>],
+    suffix_imports: &[Arc<str>],
+) -> u128 {
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    hash.update(b"dmb-resource-phase-order-v1\0");
+    let id = |hash: &mut xxhash_rust::xxh3::Xxh3, value: SymbolId| {
+        hash.update(&value.bits().to_le_bytes());
+    };
+    for event in ledger.events.iter() {
+        hash.update(&(event.encounter_order as u64).to_le_bytes());
+        match event.kind {
+            AllocationKind::Type {
+                path,
+                lexical_owner,
+                absolute,
+            } => {
+                hash.update(&[0, u8::from(absolute)]);
+                id(&mut hash, path);
+                id(&mut hash, lexical_owner);
+            }
+            AllocationKind::Namespace {
+                owner,
+                kind,
+                absolute,
+            } => {
+                hash.update(&[1, kind as u8, u8::from(absolute)]);
+                id(&mut hash, owner);
+            }
+            AllocationKind::Field {
+                owner,
+                name,
+                formal,
+                var_namespace,
+                ..
+            } => {
+                hash.update(&[2, u8::from(formal), u8::from(var_namespace)]);
+                id(&mut hash, owner);
+                id(&mut hash, name);
+            }
+            AllocationKind::Procedure {
+                owner,
+                formal,
+                verb,
+                name,
+                ..
+            } => {
+                hash.update(&[3, u8::from(formal), u8::from(verb)]);
+                id(&mut hash, owner);
+                id(&mut hash, name);
+            }
+            AllocationKind::Parent { owner, value } => {
+                hash.update(&[4]);
+                id(&mut hash, owner);
+                let value = text.get(value.range()).unwrap_or("\u{0}<outside>");
+                hash.update(&(value.len() as u64).to_le_bytes());
+                hash.update(value.as_bytes());
+            }
+        }
+    }
+    hash.update(&(uses.len() as u64).to_le_bytes());
+    for usage in uses {
+        hash.update(&(usage.event as u64).to_le_bytes());
+        hash.update(usage.alias.as_bytes());
+        hash.update(b"\0");
+    }
+    for root in known_roots {
+        id(&mut hash, *root);
+    }
+    for (marker, imports) in [(b"<", prefix_imports), (b">", suffix_imports)] {
+        hash.update(marker);
+        for import in imports {
+            hash.update(import.as_bytes());
+            hash.update(b"\0");
+        }
+    }
+    hash.digest128()
+}
+
 pub fn collect<R: Resolver>(
     ledger: &AllocationLedger,
     uses: &[ResourceUse],
@@ -386,6 +474,7 @@ fn archive_order<R: Resolver>(
             return Err("duplicate captured resource lookup path".into());
         }
     }
+    let _events_timer = dm_profile::detail_timer("resources.order.event_literals");
     let mut uses = Vec::new();
     for (event, literal) in indexed_event_literals(
         &frontend.allocation_ledger,
@@ -414,15 +503,41 @@ fn archive_order<R: Resolver>(
             }
         }
     }
-    let ordered_aliases = collect(
+    drop(_events_timer);
+    let _collect_timer = dm_profile::detail_timer("resources.order.collect");
+    let key = collect_key(
         &frontend.allocation_ledger,
+        frontend.expanded.text.as_str(),
         &uses,
-        frontend.snapshot.tree.symbols(),
-        resolver,
         known_roots,
         prefix_imports,
         suffix_imports,
-    )?;
+    );
+    static LAST: std::sync::Mutex<Option<(u128, Arc<Vec<Arc<str>>>)>> =
+        std::sync::Mutex::new(None);
+    let cached = LAST
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .filter(|(last, _)| *last == key)
+        .map(|(_, order)| Arc::clone(order));
+    let ordered_aliases = match cached {
+        Some(order) => order.as_ref().clone(),
+        None => {
+            let order = collect(
+                &frontend.allocation_ledger,
+                &uses,
+                frontend.snapshot.tree.symbols(),
+                resolver,
+                known_roots,
+                prefix_imports,
+                suffix_imports,
+            )?;
+            *LAST.lock().unwrap_or_else(|e| e.into_inner()) =
+                Some((key, Arc::new(order.clone())));
+            order
+        }
+    };
     let mut ordinals = BTreeMap::new();
     for (ordinal, alias) in aliases.iter().enumerate() {
         if ordinals.insert(*alias, ordinal).is_some() {

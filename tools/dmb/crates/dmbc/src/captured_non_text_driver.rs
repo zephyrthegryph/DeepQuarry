@@ -533,14 +533,18 @@ fn capture_with_resource_operation<
     };
     let retained = if let Some(retained) = retained {
         let candidate = timed(observer, CaptureStage::RetainedResourceOrder, || {
+            let _timer = dm_profile::detail_timer("resources.order.reject_missing");
             reject_missing_demands(
                 frontend,
                 &captured,
                 &demand.literals,
                 &retained.catalog.record().lookups,
             )?;
+            drop(_timer);
+            let _timer = dm_profile::detail_timer("resources.order.imports");
             let (prefix, suffix) =
                 crate::resource_order::metadata_nontext_imports(&captured, &retained.catalog)?;
+            drop(_timer);
             crate::resource_order::metadata_archive_order(
                 frontend,
                 &retained.catalog,
