@@ -20,7 +20,7 @@
 	var/list/log = list()
 	var/list/busy = list()
 
-TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
+TRACKED(/datum/seq_test_entity, heat)
 
 /datum/seq_test_entity/seq_plan_key()
 	return plan_key
@@ -43,7 +43,7 @@ TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
 		seq_step(PROC_REF(sn), after = "T_FIRST", when = "!on", should_run = PROC_REF(sn_busy)),
 		seq_step(PROC_REF(so), after = "T_FIRST", when = "on", should_run = PROC_REF(so_busy)),
 		seq_step(PROC_REF(heat), after = "T_FIRST", reads = nameof(heat), should_run = PROC_REF(heat_hot), woken_by = "set_heat()"),
-		seq_step(PROC_REF(chan), after = "T_FIRST", reads = CHANGE_DATUM_C, should_run = PROC_REF(chan_busy)),
+		seq_step(PROC_REF(chan), after = "T_FIRST", reads = "seq_test_chan", should_run = PROC_REF(chan_busy)),
 		seq_step(PROC_REF(tail), after = "T_LAST", should_run = PROC_REF(tail_busy)),
 	)
 
@@ -127,7 +127,7 @@ SEQ_TEST_STEP(cy)
 	step = 1
 	max_catchup = 2
 	park_after = 2
-	wake_all = CHANGE_EXPLICIT
+	wake_keys = list("seq_test_wake_all")
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 	table_proc = TYPE_PROC_REF(/datum/seq_test_entity, test_steps)
 	frame_type = /datum/seq_frame/test
@@ -245,7 +245,7 @@ SEQ_TEST_STEP(cy)
 // ---------------------------------------------------------------- sleep and wake
 
 /// A step sleeps when its should_run() is FALSE after it ran. publish_change() of a key wakes the steps that read
-/// it, changed() of a channel the steps that read that, a wake_all channel every step. The sequence's reads
+/// it, a wake_keys key every step. The sequence's reads
 /// are READERS on the type, so a TRACKED setter publishes them.
 /datum/unit_test/kernel_sequence_sleep_wake
 
@@ -274,16 +274,16 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "with no work left it sleeps")
 
-	changed(E, CHANGE_DATUM_C)
-	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "changed() of a channel wakes the step that reads it")
+	publish_change(E, "seq_test_chan")
+	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "publishing its own key wakes the step that reads it")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and not the others")
 	E.set_heat(2)
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "a TRACKED setter publishes the read (READERS)")
 	E.heat = 0
 	E.log.Cut()
 	seq_run_frame_now(E, SEQ_TEST)
-	changed(E, CHANGE_EXPLICIT)
-	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_all channel wakes every step")
+	publish_change(E, "seq_test_wake_all")
+	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_keys key wakes every step")
 
 /// A woken step is asked should_run() before it runs: FALSE sends it back to sleep without running; TRUE runs it.
 /datum/unit_test/kernel_sequence_precheck

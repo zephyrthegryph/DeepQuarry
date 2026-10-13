@@ -540,7 +540,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /proc/capability_key_changed(datum/holder, key_id)
 	engine_key_changed(holder, "capkey:[key_id]")
 	// A capability's state is drawn, examined and shown in windows: every output of the holder re-derives (the legacy cap_set() raised the same channel).
-	state_changed(holder, CHANGE_CAPABILITY)
+	state_changed(holder)
 
 /// Something an engine may depend on changed on `holder` under `key` (a tracked var name, "capkey:<id>", a stat id): published to the
 /// readers of the key. E3 extends this with the inline recompute of the stats that read it.

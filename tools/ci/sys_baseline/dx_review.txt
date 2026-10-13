@@ -121,20 +121,6 @@ unkeyed_wire_after	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/
 unkeyed_wire_after	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	after(src, 0.1 SECONDS, PROC_REF(yeet), with = list(am))
 unkeyed_wire_after	code/modules/power/grid_checker.dm	after(src, 30 SECONDS, PROC_REF(end_wire_lockout))
 unkeyed_wire_after	code/modules/recycling/disposal_junctions.dm	after(src, 10 SECONDS, PROC_REF(reset_scan))
-manual_push	code/datums/capabilities/capabilities.dm	changed(A, CHANGE_CAPABILITY)
-manual_push	code/datums/capabilities/capability_ext.dm	changed(A, CHANGE_CAPABILITY)
-manual_push	code/datums/capabilities/capability_ext.dm	changed(A, CHANGE_CAPABILITY)
-manual_push	code/datums/capabilities/timed.dm	changed(D, CHANGE_EXPLICIT, var_name)
-manual_push	code/game/atom/atom_defense.dm	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
-manual_push	code/game/machinery/doors/airlock.dm	changed(src, CHANGE_MACHINE_MODE)
-manual_push	code/game/machinery/machinery_power.dm	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
-manual_push	code/modules/asset_cache/asset_list.dm	changed(src, CHANGE_EXPLICIT)
-manual_push	code/modules/asset_cache/asset_list.dm	changed(src, CHANGE_EXPLICIT)
-manual_push	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	changed(H, CHANGE_EXPLICIT) // wake the forms life stage for the new form's upkeep
-manual_push	code/modules/mob/living/carbon/human/species/station/traits/trait.dm	changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
-manual_push	code/modules/mob/living/carbon/human/species/station/traits/trait.dm	changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
-manual_push	code/modules/overmap/overmap_object.dm	changed(src, CHANGE_EXPLICIT)
 manual_push	code/modules/power/apc.dm	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
-manual_push	code/modules/recycling/disposal_machines.dm	changed(src, CHANGE_MACHINE_SETTINGS)
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
 output_side_effect	code/modules/mob/living/silicon/robot/robot_ui_module.dm	to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))

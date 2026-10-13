@@ -11,18 +11,16 @@
 	TEST_ASSERT(length(first), "species preference has no choices")
 	TEST_ASSERT(first == pref.get_choices(), "get_choices() rebuilt its list instead of reading the shared cache")
 
-/// An asset's serialized URL mappings are a declared cache: CHANGE_EXPLICIT clears them.
-/datum/unit_test/dq_sys_hygiene_asset_declared_cache
+/// An asset's serialized URL mappings are a shared cache: built once, dropped when an asset regenerates.
+/datum/unit_test/dq_sys_hygiene_asset_shared_cache
 
-/datum/unit_test/dq_sys_hygiene_asset_declared_cache/Run()
+/datum/unit_test/dq_sys_hygiene_asset_shared_cache/Run()
 	var/datum/asset/A = get_asset_datum(/datum/asset/simple/generic)
 	TEST_ASSERT(istype(A), "no generic asset datum")
 	var/message = A.get_serialized_url_mappings()
 	TEST_ASSERT(!isnull(message), "serialized mappings were not built")
-	TEST_ASSERT(!isnull(A.cached_serialized_url_mappings), "serialized mappings were not kept")
-	changed(A, CHANGE_EXPLICIT)
-	TEST_ASSERT(isnull(A.cached_serialized_url_mappings), "CHANGE_EXPLICIT did not clear the declared cache")
-	TEST_ASSERT(isnull(A.cached_serialized_url_mappings_transport_type), "CHANGE_EXPLICIT did not clear the transport key")
+	TEST_ASSERT(message == A.get_serialized_url_mappings(), "serialized mappings were rebuilt instead of read from the shared cache")
+	INVALIDATE_SHARED_CACHE(asset_url_mappings)
 	TEST_ASSERT(!isnull(A.get_serialized_url_mappings()), "serialized mappings were not rebuilt after clearing")
 
 /// The anomaly device's run ends on its after() timer, not a world.time check in its step.

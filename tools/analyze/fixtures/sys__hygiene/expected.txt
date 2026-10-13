@@ -19,6 +19,8 @@ annotation_boilerplate	code/modules/tgs/vendored.dm	7
 cached_var	code/modules/hyg/caches.dm	2
 cached_var	code/modules/hyg/caches.dm	3
 cached_var	code/modules/hyg/caches.dm	4
+cached_var	code/modules/hyg/caches.dm	11
+cached_var	code/modules/hyg/caches.dm	12
 cached_var	code/modules/hyg/caches.dm	13
 cached_var	code/modules/hyg/caches.dm	15
 cached_var	code/modules/hyg/caches.dm	19
@@ -30,6 +32,7 @@ cached_var	code/modules/hyg/caches.dm	24
 cached_var	code/modules/hyg/caches.dm	26
 cached_var	code/modules/hyg/caches.dm	27
 cached_var	code/modules/hyg/caches.dm	28
+cached_var	code/modules/hyg/caches.dm	29
 cached_var	code/modules/hyg/caches.dm	30
 cached_var	code/modules/hyg/caches.dm	31
 cached_var	code/modules/hyg/caches.dm	35

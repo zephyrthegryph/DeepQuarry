@@ -131,8 +131,8 @@
 /datum/sequence/bench_life/conditions()
 	return list(
 		seq_condition("placed", TYPE_PROC_REF(/datum/seq_frame/bench_life, placed)),
-		seq_condition("alive", TYPE_PROC_REF(/datum/seq_frame/bench_life, alive), CHANGE_DATUM_A),
-		seq_condition("status_ok", TYPE_PROC_REF(/datum/seq_frame/bench_life, status_passed), CHANGE_DATUM_A),
+		seq_condition("alive", TYPE_PROC_REF(/datum/seq_frame/bench_life, alive), "bench_alive"),
+		seq_condition("status_ok", TYPE_PROC_REF(/datum/seq_frame/bench_life, status_passed), "bench_status"),
 	)
 
 /datum/seq_frame/bench_life

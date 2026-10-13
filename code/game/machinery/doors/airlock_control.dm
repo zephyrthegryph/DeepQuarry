@@ -9,7 +9,7 @@
 	/// The command the door is currently attempting to complete; command_step() retries it every second while set (airlock.dm declares the every()).
 	var/cur_command
 
-TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/door/airlock, cur_command)
 
 /obj/machinery/door/airlock/proc/command_step(datum/act/A)
 	if (power_systems_on())
@@ -173,6 +173,8 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 	var/alert = 0
 	var/previousPressure
 
+TRACKED(/obj/machinery/airlock_sensor, alert)
+
 // ---- what an airlock sensor is, declared ----
 //
 // It reads the pressure where it stands and sends it to its airlock controller whenever the reading (to a tenth of a kilopascal) changes: it waits on a gas
@@ -252,9 +254,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 
 		previousPressure = pressure
 
-		alert = (pressure < ONE_ATMOSPHERE*0.8)
-
-		changed(src)
+		set_alert(pressure < ONE_ATMOSPHERE*0.8)
 	register_gas_dependencies()
 
 /// The look (the draw sweep: from its template and its layers).
