@@ -26,7 +26,7 @@
 	TEST_ASSERT(move_into(wearer, SLOT_ID_SHOES, boots), "the actual wearer equips its real jackboots")
 	var/obj/item/material/knife/tacknife/knife = allocate(/obj/item/material/knife/tacknife, T)
 	TEST_ASSERT(wearer.put_in_active_hand(knife), "the actual wearer holds a compatible boot knife")
-	appearance_flush() // the humans' own first draws run before the counters start
+	refresh_flush() // the humans' own first draws run before the counters start
 	wearer.shoe_redraws = 0
 	bystander.shoe_redraws = 0
 	test_op_handler(boots, "shoes_stuff_item", wearer, knife)
@@ -44,7 +44,7 @@
 	boots.observe_look()
 	TEST_ASSERT(!("jackboots_knife" in boots.observed_overlays), "actual knife removal clears the appearance overlay")
 	TEST_ASSERT(wearer.unEquip(boots), "the actual wearer releases the boots to the floor")
-	appearance_flush() // the release's own redraw runs before the counters are zeroed
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
 	wearer.shoe_redraws = 0
 	boots.observe_look()
 	TEST_ASSERT_EQUAL(wearer.shoe_redraws, 0, "floor boot appearance does not redraw the former wearer")

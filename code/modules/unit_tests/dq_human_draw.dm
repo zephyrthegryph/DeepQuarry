@@ -17,7 +17,7 @@
 	for(var/d in list(SOUTH, NORTH, EAST, WEST))
 		H.set_dir(d)
 		H.animate_tail_stop() // a species tail idles on a random loop; the pin holds the still one
-		appearance_flush()
+		refresh_flush()
 		var/icon/flat = getFlatIcon(H, d)
 		var/list/pixels = list("[flat.Width()]x[flat.Height()]")
 		for(var/x in 1 to flat.Width())
@@ -25,7 +25,7 @@
 				pixels += "[flat.GetPixel(x, y)]"
 		. += "[dir2text(d)]=[md5(jointext(pixels, ","))]"
 	H.set_dir(start_dir)
-	appearance_flush()
+	refresh_flush()
 	var/list/planes = list()
 	for(var/layer in H.overlays)
 		var/mutable_appearance/MA = new(layer)
@@ -64,7 +64,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	H.set_species(species)
 	H.set_dir(SOUTH)
-	appearance_flush()
+	refresh_flush()
 	return H
 
 /datum/unit_test/dq_human_look_pin
@@ -160,7 +160,7 @@
 
 /// The flat picture of H facing south: what a redraw changes.
 /datum/unit_test/proc/dq_hd_picture(mob/living/carbon/human/H)
-	appearance_flush()
+	refresh_flush()
 	return md5(icon2base64(getFlatIcon(H, SOUTH)))
 
 /// A tail is drawn under the uniform from the south and over it from the north.

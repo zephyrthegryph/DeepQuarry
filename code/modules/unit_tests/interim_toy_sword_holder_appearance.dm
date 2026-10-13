@@ -14,7 +14,7 @@
 	var/list/observed_overlays
 
 /obj/item/toy/sword/interim_holder_appearance/proc/observe()
-	appearance_flush() // the queued draws run: the holder hears its item's change
+	refresh_flush() // the queued draws run: the holder hears its item's change
 	var/datum/look/look = new
 	draw(look)
 	observed_overlays = look.overlays ? look.overlays.Copy() : list()
@@ -62,7 +62,7 @@
 			retracted_blades++
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
-	appearance_flush() // the release's own redraw runs before the counters are zeroed
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
 	holder.left_redraws = 0
 	holder.right_redraws = 0
 	sword.observe()

@@ -5,7 +5,7 @@
 /// The flat south icon of H, hashed.
 /datum/unit_test/proc/dq_profile_look_hash(mob/living/carbon/human/H)
 	H.force_update_limbs()
-	appearance_flush()
+	refresh_flush()
 	return md5(icon2base64(getFlatIcon(H, SOUTH)))
 
 /// The first style of `styles` the species of H may wear (deterministic: list order).
