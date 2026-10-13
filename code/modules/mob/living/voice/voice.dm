@@ -14,7 +14,7 @@
 /mob/living/voice/proc/transfer_identity(mob/speaker)
 	if(ismob(speaker))
 		icon = speaker.icon
-		icon_state = speaker.icon_state
+		set_icon_state(speaker.icon_state)
 		overlays = speaker.overlays
 		timeofdeath = speaker.timeofdeath
 

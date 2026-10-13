@@ -129,7 +129,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	if(!chosen_item)
 		return
 	icon = chosen_item.icon
-	icon_state = chosen_item.icon_state
+	set_icon_state(chosen_item.icon_state)
 	color = chosen_item.color
 	rel_set(src, nameof(selected_item), chosen_item)
 
@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 /obj/item/robotic_multibelt/proc/original_state(mob/user)
 	rel_clear(src, nameof(selected_item))
 	icon = initial(icon)
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
 /obj/item/tool/screwdriver/cyborg
 	name = "powered screwdriver"

@@ -16,7 +16,7 @@
 	if(summoned_mob_type && length(core.summoned_mobs) < core.max_summons && within_range(hit_atom) && pay_energy(energy_cost))
 		var/obj/effect/E = new(T)
 		E.icon = 'icons/obj/objects.dmi'
-		E.icon_state = "anom"
+		E.set_icon_state("anom")
 		after(src, 5 SECONDS, PROC_REF(summon_arrives), with = list(E, T, user))
 
 /obj/item/spell/summon/proc/summon_arrives(obj/effect/E, turf/T, mob/living/user)

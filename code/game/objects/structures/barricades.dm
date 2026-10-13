@@ -30,7 +30,7 @@ TRACKED(/obj/structure/barricade, material)
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
 	color = material.icon_colour
-	max_integrity = material.integrity
+	set_max_integrity(material.integrity)
 	update_integrity(max_integrity)
 
 /obj/structure/barricade/get_material()
@@ -130,7 +130,7 @@ CAPABILITIES(/obj/structure/barricade/sandbag)
 		return
 	name = "[material.display_name] [initial(name)]"
 	color = null
-	max_integrity = material.integrity * 2	// These things are, commonly, used to stop bullets where possible.
+	set_max_integrity(material.integrity * 2)	// These things are, commonly, used to stop bullets where possible.
 	update_integrity(max_integrity)
 	update_connections(1)
 

@@ -187,9 +187,9 @@ CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
 	var/datum/ai_brain/B = S.ai_brain
 	var/mob/living/carbon/human/seen = pack_human(1)
 	var/mob/living/carbon/human/invisible = pack_human(2)
-	invisible.invisibility = INVISIBILITY_MAXIMUM
+	invisible.set_invisibility(INVISIBILITY_MAXIMUM)
 	var/obj/blocker = allocate(/obj, ai_floor(3))
-	blocker.opacity = TRUE
+	blocker.set_opacity(TRUE)
 	var/mob/living/carbon/human/behind = pack_human(4)
 	var/mob/living/carbon/human/dead = pack_human(1)
 	dead.set_stat(DEAD)

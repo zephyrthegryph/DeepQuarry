@@ -20,18 +20,18 @@
 		return
 	rel_set(src, nameof(paired_juke), juke) // also lists us in the jukebox's remotes (REL_PAIR)
 	to_chat(user, span_notice("You pair the [src] to the [juke]."))
-	icon_state = "[initial(icon_state)]_ready"
+	set_icon_state("[initial(icon_state)]_ready")
 
 /obj/item/juke_remote/proc/unpair_juke(mob/user)
 	if(!paired_juke())
 		to_chat(user, span_warning("The [src] isn't paired to anything."))
 		return
 	rel_clear(src, nameof(paired_juke))
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	unanchor()
 	detach_area()
 	to_chat(user, span_notice("You unpair the [src]."))
-	icon_state = "[initial(icon_state)]"
+	set_icon_state("[initial(icon_state)]")
 
 /obj/item/juke_remote/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	if(istype(target, /obj/machinery/media/jukebox))
@@ -69,18 +69,18 @@ CAPABILITIES(/obj/item/juke_remote)
 	if(attach_area())
 		visible_message("[src] attaches to the nearest surface and bounces happily, ready to pump tunes.", runemessage = "clank")
 		if(paired_juke()) // we were able to claim the area
-			icon_state = "[initial(icon_state)]_playing"
+			set_icon_state("[initial(icon_state)]_playing")
 		else
-			icon_state = "[initial(icon_state)]"
+			set_icon_state("[initial(icon_state)]")
 
 /obj/item/juke_remote/proc/unanchor()
 	detach_area()
 	set_anchored(FALSE)
 	visible_message("[src] detaches from it's mounting surface, able to be moved once again.", runemessage = "clunk")
 	if(paired_juke())
-		icon_state = "[initial(icon_state)]_ready"
+		set_icon_state("[initial(icon_state)]_ready")
 	else
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 
 // Area handling
 /obj/item/juke_remote/proc/attach_area()

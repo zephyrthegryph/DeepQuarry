@@ -25,9 +25,9 @@ CAPABILITIES(/mob/living/bot/secbot/ed209/slime)
 
 /mob/living/bot/secbot/ed209/slime/update_icons()
 	if(on && bot_busy())
-		icon_state = "sled209-c"
+		set_icon_state("sled209-c")
 	else
-		icon_state = "sled209[on]"
+		set_icon_state("sled209[on]")
 
 /mob/living/bot/secbot/ed209/slime/RangedAttack(atom/A)
 	if(!COOLDOWN_FINISHED(src, shot_cooldown))
@@ -79,8 +79,8 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly/slime)
 
 /obj/item/secbot_assembly/ed209_assembly/slime/proc/xeno_taser_added(datum/act/op/A)
 	name = "xenotaser SL-ED-209 assembly"
-	item_state = "sled209_taser"
-	icon_state = "sled209_taser"
+	set_item_state("sled209_taser")
+	set_icon_state("sled209_taser")
 	to_chat(A.actor, span_notice("You add [A.held] to [src]."))
 	return OP_OK
 

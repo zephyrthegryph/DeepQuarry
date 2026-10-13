@@ -59,7 +59,7 @@
 		MSG_OTHERS("%U% puts [I] into %T%"), \
 		MSG_BLIND("You hear a rustle as someone puts something into a plastic bag."))
 
-	icon_state = "evidence"
+	set_icon_state("evidence")
 
 	var/xx = I.pixel_x	//save the offset of the item
 	var/yy = I.pixel_y
@@ -96,11 +96,11 @@ CAPABILITIES(/obj/item/evidencebag)
 		rel_clear(src, nameof(stored_item))
 
 		set_w_class(initial(w_class))
-		icon_state = "evidenceobj"
+		set_icon_state("evidenceobj")
 		desc = "An empty evidence bag."
 	else
 		to_chat(user, "[src] is empty.")
-		icon_state = "evidenceobj"
+		set_icon_state("evidenceobj")
 	return TRUE
 
 /obj/item/evidencebag/examine(mob/user)

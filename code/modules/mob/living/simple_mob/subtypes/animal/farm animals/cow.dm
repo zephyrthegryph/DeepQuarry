@@ -65,7 +65,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cow)
 	if(!stat && stance == I_DISARM && icon_state != icon_dead)
 		act_message(M, src, MSG_SELF(span_notice("You tip over %T%.")), MSG_OTHERS(span_warning("%U% tips over %T%.")))
 		status_at_least(STAT_WEAKENED, 30)
-		icon_state = icon_dead
+		set_icon_state(icon_dead)
 		after(src, rand(2 SECONDS, 5 SECONDS), PROC_REF(get_up_after_tipping), with = list(M))
 	else
 		return OP_DECLINE
@@ -80,7 +80,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/cow, mob_organ_hit_zones, list("head", "t
 
 /mob/living/simple_mob/animal/passive/cow/proc/get_up_after_tipping(mob/M)
 	if(!stat && M)
-		icon_state = icon_living
+		set_icon_state(icon_living)
 		var/list/responses = list(	"[src] looks at you imploringly.",
 									"[src] looks at you pleadingly",
 									"[src] looks at you with a resigned expression.",

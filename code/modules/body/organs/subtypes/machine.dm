@@ -92,7 +92,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 	icon = stored_mmi.icon
 
 	stored_mmi.icon_state = "mmi_full"
-	icon_state = stored_mmi.icon_state
+	set_icon_state(stored_mmi.icon_state)
 
 	if(owner && owner.is_dead() && owner.return_from_death("MMI installed", stored_mmi) == TRUE)
 		owner.visible_message(span_danger("\The [owner] twitches visibly!"))
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 /obj/item/organ/internal/mmi_holder/posibrain/update_from_mmi()
 	..()
 	stored_mmi.icon_state = "posibrain-occupied"
-	icon_state = stored_mmi.icon_state
+	set_icon_state(stored_mmi.icon_state)
 
 /obj/item/organ/internal/mmi_holder/robot
 	name = "digital brain interface"
@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 /obj/item/organ/internal/mmi_holder/robot/update_from_mmi()
 	..()
 	stored_mmi.icon_state = "mainboard"
-	icon_state = stored_mmi.icon_state
+	set_icon_state(stored_mmi.icon_state)
 
 
 // This organ has work every organ_tick(), so the body's organ clock stays running for it.

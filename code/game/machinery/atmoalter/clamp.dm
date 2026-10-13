@@ -92,7 +92,7 @@ CAPABILITIES(/obj/machinery/clamp)
 	update_networks()
 
 	set_open(1)
-	icon_state = "pclamp0"
+	set_icon_state("pclamp0")
 	target_ref().in_stasis = 0
 	return 1
 
@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/clamp)
 	target_ref().rust_set_physical_edges(FALSE)
 
 	set_open(0)
-	icon_state = "pclamp1"
+	set_icon_state("pclamp1")
 	target_ref().in_stasis = 1
 
 	return 1

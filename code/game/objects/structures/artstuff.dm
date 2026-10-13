@@ -498,7 +498,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 /obj/structure/sign/painting/proc/update_appearance()
 	name = current_canvas ? "painting - [current_canvas.painting_name]" : initial(name)
 	desc = current_canvas ? desc_with_canvas : initial(desc)
-	icon_state = "[base_icon_state]-[current_canvas?.generated_icon ? "hidden" : "empty"]"
+	set_icon_state("[base_icon_state]-[current_canvas?.generated_icon ? "hidden" : "empty"]")
 
 	cut_overlays()
 

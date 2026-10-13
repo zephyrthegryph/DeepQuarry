@@ -237,7 +237,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 
 /// The look is the one writer of the heading: set_dir() keeps every other caller facing north.
 /obj/effect/overmap/visitable/ship/look_set_dir(new_dir)
-	dir = new_dir
+	set_dir(new_dir)
 
 /obj/effect/overmap/visitable/ship/set_dir(new_dir)
 	return ..(NORTH) // NO! We always face north.

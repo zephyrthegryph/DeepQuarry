@@ -20,7 +20,7 @@
 	var/material_temperature = SSair?.initialized ? get_temperature() : initial_temperature
 	var/list/facts = wall_material_facts(material_temperature)
 	var/missing = max_integrity - get_integrity()
-	max_integrity = facts[WALL_FACT_INTEGRITY]
+	set_max_integrity(facts[WALL_FACT_INTEGRITY])
 	update_integrity(max(1, max_integrity - missing))
 	explosion_resistance = facts[WALL_FACT_EXPLOSION]
 	thermal_conductivity = facts[WALL_FACT_CONDUCTIVITY]

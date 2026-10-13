@@ -248,12 +248,12 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirment
 		if(istype(P, /obj/item/projectile/ion))
 			fullshield -= 300
 			visible_message(span_boldwarning(span_orange("[P] breaks the shield!!.")))
-			icon_state = "shield_boss"
+			set_icon_state("shield_boss")
 		if(fullshield > 0)
 			visible_message(span_boldwarning(span_orange("[P] is absorbed by the shield!.")))
 		else
 			visible_message(span_boldwarning(span_orange("[P] breaks the shield!!.")))
-			icon_state = "shield_boss"
+			set_icon_state("shield_boss")
 	else
 		..()
 		shieldrage -= P.damage
@@ -261,7 +261,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirment
 			shieldrage = 300
 			fullshield = 300
 			visible_message(span_boldwarning(span_orange("The shield reactivates!!.")))
-			icon_state = "UPshield_boss"
+			set_icon_state("UPshield_boss")
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/barrier/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,4)

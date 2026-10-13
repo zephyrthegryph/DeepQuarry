@@ -110,11 +110,11 @@
 
 /obj/item/organ/internal/nano/orchestrator/robotize()
 	. = ..()
-	icon_state = "orchestrator"
+	set_icon_state("orchestrator")
 
 /obj/item/organ/internal/nano/orchestrator/mechassist()
 	. = ..()
-	icon_state = "orchestrator"
+	set_icon_state("orchestrator")
 
 /// Supply and contamination: stores the steel the swarm repairs itself with
 /// (refactory_depletion when it runs dry) and filters out what it can't use
@@ -136,11 +136,11 @@
 
 /obj/item/organ/internal/nano/refactory/robotize()
 	. = ..()
-	icon_state = "refactory"
+	set_icon_state("refactory")
 
 /obj/item/organ/internal/nano/refactory/mechassist()
 	. = ..()
-	icon_state = "refactory"
+	set_icon_state("refactory")
 
 /obj/item/organ/internal/nano/refactory/proc/get_stored_material(material)
 	if(status & ORGAN_DEAD)
@@ -235,17 +235,17 @@
 
 /obj/item/organ/internal/mmi_holder/posibrain/nano/robotize()
 	. = ..()
-	icon_state = "posi1"
+	set_icon_state("posi1")
 
 /obj/item/organ/internal/mmi_holder/posibrain/nano/mechassist()
 	. = ..()
-	icon_state = "posi1"
+	set_icon_state("posi1")
 
 
 /obj/item/organ/internal/mmi_holder/posibrain/nano/update_from_mmi()
 	. = ..()
 	icon = initial(icon)
-	icon_state = "posi1"
+	set_icon_state("posi1")
 	stored_mmi.icon_state = "posi1"
 // The 'out on the ground' object, not the organ holder
 /obj/item/mmi/digital/posibrain/nano
@@ -255,20 +255,20 @@
 	icon_state = "posi"
 
 /obj/item/mmi/digital/posibrain/nano/request_player()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	return //We don't do this stuff
 
 /obj/item/mmi/digital/posibrain/nano/reset_search()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	return //Don't do this either because of the above
 
 /obj/item/mmi/digital/posibrain/nano/transfer_personality()
 	. = ..()
-	icon_state = "posi1"
+	set_icon_state("posi1")
 
 /obj/item/mmi/digital/posibrain/nano/take_identity(mob/living/L, move_mind = TRUE)
 	. = ..()
-	icon_state = "posi1"
+	set_icon_state("posi1")
 
 /obj/item/organ/internal/nano/digest_act(atom/movable/item_storage = null)
 	return FALSE

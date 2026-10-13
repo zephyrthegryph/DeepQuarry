@@ -352,8 +352,8 @@ CAPABILITIES(/obj/effect/hotspot)
 	if(fire_stage == stage)
 		return
 	fire_stage = stage
-	icon_state = stage
-	dir = pick(GLOB.cardinals)
+	set_icon_state(stage)
+	set_dir(pick(GLOB.cardinals))
 	update_color()
 
 // a dying fire cools its tile and leaves its hot group.

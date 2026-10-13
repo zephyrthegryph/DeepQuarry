@@ -22,7 +22,7 @@
 /// there when this look is applied; nothing to call.
 /obj/item/look_apply_held_state(state)
 	if(item_state != state)
-		item_state = state
+		set_item_state(state)
 
 /atom/look_apply_light(range, power, color)
 	set_glow(src, GLOW(range, power, color))

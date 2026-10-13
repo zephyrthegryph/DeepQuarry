@@ -13,12 +13,12 @@
 	var/mob/user = A.actor
 	user.drop_item()
 	if(icon_state == initial(icon_state))
-		icon_state = "[icon_state]_placed"
+		set_icon_state("[icon_state]_placed")
 	add_fingerprint(user)
 
 /obj/item/bedsheet/pillow/pickup(mob/user)
 	..()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
 CAPABILITIES(/obj/item/bedsheet/pillow)
 	configure(item_worn(slots = 0))

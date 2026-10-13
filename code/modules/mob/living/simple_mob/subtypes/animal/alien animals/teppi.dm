@@ -933,7 +933,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_baby(list/teppi_data)
 	inherit_colors = TRUE
 	inherit_allergen = TRUE
-	dir = teppi_data["dir"]
+	set_dir(teppi_data["dir"])
 	name = teppi_data["name"]
 	set_real_name(teppi_data["real_name"])
 	faction = teppi_data["faction"]
