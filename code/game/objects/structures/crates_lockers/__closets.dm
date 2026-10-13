@@ -359,7 +359,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The held item is in the actor's own hands (not a module mounted on a cyborg), and the actor is no cyborg: only those let go of things at a closet.
 /obj/structure/closet/proc/can_set_down(datum/act/op/A)
-	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down
 
 
 /// A held thing is let go of onto the tile of an open closet.
@@ -481,7 +481,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The actor is shut inside, and the closet holds them (still shut, and sealed or locked).
 /obj/structure/closet/proc/can_break_out(datum/act/op/A)
-	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out // ALLOW(reads): where the pusher is, and whether the closet still holds them, read again when the wait ends
+	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out
 
 
 /// The shove goes through: the closet is broken open.
@@ -570,7 +570,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The actor is a living thing shut in this closet.
 /obj/structure/closet/proc/actor_shut_in(datum/act/op/A)
-	return isliving(A.actor) && A.actor.loc == src // ALLOW(reads): who is shut in is read when the entry is offered and when it is picked
+	return isliving(A.actor) && A.actor.loc == src
 
 /// Each devourable one shut in with `user`, other than `user`, by the name the choice shows (two with one name are told apart with a number). Names to mobs.
 /obj/structure/closet/proc/prey_by_name(mob/living/user)

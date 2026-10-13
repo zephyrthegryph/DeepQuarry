@@ -40,11 +40,21 @@ pub struct Untracked {
     pub line: u32,
 }
 
-/// What a consumer's reads leave the graph unable to see change.
-pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> Vec<Untracked> {
+/// The hops an output's subscriptions do not follow yet: a draw (or another derived output) redraws from its own vars and from the entities it
+/// declares it watches (`look.watch()`, a derived() hop over a relation); the engine does not subscribe it from a generated read through the
+/// container hop, so such a read is an input an output cannot hear change. Stat inputs, conditions and requirements do hear it.
+const DRAW_UNHEARD_HOPS: &[&str] = &["loc"];
+
+/// What a consumer's reads leave the graph unable to see change. `output`: the consumer is a draw() or another derived output.
+pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, output: bool) -> Vec<Untracked> {
     let mut out = Vec::new();
     for r in &set.reads {
         if r.kind != ReadKind::Var || r.root != "holder" || set.internal.contains(r) {
+            continue;
+        }
+        if output && r.hops.iter().any(|h| DRAW_UNHEARD_HOPS.contains(&h.as_str())) {
+            let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
+            out.push(Untracked { what: r.key(), rel, line });
             continue;
         }
         if !r.hop_ok || eng.classify(&r.owner, &r.var, written) == VarClass::Unknown {
@@ -198,9 +208,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
                 if closed {
                     // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
-                    untracked_of(handled, &eng, &written)
+                    untracked_of(handled, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
                 } else {
-                    untracked_of(&eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path()), &eng, &written)
+                    untracked_of(&eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path()), &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
                 }
             });
         }
@@ -216,7 +226,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             continue;
         }
         let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
-        consumers.insert(id, untracked_of(&set, &eng, &written));
+        consumers.insert(id, untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output));
     }
     // STAT(T, v, FORMULA, formula = PROC_REF(f)): the formula is the stat's one input.
     for m in decls.markers_named("STAT") {
@@ -228,7 +238,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 continue;
             }
             let set = eng.analyze_handler(owner, name, "/datum/act/eval");
-            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written));
+            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written, false));
         }
     }
     let mut draws = BTreeSet::new();
@@ -248,7 +258,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 keys.insert(r.var.clone());
             }
         }
-        consumers.insert(id.clone(), untracked_of(&set, &eng, &written));
+        consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
         draws.insert(id);
     }
     let mut leaves = Vec::new();

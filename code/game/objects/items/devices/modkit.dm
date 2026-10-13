@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/modkit)
 	var/in_list = (target_species in bodytypes)
 	if(excluding ^ in_list)
 		return span_notice("[I] is already modified.")
-	if(!isturf(I.loc)) // ALLOW(reads): native target location is rechecked immediately before this instant refit with no wait or prompt
+	if(!isturf(I.loc))
 		return span_warning("[I] must be safely placed on the ground for modification.")
 	return null
 

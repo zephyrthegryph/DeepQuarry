@@ -250,6 +250,7 @@ CAPABILITIES(/datum/global_hud)
 	var/list/minihuds
 
 CAPABILITIES(/datum/hud)
+	ref_one(nameof(mymob), /mob)
 	hud_element(nameof(hands), /atom/movable/screen)
 	hud_element(nameof(pullin), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
 	hud_element(nameof(internals), /atom/movable/screen)

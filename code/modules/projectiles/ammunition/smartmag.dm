@@ -29,6 +29,7 @@
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
 CAPABILITIES(/obj/item/ammo_magazine/smart)
+	ref_one(nameof(attached_cell), /obj/item/cell/device)
 	every(2 SECONDS, then(PROC_REF(smart_step)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("smart_item", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(smart_interaction_item)))

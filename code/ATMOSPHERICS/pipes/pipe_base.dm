@@ -249,7 +249,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 
 /// Its floor does not cover it.
 /obj/machinery/atmospherics/pipe/proc/floor_clear(datum/act/A)
-	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe stays where it was built
+	var/turf/T = loc
 	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(pipe/plating) // ALLOW(reads): a pipe's level is fixed by where it was built; asked when the wrench is used
 
 /// What it holds above the room, kPa.

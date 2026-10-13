@@ -61,9 +61,9 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 /// Placing needs open floor with no beacon on it already.
 /obj/item/stack/marker_beacon/proc/can_place(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!isturf(user.loc)) // ALLOW(reads): where the user stands is read when the beacon is placed, never from a cached menu
+	if(!isturf(user.loc))
 		return /datum/msg/marker_beacon/no_space
-	if(locate_within(user.loc, /obj/structure/marker_beacon)) // ALLOW(reads): the same read of where the user stands, for the beacons already on that tile
+	if(locate_within(user.loc, /obj/structure/marker_beacon))
 		return /datum/msg/marker_beacon/already_there
 	return null
 

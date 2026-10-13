@@ -681,7 +681,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
 /obj/machinery/portable_atmospherics/hydroponics/proc/boltable(datum/act/op/A)
-	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed // ALLOW(reads): the port under the tray is looked for when the wrench is used
+	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/bolted(datum/act/op/A)
 	var/obj/item/tool = A.held

@@ -363,7 +363,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 	var/mob/user = A.actor
 	if(!user)
 		return /datum/msg/op/failed
-	if(user.loc == loc) // ALLOW(reads): where the actor stands is legacy mob state, read when the cable is offered
+	if(user.loc == loc)
 		return /datum/msg/smes/on_the_unit
 	var/list/site = terminal_site_of(user)
 	var/turf/tempLoc = site[1]
