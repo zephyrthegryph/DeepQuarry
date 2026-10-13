@@ -63,8 +63,8 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/derived = state_derived_vars(D)
 	for(var/name in D.vars)
 		if((name in builtins) && !(name in builtin_saved))
-		if(name in derived)
 			continue
+		if(name in derived)
 			continue
 		if(!issaved(D.vars[name]))
 			continue
