@@ -117,7 +117,7 @@ B1:code/modules/pda/core_apps.dm:SSjob 1
 B1:code/modules/persistence/paintings.dm:SSpersistence 6
 B1:code/modules/power/cable.dm:SSmachines 3
 B1:code/modules/power/power_bridge.dm:SSmachines 1
-B1:code/modules/power/power_grid.dm:SSmachines 6
+B1:code/modules/power/power_grid.dm:SSmachines 4
 B1:code/modules/power/solar.dm:SSplanets 3
 B1:code/modules/power/solar_service.dm:SSplanets 3
 B1:code/modules/rogueminer/zonemaster.dm:SSxenoarch 2

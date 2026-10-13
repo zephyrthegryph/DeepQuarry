@@ -18,6 +18,7 @@
 // Order is `after =` edges only. An anchor (seq_anchor(), a named no-op) is a barrier: it is passed only when no
 // step is ready, so the steps after one anchor all run before the next anchor's. Steps no edge orders run by key.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_step)
 /// One declared step, or an anchor. seq_step() and seq_anchor() make them; a table keeps its own compiled copies.
 /datum/seq_step
 	/// Its name in the table: `after` and run_step_now() name it. Default: the handler, or for a contributed step
@@ -100,6 +101,7 @@
 	S.anchor = TRUE
 	return S
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_condition)
 /// A named gate for steps (`when = "alive"`), replacing the pipeline runner's facts. `check` is a proc name on the
 /// sequence's frame type (it reads the frame's entity); `reads` are the keys and channels whose change can flip it.
 /// A step blocked by a condition with reads sleeps until one of them changes; one without reads (nothing announces
@@ -143,6 +145,7 @@
 
 // ---------------------------------------------------------------- the compiled table
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/seq_table)
 /// One composed, ordered and compiled step list, shared by every entity with the same key.
 /datum/seq_table
 	var/key

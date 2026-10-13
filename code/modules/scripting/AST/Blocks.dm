@@ -13,6 +13,9 @@
 	var/list/functions  = list() // ALLOW(instance_list): d: script AST node state
 	var/list/initial_variables
 
+CAPABILITIES(/datum/node/BlockDefinition)
+	ref_many(nameof(functions), /datum/node/statement/FunctionDefinition)
+
 /*
 	Proc: SetVar
 	Defines a permanent variable. The variable will not be deleted when it goes out of scope.

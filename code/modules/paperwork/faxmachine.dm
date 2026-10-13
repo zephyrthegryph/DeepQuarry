@@ -5,7 +5,19 @@ GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central
 GLOBAL_LIST_EMPTY(alldepartments)
 GLOBAL_VAR(last_fax_role_request)
 
+// The links in the admin message point at these copies, so the cache keeps them (bounded by admin_fax_keep()).
 GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
+/// The newest faxes the cache keeps: an older copy is deleted, so the cache is not a leak that grows with every fax of the round.
+#define ADMIN_FAX_KEEP 500
+
+/// Files a copy of a fax sent to the admins; the oldest copies past ADMIN_FAX_KEEP are deleted.
+/proc/admin_fax_keep(obj/item/rcvdcopy)
+	GLOB.adminfaxes += rcvdcopy
+	while(length(GLOB.adminfaxes) > ADMIN_FAX_KEEP)
+		var/obj/item/oldest = GLOB.adminfaxes[1]
+		GLOB.adminfaxes.Cut(1, 2)
+		if(!QDELETED(oldest))
+			oldest.expire(0)
 
 /obj/machinery/photocopier/faxmachine
 	name = "fax machine"
@@ -484,7 +496,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		return
 
 	rcvdcopy.moveToNullspace() //hopefully this shouldn't cause trouble
-	GLOB.adminfaxes += rcvdcopy
+	admin_fax_keep(rcvdcopy)
 
 	//message badmins that a fax has arrived
 

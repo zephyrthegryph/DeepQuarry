@@ -34,7 +34,7 @@
 	TEST_ASSERT(length(prefs.character_preview_b64["south"]), "the fresh render has no south image")
 	TEST_ASSERT(!prefs.dq_apply_preview_result(stale_generation, list("bg" = "stale")), "a stale result was applied")
 	TEST_ASSERT(prefs.dq_apply_preview_result(fresh_generation, list("bg" = "fresh")), "the latest result was refused")
-	qdel(prefs)
+	qdel(prefs, TRUE) // preferences refuse an unforced delete: this test owns its fixture
 
 /// The iconforge preview matches getFlatIcon pixel for pixel on a real mannequin,
 /// including a colour-matrix overlay and an offset overlay that forces a crop.

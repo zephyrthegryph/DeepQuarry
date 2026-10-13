@@ -10,7 +10,6 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 	var/atom/movable/weather_visuals/visuals
 	var/family = null	//Allows multipe maps that are THEORETICALLY connected to use the same settings when not in a connected Z stack
 	var/shared_settings	//Automatically set if using the family var
-	var/static/world_suns = list()	//List of all the fake_suns in the world, used for checking for family members
 	var/list/choice
 
 	var/do_sun = TRUE
@@ -21,7 +20,11 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 	var/weather_visuals_icon = 'icons/effects/weather.dmi'
 	var/weather_visuals_icon_state = null
 
+/// Every fake sun in the world, used for checking for family members: a registry, so a deleted sun leaves it.
+REGISTRY_MEMBERSHIP(/obj/effect/fake_sun, REGISTRY_FAKE_SUNS)
+
 CAPABILITIES(/obj/effect/fake_sun)
+	after_init(0, then(PROC_REF(light_advanced)))
 	after_init(0, then(PROC_REF(light_levels)))
 	owns_one(nameof(sun), /atom/movable/sun_visuals)
 	owns_one(nameof(visuals), /atom/movable/weather_visuals)
@@ -97,16 +100,15 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 	) \
 ))
 
-/obj/effect/fake_sun/Initialize(mapload)
-	. = ..()
-	world_suns += src
+/// The advanced-lighting sun: one planetary sunlight handler for the level, instead of coloured outdoor turfs.
+/obj/effect/fake_sun/proc/light_advanced(datum/act/timer/A)
 	if(!advanced_lighting)
 		return
 	do_sun = FALSE
 
 	//Copied code
 	if(family)	//Allows one to make multiple fake_suns to use the same settings
-		for(var/obj/effect/fake_sun/l in world_suns)	//check all the suns that exist
+		for(var/obj/effect/fake_sun/l in REGISTRY_MEMBERS(REGISTRY_FAKE_SUNS))	//check all the suns that exist
 			if(l.family == family && l.shared_settings)	//do you have settings we need?
 				choice = l.shared_settings
 				break
@@ -130,7 +132,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 /// Lights the levels it is connected to, once they exist (a dark choice lights nothing).
 /obj/effect/fake_sun/proc/light_levels(datum/act/timer/A)
 	if(family)	//Allows one to make multiple fake_suns to use the same settings
-		for(var/obj/effect/fake_sun/l in world_suns)	//check all the suns that exist
+		for(var/obj/effect/fake_sun/l in REGISTRY_MEMBERS(REGISTRY_FAKE_SUNS))	//check all the suns that exist
 			if(l.family == family && l.shared_settings)	//do you have settings we need?
 				choice = l.shared_settings
 				break
