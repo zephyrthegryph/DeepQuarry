@@ -83,7 +83,11 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 		publish_change(E, key)
 	// A draw that reads the key through a READS_AS accessor redraws (code/engine/_generated/deps.dm, generated_draw_keys).
 	if(isatom(E) && draw_reads_key(E, key))
+		// As state_changed() does: the look that watches E hears it on E's first mark of the frame, and marking E first would swallow that.
+		var/first_mark = E.rel_watchers && !E.refresh_queued
 		refresh_mark(E, DEP_DRAW)
+		if(first_mark)
+			rel_notify_watchers(E)
 
 /// Writes a stat's settled value where it lives.
 PROC_SUMMARY(/proc/stat_store) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
