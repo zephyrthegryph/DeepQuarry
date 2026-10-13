@@ -80,7 +80,6 @@ var	code/_onclick/hud/action/action_screen_objects.dm	var/atom/last_hovored
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/action_group/owner
-var	code/_onclick/hud/hud.dm	GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/lingchemdisplay
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/blobpwrdisplay
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/blobhealthdisplay
@@ -134,7 +133,6 @@ var	code/contracts/acts/context.dm	var/datum/request/answer
 var	code/controllers/kernel/kernel.dm	var/datum/time_scheduler/sched
 var	code/controllers/kernel/kernel.dm	var/datum/kernel_latency/latency_state
 var	code/controllers/kernel/system.dm	var/datum/system_member_driver/member_driver
-var	code/controllers/kernel/urgent.dm	var/datum/work_item/work
 var	code/controllers/kernel/urgent.dm	var/datum/member
 var	code/controllers/kernel/watchdog.dm	var/datum/kernel_watchdog/watchdog
 var	code/controllers/kernel/work_item.dm	var/datum/owner_cache
@@ -239,7 +237,6 @@ var	code/domains/heat/heat_entries.dm	var/atom/movable/follows
 var	code/engine/actions/every.dm	var/datum/holder
 var	code/engine/actions/guards.dm	var/datum/item
 var	code/engine/actions/hooks.dm	var/datum/activation/activation
-var	code/engine/actions/reactions.dm	var/datum/work_item/reaction/work
 var	code/engine/change/delivery.dm	var/datum/source
 var	code/engine/change/delivery.dm	var/datum/listener
 var	code/engine/change/lookup_reads.dm	GLOBAL_DATUM(lookup_read_scope_frame, /datum/lookup_read_scope)
@@ -261,7 +258,6 @@ var	code/engine/declare/definition_types.dm	var/datum/relation_definition/rel
 var	code/engine/declare/definition_types.dm	var/datum/source
 var	code/engine/declare/definition_types.dm	var/datum/target
 var	code/engine/declare/definition_types.dm	var/datum/requirement_definition/compiled_expr
-var	code/engine/declare/graph.dm	var/datum/state_graph/graph
 var	code/engine/declare/schema.dm	var/datum/schema/member
 var	code/engine/declare/schema.dm	var/datum/schema/key_schema
 var	code/engine/declare/table.dm	var/datum/item
@@ -271,7 +267,6 @@ var	code/engine/hooks/materialization.dm	GLOBAL_DATUM(materialization_host, /dat
 var	code/engine/hooks/native_watch.dm	var/datum/rx_listener/rx_listener
 var	code/engine/io/jobs.dm	GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 var	code/engine/io/path.dm	var/atom/movable/mover
-var	code/engine/kernel/cadences.dm	var/datum/cadence/def
 var	code/engine/kernel/inbox.dm	var/mob/actor
 var	code/engine/kernel/inbox.dm	var/datum/op_result/result
 var	code/engine/kernel/inbox.dm	var/atom/target
@@ -289,16 +284,9 @@ var	code/engine/kernel/requests.dm	var/datum/owner
 var	code/engine/kernel/requests.dm	var/mob/answerer
 var	code/engine/kernel/requests.dm	var/datum/op_result/waiting
 var	code/engine/kernel/requests.dm	var/datum/payer
-var	code/engine/kernel/sequence.dm	var/datum/work_item/sequence/work
-var	code/engine/kernel/sequence.dm	var/datum/sequence/def
 var	code/engine/kernel/sequence.dm	var/datum/seq_frame/frame
-var	code/engine/kernel/sequence_state.dm	var/datum/sequence/seq
-var	code/engine/kernel/sequence_state.dm	var/datum/seq_table/table
 var	code/engine/kernel/sequence_state.dm	var/datum/entity
-var	code/engine/kernel/sequence_state.dm	var/datum/sequence/seq
-var	code/engine/kernel/sequence_state.dm	var/datum/seq_state/state
 var	code/engine/kernel/sequence_table.dm	var/datum/contributor
-var	code/engine/kernel/sequence_table.dm	var/datum/sequence/seq
 var	code/engine/kernel/tasks.dm	var/datum/actor
 var	code/engine/kernel/tasks.dm	var/datum/target
 var	code/engine/kernel/tasks.dm	var/datum/receiver
@@ -312,11 +300,9 @@ var	code/engine/parts/operation_context.dm	var/mob/actor
 var	code/engine/parts/operation_context.dm	var/datum/target
 var	code/engine/parts/operation_context.dm	var/obj/held
 var	code/engine/parts/operation_context.dm	var/datum/authority
-var	code/engine/parts/plan.dm	var/datum/op_index/op_index
 var	code/engine/parts/provider.dm	var/datum/source
 var	code/engine/parts/provider.dm	var/datum/pending_op/claimed_by
 var	code/engine/parts/requirement.dm	GLOBAL_DATUM(requirement_composer, /datum/requirement_composer)
-var	code/engine/parts/resolve.dm	var/datum/op_plan/oplan
 var	code/engine/parts/resolve.dm	var/datum/holder
 var	code/engine/parts/resolve.dm	var/datum/activation/activation
 var	code/engine/parts/resolve.dm	var/datum/prov/provider
@@ -324,16 +310,12 @@ var	code/engine/parts/resolve.dm	var/mob/actor
 var	code/engine/parts/resolve.dm	var/atom/target
 var	code/engine/parts/resolve.dm	var/obj/held
 var	code/engine/parts/resolve.dm	var/datum/op_cand/near_miss
-var	code/engine/parts/resolve.dm	var/datum/op_plan/oplan
 var	code/engine/parts/resolve.dm	var/datum/activation/activation
-var	code/engine/parts/resolve.dm	var/datum/op_plan/oplan
 var	code/engine/parts/resource.dm	var/datum/holder
 var	code/engine/parts/resource.dm	var/datum/held
 var	code/engine/parts/resource.dm	var/datum/actor
-var	code/engine/parts/run.dm	var/datum/op_plan/oplan
 var	code/engine/parts/run.dm	var/datum/op_result/result
 var	code/engine/parts/run.dm	var/datum/pending_op/pending
-var	code/engine/parts/run.dm	var/datum/op_plan/oplan
 var	code/engine/parts/run.dm	var/datum/op_result/result
 var	code/engine/parts/run.dm	var/datum/act/op/act
 var	code/engine/parts/run.dm	var/datum/activation/activation
@@ -345,8 +327,6 @@ var	code/engine/state/construction.dm	GLOBAL_DATUM(state_construction, /datum/st
 var	code/engine/state/properties/providers.dm	GLOBAL_DATUM(property_environment, /datum/property_environment)
 var	code/engine/state/schema.dm	GLOBAL_DATUM(type_metadata_registry, /datum/type_metadata_registry)
 var	code/engine/state/serializer.dm	GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
-var	code/engine/stats/contributes.dm	var/datum/stat_contrib/ct
-var	code/engine/stats/contributes.dm	var/datum/stat_contrib/ct
 var	code/engine/stats/def.dm	var/datum/schema/schema
 var	code/engine/stats/store.dm	var/datum/stat_record/stats
 var	code/game/antagonist/alien/borer.dm	GLOBAL_DATUM(borers, /datum/antagonist/borer)
@@ -532,7 +512,6 @@ var	code/game/objects/items/petrifier.dm	var/mob/living/carbon/human/target
 var	code/game/objects/items/petrifier.dm	var/obj/machinery/petrification/linked
 var	code/game/objects/items/sahoc.dm	var/mob/living/capsuleowner //taken from Capsule Code
 var	code/game/objects/items/weapons/cigs_lighters.dm	var/obj/item/clothing/mask/smokable/cigarette/crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint
-var	code/game/objects/items/weapons/dna_injector.dm	/obj/item/dnainjector/var/tmp/datum/gene/trait/rolled_gene
 var	code/game/objects/items/weapons/explosives.dm	var/atom/target
 var	code/game/objects/items/weapons/id cards/cards.dm	var/mob/living/silicon/robot/robot_owner
 var	code/game/objects/items/weapons/id cards/syndicate_ids.dm	var/mob/registered_user
@@ -1385,10 +1364,6 @@ list	code/_helpers/global_lists.dm	GLOBAL_LIST_EMPTY(virusDB) // Stores discover
 list	code/_helpers/null_safety.dm	var/static/list/instances = list()
 list	code/_helpers/traits.dm	GLOBAL_LIST_EMPTY(trait_source_singletons)
 list	code/contracts/acts/context.dm	var/list/args
-list	code/controllers/kernel/kernel.dm	var/list/work_all = list()
-list	code/controllers/kernel/kernel.dm	var/list/work_by_key = list()
-list	code/controllers/kernel/kernel.dm	var/list/p_carry
-list	code/controllers/kernel/kernel.dm	var/list/cadence_items = list()
 list	code/controllers/kernel/kernel.dm	var/list/urgent_queue = list()
 list	code/controllers/kernel/work_item.dm	var/list/urgent_pending
 list	code/controllers/measure/meter.dm	var/list/systems
@@ -1431,21 +1406,10 @@ list	code/datums/gear/_gear.dm	var/list/gear = list() // ALLOW(instance_list): d
 list	code/datums/locations/locations.dm	var/list/children = list() // ALLOW(instance_list): d: location tree children
 list	code/datums/operations/req.dm	GLOBAL_LIST_EMPTY(reqs_interned)
 list	code/datums/underwear/underwear.dm	var/list/tweaks // Underwear customizations.
-list	code/domains/heat/heat_entries.dm	GLOBAL_LIST_EMPTY(heat_entry_edges)
 list	code/engine/actions/change.dm	GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the order first marked
 list	code/engine/actions/every.dm	GLOBAL_LIST_EMPTY(every_hop_watches)
-list	code/engine/actions/hooks.dm	GLOBAL_LIST_EMPTY(hook_tables) // /datum/type_table -> list of /datum/hook (every kind), built on first use
-list	code/engine/actions/hooks.dm	GLOBAL_LIST_EMPTY(act_plans) // /datum/type_table -> (action type -> /datum/act_plan, or FALSE for none)
-list	code/engine/actions/hooks.dm	GLOBAL_LIST_EMPTY(notice_plans) // /datum/type_table -> (notice type -> list of notice hooks)
-list	code/engine/actions/hooks.dm	var/list/needs
-list	code/engine/actions/hooks.dm	var/list/instead
-list	code/engine/actions/hooks.dm	var/list/adjusts
-list	code/engine/actions/hooks.dm	var/list/notices
-list	code/engine/actions/hooks.dm	var/list/hooks
 list	code/engine/actions/notices.dm	GLOBAL_LIST_EMPTY(notice_late_queue)
-list	code/engine/actions/periodic_dispatch.dm	GLOBAL_LIST_EMPTY(every_dispatch_items)
 list	code/engine/actions/reactions.dm	GLOBAL_LIST_EMPTY(rx_tables)
-list	code/engine/actions/work.dm	GLOBAL_LIST_EMPTY(rx_work_by_sig)
 list	code/engine/change/delivery.dm	GLOBAL_LIST_EMPTY(rx_pending)
 list	code/engine/change/delivery.dm	GLOBAL_LIST_EMPTY(rx_cross_jobs)
 list	code/engine/change/delivery.dm	GLOBAL_LIST_EMPTY(rx_notice_queue)
@@ -1458,7 +1422,6 @@ list	code/engine/declare/activation.dm	var/static/list/engines
 list	code/engine/declare/activation.dm	var/list/applied
 list	code/engine/declare/activation.dm	var/list/owned
 list	code/engine/declare/activation.dm	var/list/activations
-list	code/engine/declare/capability_tables.dm	GLOBAL_LIST(capability_runtime_records)
 list	code/engine/declare/checks.dm	var/list/parts
 list	code/engine/declare/definition_registry.dm	var/list/behaviour_by_type
 list	code/engine/declare/definition_registry.dm	var/list/clocks
@@ -1476,21 +1439,11 @@ list	code/engine/declare/definition_registry.dm	var/list/type_tables
 list	code/engine/declare/definition_tables.dm	var/list/compiled_behaviours
 list	code/engine/declare/definition_tables.dm	var/list/services
 list	code/engine/declare/definition_types.dm	var/list/compiled_requires
-list	code/engine/declare/graph.dm	GLOBAL_LIST_EMPTY(state_graphs) // graph id (or anonymous signature) -> /datum/state_graph
 list	code/engine/declare/graph.dm	var/list/edges
-list	code/engine/declare/relations.dm	GLOBAL_LIST_EMPTY(list_states) // "[type]|[var]" -> /datum/list_state; built on first use
 list	code/engine/declare/table.dm	var/list/items
-list	code/engine/declare/type_traits.dm	GLOBAL_LIST_EMPTY(type_trait_defaults)
-list	code/engine/declare/type_traits.dm	var/tmp/list/type_trait_overrides
 list	code/engine/io/db.dm	var/list/rows
 list	code/engine/io/jobs.dm	var/list/jobs
-list	code/engine/kernel/cadences.dm	var/static/list/defs = list()
 list	code/engine/kernel/jobs.dm	var/list/jobs = list()
-list	code/engine/kernel/sequence.dm	var/list/conds
-list	code/engine/kernel/sequence.dm	var/list/tables
-list	code/engine/kernel/sequence.dm	var/static/list/defs = list()
-list	code/engine/kernel/sequence_state.dm	/datum/var/tmp/list/seq_states
-list	code/engine/kernel/sequence_table.dm	var/list/steps
 list	code/engine/kernel/tasks.dm	GLOBAL_LIST_EMPTY(task_specs)
 list	code/engine/kernel/tasks.dm	GLOBAL_LIST_EMPTY(task_target_claims)
 list	code/engine/kernel/tasks.dm	GLOBAL_LIST_EMPTY(task_busy_claims)
@@ -1499,7 +1452,6 @@ list	code/engine/lifeforms/adjacency.dm	GLOBAL_LIST_EMPTY(adjacency_members)
 list	code/engine/lifeforms/derives.dm	GLOBAL_LIST_EMPTY(derives_running)
 list	code/engine/lifeforms/forms.dm	var/list/param_applies
 list	code/engine/lifeforms/forms.dm	var/list/param_drops
-list	code/engine/lifeforms/forms.dm	var/static/list/plans = list()
 list	code/engine/lifeforms/keeps_if.dm	GLOBAL_REAL_VAR(list/init_discard_pending)
 list	code/engine/lifeforms/lifetimes.dm	GLOBAL_REAL_VAR(list/ending_causes)
 list	code/engine/lifeforms/lifetimes.dm	GLOBAL_LIST_EMPTY(lives_in)
@@ -1508,54 +1460,31 @@ list	code/engine/lifeforms/params.dm	GLOBAL_LIST_EMPTY(make_pending)
 list	code/engine/lifeforms/params.dm	GLOBAL_REAL_VAR(list/param_given)
 list	code/engine/lifeforms/params.dm	GLOBAL_REAL_VAR(list/param_drop_pending)
 list	code/engine/lifeforms/registry.dm	var/list/filed = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
-list	code/engine/lifeforms/registry.dm	GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 list	code/engine/lifeforms/registry.dm	GLOBAL_LIST_EMPTY(radio_listen_tuned) // holder -> the frequency it listens on now
 list	code/engine/lifeforms/registry.dm	GLOBAL_LIST_EMPTY(radio_listen_via) // holder -> TRUE when its own tuner (via =) holds the registration: its own teardown leaves the frequency
 list	code/engine/lifeforms/rolls.dm	GLOBAL_LIST_EMPTY(roll_rollers)
 list	code/engine/lifeforms/setup.dm	GLOBAL_REAL_VAR(list/setup_pending)
-list	code/engine/parts/plan.dm	var/list/by_key
-list	code/engine/parts/plan.dm	var/list/ordered
-list	code/engine/parts/plan.dm	var/list/op_def_indexes
 list	code/engine/parts/resolve.dm	var/list/all
 list	code/engine/parts/resolve.dm	var/list/ordered
-list	code/engine/parts/resource.dm	GLOBAL_LIST_EMPTY(resource_adapters)
 list	code/engine/parts/run.dm	var/list/reservations
 list	code/engine/parts/run.dm	var/list/step_answers
 list	code/engine/present/appearance_builder.dm	var/list/vis
-list	code/engine/present/messages.dm	GLOBAL_LIST_EMPTY(msg_defs)
-list	code/engine/present/outputs.dm	var/static/list/tables = list()
 list	code/engine/present/type_verbs.dm	GLOBAL_LIST_EMPTY(type_login_verb_entries)
-list	code/engine/state/codecs.dm	GLOBAL_LIST_EMPTY(state_codec_instances)
-list	code/engine/state/pool.dm	GLOBAL_LIST_EMPTY(object_pools)
 list	code/engine/state/pool.dm	var/list/free = list() // ALLOW(instance_list): one pool per pooled type (a handful per round), always used as the free list
 list	code/engine/state/serializer.dm	GLOBAL_LIST_EMPTY(state_schemas)
 list	code/engine/state/serializer.dm	var/list/pending
-list	code/engine/stats/contributes.dm	var/list/defs
-list	code/engine/stats/contributes.dm	var/list/ct_entries
-list	code/engine/stats/def.dm	GLOBAL_LIST_EMPTY(stat_defs) // "[id]" -> /datum/stat_def
-list	code/engine/stats/def.dm	GLOBAL_LIST_EMPTY(stat_defs_by_name) // name -> /datum/stat_def
-list	code/engine/stats/def.dm	GLOBAL_LIST_EMPTY(stat_type_index) // type -> /datum/stat_type_info
 list	code/engine/stats/recompute.dm	GLOBAL_LIST_EMPTY(stat_marked) // list(entity, stat def, contribution or null) rows waiting for a marked drain
 list	code/engine/stats/store.dm	var/list/ct_targets
 list	code/engine/stats/store.dm	var/list/held_on
 list	code/engine/stats/store.dm	var/list/hop_targets
 list	code/engine/stats/store.dm	GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for their next slice
 list	code/game/area/areas.dm	var/list/all_doors = null //Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
-list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes, /datum/gene)
-list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY(trait_to_dna_genes) // Reverse lookup genes, use get_gene_from_trait(var/trait_path) to read this
-list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes_good, /datum/gene/trait)
-list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes_neutral, /datum/gene/trait)
-list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
-list	code/game/gamemodes/changeling/state/changeling.dm	GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 list	code/game/machinery/camera/camera.dm	var/client_huds = null
 list	code/game/machinery/camera/camera_assembly.dm	var/static/list/obj/item/possible_upgrades = list(/obj/item/assembly/prox_sensor, /obj/item/stack/material/osmium, /obj/item/stock_parts/scanning_module)
 list	code/game/machinery/frame.dm	GLOBAL_LIST(construction_frame_wall)
 list	code/game/machinery/frame.dm	GLOBAL_LIST(construction_frame_floor)
 list	code/game/machinery/machine_service.dm	var/list/pending_pump_transfers = list()
 list	code/game/machinery/machinery.dm	var/static/list/probes = list()
-list	code/game/machinery/status_display_ai.dm	GLOBAL_LIST_INIT(ai_status_emotions, list(
-list	code/game/mecha/mecha_construction_paths.dm	var/static/list/known = list()
-list	code/game/objects/explosion_service.dm	VAR_PRIVATE/list/resolved_atoms = list()
 list	code/game/objects/items/devices/radio/radio.dm	var/tmp/list/datum/radio_frequency/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
 list	code/game/objects/items/devices/radio/radio_service.dm	var/list/data = list() // ALLOW(instance_list): d: every signal carries data
 list	code/modules/admin/admin_ranks.dm	GLOBAL_LIST_EMPTY(admin_ranks) //list of all admin_rank datums
@@ -1565,13 +1494,9 @@ list	code/modules/admin/holder2.dm	GLOBAL_LIST_EMPTY(protected_admins)
 list	code/modules/admin/holder2.dm	var/list/datum/admin_rank/ranks
 list	code/modules/asset_cache/asset_list.dm	var/assets
 list	code/modules/belly_overlay/belly_overlay_asset.dm	GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
-list	code/modules/body/breath_profile.dm	var/static/list/instances = list()
 list	code/modules/economy/economy_misc.dm	GLOBAL_LIST_EMPTY_TYPED(department_accounts, /datum/money_account)
-list	code/modules/ghosttrap/trap.dm	GLOBAL_LIST(ghost_traps)
 list	code/modules/heat/heat_bind_batch.dm	GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
 list	code/modules/lighting/lighting_corner.dm	var/list/datum/light_source/affecting // Light sources affecting us.
-list	code/modules/materials/engineering/material_templates.dm	var/static/list/interned
-list	code/modules/materials/engineering/material_templates.dm	GLOBAL_REAL_VAR(list/GLOB_material_mix_registry)
 list	code/modules/medical/causes/_cause.dm	GLOBAL_LIST_EMPTY(affliction_triggers_all)
 list	code/modules/medical/contagion/engineered/engineered.dm	GLOBAL_LIST_EMPTY(archive_diseases)
 list	code/modules/mob/dead/observer/chunk.dm	var/list/hidden_areas
@@ -1581,14 +1506,9 @@ list	code/modules/mob/living/silicon/robot/robot_upgrade_detection.dm	var/static
 list	code/modules/mob/mob_chunks.dm	GLOBAL_LIST_EMPTY(mob_chunks)
 list	code/modules/overmap/turfs.dm	GLOBAL_LIST_EMPTY(map_sectors)
 list	code/modules/paperwork/faxmachine.dm	GLOBAL_LIST_EMPTY(adminfaxes) //cache for faxes that have been sent to admins
-list	code/modules/power/power_bridge.dm	var/alist/power_material_overlays = alist()
 list	code/modules/power/power_grid.dm	var/alist/by_id
 list	code/modules/radiation/radiation_service.dm	var/list/dirty_turfs = list()
 list	code/modules/reagents/reagents/_reagents.dm	var/list/data = null
 list	code/modules/scripting/AST/Blocks.dm	var/list/statements
-list	code/modules/scripting/AST/Blocks.dm	var/list/functions = list() // ALLOW(instance_list): d: script AST node state
-list	code/modules/shuttles/emergency_shuttle_service.dm	var/list/escape_pods = list()
-list	code/modules/surgery/surgery_ops.dm	GLOBAL_LIST_EMPTY(surgery_op_steps)
 list	code/modules/tgs_commands/vorestation.dm	GLOBAL_LIST_EMPTY(tgs_flow_senders)
 list	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
-list	code/modules/vore/eating/bellymodes_datum.dm	GLOBAL_LIST_INIT(digest_modes, list())

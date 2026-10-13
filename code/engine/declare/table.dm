@@ -23,6 +23,7 @@
 	/// The key extend/configure/without address it by: its own key =, namespaced by the capability for an op.
 	var/eff_key
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_table)
 /// One type's compiled table. Read-only after build: never write one.
 /datum/type_table
 	var/owner_type
