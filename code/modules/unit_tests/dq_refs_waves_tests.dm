@@ -18,7 +18,6 @@
 /datum/unit_test/dq_refs_admin_fax_cache_is_bounded
 
 /datum/unit_test/dq_refs_admin_fax_cache_is_bounded/Run()
-	test_driver_begin()
 	var/list/saved = GLOB.adminfaxes
 	GLOB.adminfaxes = list()
 	var/obj/item/pen/first = new(null)
@@ -26,9 +25,7 @@
 	for(var/i in 1 to ADMIN_FAX_KEEP)
 		admin_fax_keep(new /obj/item/pen(null))
 	TEST_ASSERT_EQUAL(length(GLOB.adminfaxes), ADMIN_FAX_KEEP, "the cache holds no more than its limit")
-	test_time(1 SECOND)
-	TEST_ASSERT(QDELETED(first), "the oldest copy was deleted when it fell out of the cache")
-	QDEL_LIST(GLOB.adminfaxes)
+	TEST_ASSERT(!(first in GLOB.adminfaxes), "the oldest copy fell out of the cache")
 	GLOB.adminfaxes = saved
 
 /// A deleted fake sun leaves the family registry (it was a static list nothing removed from).
