@@ -175,7 +175,7 @@ SYSTEM_DEF(time_track)
 			SSair.gas_reactions_last,
 			SSair.gas_visuals_last,
 			SSair.gas_pressure_last,
-			length(SSair.hotspots),
+			REGISTRY_COUNT(REGISTRY_HOTSPOTS),
 			length(SSair.networks),
 			length(SSair.high_pressure_delta),
 			SSair.fire_cost,

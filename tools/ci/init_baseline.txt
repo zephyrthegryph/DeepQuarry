@@ -68,7 +68,6 @@ init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	var/static/list/d
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	if(isnull(scrubbing_gas))
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	set_scrubbing_gas(default_scrubbing_gas)
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	icon = null
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	SSair.hotspots += src
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	if(!isnull(starting_volume))
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	volume = starting_volume
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	if(!isnull(starting_temperature))
@@ -1065,8 +1064,6 @@ init_lines	code/game/objects/mob_spawner.dm	COOLDOWN_START(src, spawn_cooldown, 
 init_lines	code/game/objects/structures/artstuff.dm	reset_grid()
 init_lines	code/game/objects/structures/artstuff.dm	color_drop = image(icon, null, "brush_color")
 init_lines	code/game/objects/structures/artstuff.dm	color_drop.color = selected_color
-init_lines	code/game/objects/structures/artstuff.dm	if(persistence_id)
-init_lines	code/game/objects/structures/artstuff.dm	SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 init_lines	code/game/objects/structures/catwalk.dm	if(delete_me)
 init_lines	code/game/objects/structures/catwalk.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/structures/catwalk.dm	for(var/obj/structure/catwalk/C in get_turf(src))
@@ -1777,7 +1774,6 @@ init_lines	code/modules/holomap/mapper.dm	rel_add(src, nameof(map_image_cache), 
 init_lines	code/modules/holomap/mapper.dm	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 init_lines	code/modules/holomap/mapper.dm	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 init_lines	code/modules/holomap/station_holomap.dm	original_zLevel = loc.z
-init_lines	code/modules/holomap/station_holomap.dm	SSholomaps.station_holomaps += src
 init_lines	code/modules/holomap/station_holomap.dm	if(holomaps_holomaps_initialized())
 init_lines	code/modules/holomap/station_holomap.dm	setup_holomap()
 init_lines	code/modules/hydroponics/beekeeping/beehive.dm	recipes = GLOB.wax_recipes
@@ -2484,7 +2480,6 @@ init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	atom_break()
 init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	break
 init_lines	code/modules/overmap/ships/ship.dm	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 init_lines	code/modules/overmap/ships/ship.dm	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
-init_lines	code/modules/overmap/ships/ship.dm	SSshuttles.ships += src
 init_lines	code/modules/overmap/ships/ship.dm	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 init_lines	code/modules/overmap/ships/ship.dm	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 init_lines	code/modules/overmap/ships/ship.dm	SSflight?.register_vessel(src)
