@@ -59,6 +59,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			look.set_dir(tape_dir)
 
 TRACKED(/obj/item/tape, crumpled)
+TRACKED(/obj/item/tape, icon_base)
 
 /obj/item/taperoll/medical
 	name = "medical tape"

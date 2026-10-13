@@ -657,6 +657,8 @@ CAPABILITIES(/obj/machinery/power/rtg/fake_gen)
 	/// The cell a core placed built starts with.
 	var/starting_cell
 
+TRACKED(/obj/machinery/power/rtg/abductor, icon_base)
+
 /obj/machinery/power/rtg/abductor/RefreshParts()
 	..()
 	if(!cell)

@@ -7476,6 +7476,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/reishicup)
 /obj/item/storage/box/wings
 
 
+TRACKED(/obj/item/storage/box/wings, icon_base)
+
 CAPABILITIES(/obj/item/storage/box/wings)
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing)))
 

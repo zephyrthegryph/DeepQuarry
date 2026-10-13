@@ -27,6 +27,7 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	var/picked_color = "random"
 
 TRACKED(/obj/item/stack/marker_beacon, picked_color)
+TRACKED(/obj/item/stack/marker_beacon, icon_base)
 
 CAPABILITIES(/obj/item/stack/marker_beacon)
 	without("ui_open")
@@ -112,6 +113,7 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 	var/mapped_in_color
 
 TRACKED(/obj/structure/marker_beacon, picked_color)
+TRACKED(/obj/structure/marker_beacon, icon_base)
 
 CAPABILITIES(/obj/structure/marker_beacon)
 	configure(light_glow(range = 2, power = 0.8))

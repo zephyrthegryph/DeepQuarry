@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/stack/material)
 
 	if(!default_type)
 		default_type = MAT_STEEL
-	set_material(get_material_by_name("[default_type]"))
+	material = get_material_by_name("[default_type]")
 	if(!material)
 		stack_trace("Material of type: [default_type] does not exist.")
 		return INITIALIZE_HINT_QDEL

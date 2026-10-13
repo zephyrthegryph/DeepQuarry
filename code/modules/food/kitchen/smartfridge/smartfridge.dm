@@ -153,6 +153,8 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	look_parts(look)
 
 /// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+TRACKED(/obj/machinery/smartfridge, icon_base)
+
 /obj/machinery/smartfridge/proc/look_parts(datum/look/look)
 	if(panel_open)
 		look.overlay("[icon_base]-panel")
