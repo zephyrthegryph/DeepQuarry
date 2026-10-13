@@ -10,9 +10,10 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/effect/mine/training/mine = allocate(/obj/effect/mine/training, T)
+	var/mine_h = entity_handle(mine) // the floor danger index holds handles
 	var/datum/wires_test_adapter/wires = wires_test(mine)
 	TEST_ASSERT(wires, "the actual deployed training mine initializes its wire controller")
-	TEST_ASSERT(mine in T.dangerous_objects, "actual initialization registers the training mine as a floor danger")
+	TEST_ASSERT(mine_h && (mine_h in T.dangerous_objects), "actual initialization registers the training mine as a floor danger")
 	TEST_ASSERT(!mine.triggered, "the real training mine starts untriggered")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/mine/training)), 0, "the floor starts without a refunded casing")
 	if(delayed)
@@ -28,7 +29,7 @@
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "actual crossing or scheduled detonation consumes the deployed mine")
 	TEST_ASSERT(isnull(wiring_of(mine)), "actual consumption drops the mine's wire record")
-	TEST_ASSERT(!(mine in T.dangerous_objects), "actual teardown removes the old mine from the floor danger index")
+	TEST_ASSERT(!(mine_h in T.dangerous_objects), "actual teardown removes the old mine from the floor danger index")
 	TEST_ASSERT_NULL(locate_within(T, /obj/effect/mine/training), "the detonation leaves no duplicate deployed mine")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/mine/training)), 1, "actual training detonation refunds exactly one original-type casing")
 	var/obj/item/mine/training/refund = locate_within(T, /obj/item/mine/training)
@@ -41,6 +42,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/effect/mine/stun/mine = allocate(/obj/effect/mine/stun, T)
+	var/mine_h = entity_handle(mine) // the floor danger index holds handles
 	TEST_ASSERT(mouse.mob_size <= MOB_TINY, "the actual mouse meets the existing tiny-victim exemption")
 	TEST_ASSERT(!user.has_status(STAT_STUNNED), "the actual person starts without stun")
 	mine.Bumped(mouse)
@@ -52,7 +54,7 @@
 	TEST_ASSERT(user.has_status(STAT_STUNNED), "the actual mine applies real stun to the full-size victim")
 	TEST_ASSERT(user.status_units(STAT_STUNNED) > 0, "the actual stun has a positive remaining quantity")
 	TEST_ASSERT(!QDELETED(mouse), "the tiny bystander survives the actual stun detonation")
-	TEST_ASSERT(!(mine in T.dangerous_objects), "actual stun-mine teardown clears the floor danger index")
+	TEST_ASSERT(!(mine_h in T.dangerous_objects), "actual stun-mine teardown clears the floor danger index")
 	TEST_ASSERT_NULL(locate_within(T, /obj/effect/mine/stun), "the real detonation leaves no duplicate stun mine")
 
 /// Actual stripping-mine crossing drops both real held objects without destroying them.
@@ -64,6 +66,7 @@
 	TEST_ASSERT(user.put_in_active_hand(book), "the actual victim holds the original book")
 	TEST_ASSERT(user.put_in_inactive_hand(pen), "the actual victim holds the original pen in the other hand")
 	var/obj/effect/mine/stripping/mine = allocate(/obj/effect/mine/stripping, T)
+	var/mine_h = entity_handle(mine) // the floor danger index holds handles
 	mine.Bumped(user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "the actual crossing consumes the stripping mine")
@@ -75,5 +78,5 @@
 	TEST_ASSERT_EQUAL(pen.loc, T, "the actual stripping effect drops the same original pen onto the floor")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/book)), 1, "the effect leaves exactly the original book")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/pen)), 1, "the effect leaves exactly the original pen")
-	TEST_ASSERT(!(mine in T.dangerous_objects), "actual stripping-mine teardown clears the floor danger index")
+	TEST_ASSERT(!(mine_h in T.dangerous_objects), "actual stripping-mine teardown clears the floor danger index")
 	TEST_ASSERT_NULL(locate_within(T, /obj/effect/mine/stripping), "the actual detonation leaves no duplicate stripping mine")

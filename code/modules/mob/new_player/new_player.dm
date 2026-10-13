@@ -236,17 +236,17 @@
 	if(rank == JOB_OUTSIDER)
 		log_and_message_admins("has joined the round as non-crew. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
 		if(!(J.mob_type & JOB_SILICON))
-			SSticker.minds += character.mind // ALLOW(ownership): the ticker's roster of minds, appended where the mind is created; no registry for minds yet
+			rel_add(SSticker, nameof(SSticker.minds), character.mind)
 	else if(rank == JOB_ANOMALY)
 		log_and_message_admins("has joined the round as anomaly. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
 		if(!(J.mob_type & JOB_SILICON))
-			SSticker.minds += character.mind // ALLOW(ownership): the ticker's roster of minds, appended where the mind is created; no registry for minds yet
+			rel_add(SSticker, nameof(SSticker.minds), character.mind)
 	else if(J.mob_type & JOB_SILICON)
 		AnnounceCyborg(character, rank, join_message, announce_channel, character.z)
 	else
 		AnnounceArrival(character, rank, join_message, announce_channel, character.z)
 		GLOB.data_core.manifest_inject(character)
-		SSticker.minds += character.mind//Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn // ALLOW(ownership): the ticker's roster of minds, appended where the mind is created; no registry for minds yet
+		rel_add(SSticker, nameof(SSticker.minds), character.mind) //Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
 	if(ishuman(character))
 		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 			var/obj/item/implant/backup/imp = new(src)

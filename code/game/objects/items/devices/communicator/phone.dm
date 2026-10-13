@@ -34,7 +34,7 @@
 		return
 	var/obj/item/communicator/comm = candidate
 	rel_remove(src, nameof(voice_invites), candidate)
-	LAZYREMOVE(comm.voice_requests, src)
+	rel_remove(comm, nameof(comm.voice_requests), src)
 
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
@@ -70,7 +70,7 @@
 		return
 	//Handle moving the ghost into the new shell.
 	announce_ghost_joinleave(candidate, 0, "They are occupying a personal communications device now.")
-	LAZYREMOVE(voice_requests, candidate)
+	rel_remove(src, nameof(voice_requests), candidate)
 	rel_remove(src, nameof(voice_invites), candidate)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
@@ -171,7 +171,7 @@
 	if(!who)
 		return
 
-	LAZYOR(voice_requests, candidate)
+	rel_add(src, nameof(voice_requests), candidate)
 
 	if(ringer)
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
@@ -201,7 +201,7 @@
 		var/obj/item/communicator/comm = candidate
 		rel_remove(comm, nameof(comm.voice_invites), src)
 
-	LAZYREMOVE(voice_requests, candidate)
+	rel_remove(src, nameof(voice_requests), candidate)
 
 	//Search for holder of our device.
 	var/mob/living/us = null

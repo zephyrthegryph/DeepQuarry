@@ -91,7 +91,7 @@
 		return null
 	var/id = "DQ-EV-[next_evidence_id++]"
 	var/datum/contract_evidence/evidence = new(id, kind, subject_id, creator_account, source, payload)
-	evidence_by_id[id] = evidence // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+	rel_add(src, nameof(evidence_by_id), evidence, id)
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_REGISTERED, list(
 		"subject_id" = subject_id,
 		"actor_account" = creator_account,
@@ -119,7 +119,7 @@
 /datum/system/contracts/proc/unregister_evidence(datum/contract_evidence/evidence)
 	if(!evidence || evidence_by_id[evidence.id] != evidence)
 		return
-	evidence_by_id -= evidence.id
+	rel_take(src, nameof(evidence_by_id), key = evidence.id)
 	spent(evidence)
 
 /datum/system/contracts/proc/void_evidence(evidence_id, reason)

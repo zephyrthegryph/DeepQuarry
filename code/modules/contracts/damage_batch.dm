@@ -25,6 +25,16 @@
 
 CAPABILITIES(/datum/system/contracts)
 	owns_many(nameof(pending_damage_reports))
+	owns_many(nameof(contracts_by_id), /datum/contract)
+	owns_many(nameof(evidence_by_id), /datum/contract_evidence)
+	ref_many(nameof(offered_contracts), /datum/contract)
+	ref_many(nameof(active_contracts), /datum/contract)
+	ref_many(nameof(grace_contracts), /datum/contract)
+	ref_many(nameof(closed_contracts), /datum/contract)
+	ref_many(nameof(offer_candidates), /datum/contract_offer_candidate)
+	ref_many(nameof(lifecycle_history), /datum/contract_lifecycle_entry)
+	ref_many(nameof(recent_events), /datum/contract_event)
+	ref_many(nameof(opportunity_history), /datum/contract_opportunity_history_entry)
 
 /// One damaged atom's accumulated damage in a batch, with the location facts
 /// the event needs if the atom is gone by the time the batch flushes.

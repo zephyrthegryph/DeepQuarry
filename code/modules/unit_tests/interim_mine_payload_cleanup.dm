@@ -4,6 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/effect/mine/n2o/mine = allocate(/obj/effect/mine/n2o, T)
+	var/mine_h = entity_handle(mine) // the floor danger index holds handles
 	var/list/floors = list()
 	for(var/turf/simulated/floor/floor in range(1, mine))
 		if(!floor.blocks_air)
@@ -28,7 +29,7 @@
 		var/turf/simulated/floor/floor = entry[1]
 		var/datum/gas_mixture/air = floor.return_air()
 		TEST_ASSERT(abs(air.get_moles(GAS_N2O) - (entry[2] + 30)) < 0.01, "actual N2O detonation adds exactly thirty moles at every eligible destination")
-	TEST_ASSERT(!(mine in T.dangerous_objects), "actual N2O mine teardown clears the source floor danger index")
+	TEST_ASSERT(!(mine_h in T.dangerous_objects), "actual N2O mine teardown clears the source floor danger index")
 	TEST_ASSERT(!QDELETED(user) && !QDELETED(mouse), "actual gas-mine cleanup preserves both real victims")
 
 /// Registered before detonation; teardown restores every snapshot even after an assertion or runtime.
@@ -43,7 +44,8 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/effect/mine/incendiary/mine = allocate(/obj/effect/mine/incendiary, T)
-	TEST_ASSERT_NULL(fire_stacks_of(user), "actual human starts without combustible stacks")
+	var/mine_h = entity_handle(mine) // the floor danger index holds handles
+	TEST_ASSERT_EQUAL(fire_stacks_of(user), 0, "actual human starts without combustible stacks")
 	TEST_ASSERT(!stat_value(user, STAT_ON_FIRE), "actual human starts without an active fire")
 	TEST_ASSERT_EQUAL(user.fire_reaction, FIRE_REACTION_BURN, "actual human uses the normal burn reaction")
 	mine.Bumped(mouse)
@@ -54,7 +56,7 @@
 	TEST_ASSERT(QDELETED(mine), "actual full-size crossing consumes the incendiary mine")
 	TEST_ASSERT(stat_value(user, STAT_ON_FIRE), "actual detonation ignites the real human victim")
 	TEST_ASSERT_EQUAL(fire_stacks_of(user), 7, "actual detonation preserves five payload stacks plus two from the normal fire reaction")
-	TEST_ASSERT(!(mine in T.dangerous_objects), "actual incendiary teardown clears the source floor danger index")
+	TEST_ASSERT(!(mine_h in T.dangerous_objects), "actual incendiary teardown clears the source floor danger index")
 	TEST_ASSERT(!QDELETED(user) && !QDELETED(mouse), "actual incendiary cleanup preserves both real victims")
 	user.extinguish_mob()
 	TEST_ASSERT(!stat_value(user, STAT_ON_FIRE), "actual cleanup extinguishes the fixture's real fire")

@@ -20,7 +20,8 @@ SYSTEM_DEF(pois)
 
 CAPABILITIES(/datum/system/pois)
 	ref_many(nameof(allocated_gamma_items))
-
+	/// Queued loader landmarks: each qdels itself once placed (a loader deleted early leaves the queue).
+	ref_many(nameof(poi_queue))
 
 /datum/system/pois/initialize()
 	if(initialized)

@@ -17,7 +17,7 @@ CAPABILITIES(/obj/asteroid_spawner)
 /obj/asteroid_spawner/proc/register_spawn(datum/act/timer/A)
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
 		var/area/asteroid/rogue/zone = loc.loc
-		LAZYADD(zone.asteroid_spawns, src)
+		rel_add(zone, nameof(zone.asteroid_spawns), src)
 
 /obj/rogue_mobspawner
 	name = "mob spawn"
@@ -33,7 +33,7 @@ CAPABILITIES(/obj/rogue_mobspawner)
 /obj/rogue_mobspawner/proc/register_spawn(datum/act/timer/A)
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
 		var/area/asteroid/rogue/zone = loc.loc
-		LAZYADD(zone.mob_spawns, src)
+		rel_add(zone, nameof(zone.mob_spawns), src)
 
 /// Accessor for the myasteroid var.
 /obj/asteroid_spawner/proc/myasteroid() as /datum/rogue/asteroid

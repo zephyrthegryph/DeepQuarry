@@ -4,12 +4,13 @@
 	if(!istype(user))
 		return
 	var/key = "[REF(source)]"
-	var/datum/languages_panel/panel = LAZYACCESS(GLOB.dq_languages_panels, key)
+	var/datum/languages_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_languages_panels, key))
 	if(!panel)
 		panel = new(source)
-		GLOB.dq_languages_panels[key] = panel
+		GLOB.dq_languages_panels[key] = entity_handle(panel)
 	panel.tgui_interact(user)
 
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
 GLOBAL_LIST_EMPTY(dq_languages_panels)
 
 /datum/languages_panel

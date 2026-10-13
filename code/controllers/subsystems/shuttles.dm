@@ -9,6 +9,8 @@
 
 CAPABILITIES(/datum/system/shuttles)
 	owns_many(nameof(specops_announcers))
+	ref_many(nameof(process_shuttles), /datum/shuttle)
+	ref_many(nameof(landmarks_awaiting_sector), /obj/effect/shuttle_landmark/automatic)
 
 SYSTEM_DEF(shuttles)
 	name = "Shuttles"
@@ -25,14 +27,14 @@ SYSTEM_DEF(shuttles)
 	var/list/shuttles = list()                     // Maps shuttle tags to shuttle datums, so that they can be looked up.
 	var/list/process_shuttles = list()             // Simple list of shuttles, for processing
 
-	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to instances
+	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to entity_handle()s of the instances (get_landmark() resolves)
 	EXPIRY_DECLARE(last_landmark_registration_time) // world.time of most recent addition to registered_shuttle_landmarks
 	var/list/shuttle_logs = list()                 // (Not Implemented) Keeps records of shuttle movement, format is list(datum/shuttle = datum/shuttle_log)
 	var/list/shuttle_areas = list()                // All the areas of all shuttles.
-	var/list/docking_registry = list()             // Docking controller tag -> docking controller program, mostly for init purposes.
+	var/list/docking_registry = list()             // Docking controller tag -> entity_handle() of the docking controller program, mostly for init purposes (docking_program() resolves).
 
 	var/list/landmarks_awaiting_sector = list()    // Stores automatic landmarks that are waiting for a sector to finish loading.
-	var/list/landmarks_still_needed = list()       // Stores landmark_tags that need to be assigned to the sector (landmark_tag = sector) when registered.
+	var/list/landmarks_still_needed = list()       // Stores landmark_tags that need to be assigned to the sector (landmark_tag = entity_handle() of the sector) when registered.
 	var/list/shuttles_to_initialize                // A queue for shuttles to initialize at the appropriate time.
 	var/list/sectors_to_initialize                 // Used to find all sector objects at the appropriate time.
 	var/block_init_queue = TRUE                    // Block initialization of new shuttles/sectors
@@ -129,22 +131,29 @@ SYSTEM_DEF(shuttles)
 	sectors_to_initialize = null
 
 /datum/system/shuttles/proc/register_landmark(shuttle_landmark_tag, obj/effect/shuttle_landmark/shuttle_landmark)
-	if (registered_shuttle_landmarks[shuttle_landmark_tag])
+	if (get_landmark(shuttle_landmark_tag))
 		CRASH("Attempted to register shuttle landmark with tag [shuttle_landmark_tag], but it is already registered!")
 	if (istype(shuttle_landmark))
-		registered_shuttle_landmarks[shuttle_landmark_tag] = shuttle_landmark
+		registered_shuttle_landmarks[shuttle_landmark_tag] = entity_handle(shuttle_landmark)
 		EXPIRY_STAMP(src, last_landmark_registration_time, CLOCK_WORLD)
 
-		var/obj/effect/overmap/visitable/O = landmarks_still_needed[shuttle_landmark_tag]
+		var/obj/effect/overmap/visitable/O = resolve_handle(landmarks_still_needed[shuttle_landmark_tag])
 		if(O) //These need to be added to sectors, which we handle.
 			try_add_landmark_tag(shuttle_landmark_tag, O)
 			landmarks_still_needed -= shuttle_landmark_tag
 		else if(istype(shuttle_landmark, /obj/effect/shuttle_landmark/automatic)) //These find their sector automatically
 			O = get_overmap_sector(get_z(shuttle_landmark))
-			O ? O.add_landmark(shuttle_landmark, shuttle_landmark.shuttle_restricted) : (landmarks_awaiting_sector += shuttle_landmark)
+			if(O)
+				O.add_landmark(shuttle_landmark, shuttle_landmark.shuttle_restricted)
+			else
+				rel_add(src, nameof(landmarks_awaiting_sector), shuttle_landmark)
+
+/// The docking controller program registered under `tag`, or null (no program, or it was deleted).
+/datum/system/shuttles/proc/docking_program(tag)
+	return resolve_handle(docking_registry[tag])
 
 /datum/system/shuttles/proc/get_landmark(shuttle_landmark_tag)
-	return registered_shuttle_landmarks[shuttle_landmark_tag]
+	return resolve_handle(registered_shuttle_landmarks[shuttle_landmark_tag])
 
 //Checks if the given sector's landmarks have initialized; if so, registers them with the sector, if not, marks them for assignment after they come in.
 //Also adds automatic landmarks that were waiting on their sector to spawn.
@@ -153,18 +162,18 @@ SYSTEM_DEF(shuttles)
 
 	for(var/landmark_tag in given_sector.initial_generic_waypoints)
 		if(!try_add_landmark_tag(landmark_tag, given_sector))
-			landmarks_still_needed[landmark_tag] = given_sector // Landmark isn't registered yet, queue it to be added once it is.
+			landmarks_still_needed[landmark_tag] = entity_handle(given_sector) // Landmark isn't registered yet, queue it to be added once it is.
 
 	for(var/shuttle_name in given_sector.initial_restricted_waypoints)
 		for(var/landmark_tag in given_sector.initial_restricted_waypoints[shuttle_name])
 			if(!try_add_landmark_tag(landmark_tag, given_sector))
-				landmarks_still_needed[landmark_tag] = given_sector // Landmark isn't registered yet, queue it to be added once it is.
+				landmarks_still_needed[landmark_tag] = entity_handle(given_sector) // Landmark isn't registered yet, queue it to be added once it is.
 
 	var/landmarks_to_check = landmarks_awaiting_sector.Copy()
 	for(var/obj/effect/shuttle_landmark/automatic/landmark as anything in landmarks_to_check)
 		if(landmark.z in given_sector.map_z)
 			given_sector.add_landmark(landmark, landmark.shuttle_restricted)
-			landmarks_awaiting_sector -= landmark
+			rel_remove(src, nameof(landmarks_awaiting_sector), landmark)
 
 // Attempts to add a landmark instance with a sector (returns false if landmark isn't registered yet)
 /datum/system/shuttles/proc/try_add_landmark_tag(landmark_tag, obj/effect/overmap/visitable/given_sector)
