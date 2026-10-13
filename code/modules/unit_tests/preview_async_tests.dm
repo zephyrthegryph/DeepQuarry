@@ -101,3 +101,26 @@
 	for(var/channel in 1 to 3)
 		diff = max(diff, abs(a[channel] - b[channel]))
 	return diff
+
+/// The real preview proc draws the mannequin itself: a freshly made mannequin has nothing drawn until the refresh queue runs,
+/// and update_character_previews() must not flatten that blank look.
+/datum/unit_test/dq_preview_draws_mannequin_before_flatten
+
+/datum/unit_test/dq_preview_draws_mannequin_before_flatten/Run()
+	var/datum/preferences/dq_preview_test_stub/prefs = new()
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
+	TEST_ASSERT(!length(mannequin.overlays), "the mannequin already had overlays before the preview ran")
+	prefs.update_character_previews(mannequin, TRUE)
+	TEST_ASSERT(length(mannequin.overlays), "update_character_previews flattened a mannequin that was never drawn")
+	qdel(prefs)
+
+/// draw_now() builds the look of a mob that was made in the same call, and follows a direction change.
+/datum/unit_test/dq_draw_now_draws_fresh_human
+
+/datum/unit_test/dq_draw_now_draws_fresh_human/Run()
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
+	TEST_ASSERT(!length(mannequin.overlays), "a fresh mannequin already had overlays")
+	draw_now(mannequin)
+	TEST_ASSERT(length(mannequin.overlays), "draw_now left the mannequin undrawn")
+	var/icon/flat = getFlatIcon(mannequin, defdir = SOUTH, no_anim = TRUE)
+	TEST_ASSERT_NOTNULL(flat, "the drawn mannequin did not flatten")
