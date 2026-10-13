@@ -1,7 +1,6 @@
 
 /// The silk the weaver can spend; the weave buttons read it, so it is written through its setter.
 /datum/trait_state/weaver/var/silk_reserve = 100
-TRACKED(/datum/trait_state/weaver, silk_reserve)
 
 /datum/trait_state/weaver
 	var/silk_max_reserve = 500

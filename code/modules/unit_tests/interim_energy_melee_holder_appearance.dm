@@ -5,8 +5,8 @@
 
 /// The holder's look is one draw: a redraw counts for both hands.
 /mob/living/carbon/human/interim_energy_melee_holder/draw(datum/look/look)
-	left_redraws++
-	right_redraws++
+	set_left_redraws(left_redraws + 1)
+	set_right_redraws(right_redraws + 1)
 	..()
 
 /// Draws the real look and applies it, observing the overlays it lays.
@@ -34,10 +34,10 @@
 		if(entry && entry.icon_state == "esword_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
-	bystander.left_redraws = 0
-	bystander.right_redraws = 0
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
+	bystander.set_left_redraws(0)
+	bystander.set_right_redraws(0)
 	sword.activate(holder)
 	TEST_ASSERT(sword.active, "the actual sword interaction extends its blade")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
@@ -66,8 +66,8 @@
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
 	refresh_flush() // the release's own redraw runs before the counters are zeroed
-	holder.left_redraws = 0
-	holder.right_redraws = 0
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
 	sword.observe()
 	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld energy sword does not redraw its former holder")
 	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld energy sword leaves its former holder's right hand untouched")

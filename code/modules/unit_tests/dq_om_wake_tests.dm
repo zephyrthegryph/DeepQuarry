@@ -122,7 +122,7 @@
 
 	C.upgradeMotion()
 	C.set_grid_power(TRUE)
-	C.status = TRUE
+	C.set_status(TRUE)
 	C.alarm_delay = 1
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(C))
 	C.newTarget(H)

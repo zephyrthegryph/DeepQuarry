@@ -22,8 +22,6 @@
 // single TGUI window with all channels/messages shipped in one payload
 // and curr_page driving the view. Photo embedding (browse_rsc) is not
 // yet wired through TGUI assets, so message photos are omitted.
-TRACKED(/obj/item/newspaper, curr_page)
-TRACKED(/obj/item/newspaper, scribble_page)
 
 MSG_DEF_SELF(newspaper/unintelligible, "the paper is full of unintelligible symbols")
 

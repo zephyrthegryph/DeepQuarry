@@ -1084,7 +1084,6 @@ CAPABILITIES(/obj/item/orion_ship)
 	var/gameprice = 1
 	var/winscreen = ""
 
-TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 
 /// Payment follows inherited ticket redemption; the selection gate keeps an already-paid
 /// machine or unavailable vendor account from swallowing the inherited interaction.

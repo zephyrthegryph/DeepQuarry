@@ -317,8 +317,6 @@ TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, mecha_starting_equipment, lis
 	if(stripe2_color)
 		look.overlay(look_appearance(icon, "gunpod_stripes2", color = stripe2_color))
 
-TRACKED(/obj/mecha/combat/fighter/gunpod, stripe1_color)
-TRACKED(/obj/mecha/combat/fighter/gunpod, stripe2_color)
 
 CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	op("gunpod_paint", item(/obj/item), label("Paint stripes"), then(PROC_REF(interaction_gunpod_paint)))

@@ -619,7 +619,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
 	play_sfx(src, SFX_SPARKS)
-	req_access = list()
+	set_req_access(list())
 	set_emagged(1)
 	set_locked(0)
 	cash_locked = 0

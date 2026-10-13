@@ -533,7 +533,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 	var/mob/user = A.actor
 	to_chat(user, span_danger("You stealthily swipe the cryptographic sequencer through \the [src]."))
 	play_sfx(src, SFX_SPARKS)
-	req_access = list()
+	set_req_access(list())
 	emagged = 1
 	return OP_OK
 

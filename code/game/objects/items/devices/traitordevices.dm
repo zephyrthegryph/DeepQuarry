@@ -28,7 +28,6 @@ effective or pretty fucking useless.
 	var/max_uses = 2
 
 
-TRACKED(/obj/item/batterer, times_used)
 TRACKED(/obj/item/batterer, max_uses)
 
 MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")

@@ -40,8 +40,6 @@ CAPABILITIES(/obj/structure/blob)
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
-TRACKED(/obj/structure/blob, look_title)
-TRACKED(/obj/structure/blob, look_tint)
 
 /// What the overmind gives the look: its blob type's name and colour, copied here so the look reads only this blob's own state. Called wherever the overmind
 /// or its type changes (inert blobs turn into other blobs with magic if another blob core claims one with pulsing).

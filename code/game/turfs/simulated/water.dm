@@ -24,7 +24,6 @@
 
 	var/watercolor = null
 
-TRACKED(/turf/simulated/floor/water, water_state)
 
 /turf/simulated/floor/water/Initialize(mapload)
 	. = ..()

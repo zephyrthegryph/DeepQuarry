@@ -250,7 +250,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating)
 	refresh_flush()
 	TEST_ASSERT(GLOB.refresh_sweep_list[REF(F)], "a drawn atom is tracked by the sweep")
 	TEST_ASSERT(!refresh_check_drift(F), "no drift right after a refresh")
-	F.drift_state = TRUE // deliberately unmarked
+	F.set_drift_state(TRUE) // deliberately unmarked
 	var/before = length(GLOB.refresh_drift)
 	set_global("refresh_drift_expected", TRUE)
 	var/found = refresh_check_drift(F)
@@ -417,7 +417,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating)
 	refresh_flush()
 	var/key = F.rx?.look_key
 	TEST_ASSERT(findtext(key, "mark_a"), "an image overlay keys by its icon_state: [key]")
-	F.mark_state = "mark_b"
+	F.set_mark_state("mark_b")
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_key != key, "a different image changes the key")
@@ -427,16 +427,16 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_overlays == applied, "an equal image (a fresh mutable_appearance) churns no overlays")
 
-	F.tinted = TRUE
+	F.set_tinted(TRUE)
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.color, "#ff0000", "set_color applied")
-	F.tinted = FALSE
+	F.set_tinted(FALSE)
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.color, initial(F.color), "a colour the look stopped setting goes back to the default")
 	TEST_ASSERT_EQUAL(F.icon_state, "look_on", "state still applied")
-	F.stated = FALSE
+	F.set_stated(FALSE)
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "look_default", "a state the look stopped setting goes back to the default")
@@ -446,7 +446,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating)
 /datum/unit_test/dx_core_refresh_throw_restores/Run()
 	var/obj/cap_fixture/dx_look/F = allocate(/obj/cap_fixture/dx_look)
 	refresh_flush()
-	F.explode = TRUE
+	F.set_explode(TRUE)
 	var/caught = FALSE
 	try
 		refresh_one(F, 0)
@@ -454,7 +454,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating)
 		caught = !!e
 	TEST_ASSERT(caught, "the draw failure propagated")
 	TEST_ASSERT(GLOB.refresh_running != F, "refresh_running was restored after the failure")
-	F.explode = FALSE
+	F.set_explode(FALSE)
 	state_changed(F) // would stack_trace REFRESH SELF-MARK with a stale refresh_running
 	refresh_flush()
 	TEST_ASSERT(!F.refresh_queued, "the next refresh ran")

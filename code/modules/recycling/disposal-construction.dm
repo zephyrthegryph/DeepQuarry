@@ -299,7 +299,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		var/pipetype = dpipetype()
 		var/obj/structure/disposalpipe/P = new pipetype(src.loc)
 		transfer_fingerprints_to(P)
-		P.base_icon_state = base_state
+		P.set_base_icon_state(base_state)
 		P.set_dir(dir)
 		P.dpdir = dpdir
 		if(ptype == DISPOSAL_PIPE_SORTER || ptype == DISPOSAL_PIPE_SORTER_FLIPPED)

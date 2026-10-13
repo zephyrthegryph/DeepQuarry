@@ -22,7 +22,6 @@
 	var/obj/item/scan_hand
 	var/datum/beam/scan_beam_effect
 	var/trading = 0
-TRACKED(/obj/item/slow_sizegun, sizeshift_mode)
 
 /// Set to true when scanning, to stop multiple scans.
 /obj/item/slow_sizegun/var/busy = FALSE

@@ -113,7 +113,6 @@ CAPABILITIES(/obj/item/gun/energy/crossbow/largecrossbow)
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
-TRACKED(/obj/item/gun/energy/stunrevolver/detective, unique_reskin)
 
 /// The detective's revolver is drawn from the sprite it was reskinned to.
 /obj/item/gun/energy/stunrevolver/detective/charge_state_name()

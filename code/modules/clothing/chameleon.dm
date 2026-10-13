@@ -13,8 +13,8 @@
 	set_body_parts_covered(worn_of(copy).covers)
 	set_flags_inv(worn_of(copy).hides)
 
-	item_icons = copy.item_icons?.Copy()
-	item_state_slots = copy.item_state_slots?.Copy()
+	set_item_icons(copy.item_icons?.Copy())
+	set_item_state_slots(copy.item_state_slots?.Copy())
 	set_sprite_sheets(copy.sprite_sheets?.Copy())
 	//copying sprite_sheets_obj should be unnecessary as chameleon items are not refittable.
 
@@ -60,7 +60,7 @@
 	name = "psychedelic"
 	desc = "Groovy!"
 	icon_state = "psyche"
-	LAZYSET(item_state_slots, slot_w_uniform_str, "psyche")
+	set_item_state_slots_at(slot_w_uniform_str, "psyche")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/under/chameleon)
@@ -443,7 +443,6 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 	/// The icon_state of the gun it mimics (null: its own base sprite); the look draws it, so a redraw keeps the disguise.
 	var/disguise_state
 
-TRACKED(/obj/item/gun/energy/chameleon, disguise_state)
 
 /// The look: the mimicked gun's sprite, whatever the charge.
 /obj/item/gun/energy/chameleon/charge_state_name()

@@ -623,7 +623,6 @@ CAPABILITIES(/obj/item/archaeological_find)
 			new_item = new /obj/item/reagent_containers/syringe(src.loc)
 			var/obj/item/reagent_containers/syringe/S = new_item
 
-			S.volume = 15
 			//If S hasn't initialized yet, S.reagents will be null.
 			//However, in that case Initialize will set the maximum volume to the volume for us, so we don't need to do anything.
 			S.reagents?.maximum_volume = 15

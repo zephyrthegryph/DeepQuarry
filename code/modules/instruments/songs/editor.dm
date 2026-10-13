@@ -153,7 +153,7 @@
 
 /datum/song/proc/ui_act_start_new_song(datum/act/op/A)
 	name = ""
-	lines = new()
+	set_lines(list())
 	tempo = sanitize_tempo(5) // default 120 BPM
 	return OP_OK
 
@@ -172,13 +172,13 @@
 	var/line_to_delete = line_deleted
 	if(line_to_delete > lines.len || line_to_delete < 1)
 		return FALSE
-	lines.Cut(line_to_delete, line_to_delete + 1)
+	cut_lines(line_to_delete, line_to_delete + 1)
 	return TRUE
 
 /// The line a modify button names is one of the song's.
 /datum/song/proc/line_exists(datum/act/op/A)
 	var/line = A.args["line_editing"]
-	return isnum(line) && line >= 1 && line <= length(lines) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return isnum(line) && line >= 1 && line <= length(lines)
 
 /datum/song/proc/edited_line(datum/act/op/A)
 	return lines[A.args["line_editing"]]
@@ -188,7 +188,7 @@
 		return FALSE
 	if(line_editing > lines.len || line_editing < 1 || !in_range(parent(), A.actor))
 		return FALSE
-	lines[line_editing] = A.step_value("line")
+	set_lines_at(line_editing, A.step_value("line"))
 	return TRUE
 
 //MODE STUFF
@@ -261,32 +261,32 @@
  */
 /datum/song/proc/ParseSong(mob/user, new_song)
 	//split into lines
-	lines = islist(new_song) ? new_song : splittext(new_song, "\n")
+	set_lines(islist(new_song) ? new_song : splittext(new_song, "\n"))
 	if(lines.len)
 		var/bpm_string = "BPM: "
 		if(findtext(lines[1], bpm_string, 1, length(bpm_string) + 1))
 			var/divisor = text2num(copytext(lines[1], length(bpm_string) + 1)) || 120 // default
 			tempo = sanitize_tempo(BPM_TO_TEMPO_SETTING(divisor))
-			lines.Cut(1, 2)
+			cut_lines(1, 2)
 		else
 			tempo = sanitize_tempo(5) // default 120 BPM
 		if(lines.len > MUSIC_MAXLINES)
 			if(user)
 				to_chat(user, "Too many lines!")
-			lines.Cut(MUSIC_MAXLINES + 1)
+			cut_lines(MUSIC_MAXLINES + 1)
 		var/linenum = 1
 		for(var/l in lines)
 			if(length_char(l) > MUSIC_MAXLINECHARS)
 				if(user)
 					to_chat(user, "Line [linenum] too long!")
-				lines.Remove(l)
+				remove_lines(l)
 			else
 				linenum++
 
 /datum/song/proc/append_answered_line(value)
 	if(length(value) > MUSIC_MAXLINECHARS)
 		value = copytext(value, 1, MUSIC_MAXLINECHARS)
-	lines.Add(value)
+	add_lines(value)
 
 /datum/prompt/text/song_line
 	max_len = MUSIC_MAXLINECHARS

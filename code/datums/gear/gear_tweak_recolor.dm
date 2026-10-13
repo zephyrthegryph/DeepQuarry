@@ -70,7 +70,7 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 			if(I.icon_override)
 				var/icon/swapped_override = _swap_icon(I.icon_override, swaps)
 				if(swapped_override)
-					I.icon_override = swapped_override
+					I.set_icon_override(swapped_override)
 			else
 				// No explicit override — mob renderer falls back to a per-slot default
 				// worn sheet (e.g. icons/inventory/uniform/mob.dmi for uniforms). Clone
@@ -92,13 +92,13 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 					if(default_worn)
 						var/icon/swapped_default = _swap_icon(default_worn, swaps)
 						if(swapped_default)
-							I.icon_override = swapped_default
+							I.set_icon_override(swapped_default)
 			if(islist(I.item_icons))
 				var/list/new_item_icons = list()
 				for(var/slot in I.item_icons)
 					var/icon/swapped_slot = _swap_icon(I.item_icons[slot], swaps)
 					new_item_icons[slot] = swapped_slot || I.item_icons[slot]
-				I.item_icons = new_item_icons
+				I.set_item_icons(new_item_icons)
 			if(islist(I.sprite_sheets))
 				var/list/new_sheets = list()
 				for(var/species in I.sprite_sheets)

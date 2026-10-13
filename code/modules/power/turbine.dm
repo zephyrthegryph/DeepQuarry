@@ -45,8 +45,6 @@
 	/// The compressor overlay's stage (0 none, 1..4 by rpm).
 	var/rpm_stage = 0
 
-TRACKED(/obj/machinery/compressor, starter)
-TRACKED(/obj/machinery/compressor, rpm_stage)
 
 // The gas turbine (doc/rewrite/final_api.html section 16): a compressor draws a tenth of the gas in front of it every machine service interval
 // while it is started (compressor_step(); a starter motor brings it to 1000 rpm), and its turbine turns the compressor's rpm into power
@@ -81,7 +79,6 @@ CAPABILITIES(/obj/machinery/compressor)
 	/// It makes power (its "running" overlay shows).
 	var/generating_shown = FALSE
 
-TRACKED(/obj/machinery/power/turbine, generating_shown)
 
 /obj/machinery/computer/turbine_computer
 	name = "gas turbine control computer"

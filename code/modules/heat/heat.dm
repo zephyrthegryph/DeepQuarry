@@ -19,7 +19,6 @@
 /// cleared lazily.
 /atom/var/heat_body
 
-TRACKED(/atom, heat_body)
 
 // ---------------------------------------------------------------- the API
 

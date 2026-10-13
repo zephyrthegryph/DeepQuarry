@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	var/new_ident = A.answer?.value
 	if(new_ident && new_ident != id_tag)
 		to_chat(A.actor, span_notice("You register [src] with the [new_ident] network."))
-		id_tag = new_ident
+		set_id_tag(new_ident)
 	return OP_OK
 
 //Guns cannot shoot through hull or generally dense turfs.

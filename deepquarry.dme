@@ -5872,6 +5872,7 @@
 #include "code\engine\_generated\declare.dm"
 #include "code\engine\_generated\stats.dm"
 #include "code\engine\_generated\actions.dm"
+#include "code\engine\_generated\auto_tracked.dm"
 #include "code\engine\_generated\tracked_lists.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES

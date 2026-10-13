@@ -19,8 +19,6 @@
 	var/list/areas_added
 	var/field_type = /obj/structure/atmospheric_retention_field
 	circuit = /obj/item/circuitboard/arf_generator
-TRACKED(/obj/machinery/atmospheric_field_generator, isactive)
-TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 TRACKED(/obj/machinery/atmospheric_field_generator, hatch_open)
 
 /obj/machinery/atmospheric_field_generator/impassable

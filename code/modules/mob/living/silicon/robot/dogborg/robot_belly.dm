@@ -55,7 +55,6 @@ CAPABILITIES(/datum/robot_belly)
 	return robot_belly
 
 /// The sleeper sets this; the robot's look watches it, so the sprite redraws when it changes.
-TRACKED(/datum/robot_belly, sleeper_state)
 
 /datum/robot_belly/proc/get_sleepers()
 	var/mob/living/silicon/robot/R = owner

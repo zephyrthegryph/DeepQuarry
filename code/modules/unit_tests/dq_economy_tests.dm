@@ -55,10 +55,10 @@
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_ENGINEERING), "Chief Engineer could not view Engineering finances")
 	TEST_ASSERT(!console.can_view_department(DEPARTMENT_MEDICAL), "Chief Engineer could view Medical finances")
 	TEST_ASSERT(!console.can_allocate_station_budget(), "Chief Engineer could allocate Station funds")
-	head_id.access |= ACCESS_CAPTAIN
+	head_id.include_access(ACCESS_CAPTAIN)
 	TEST_ASSERT(console.can_allocate_station_budget(), "Captain access could not allocate Station funds")
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_MEDICAL), "Captain access could not view every department")
-	console.authenticated = "Budget tester"
+	console.set_authenticated("Budget tester")
 	var/list/data = console.tgui_data(null)
 	TEST_ASSERT(length(data["department_finances"]), "Captain finance payload contained no department accounts")
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
@@ -574,7 +574,7 @@
 	register.price_list["meal"] = 25
 	var/obj/item/spacecash/ewallet/wallet = new(customer)
 	wallet.owner_name = customer_account.owner_name
-	wallet.worth = 60
+	wallet.set_worth(60)
 	register.scan_wallet(wallet, customer)
 	TEST_ASSERT_EQUAL(wallet.worth, 35, "real register did not debit the e-wallet")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 25, "real register did not credit Service for an e-wallet sale")
@@ -896,7 +896,7 @@
 	collaborator_mind.transfer_to(collaborator)
 	var/obj/item/card/id/collaborator_id = new(collaborator)
 	collaborator_id.associated_account_number = collaborator_account.account_number
-	collaborator_id.access = list(ACCESS_CARGO)
+	collaborator_id.set_access(list(ACCESS_CARGO))
 	dq_test_wear_id(collaborator, collaborator_id)
 
 	TEST_ASSERT(!SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "unapproved account could see the covert market feed")
@@ -993,7 +993,7 @@
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
 	auditor_id.associated_account_number = auditor_account.account_number
-	auditor_id.access = list(ACCESS_SECURITY)
+	auditor_id.set_access(list(ACCESS_SECURITY))
 	dq_test_wear_id(auditor, auditor_id)
 	TEST_ASSERT(SSsupply.market_security_auditor(auditor), "test Security ID did not authorize market forensics")
 	transaction.trace_strength = FACTION_AGENT_INVESTIGATION_THRESHOLD
@@ -1050,7 +1050,7 @@
 	contact_mind.transfer_to(contact)
 	var/obj/item/card/id/contact_id = new(contact)
 	contact_id.associated_account_number = contact_account.account_number
-	contact_id.access = list(ACCESS_CARGO)
+	contact_id.set_access(list(ACCESS_CARGO))
 	dq_test_wear_id(contact, contact_id)
 
 	var/datum/faction_agent_record/record = new
@@ -1111,7 +1111,7 @@
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
 	auditor_id.associated_account_number = auditor_account.account_number
-	auditor_id.access = list(ACCESS_SECURITY)
+	auditor_id.set_access(list(ACCESS_SECURITY))
 	dq_test_wear_id(auditor, auditor_id)
 	contract.record_contribution(auditor_account.account_number, 10, "Authenticated third-department work", auditor_account.owner_name)
 	var/list/reward_weights = contract.reward_recipient_weights()

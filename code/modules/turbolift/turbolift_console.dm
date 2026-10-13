@@ -68,7 +68,6 @@ CAPABILITIES(/obj/structure/lift)
 	var/light_up = FALSE
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
-TRACKED(/obj/structure/lift/button, light_up)
 
 
 /obj/structure/lift/button/proc/reset()

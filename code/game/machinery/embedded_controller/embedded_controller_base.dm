@@ -9,7 +9,6 @@
 
 /// TRUE while the program is cycling (its memory's "processing"): work_step() writes it each step, the display shows it.
 /obj/machinery/embedded_controller/var/processing_shown = FALSE
-TRACKED(/obj/machinery/embedded_controller, processing_shown)
 
 CAPABILITIES(/obj/machinery/embedded_controller)
 	configure(uses_power(idle = 10))

@@ -253,8 +253,6 @@
 		if(99 to 110)
 			return "statn_c100"
 
-TRACKED(/obj/machinery/recharge_station, gauge_state)
-TRACKED(/obj/machinery/recharge_station, cell_dead)
 /// The charge gauge the station shows (build_overlays()), refreshed by refresh_gauge() as the buffer charges.
 /obj/machinery/recharge_station/var/gauge_state
 /// TRUE while it has no external power and its buffer cell is empty.

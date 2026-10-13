@@ -683,15 +683,15 @@ CAPABILITIES(/datum/system/supply)
 			A.name = "[SP.containername] [SO.comment ? "([SO.comment])":"" ]"
 			if(SP.access)
 				if(isnum(SP.access))
-					A.req_access = list(SP.access)
+					A.set_req_access(list(SP.access))
 				else if(islist(SP.access) && SP.one_access)
 					var/list/L = SP.access // access var is a plain var, we need a list
-					A.req_one_access = L.Copy()
-					A.req_access = null
+					A.set_req_one_access(L.Copy())
+					A.set_req_access(null)
 				else if(islist(SP.access) && !SP.one_access)
 					var/list/L = SP.access
-					A.req_access = L.Copy()
-					A.req_one_access = null
+					A.set_req_access(L.Copy())
+					A.set_req_one_access(null)
 				else
 					log_runtime(span_danger("Supply pack with invalid access restriction [SP.access] encountered!"))
 

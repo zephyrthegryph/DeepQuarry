@@ -187,7 +187,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 
 /// Sheets of plasteel it would take to mend it fully (one per 150 points).
 /obj/machinery/door/blast/proc/sheets_to_mend()
-	return CEILING((max_integrity - get_integrity()) / 150, 1) // ALLOW(reads): a door's max_integrity is its type's constant
+	return CEILING((max_integrity - get_integrity()) / 150, 1)
 
 /obj/machinery/door/blast/proc/needs_mending(datum/act/A)
 	return (sheets_to_mend() > 0) ? null : MSG(blast_door/already_repaired)

@@ -71,7 +71,6 @@
 
 TRACKED(/obj/item/telecube, ready)
 TRACKED(/obj/item/telecube, glow_color)
-TRACKED(/obj/item/telecube, on_floor)
 
 /obj/item/telecube/draw(datum/look/look)
 	..()

@@ -1310,8 +1310,8 @@
 /datum/unit_test/dq_p2_smes/emp_scrambles_settings_and_drains/run_gate()
 	var/obj/machinery/power/smes/S = p2_smes()
 	p2_smes_set_charge(S, 3e6)
-	S.input_level = 12345
-	S.output_level = 54321
+	S.set_input_level(12345)
+	S.set_output_level(54321)
 	S.emp_act(1)
 	p2_settle()
 	TEST_ASSERT(same_charge(p2_smes_charge(S), 2e6, 50), "a severity one pulse took a million")

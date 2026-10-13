@@ -49,8 +49,6 @@ Pipelines + Other Objects -> Pipe network
 	/// Every pipe network whose normal_members roster lists this machine (the two-sided
 	/// partner of /datum/pipe_network.normal_members).
 	var/list/datum/pipe_network/network_memberships
-TRACKED(/obj/machinery/atmospherics, icon_connect_type)
-TRACKED(/obj/machinery/atmospherics, pipe_color)
 
 
 
@@ -161,7 +159,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 	return supports_engineered_material()
 
 /obj/machinery/atmospherics/proc/no_shell(datum/act/A)
-	return (!engineered_material_id) ? null : MSG(atmospherics/has_shell) // ALLOW(reads): asked when the sheets are used, never from a cached menu
+	return (!engineered_material_id) ? null : MSG(atmospherics/has_shell)
 
 /obj/machinery/atmospherics/proc/painter_swallowed(datum/act/op/A)
 	return OP_OK
@@ -172,7 +170,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 	var/datum/material/material = stock?.material
 	if(!material)
 		return OP_FAILED
-	engineered_material_id = material.name
+	set_engineered_material_id(material.name)
 	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
 	to_chat(A.actor, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
 	return OP_OK

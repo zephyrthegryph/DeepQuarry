@@ -140,8 +140,6 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 /obj/machinery/floor_light/proc/lit()
 	return on && use_power == USE_POWER_ACTIVE
 
-TRACKED(/obj/machinery/floor_light, damaged)
-TRACKED(/obj/machinery/floor_light, default_light_colour)
 
 /// What the panel shows while it draws power and works: its light, flickering once damaged, and the light it casts while lit.
 /obj/machinery/floor_light/draw(datum/look/look)

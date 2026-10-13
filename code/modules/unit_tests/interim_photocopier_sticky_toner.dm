@@ -7,7 +7,7 @@
 	TEST_ASSERT_EQUAL(machine.toner, initial(machine.toner), "the actual machine starts with its declared toner supply")
 	TEST_ASSERT(cartridge.toner_amount > 0, "the actual original cartridge has a positive declared refill")
 	var/refill_amount = cartridge.toner_amount
-	machine.toner = 10
+	machine.set_toner(10)
 	TEST_ASSERT(user.put_in_active_hand(cartridge), "the actor holds the exact original toner cartridge")
 	add_trait(cartridge, TRAIT_NODROP, "interim_photocopier_sticky")
 	TEST_ASSERT(user.release_refusal(cartridge, user), "actual inventory refuses cartridge consumption")

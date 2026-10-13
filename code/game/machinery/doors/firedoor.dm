@@ -75,10 +75,7 @@ TRACKED(/obj/machinery/door/firedoor, air_hot_3)
 TRACKED(/obj/machinery/door/firedoor, air_cold_3)
 TRACKED(/obj/machinery/door/firedoor, air_hot_4)
 TRACKED(/obj/machinery/door/firedoor, air_cold_4)
-TRACKED(/obj/machinery/door/firedoor, dir_alerts)
-TRACKED(/obj/machinery/door/firedoor, pdiff_alert)
 
-TRACKED(/obj/machinery/door/firedoor, blocked)
 TRACKED(/obj/machinery/door/firedoor, hatch_open)
 
 /obj/machinery/door/firedoor/Initialize(mapload)
@@ -247,7 +244,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// An alarm, a lockdown and no access keep a shut door shut (for whoever has no access).
 /obj/machinery/door/firedoor/proc/not_locked_out(datum/act/op/A)
-	return (!(density && lockdown && alarmed() && !allowed(A.actor))) ? null : MSG(firedoor/locked_out) // ALLOW(reads): the alarm and the lockdown are read when the question is asked and again when it is answered
+	return (!(density && lockdown && alarmed() && !allowed(A.actor))) ? null : MSG(firedoor/locked_out)
 
 /// What is asked: to open or close it, with the warning that opening it in an alarm is on whoever does.
 /// The yes button names what it does.
@@ -553,7 +550,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// Reads the air around a shut door: a pressure difference past the limit or a band of temperature on any side is an alert, and any alert is a lockdown.
 /obj/machinery/door/firedoor/proc/air_check(datum/act/A)
-	lockdown = FALSE
+	set_lockdown(FALSE)
 	pdiff = getOPressureDifferential(src.loc)
 	var/new_pdiff_alert = pdiff >= FIREDOOR_MAX_PRESSURE_DIFF
 	lockdown ||= new_pdiff_alert

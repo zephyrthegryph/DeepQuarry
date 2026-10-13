@@ -154,7 +154,7 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 /mob/living/silicon/robot/proc/robot_name_entered(entered)
 	var/newname = sanitizeSafe(entered || "", MAX_NAME_LEN)
 	if (newname && !custom_name)
-		custom_name = newname
+		set_custom_name(newname)
 		sprite_name = newname
 
 	updatename()

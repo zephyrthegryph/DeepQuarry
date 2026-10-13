@@ -244,7 +244,6 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	if(choice != selecting)
 		set_selecting(choice)
 
-TRACKED(/atom/movable/screen/zone_sel, selecting)
 
 /// The selected zone is drawn over the doll.
 /atom/movable/screen/zone_sel/draw(datum/look/look)

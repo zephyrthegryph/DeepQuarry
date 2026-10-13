@@ -1,4 +1,3 @@
-TRACKED(/mob/living/simple_mob, has_hands)
 
 // Reorganized and somewhat cleaned up.
 // AI code has been made into a datum, inside the AI module folder.
@@ -168,11 +167,6 @@ TRACKED(/mob/living/simple_mob, has_hands)
 	//no stripping of simplemobs
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
-TRACKED(/mob/living/simple_mob, icon_living)
-TRACKED(/mob/living/simple_mob, icon_dead)
-TRACKED(/mob/living/simple_mob, icon_rest)
-TRACKED(/mob/living/simple_mob, spitting)
-TRACKED(/mob/living/simple_mob, pouncing)
 
 CAPABILITIES(/mob/living/simple_mob)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
@@ -222,7 +216,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(!ID_provided)
 		return null
 	var/obj/item/card/id/card = new /obj/item/card/id(src)
-	card.access = id_access()
+	card.set_access(id_access())
 	return card
 
 /// The access its ID card starts with: the type's myid_access (a subtype may add to it).
@@ -645,7 +639,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 // Make sure you don't call ..() on this one, otherwise you duplicate work.
 /mob/living/simple_mob/init_vore(force)
 	if(force)
-		vore_active = TRUE
+		set_vore_active(TRUE)
 		voremob_loaded = TRUE
 	if(!vore_active || no_vore || !voremob_loaded)
 		return

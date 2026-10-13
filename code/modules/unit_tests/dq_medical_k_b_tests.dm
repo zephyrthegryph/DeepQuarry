@@ -67,7 +67,7 @@
 	var/obj/item/organ/internal/heart/O = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(O, "setup: the human has a heart")
 	O.set_robotic(ORGAN_ROBOT)
-	O.meat_type = null
+	O.set_meat_type(null)
 	O.set_initial_meat()
 	TEST_ASSERT_EQUAL(O.meat_type, /obj/item/stack/material/steel, "a robotic organ in an organic body yields steel")
 
@@ -183,9 +183,9 @@
 	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_STERILIZINE]
 	TEST_ASSERT_NOTNULL(R, "setup: sterilizine exists")
 	var/old_volume = R.volume
-	R.volume = 1
+	R.set_volume(1)
 	R.touch_obj(I)
-	R.volume = old_volume
+	R.set_volume(old_volume)
 	TEST_ASSERT_EQUAL(I.germ_level, 0, "sterilizine cleans an object to zero, never below")
 	var/obj/item/organ/internal/heart/O = allocate(/obj/item/organ/internal/heart)
 	O.germ_level = 0

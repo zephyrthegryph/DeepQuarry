@@ -6,8 +6,8 @@
 	var/obj/item/paiparts/cell/part = allocate(/obj/item/paiparts/cell, T)
 	made += list(user, device, part)
 	TEST_ASSERT_EQUAL(device.cell, PP_FUNCTIONAL, "actual pAI card initializes with functional power hardware")
-	device.cell = PP_MISSING
-	device.panel_open = TRUE
+	device.set_cell(PP_MISSING)
+	device.set_panel_open(TRUE)
 	TEST_ASSERT(user.put_in_active_hand(part), "the actor holds exact original replacement power part")
 	TEST_ASSERT(!user.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_KNOCKOUT), "actual repair actor starts capable")
 	perform_op(user, device, "install_cell", part, ORIGIN_CLICK, AUTH_PHYSICAL)

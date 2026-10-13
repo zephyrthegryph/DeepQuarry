@@ -223,8 +223,8 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "USDF"
 	C.set_registered_name(H.real_name)
 	return C
@@ -249,8 +249,8 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "USDF"
 	C.set_registered_name(H.real_name)
 	return C
@@ -273,8 +273,8 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s SolGov ID Card" // SolGov
 	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "SolGov Representative" // SolGov
 	C.set_registered_name(H.real_name)
 	return C

@@ -225,7 +225,6 @@
 		if("Belly")
 			open_request(src, /datum/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
-TRACKED(/mob/living/simple_mob/vore/zorgoia, goia_overlays)
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))

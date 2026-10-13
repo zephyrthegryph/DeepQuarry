@@ -86,7 +86,7 @@
 	mfo_walk_into(U, locked)
 	settle()
 	TEST_ASSERT(locked.density, "a door with access is shut to a drone")
-	locked.req_access = null
+	locked.set_req_access(null)
 	mfo_walk_into(U, locked)
 	settle()
 	TEST_ASSERT(!locked.density, "a public door opens for one")

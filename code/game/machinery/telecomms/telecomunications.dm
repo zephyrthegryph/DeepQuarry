@@ -172,7 +172,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(!listening_level)
 		//Defaults to our Z level!
 		var/turf/position = get_turf(src)
-		listening_level = position.z
+		set_listening_level(position.z)
 
 	if(length(autolinkers))
 		// Links nearby machines
@@ -372,7 +372,7 @@ CAPABILITIES(/obj/machinery/telecomms/hub)
 
 /obj/machinery/telecomms/relay/forceMove(atom/destination, direction, movetime)
 	. = ..(destination, direction, movetime)
-	listening_level = z
+	set_listening_level(z)
 
 /obj/machinery/telecomms/relay/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 

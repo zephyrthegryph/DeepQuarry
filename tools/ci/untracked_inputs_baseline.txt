@@ -1,20 +1,12 @@
 # untracked_inputs: reads of untracked state by stat inputs, requirements, outputs and draws (analyze gen deps). rule<TAB>file<TAB>normalized line.
 # Shrink-only: `analyze baseline --update --lint untracked_inputs` drops fixed sites and never adds one.
-stat_input_untracked	code/ATMOSPHERICS/atmospherics.dm	return (!engineered_material_id) ? null : MSG(atmospherics/has_shell) // ALLOW(reads): asked when the sheets are used, never from a cached menu
-stat_input_untracked	code/ATMOSPHERICS/components/omni_devices/mixer.dm	if(P.dir != port && !P.con_lock) // ALLOW(reads): the ports are asked when the button is pressed, never from a cached menu or look
-stat_input_untracked	code/ATMOSPHERICS/components/omni_devices/mixer.dm	if(P.dir != port && !P.con_lock) // ALLOW(reads): the ports are asked when the button is pressed, never from a cached menu or look
 stat_input_untracked	code/ATMOSPHERICS/components/unary/heat_exchanger.dm	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; it stays where it was built
 stat_input_untracked	code/ATMOSPHERICS/components/unary/heat_exchanger.dm	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; it stays where it was built
-stat_input_untracked	code/ATMOSPHERICS/components/unary/heat_exchanger.dm	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating) // ALLOW(reads): the exchanger level is fixed by where it was built; asked when the wrench is used
-stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
 stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
 stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe on a floor stays where it was built
 stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe on a floor stays where it was built
-stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	return (!(node && node.level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating) // ALLOW(reads): a pipe's level is fixed by its type; the node is the pipe network's link
 stat_input_untracked	code/ATMOSPHERICS/pipes/pipe_base.dm	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe stays where it was built
 stat_input_untracked	code/ATMOSPHERICS/pipes/pipe_base.dm	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe stays where it was built
-stat_input_untracked	code/ATMOSPHERICS/pipes/pipe_base.dm	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(pipe/plating) // ALLOW(reads): a pipe's level is fixed by where it was built; asked when the wrench is used
-stat_input_untracked	code/ATMOSPHERICS/pipes/pipe_base.dm	return (damaged_leak) ? null : MSG(pipe/not_cracked) // ALLOW(reads): asked when the welder is used, never from a cached menu
 stat_input_untracked	code/__defines/verdigris/_bindings_types.dm	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
 stat_input_untracked	code/_helpers/game.dm	return level in using_map.player_levels
 stat_input_untracked	code/_helpers/icons.dm	if(path in GLOB.dq_resolved_icon_path_cache)
@@ -49,9 +41,9 @@ stat_input_untracked	code/controllers/subsystems/job.dm	var/datum/department/dep
 stat_input_untracked	code/controllers/subsystems/job.dm	return department_datums[primary_department]
 stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
 stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
+stat_input_untracked	code/controllers/subsystems/tgui.dm	if(ui.user == user)
 stat_input_untracked	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 stat_input_untracked	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
-stat_input_untracked	code/datums/managed_browsers/feedback_form.dm	return length(feedback_body) && length(feedback_body) <= MAX_FEEDBACK_LENGTH // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/datums/operations/req.dm	var/datum/req/known = GLOB.reqs_interned[signature]
 stat_input_untracked	code/datums/operations/req.dm	GLOB.reqs_interned[signature] = R
 stat_input_untracked	code/engine/actions/coalesce.dm	if(GLOB.forms_trace)
@@ -66,12 +58,8 @@ stat_input_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) //
 stat_input_untracked	code/game/atom/_atom.dm	var/atom/L = loc
 stat_input_untracked	code/game/dna/dna_modifier.dm	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
 stat_input_untracked	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
 stat_input_untracked	code/game/jobs/whitelist.dm	if(!GLOB.whitelist)
 stat_input_untracked	code/game/jobs/whitelist.dm	return ("[M.ckey]" in GLOB.whitelist)
-stat_input_untracked	code/game/machinery/air_alarm.dm	return (islist(TLV[A.args?["env"]])) ? null : MSG(alarm/no_such_threshold) // ALLOW(reads): asked when the threshold button is pressed, never from a cached menu
-stat_input_untracked	code/game/machinery/atmoalter/canister.dm	return (!pressure_liner_material_id) ? null : MSG(canister/has_liner) // ALLOW(reads): asked when the sheets are used, never from a cached menu
 stat_input_untracked	code/game/machinery/atmoalter/meter.dm	return (!!locate_within(loc, /obj/machinery/atmospherics/pipe)) ? null : MSG(meter/no_pipe) // ALLOW(reads): asked when the multitool is used, never from a cached menu
 stat_input_untracked	code/game/machinery/atmoalter/meter.dm	return (!!locate_within(loc, /obj/machinery/atmospherics/pipe)) ? null : MSG(meter/no_pipe) // ALLOW(reads): asked when the multitool is used, never from a cached menu
 stat_input_untracked	code/game/machinery/atmoalter/portable_atmospherics.dm	return (connected_port() || locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : MSG(portable/no_port) // ALLOW(reads): asked when the wrench is used, never from a cached menu
@@ -86,64 +74,37 @@ stat_input_untracked	code/game/machinery/computer/arcade.dm	if(gamepaid == 0 && 
 stat_input_untracked	code/game/machinery/computer/arcade.dm	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
 stat_input_untracked	code/game/machinery/computer/cloning.dm	return (!QDELETED(active_BR)) ? null : MSG(req_failed) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
 stat_input_untracked	code/game/machinery/computer/cloning.dm	return (!QDELETED(active_BR)) ? null : MSG(req_failed) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
-stat_input_untracked	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-stat_input_untracked	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
 stat_input_untracked	code/game/machinery/computer/law.dm	if(using_map && !(read_once(user.z) in using_map.contact_levels))
 stat_input_untracked	code/game/machinery/computer/robot.dm	var/mob/living/original = user.mind.original_character // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
 stat_input_untracked	code/game/machinery/computer/robot.dm	return (user.mind.special_role && (original && original == user)) // ALLOW(reads): who may hack is asked when the question opens and again when it is answered, never cached
-stat_input_untracked	code/game/machinery/computer/security.dm	return (!!authenticated) ? null : MSG(records/not_authenticated) // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
 stat_input_untracked	code/game/machinery/computer/skills.dm	if(!using_map || (read_once(z) in using_map.contact_levels))
-stat_input_untracked	code/game/machinery/computer/skills.dm	return (!!authenticated) ? null : MSG(records/not_authenticated) // ALLOW(reads): who is logged in is asked when the button is pressed and again when the answer arrives, never cached
-stat_input_untracked	code/game/machinery/door_control.dm	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock) // ALLOW(reads): the access lists are read when the sequencer is tried
-stat_input_untracked	code/game/machinery/door_control.dm	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock) // ALLOW(reads): the access lists are read when the sequencer is tried
-stat_input_untracked	code/game/machinery/doors/airlock.dm	return get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
-stat_input_untracked	code/game/machinery/doors/airlock_electronics.dm	return (!secure) ? null : MSG(airlock_electronics/hardened) // ALLOW(reads): the hardened kind is a different type; the flag never changes
-stat_input_untracked	code/game/machinery/doors/blast_door.dm	return CEILING((max_integrity - get_integrity()) / 150, 1) // ALLOW(reads): a door's max_integrity is its type's constant
-stat_input_untracked	code/game/machinery/doors/door.dm	return (!broken_now() && get_integrity() >= max_integrity) ? null : MSG(door/repair_first) // ALLOW(reads): a door's max_integrity is its type's constant
-stat_input_untracked	code/game/machinery/doors/door.dm	return !reinforcing && get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
 stat_input_untracked	code/game/machinery/doors/firedoor.dm	if(A.firedoors_closed) // ALLOW(reads): an area's alarm flag is read when the door is used and again when the question is answered
-stat_input_untracked	code/game/machinery/doors/firedoor.dm	return (!(density && lockdown && alarmed() && !allowed(A.actor))) ? null : MSG(firedoor/locked_out) // ALLOW(reads): the alarm and the lockdown are read when the question is asked and again when it is answered
-stat_input_untracked	code/game/machinery/doors/windowdoor.dm	return (get_integrity() < max_integrity) ? null : MSG(windoor/good_condition) // ALLOW(reads): a door's max_integrity is its type's constant
 stat_input_untracked	code/game/machinery/pipe/construction.dm	return (isturf(loc)) ? null : MSG(pipe_item/not_on_floor) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 stat_input_untracked	code/game/machinery/pipe/construction.dm	return (isturf(loc)) ? null : MSG(pipe_item/not_on_floor) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
-stat_input_untracked	code/game/machinery/pipe/construction.dm	var/obj/machinery/atmospherics/fakeA = pipe_type // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 stat_input_untracked	code/game/machinery/pipe/construction.dm	for(var/obj/machinery/atmospherics/M in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 stat_input_untracked	code/game/machinery/pipe/construction.dm	for(var/obj/machinery/atmospherics/M in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
-stat_input_untracked	code/game/machinery/pipe/construction.dm	if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 stat_input_untracked	code/game/machinery/pipe/construction.dm	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 stat_input_untracked	code/game/machinery/pipe/construction.dm	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
-stat_input_untracked	code/game/machinery/pipe/construction.dm	if(P.piping_layer == piping_layer) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 stat_input_untracked	code/game/machinery/pipe/pipe_dispenser.dm	return (!unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1) ? null : MSG(pipedispenser/cannot_use) // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
 stat_input_untracked	code/game/machinery/pipe/pipe_dispenser.dm	return (!unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1) ? null : MSG(pipedispenser/cannot_use) // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
-stat_input_untracked	code/game/machinery/pipe/pipelayer.dm	return (on || metal) ? null : MSG(pipelayer/no_metal) // ALLOW(reads): the store is read when it is switched, never from a cached menu
-stat_input_untracked	code/game/machinery/pipe/pipelayer.dm	return (metal >= 1) ? null : MSG(pipelayer/empty) // ALLOW(reads): the store is read when it is touched, never from a cached menu
-stat_input_untracked	code/game/machinery/pipe/pipelayer.dm	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when a pipe is fed in, never from a cached menu
-stat_input_untracked	code/game/machinery/pipe/pipelayer.dm	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when a pipe is fed in, never from a cached menu
-stat_input_untracked	code/game/machinery/pipe/pipelayer.dm	return (round(metal) < max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when sheets are fed in, never from a cached menu
-stat_input_untracked	code/game/machinery/pipe/pipelayer.dm	return (round(metal) < max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when sheets are fed in, never from a cached menu
 stat_input_untracked	code/game/machinery/portable_turret.dm	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
 stat_input_untracked	code/game/machinery/portable_turret.dm	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
 stat_input_untracked	code/game/machinery/portable_turret.dm	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
 stat_input_untracked	code/game/machinery/portable_turret.dm	return (anchored || !istype(loc, /turf/space)) ? null : MSG(porta_turret/in_space) // ALLOW(reads): the floor under it is asked when the wrench turns, never cached
 stat_input_untracked	code/game/machinery/portable_turret.dm	return (anchored || !istype(loc, /turf/space)) ? null : MSG(porta_turret/in_space) // ALLOW(reads): the floor under it is asked when the wrench turns, never cached
-stat_input_untracked	code/game/machinery/recharger.dm	for(var/type in (small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices)) // ALLOW(reads): the lists are constants and an item's type is fixed for its life
 stat_input_untracked	code/game/machinery/telecomms/logbrowser.dm	return SelectedServer // ALLOW(reads): the server shown is asked when it is needed, never cached
-stat_input_untracked	code/game/machinery/telecomms/machine_interactions.dm	return (get_integrity() < max_integrity) ? null : MSG(tcomms/whole) // ALLOW(reads): the machine's integrity is asked when the paste is applied, never cached
 stat_input_untracked	code/game/machinery/telecomms/machine_interactions.dm	return (listening_level == TCOMMS_STATION_Z || z == TCOMMS_SATELLITE_Z) ? null : MSG(tcomms/cannot_lock) // ALLOW(reads): the relay's level is asked when the button is pressed
-stat_input_untracked	code/game/machinery/telecomms/machine_interactions.dm	return (listening_level == TCOMMS_STATION_Z || z == TCOMMS_SATELLITE_Z) ? null : MSG(tcomms/cannot_lock) // ALLOW(reads): the relay's level is asked when the button is pressed
-stat_input_untracked	code/game/mecha/mecha.dm	if(access_list==src.operation_req_access)
 stat_input_untracked	code/game/objects/items/bodybag.dm	var/reason = loc?.release_refusal(src, A.actor) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
 stat_input_untracked	code/game/objects/items/bodybag.dm	var/reason = loc?.release_refusal(src, A.actor) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
 stat_input_untracked	code/game/objects/items/bodybag.dm	var/reason = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): where the injector is carried and whether that lets it go are read when it is put in
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
+stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 stat_input_untracked	code/game/objects/items/devices/modkit.dm	if(!isturf(I.loc)) // ALLOW(reads): native target location is rechecked immediately before this instant refit with no wait or prompt
 stat_input_untracked	code/game/objects/items/devices/radio/radio.dm	if(!on)
 stat_input_untracked	code/game/objects/items/devices/uplink.dm	return loc
-stat_input_untracked	code/game/objects/items/devices/uplink.dm	if(!active)
 stat_input_untracked	code/game/objects/items/petrifier.dm	return (isturf(user.loc) || get_ultimate_mob(user) == target_ref()) ? null : MSG(petrifier/beeps)
-stat_input_untracked	code/game/objects/items/petrifier.dm	return target // ALLOW(reads): the one it aims at is read when the device is used, never from a cached menu
 stat_input_untracked	code/game/objects/items/petrifier.dm	return target // ALLOW(reads): the one it aims at is read when the device is used, never from a cached menu
 stat_input_untracked	code/game/objects/items/stacks/marker_beacons.dm	if(!isturf(user.loc)) // ALLOW(reads): where the user stands is read when the beacon is placed, never from a cached menu
 stat_input_untracked	code/game/objects/items/stacks/marker_beacons.dm	if(locate_within(user.loc, /obj/structure/marker_beacon)) // ALLOW(reads): the same read of where the user stands, for the beacons already on that tile
@@ -153,24 +114,17 @@ stat_input_untracked	code/game/objects/items/weapons/RCD.dm	if(istype(loc, /obj/
 stat_input_untracked	code/game/objects/items/weapons/RCD.dm	var/obj/item/rig_module/module = loc
 stat_input_untracked	code/game/objects/items/weapons/RCD.dm	if(istype(loc, /obj/item/mecha_parts/mecha_equipment)) // In a mech.
 stat_input_untracked	code/game/objects/items/weapons/RCD.dm	var/obj/item/mecha_parts/mecha_equipment/ME = loc
-stat_input_untracked	code/game/objects/items/weapons/id cards/station_ids.dm	return access // ALLOW(reads): a card's access is asked when the card is used, never cached
 stat_input_untracked	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
 stat_input_untracked	code/game/objects/items/weapons/storage/wallets.dm	return front_id
-stat_input_untracked	code/game/objects/structures/artstuff.dm	return (!finalized) ? null : MSG(canvas/finished) // ALLOW(reads): a finished painting is read when a stroke is made, never from a cached menu
-stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge // ALLOW(reads): what a door lets through is asked of the closet's own procs at the click; the menu entry is advisory
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down // ALLOW(reads): where the held item is read when it is put down; the click asks again
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out // ALLOW(reads): where the pusher is, and whether the closet still holds them, read again when the wait ends
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return isliving(A.actor) && A.actor.loc == src // ALLOW(reads): who is shut in is read when the entry is offered and when it is picked
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	for(var/mob/living/L in contents) // ALLOW(latent,reads): mobs are never latent; who is shut in is read when the entry is offered and when it is picked
 stat_input_untracked	code/game/objects/structures/crates_lockers/__closets.dm	if(L == user || !L.vore_prefs.devourable) //no eating yourself. 1984.
-stat_input_untracked	code/game/objects/structures/crates_lockers/closets/secure/personal.dm	if(!lock_locked(src) && registered_name && !broken) // ALLOW(reads): who owns it and whether it is locked is read when the entry is offered and when it is picked
 stat_input_untracked	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	return (A.actor?.loc != src) ? null : /datum/msg/req_failed // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
 stat_input_untracked	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(user.mind == owner_ref()) // ALLOW(reads): whose mind it is is read at the click; the locker is made for one mind and never changes it
 stat_input_untracked	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	return owner // ALLOW(reads): the owner is set once when the locker is made
-stat_input_untracked	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	return owner // ALLOW(reads): the owner is set once when the locker is made
-stat_input_untracked	code/game/objects/structures/crates_lockers/closets/walllocker.dm	return (amount > 0) ? null : /datum/msg/emerglocker/empty // ALLOW(reads): how many sets are left is read when the entry is offered and when it is picked
 stat_input_untracked	code/game/objects/structures/crates_lockers/crates.dm	return (A.actor?.loc != src) ? null : /datum/msg/req_failed // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
-stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(can_pad && !padding_material && !isnull(padding_type_of(A.held))) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(can_pad && !padding_material && !isnull(padding_type_of(A.held))) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	return (!!padding_material) ? null : MSG(bed/no_padding) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	return (!padding_material) ? null : MSG(chair/padded) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
@@ -194,68 +148,40 @@ stat_input_untracked	code/modules/body/body.dm	if(gained && owner)
 stat_input_untracked	code/modules/body/body.dm	PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
 stat_input_untracked	code/modules/body/body.dm	return owner.biology // ALLOW(reads): biology is fixed when the body is made; a reader asks it, nothing caches it
 stat_input_untracked	code/modules/body/limb_state.dm	var/mob/living/carbon/human/H = owner
-stat_input_untracked	code/modules/body/organs/organ.dm	if(butcherable && meat_type) // ALLOW(reads): the organ's meat is read when the butchery is tried, never from a cached menu
-stat_input_untracked	code/modules/body/organs/organ.dm	if(butcherable && meat_type) // ALLOW(reads): the organ's meat is read when the butchery is tried, never from a cached menu
 stat_input_untracked	code/modules/body/organs/organ_external.dm	for(var/obj/item/organ/external/E in (contents + src)) // ALLOW(reads): what is stuck in the limb is read when the limb is used, never from a cached menu
-stat_input_untracked	code/modules/body/organs/organ_external.dm	return (stage == 0 || stage == 2) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
-stat_input_untracked	code/modules/body/organs/organ_external.dm	return (stage == 1) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
-stat_input_untracked	code/modules/body/organs/organ_external.dm	return (stage == 2) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
-stat_input_untracked	code/modules/body/organs/organ_external.dm	return (stage == 3) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
 stat_input_untracked	code/modules/body/organs/organ_external.dm	return LAZYLEN(contents) > 0 // ALLOW(reads): the extraction question is asked from what the limb holds when the hemostat goes in
 stat_input_untracked	code/modules/body/plans/humanoid.dm	var/mob/living/carbon/human/H = owner
 stat_input_untracked	code/modules/client/preferences/middleware/character_setup.dm	return !isnull(GLOB.preference_entries_by_key[A.args["key"]])
 stat_input_untracked	code/modules/client/preferences_tgui.dm	return istype(GLOB.preference_entries_by_key[A.args["preference"]], /datum/preference/color)
-stat_input_untracked	code/modules/clothing/spacesuits/rig/rig.dm	if(!security_check_enabled)
-stat_input_untracked	code/modules/clothing/spacesuits/rig/rig.dm	else if(!ai_override_enabled)
-stat_input_untracked	code/modules/clothing/spacesuits/rig/rig.dm	if(malfunction_delay)
-stat_input_untracked	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-stat_input_untracked	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
 stat_input_untracked	code/modules/detectivework/tools/sample_kits.dm	var/why = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
 stat_input_untracked	code/modules/economy/ATM.dm	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/ATM.dm	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/ATM.dm	var/obj/item/card/card = QDELETED(held_card) ? null : held_card // ALLOW(reads): the card is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/ATM.dm	var/obj/item/card/card = QDELETED(held_card) ? null : held_card // ALLOW(reads): the card is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/Accounts.dm	if(department?.name in GLOB.department_accounts)
-stat_input_untracked	code/modules/economy/Accounts_DB.dm	return held_card && (ACCESS_CENT_CAPTAIN in held_card.access) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens (get_access_level() 2)
-stat_input_untracked	code/modules/economy/vending.dm	if(istype(held, R.item_path) && (held.name == R.item_name)) // ALLOW(reads): a record's type and name are fixed when the vendor is built; asked when an item is offered, never cached
-stat_input_untracked	code/modules/economy/vending.dm	if(istype(held, R.item_path) && (held.name == R.item_name)) // ALLOW(reads): a record's type and name are fixed when the vendor is built; asked when an item is offered, never cached
-stat_input_untracked	code/modules/economy/vending.dm	if(!(R.category & categories)) // ALLOW(reads): a product record's category is fixed when the vendor is built; asked when a purchase is chosen, never cached
 stat_input_untracked	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
 stat_input_untracked	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-stat_input_untracked	code/modules/fireworks/firework_launcher.dm	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
-stat_input_untracked	code/modules/fireworks/firework_launcher.dm	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 stat_input_untracked	code/modules/fireworks/firework_launcher.dm	return loaded_star // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 stat_input_untracked	code/modules/food/food/sandwich.dm	return (length(contents) <= sandwich_limit()) ? null : MSG(snack/collapses) // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
-stat_input_untracked	code/modules/food/food/snacks.dm	return package && !special_handling // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
-stat_input_untracked	code/modules/food/food/snacks.dm	return canned && !special_handling // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 stat_input_untracked	code/modules/food/food/snacks.dm	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray))) // ALLOW(reads): where the loaf lies is read when it is cut; the click asks again
 stat_input_untracked	code/modules/food/food/snacks.dm	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray))) // ALLOW(reads): where the loaf lies is read when it is cut; the click asks again
-stat_input_untracked	code/modules/food/food/snacks.dm	return (!has_been_heated) ? null : /datum/msg/snack/heat_spent // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
-stat_input_untracked	code/modules/food/food/snacks.dm	return !!wrapped // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 stat_input_untracked	code/modules/food/food/z_custom_food.dm	return (length(contents) < ingMax && length(contents) < INGREDIENT_LIMIT) ? null : /datum/msg/custom/stuffed // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
-stat_input_untracked	code/modules/food/food/z_custom_food.dm	return !addTop // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	total += J.w_class
-stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	if((max_space - total) >= I.w_class) // ALLOW(reads): the room is read when a thing is put in; the click asks again
 stat_input_untracked	code/modules/ghosttrap/trap.dm	if(!GLOB.ghost_traps)
 stat_input_untracked	code/modules/ghosttrap/trap.dm	return GLOB.ghost_traps[trap_key]
 stat_input_untracked	code/modules/ghosttrap/trap.dm	GLOB.ghost_traps[G.object] = G
-stat_input_untracked	code/modules/hydroponics/seed_storage.dm	return lockdown ? "it's locked down" : null // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
-stat_input_untracked	code/modules/hydroponics/trays/tray.dm	if(!(harvest && seed && seed.has_mob_product)) // ALLOW(reads): ripeness and the plant's kind are read when the ghost clicks, never cached
 stat_input_untracked	code/modules/hydroponics/trays/tray.dm	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed // ALLOW(reads): the port under the tray is looked for when the wrench is used
 stat_input_untracked	code/modules/hydroponics/trays/tray.dm	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed // ALLOW(reads): the port under the tray is looked for when the wrench is used
-stat_input_untracked	code/modules/instruments/songs/editor.dm	return isnum(line) && line >= 1 && line <= length(lines) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/integrated_electronics/core/assemblies.dm	return access_card
 stat_input_untracked	code/modules/integrated_electronics/core/assemblies/clothing.dm	return clothing
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
 stat_input_untracked	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
 stat_input_untracked	code/modules/integrated_electronics/core/integrated_circuit.dm	if(istype(loc, /obj/item/electronic_assembly))
 stat_input_untracked	code/modules/integrated_electronics/core/integrated_circuit.dm	return loc.tgui_host()
 stat_input_untracked	code/modules/integrated_electronics/subtypes/camera.dm	var/obj/item/integrated_circuit/output/video_camera/parent = loc
 stat_input_untracked	code/modules/integrated_electronics/subtypes/camera.dm	var/obj/item/integrated_circuit/output/video_camera/parent = loc
 stat_input_untracked	code/modules/library/lib_items.dm	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
-stat_input_untracked	code/modules/library/wikicomp.dm	return !crash && ishuman(A.actor) && A.args["donate"] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
 stat_input_untracked	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
 stat_input_untracked	code/modules/mining/resonator.dm	if(!isturf(target) && !isturf(target.loc)) // ALLOW(reads): native location is queried immediately before instant field creation with no wait or prompt
@@ -274,10 +200,6 @@ stat_input_untracked	code/modules/mob/living/carbon/human/species/station/protea
 stat_input_untracked	code/modules/mob/living/silicon/ai/life.dm	return ((!A.power_equip) && A.requires_power == 1 || istype(T, /turf/space)) && !istype(src.loc,/obj/item)
 stat_input_untracked	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)
 stat_input_untracked	code/modules/mob/living/silicon/pai/pai.dm	if(istype(src.loc,/obj/item/paicard))
-stat_input_untracked	code/modules/mob/living/silicon/robot/drone/drone.dm	return (can_pick_shell) ? null : /datum/msg/req_failed
-stat_input_untracked	code/modules/mob/living/silicon/robot/robot_abilities.dm	return (lights_on || has_power) ? null : /datum/msg/req_failed
-stat_input_untracked	code/modules/mob/living/silicon/robot/robot_abilities.dm	return (!custom_name) ? null : /datum/msg/req_failed
-stat_input_untracked	code/modules/mob/living/silicon/robot/robot_abilities.dm	return (!has_recoloured) ? null : /datum/msg/req_failed
 stat_input_untracked	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	if(infested) // If we've infested someone, use their ID.
 stat_input_untracked	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	return infested.GetIdCard()
 stat_input_untracked	code/modules/mob/mob.dm	var/atom/to_check = source.loc // ALLOW(reads): a helper a use condition asks about where the thing is held; the click asks again
@@ -288,38 +210,21 @@ stat_input_untracked	code/modules/modular_computers/file_system/programs/researc
 stat_input_untracked	code/modules/overmap/helpers.dm	if(using_map.use_overmap)
 stat_input_untracked	code/modules/overmap/helpers.dm	return GLOB.map_sectors["[z]"]
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
-stat_input_untracked	code/modules/paperwork/faxmachine.dm	return !!authenticated // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-stat_input_untracked	code/modules/paperwork/faxmachine.dm	return authenticated && copyitem // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-stat_input_untracked	code/modules/paperwork/faxmachine.dm	if(!authenticated || !copyitem || !(destination in GLOB.admin_departments)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-stat_input_untracked	code/modules/paperwork/faxmachine.dm	if(!authenticated || !copyitem || !(destination in GLOB.admin_departments)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-stat_input_untracked	code/modules/paperwork/faxmachine.dm	var/atom/page1 = B.pages[1] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/paperwork/filingcabinet.dm	return (length(contents) > 0) ? null : MSG(filingcabinet/empty) // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
-stat_input_untracked	code/modules/paperwork/paperbin.dm	return !length(papers) // ALLOW(reads): the bin's papers are read when it is reached into, never cached
-stat_input_untracked	code/modules/paperwork/photocopier.dm	return istype(tempAI) && toner >= 5 && length(tempAI.aiCamera?.aipictures) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+stat_input_untracked	code/modules/pda/contracts.dm	var/datum/contract/faction_agent/agent_contract = service.contracts_by_id[A.args["id"]]
 stat_input_untracked	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
 stat_input_untracked	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
 stat_input_untracked	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
-stat_input_untracked	code/modules/power/singularity/emitter.dm	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1) // ALLOW(reads): an emitter's max_integrity is its type's constant
 stat_input_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage // ALLOW(reads): the hand and the storage are read when the item is used, never from a cached menu
 stat_input_untracked	code/modules/power/smes.dm	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
-stat_input_untracked	code/modules/power/smes.dm	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
 stat_input_untracked	code/modules/power/smes.dm	if(user.loc == loc) // ALLOW(reads): where the actor stands is legacy mob state, read when the cable is offered
 stat_input_untracked	code/modules/power/smes.dm	if(user.loc == loc) // ALLOW(reads): where the actor stands is legacy mob state, read when the cable is offered
-stat_input_untracked	code/modules/power/smes.dm	return (get_integrity() < max_integrity) ? null : MSG(smes/whole) // ALLOW(reads): a unit's max_integrity is its type's constant
 stat_input_untracked	code/modules/power/solar.dm	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
 stat_input_untracked	code/modules/power/solar.dm	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
 stat_input_untracked	code/modules/projectiles/ammunition/smartmag.dm	return attached_cell
-stat_input_untracked	code/modules/reagents/holder/holder.dm	return reagent_by_id[id] // ALLOW(reads): the reagent lookup is read when a click asks (the blood test, a hot thing held to a container); the click asks again
-stat_input_untracked	code/modules/reagents/machinery/dispenser/dispenser2.dm	return !!LAZYACCESS(saved_recipes, A.step_value("a2")) // ALLOW(reads): the saved recipes are read when the name is answered, never cached
-stat_input_untracked	code/modules/reagents/machinery/dispenser/reagent_tank.dm	return !!possible_transfer_amounts // ALLOW(reads): the amounts are a type constant no code changes at run time
-stat_input_untracked	code/modules/reagents/machinery/pump.dm	return open ? null : (unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight)) // ALLOW(reads): the panel is read when a cell is offered to it, never from a cached menu
-stat_input_untracked	code/modules/reagents/machinery/pump.dm	return open ? null : (unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight)) // ALLOW(reads): the panel is read when a cell is offered to it, never from a cached menu
 stat_input_untracked	code/modules/reagents/machinery/pump.dm	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
-stat_input_untracked	code/modules/reagents/machinery/pump.dm	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
-stat_input_untracked	code/modules/reagents/reagent_containers/borghypo.dm	return !isnull(LAZYACCESS(saved_recipes, A.step_value("a1"))) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-stat_input_untracked	code/modules/research/message_server.dm	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 stat_input_untracked	code/modules/research/tg/machinery/mech_prosfab.dm	return (istype(D) && D.species && (D.species in GLOB.all_species)) ? null : MSG(prosfab/corrupted)
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
@@ -328,7 +233,6 @@ stat_input_untracked	code/modules/shuttles/shuttle.dm	return (moving_status == S
 stat_input_untracked	code/modules/shuttles/shuttles_web.dm	return shuttles_shuttles()[shuttle_tag] // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 stat_input_untracked	code/modules/tables/interactions.dm	return (A.held.loc == A.actor) ? null : MSG(table/not_in_hand) // ALLOW(reads): where the held item is read when it is put down; the click asks again
 stat_input_untracked	code/modules/tables/interactions.dm	if(!(can_reinforce && isliving(user) && istype(A.held, /obj/item/stack/material) && A.held.loc == user)) // ALLOW(reads): where the dragged stack is read when it is dropped on the table; the drop asks again
-stat_input_untracked	code/modules/tables/tables.dm	return get_integrity() < max_integrity // ALLOW(reads): a table's strength is read when a repair is tried; the click asks again before anything runs
 stat_input_untracked	code/modules/tgui/modules/communications.dm	return (!using_map || (get_z(A.actor) in using_map.contact_levels)) ? null : MSG(communications/out_of_range)
 stat_input_untracked	code/modules/tgui/modules/crew_monitor.dm	return (T && (T.z in using_map.player_levels)) ? null : MSG(crew_monitor/out_of_range)
 stat_input_untracked	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
@@ -368,18 +272,8 @@ draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	if(!underlays)
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[cache_name + "[D]"] = I
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[state + "[D]" + "[GLOB.pipe_colors[pipe_color]]"] = I
 draw_untracked	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = dir, color = PIPE_COLOR_BLUE))
-draw_untracked	code/ATMOSPHERICS/components/binary_devices/dp_vent_pump.dm	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipes come or go
-draw_untracked	code/ATMOSPHERICS/components/binary_devices/dp_vent_pump.dm	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipes come or go
-draw_untracked	code/ATMOSPHERICS/components/binary_devices/pump.dm	look.state("[base_icon]-[running_state()]")
-draw_untracked	code/ATMOSPHERICS/components/omni_devices/mixer.dm	total += P.concentration
-draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	var/prefix = mirrored ? "m" : "" // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
-draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
-draw_untracked	code/ATMOSPHERICS/components/trinary_devices/mixer.dm	var/prefix = tee ? "t" : (mirrored ? "m" : "") // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/mixer.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
-draw_untracked	code/ATMOSPHERICS/components/trinary_devices/mixer.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
-draw_untracked	code/ATMOSPHERICS/components/tvalve.dm	look.state("tvalve[mirrored ? "m" : ""][state]")
-draw_untracked	code/ATMOSPHERICS/components/unary/vent_pump.dm	if(!T.is_plating() && node && node.level == 1 && istype(node, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
 draw_untracked	code/_helpers/icons.dm	if(path in GLOB.dq_resolved_icon_path_cache)
 draw_untracked	code/_helpers/icons.dm	return GLOB.dq_resolved_icon_path_cache[path]
 draw_untracked	code/_helpers/icons.dm	GLOB.dq_resolved_icon_path_cache[path] = out
@@ -404,7 +298,6 @@ draw_untracked	code/_helpers/time.dm	return GLOB.midnight_rollovers
 draw_untracked	code/_onclick/hud/screen_objects.dm	var/datum/hud/owner_hud_now = src.hud // the relation itself: setting it redraws the hand
 draw_untracked	code/_onclick/hud/screen_objects.dm	look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', (owner_hud_now.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"))
 draw_untracked	code/_onclick/telekinesis.dm	return focus
-draw_untracked	code/_onclick/telekinesis.dm	return focus
 draw_untracked	code/controllers/kernel/system.dm	var/started = REALTIMEOFDAY
 draw_untracked	code/controllers/kernel/system.dm	var/started = REALTIMEOFDAY
 draw_untracked	code/controllers/kernel/system.dm	log_world("System [name] initialized lazily in [(REALTIMEOFDAY - started) / 10]s.")
@@ -424,67 +317,37 @@ draw_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.cont
 draw_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
-draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 draw_untracked	code/game/machinery/adv_med.dm	filter("type" = "alpha", "icon" = icon(icon, "alpha_mask", dir = dir == EAST ? EAST : WEST)),
-draw_untracked	code/game/machinery/ai_slipper.dm	return (!power_lost() && !broken_now() && !disabled) ? 1 : 0
 draw_untracked	code/game/machinery/atm_ret_field.dm	var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
 draw_untracked	code/game/machinery/cell_charger.dm	look.overlay(cell.icon_state, icon = cell.icon) // ALLOW(sys_dx_untracked_read): a cell's sprite is fixed for its life
 draw_untracked	code/game/machinery/cell_charger.dm	look.overlay(cell.icon_state, icon = cell.icon) // ALLOW(sys_dx_untracked_read): a cell's sprite is fixed for its life
 draw_untracked	code/game/machinery/cloning.dm	return occupant_mob
 draw_untracked	code/game/machinery/computer/aifixer.dm	return occupier // ALLOW(reads): the loaded AI is asked when it is needed, never cached
-draw_untracked	code/game/machinery/doorbell.dm	look.state("dbchime-[id_tag ? "standby" : "red"]")
-draw_untracked	code/game/machinery/doors/airlock.dm	var/damaged = get_integrity() < max_integrity * 3/4
-draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/firedoor.dm	for(var/i = 1 to ALERT_STATES.len)
 draw_untracked	code/game/machinery/doors/firedoor.dm	look.overlay(image(icon = icon, icon_state = "alert_[ALERT_STATES[i]]", dir = cdir))
-draw_untracked	code/game/machinery/doors/windowdoor.dm	look.state("[base_state][density ? "" : "open"]")
 draw_untracked	code/game/machinery/feeder.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 draw_untracked	code/game/machinery/floor_light.dm	look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
-draw_untracked	code/game/machinery/frame.dm	var/type = lowertext(name)
-draw_untracked	code/game/machinery/frame.dm	if(frame_type.icon_override)
-draw_untracked	code/game/machinery/gear_dispenser.dm	if(needs_power && !operable())
 draw_untracked	code/game/machinery/gear_dispenser.dm	return held_gear_disp
-draw_untracked	code/game/machinery/holosign.dm	if(!lit)
 draw_untracked	code/game/machinery/iv_drip.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 draw_untracked	code/game/machinery/medical_kiosk.dm	return active_user
-draw_untracked	code/game/machinery/neonsign.dm	if(!lit)
-draw_untracked	code/game/machinery/partslathe.dm	else if(busy)
-draw_untracked	code/game/machinery/pointdefense.dm	return (active && id_tag && operable()) ? 1 : 0
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
-draw_untracked	code/game/machinery/virtual_reality/vr_console.dm	look.state("[base_state][appearance_occupied()]")
-draw_untracked	code/game/machinery/vitals_monitor.dm	return victim
 draw_untracked	code/game/machinery/vitals_monitor.dm	return victim
 draw_untracked	code/game/mecha/equipment/tools/shield.dm	look.overlay("shield_droid", icon = icon)
 draw_untracked	code/game/mecha/mecha_appearance.dm	if(icon_exists(icon, "[mecha_base_state()]_cutter"))
 draw_untracked	code/game/mecha/space/shuttle.dm	look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = layer + 1))
-draw_untracked	code/game/objects/effects/chem/foam.dm	switch("[metal]")
-draw_untracked	code/game/objects/effects/decals/Cleanable/humans.dm	look.identity(name = dryname, desc = drydesc)
-draw_untracked	code/game/objects/effects/decals/Cleanable/humans.dm	look.identity(name = dryname, desc = drydesc)
-draw_untracked	code/game/objects/effects/decals/Cleanable/humans.dm	look.overlay(look_overlay_image(base_icon, "[look.state_so_far(src)]_flesh", dir = dir, color = fleshcolor, appearance_flags = RESET_COLOR))
-draw_untracked	code/game/objects/effects/decals/Cleanable/tracks.dm	var/truedir = track.direction
 draw_untracked	code/game/objects/effects/decals/Cleanable/tracks.dm	look.overlay(look_overlay_image(icon, state, dir = num2dir(truedir), color = track.basecolor))
-draw_untracked	code/game/objects/effects/decals/Cleanable/vore.dm	if(isnull(custombasename))
-draw_untracked	code/game/objects/effects/decals/Cleanable/vore.dm	look.set_color(dried ? adjust_brightness(custombasecolor, -50) : custombasecolor)
-draw_untracked	code/game/objects/effects/decals/Cleanable/vore.dm	look.identity(name = custombasename, desc = custombasedesc)
-draw_untracked	code/game/objects/effects/decals/crayon.dm	var/list/art = CACHED_KEY(crayon_art, "[art_type]|[art_color]|[art_shade]", art_type, art_color, art_shade)
 draw_untracked	code/game/objects/effects/simple_portals.dm	return linked_portal
 draw_untracked	code/game/objects/items.dm	standing.alpha = alpha
 draw_untracked	code/game/objects/items.dm	standing.color = color
-draw_untracked	code/game/objects/items.dm	if(icon_override)
 draw_untracked	code/game/objects/items.dm	if(icon_exists(species_sheet, icon_state)) //Checks to make sure our custom sheet actually HAS the icon_state
-draw_untracked	code/game/objects/items.dm	if(LAZYLEN(item_icons))
-draw_untracked	code/game/objects/items.dm	if(LAZYLEN(item_state_slots))
-draw_untracked	code/game/objects/items.dm	if(item_state)
 draw_untracked	code/game/objects/items/bodybag.dm	look.overlay(look_overlay_image(icon, "indicator[opened]", color = COLOR_LIME, appearance_flags = RESET_COLOR))
 draw_untracked	code/game/objects/items/devices/aicard.dm	return carded_ai
 draw_untracked	code/game/objects/items/devices/communicator/communicator.dm	if(video_source)
-draw_untracked	code/game/objects/items/devices/flash.dm	if(broken || !battery || battery.charge < charge_cost)
-draw_untracked	code/game/objects/items/devices/flash.dm	look.state("[base_icon]burnt")
 draw_untracked	code/game/objects/items/devices/flash.dm	if(isrobot(src.loc))
 draw_untracked	code/game/objects/items/devices/flash.dm	if(isrobot(src.loc))
 draw_untracked	code/game/objects/items/devices/flash.dm	var/mob/living/silicon/robot/R = src.loc
@@ -493,7 +356,6 @@ draw_untracked	code/game/objects/items/devices/flash.dm	if(istype(src.loc, /obj/
 draw_untracked	code/game/objects/items/devices/flash.dm	var/obj/item/rig_module/module = src.loc
 draw_untracked	code/game/objects/items/devices/flash.dm	if(module.holder && module.holder.wearer())
 draw_untracked	code/game/objects/items/devices/multitool.dm	return buffer
-draw_untracked	code/game/objects/items/devices/multitool.dm	return buffer
 draw_untracked	code/game/objects/items/devices/multitool.dm	return connecting
 draw_untracked	code/game/objects/items/devices/multitool.dm	return connectable
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	if(!on)
@@ -501,36 +363,21 @@ draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(mu
 draw_untracked	code/game/objects/items/devices/transfer_valve.dm	look.overlay("[tank_one.icon_state]")
 draw_untracked	code/game/objects/items/devices/transfer_valve.dm	look.underlay(look_overlay_image(icon, "[tank_two.icon_state]", pixel_x = -13))
 draw_untracked	code/game/objects/items/devices/transfer_valve.dm	look.underlay(look_overlay_image(icon, "[tank_two.icon_state]", pixel_x = -13))
-draw_untracked	code/game/objects/items/devices/translocator.dm	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
 draw_untracked	code/game/objects/items/glassjar.dm	look.underlay(look_overlay_image(icon, "[initial(icon_state)]_water"))
 draw_untracked	code/game/objects/items/robobag.dm	corptag_icon_state = corptag.icon_state
-draw_untracked	code/game/objects/items/stacks/stack.dm	if(no_variants || amount <= (max_amount * (1/3)))
 draw_untracked	code/game/objects/items/toys/toy_customizable.dm	look.overlay(look_appearance(icon, look.state_so_far(src), color = fabric_color))
 draw_untracked	code/game/objects/items/toys/toys.dm	look.overlay(look_appearance(icon, "[base]_blade", color = lcolor), active)
-draw_untracked	code/game/objects/items/toys/toys.dm	if (lights_glowing)
 draw_untracked	code/game/objects/items/toys/toys.dm	look.overlay(emissive_appearance(icon, "[drawn_state]-lights"))
-draw_untracked	code/game/objects/items/weapons/RMS.dm	look.overlay("rms_charge[max_charge ? min(round((stored_charge / max_charge) * 4), 4) : 0]")
 draw_untracked	code/game/objects/items/weapons/capture_crystal.dm	drawn_state = look.state(bound_mob.loc == src ? full_icon : empty_icon)
 draw_untracked	code/game/objects/items/weapons/capture_crystal.dm	drawn_state = look.state(bound_mob.loc == src ? full_icon : empty_icon)
-draw_untracked	code/game/objects/items/weapons/ecigs.dm	return icon_on
-draw_untracked	code/game/objects/items/weapons/ecigs.dm	return icon_off
-draw_untracked	code/game/objects/items/weapons/grenades/supermatter.dm	if(implode_at)
-draw_untracked	code/game/objects/items/weapons/id cards/cards.dm	look.set_icon(base_icon)
-draw_untracked	code/game/objects/items/weapons/id cards/cards.dm	look.set_icon(base_icon)
-draw_untracked	code/game/objects/items/weapons/material/gravemarker.dm	if(grave_name && epitaph)
-draw_untracked	code/game/objects/items/weapons/material/gravemarker.dm	if(grave_name && epitaph)
 draw_untracked	code/game/objects/items/weapons/material/kitchen.dm	look.overlay(look_appearance(icon, "loadedfood", color = loaded_color))
-draw_untracked	code/game/objects/items/weapons/material/twohanded.dm	drawn_state = look.state("[base_icon][wielded]")
 draw_untracked	code/game/objects/items/weapons/melee/energy.dm	look.overlay(look_appearance(icon, "[base]_blade_rainbow", color = "FFFFFF"), active)
 draw_untracked	code/game/objects/items/weapons/policetape.dm	if(ismob(loc))
 draw_untracked	code/game/objects/items/weapons/policetape.dm	if(ismob(loc))
 draw_untracked	code/game/objects/items/weapons/policetape.dm	look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 draw_untracked	code/game/objects/items/weapons/policetape.dm	return start
-draw_untracked	code/game/objects/items/weapons/policetape.dm	return start
 draw_untracked	code/game/objects/items/weapons/shields.dm	look.overlay(look_appearance(icon, "[base]_blade", color = lcolor))
 draw_untracked	code/game/objects/items/weapons/storage/firstaid.dm	look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
-draw_untracked	code/game/objects/items/weapons/storage/storage.dm	return empty ? null : starts_with
-draw_untracked	code/game/objects/items/weapons/storage/storage.dm	return empty ? null : starts_with
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(isrobotmultibelt(src.loc)) //We are in a multibelt
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(isrobotmultibelt(src.loc)) //We are in a multibelt
 draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(src.loc.loc, /mob/living/silicon/robot)) //We are in a multibelt that is in a robot! This is sanity in case someone spawns a multibelt in via admin commands.
@@ -548,7 +395,6 @@ draw_untracked	code/game/objects/items/weapons/tools/weldingtool.dm	if(mounting.
 draw_untracked	code/game/objects/mail.dm	look.overlay(look_overlay_image(icon, icon_state, color = colored_envelope))
 draw_untracked	code/game/objects/mail.dm	look.overlay(look_overlay_image(icon, icon_state, color = colored_envelope))
 draw_untracked	code/game/objects/structures/barricades.dm	if(!material)
-draw_untracked	code/game/objects/structures/bedsheet_bin.dm	if(amount == 0)
 draw_untracked	code/game/objects/structures/bonfire.dm	look.overlay(look_appearance(icon, state, appearance_flags = RESET_COLOR))
 draw_untracked	code/game/objects/structures/bonfire.dm	look.overlay(mutable_appearance(icon, state))
 draw_untracked	code/game/objects/structures/catwalk.dm	look.overlay(look_overlay_image(icon, "catwalk[connect]", dir = 1<<(i-1)))
@@ -559,10 +405,6 @@ draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	if(ispat
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return GLOB.closet_appearances[closet_appearance]
 draw_untracked	code/game/objects/structures/crates_lockers/__closets.dm	return closet_appearance
 draw_untracked	code/game/objects/structures/crates_lockers/vehiclecage.dm	look.show_copy_of(V, layer = layer - 0.1)
-draw_untracked	code/game/objects/structures/extinguisher.dm	look.state("[initial(icon_state)][opened ? "" : "_closed"]_[appearance_suffix()]")
-draw_untracked	code/game/objects/structures/flora/flora.dm	if(max_harvests > 0 && harvest_count < max_harvests)
-draw_untracked	code/game/objects/structures/flora/trees.dm	var/bulbs = (5 - light_shift)
-draw_untracked	code/game/objects/structures/flora/trees.dm	look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
 draw_untracked	code/game/objects/structures/flora/trees.dm	look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
 draw_untracked	code/game/objects/structures/low_wall.dm	return material?.icon_colour
 draw_untracked	code/game/objects/structures/low_wall.dm	return material?.icon_colour
@@ -572,9 +414,7 @@ draw_untracked	code/game/objects/structures/low_wall.dm	var/on_frame = locate_on
 draw_untracked	code/game/objects/structures/low_wall.dm	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 draw_untracked	code/game/objects/structures/low_wall.dm	I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 draw_untracked	code/game/objects/structures/low_wall.dm	look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
-draw_untracked	code/game/objects/structures/medical_stand.dm	var/percent = round((reagents.total_volume / beaker.volume) * 100)
 draw_untracked	code/game/objects/structures/railing.dm	look.overlay(look_overlay_image(icon, "[icon_modifier]corneroverlay"))
-draw_untracked	code/game/objects/structures/safe.dm	look.state("[initial(icon_state)][open ? "-open" : ""]")
 draw_untracked	code/game/objects/structures/simple_doors.dm	return material.door_icon_base
 draw_untracked	code/game/objects/structures/simple_doors.dm	return material.door_icon_base
 draw_untracked	code/game/objects/structures/simple_doors.dm	return material.door_icon_base
@@ -620,11 +460,6 @@ draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	retur
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	return padding_material?.use_name
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	if(padding_material)
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	if(padding_material)
-draw_untracked	code/game/objects/structures/tank_dispenser.dm	return oxygentanks >= 1 ? min(oxygentanks, 4) : 0
-draw_untracked	code/game/objects/structures/tank_dispenser.dm	return phorontanks >= 1 ? min(phorontanks, 5) : 0
-draw_untracked	code/game/objects/structures/watercloset.dm	var/spray_color = reagent_id == REAGENT_ID_WATER ? null : reagents.get_color()
-draw_untracked	code/game/objects/structures/window.dm	return fulltile
-draw_untracked	code/game/objects/structures/window.dm	look.effect(PROC_REF(window_tilt), LERP(0, 15, max_integrity ? get_integrity_damage() / max_integrity : 0) * tilt_sign)
 draw_untracked	code/game/objects/structures/window.dm	look.overlay(look_overlay_image(icon, "[basestate]", color = "#ffffff", alpha = silicate * 255 / 100), silicate > 0)
 draw_untracked	code/game/objects/structures/window.dm	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
 draw_untracked	code/game/turfs/flooring/seasonal.dm	look.overlay(CACHED_KEY(seasonal_grass_overlays, season_overlay, icon, season_overlay))
@@ -643,8 +478,6 @@ draw_untracked	code/game/turfs/simulated/floor_icon.dm	return "[flooring.icon_ba
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	return "[flooring.icon_base]-[GLOB.world_time_season]"
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	return flooring.icon_base
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	if(flooring)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.set_icon(base_icon)
-draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.state(base_icon_state)
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	else if(flooring)
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.identity(flooring.name, flooring.desc)
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.identity(flooring.name, flooring.desc)
@@ -658,7 +491,6 @@ draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.overlay(flooring.get
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-broken-[broken]","broken[broken]"))
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	if(!isnull(burnt) && (flooring.flags & TURF_CAN_BURN))
 draw_untracked	code/game/turfs/simulated/floor_icon.dm	look.overlay(flooring.get_flooring_overlay("[flooring.icon_base]-burned-[burnt]","burned[burnt]"))
-draw_untracked	code/game/turfs/simulated/underwater.dm	look.show(CACHED_KEY(underwater_visuals, "[overlay_icon]:[overlay_state]", overlay_icon, overlay_state))
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	if(!material)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return look_overlay_image(wall_masks, "[material.icon_base]fwall_open", color = material.icon_colour)
 draw_untracked	code/game/turfs/simulated/wall_icon.dm	return look_overlay_image(wall_masks, "[material.icon_base]fwall_open", color = material.icon_colour)
@@ -670,71 +502,47 @@ draw_untracked	code/game/turfs/simulated/wall_icon.dm	return CACHED_KEY(wall_ove
 draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
 draw_untracked	code/game/turfs/simulated/wall_types.dm	look.overlay(look_overlay_image(src.icon, "o_[drawn_state]", color = stripe_color))
 draw_untracked	code/game/turfs/simulated/wall_types.dm	if(stripe_color)
-draw_untracked	code/game/turfs/simulated/wall_types.dm	if(force_icon)
 draw_untracked	code/game/turfs/snow/snow.dm	look.overlay(look_overlay_image(icon, "footprint[i]", dir = text2num(d)))
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
-draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
 draw_untracked	code/modules/artifice/telecube.dm	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
 draw_untracked	code/modules/artifice/telecube.dm	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
-draw_untracked	code/modules/blob/blob.dm	return get_integrity() > max_integrity / 2 ? "blob" : "blob_damaged"
-draw_untracked	code/modules/blob2/blobs/base_blob.dm	look.identity(name = "[look_title] [base_name]")
-draw_untracked	code/modules/blob2/blobs/normal.dm	if(get_integrity_damage() >= max_integrity - 15)
 draw_untracked	code/modules/clothing/accessories/accessory.dm	if(!istype(loc, /obj/item/clothing))
 draw_untracked	code/modules/clothing/accessories/accessory.dm	if(!istype(loc, /obj/item/clothing))
 draw_untracked	code/modules/clothing/accessories/accessory.dm	var/mob/living/carbon/human/H = wearer
-draw_untracked	code/modules/clothing/accessories/accessory.dm	var/mob/living/carbon/human/H = wearer
-draw_untracked	code/modules/clothing/accessories/accessory.dm	return mob_overlay
 draw_untracked	code/modules/clothing/accessories/accessory.dm	return has_suit
 draw_untracked	code/modules/clothing/clothing.dm	look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
 draw_untracked	code/modules/clothing/clothing.dm	look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
-draw_untracked	code/modules/clothing/clothing.dm	look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
 draw_untracked	code/modules/clothing/clothing.dm	return master_rig
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(!istype(acc.loc, /obj/item/clothing))
-draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(H && istype(acc.loc, /obj/item/clothing/under))
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	var/obj/item/clothing/under/C = acc.loc
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
-draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.icon_override)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.color)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	result.appearance_flags = acc.appearance_flags
 draw_untracked	code/modules/clothing/clothing_icons.dm	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))
 draw_untracked	code/modules/clothing/clothing_icons.dm	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))
-draw_untracked	code/modules/clothing/clothing_icons.dm	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))
 draw_untracked	code/modules/clothing/clothing_icons.dm	var/mob/living/carbon/human/H = loc
 draw_untracked	code/modules/clothing/clothing_icons.dm	var/image/bloodsies = image(icon = H.species.get_blood_mask(H), icon_state = blood_sprite_state)
-draw_untracked	code/modules/clothing/clothing_icons.dm	var/cache_key = "[light_overlay][LAZYACCESS(sprite_sheets, body_type) ? "_[body_type]" : ""]"
 draw_untracked	code/modules/clothing/clothing_icons.dm	if(standing && !GLOB.light_overlay_cache[cache_key])
 draw_untracked	code/modules/clothing/clothing_icons.dm	GLOB.light_overlay_cache[cache_key] = look_cached_image("[light_overlay]-worn-[lamp_icon]", lamp_icon, light_overlay)
 draw_untracked	code/modules/clothing/clothing_icons.dm	if(standing && GLOB.light_overlay_cache[cache_key])
 draw_untracked	code/modules/clothing/clothing_icons.dm	standing.add_overlay(GLOB.light_overlay_cache[cache_key])
-draw_untracked	code/modules/clothing/glasses/glasses.dm	look.state(off_state)
 draw_untracked	code/modules/detectivework/microscope/microscope.dm	look.state("microscope[sample ? "slide" : ""]")
-draw_untracked	code/modules/detectivework/microscope/microscope.dm	look.state("microscope[sample ? "slide" : ""]")
-draw_untracked	code/modules/detectivework/tools/sample_kits.dm	if(length(evidence))
-draw_untracked	code/modules/eventkit/collector_event/blockers.dm	look.state("[base_icon]_[block_amount ? "off" : "on"]")
 draw_untracked	code/modules/fireworks/firework_launcher.dm	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	if(reagents.reagent_list.len > 0)
-draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	look.state(base_icon)
-draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	look.identity("[base_name] of [R.glass_name ? R.glass_name : "something"]", R.glass_desc ? R.glass_desc : initial(desc))
-draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 draw_untracked	code/modules/food/drinkingglass/drinkingglass.dm	if(icon_exists(icon, "[base_icon]_[S]"))
-draw_untracked	code/modules/food/food/condiment.dm	if(reagents.total_volume && volume)
 draw_untracked	code/modules/food/food/condiment.dm	look.overlay("[icon_state]-[clamp(round(100 * reagents.total_volume / volume, 25), 0, 100)]")
 draw_untracked	code/modules/food/food/snacks.dm	look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
 draw_untracked	code/modules/food/food/snacks.dm	look.overlay(look_overlay_image(pizza.icon, pizza.icon_state, pixel_y = -3))
 draw_untracked	code/modules/food/food/snacks.dm	look.overlay(look_overlay_image(pizza.icon, pizza.icon_state, pixel_y = -3))
 draw_untracked	code/modules/food/glass/bottle.dm	draw_glass(look, icon_state, TRUE, TRUE)
 draw_untracked	code/modules/food/kitchen/cooking_machines/_cooker.dm	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
-draw_untracked	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	return clamp((volume / size)**(1/3), min_scale, max_scale) //Scaling factor is square root of desired area
-draw_untracked	code/modules/food/kitchen/cooking_machines/container.dm	var/percent = round((food_items / max_space) * 100)
 draw_untracked	code/modules/food/kitchen/cooking_machines/container.dm	look.overlay("[icon_state]")
-draw_untracked	code/modules/food/kitchen/cooking_machines/oven.dm	look.state("[state_prefix]open")
-draw_untracked	code/modules/games/cards.dm	var/cardNumber = length(cards)
 draw_untracked	code/modules/games/cards.dm	look.overlay(look_overlay_image(icon, P.face_state(concealed), pixel_x = jitter_x, pixel_y = jitter_y))
 draw_untracked	code/modules/heat/heat.dm	HEAT_BODY_RESOLVE(src)
 draw_untracked	code/modules/heat/heat.dm	var/temperature = vg_heat_body_temperature(heat_body)
@@ -748,7 +556,6 @@ draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 draw_untracked	code/modules/holodeck/HolodeckObjects.dm	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_blade", color = lcolor), active)
-draw_untracked	code/modules/holomap/station_holomap.dm	look.overlay(look_overlay_image(holomaps_extraMiniMaps()["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], null, dir = dir))
 draw_untracked	code/modules/holomap/station_holomap.dm	look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
 draw_untracked	code/modules/holomap/station_holomap.dm	look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
 draw_untracked	code/modules/hydroponics/grown.dm	if(!seed() || !SSplants?.plant_icon_cache)
@@ -757,10 +564,6 @@ draw_untracked	code/modules/hydroponics/grown.dm	plant_icon = SSplants.plant_ico
 draw_untracked	code/modules/hydroponics/grown.dm	SSplants.plant_icon_cache[icon_key] = plant_icon
 draw_untracked	code/modules/hydroponics/seed.dm	return traits["[trait]"]
 draw_untracked	code/modules/hydroponics/spreading/spreading.dm	return parent
-draw_untracked	code/modules/hydroponics/spreading/spreading.dm	return parent
-draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	shown = mechanical ? "[base_name] ([seed.seed_name])" : "[seed.seed_name]"
-draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	shown = mechanical ? "[base_name] ([seed.seed_name])" : "[seed.seed_name]"
-draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/stages = seed.growth_stages || SSplants.plant_sprites[seed.get_trait(TRAIT_PLANT_ICON)]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/stages = seed.growth_stages || SSplants.plant_sprites[seed.get_trait(TRAIT_PLANT_ICON)]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	return look_overlay_image(icon, state, plane = PLANE_LIGHTING_ABOVE)
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/image/plant_overlay = SSplants.plant_icon_cache["[key]-[colour]"]
@@ -769,9 +572,6 @@ draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plan
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["[key]-[colour]"] = plant_overlay
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	var/image/harvest_overlay = SSplants.plant_icon_cache["product-[product_icon]-[plant_colour]"]
 draw_untracked	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["product-[product_icon]-[plant_colour]"] = harvest_overlay
-draw_untracked	code/modules/integrated_electronics/core/detailer.dm	look.overlay(look_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color", color = detail_color))
-draw_untracked	code/modules/integrated_electronics/core/tools.dm	else if(accepting_refs)
-draw_untracked	code/modules/integrated_electronics/core/tools.dm	else if(ref_wiring)
 draw_untracked	code/modules/maint_recycler/code/maint_recycler.dm	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
 draw_untracked	code/modules/maint_recycler/code/maint_recycler.dm	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
 draw_untracked	code/modules/maint_recycler/code/maint_recycler.dm	look.overlay(look_overlay_image(icon, "hepme", layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
@@ -780,15 +580,9 @@ draw_untracked	code/modules/makeup/nailpolish.dm	look.underlay(look_overlay_imag
 draw_untracked	code/modules/materials/engineering/material_composites.dm	if(M.name && GLOB.name_to_material[M.name] == M)
 draw_untracked	code/modules/materials/engineering/material_composites.dm	if(M.name && GLOB.name_to_material[M.name] == M)
 draw_untracked	code/modules/materials/engineering/material_composites.dm	if(M.name && GLOB.name_to_material[M.name] == M)
-draw_untracked	code/modules/materials/engineering/material_construction.dm	if(!material_template)
-draw_untracked	code/modules/materials/engineering/material_construction.dm	if(!material_template)
-draw_untracked	code/modules/materials/engineering/material_construction.dm	return material_bulk_material
-draw_untracked	code/modules/materials/engineering/material_construction.dm	return material_bulk_material
 draw_untracked	code/modules/materials/registry.dm	return GLOB.name_to_material[name]
 draw_untracked	code/modules/mining/mine_items.dm	return material_static
-draw_untracked	code/modules/mining/mine_items.dm	return material_static
 draw_untracked	code/modules/mining/mine_turfs.dm	return mineral_static
-draw_untracked	code/modules/mob/living/bot/medbot.dm	switch("[skin]")
 draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
@@ -818,116 +612,58 @@ draw_untracked	code/modules/mob/living/carbon/human/species/station/station_spec
 draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
 draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
 draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/silicon/ai/ai.dm	look.state(selected_sprite.dead_icon)
 draw_untracked	code/modules/mob/living/silicon/pai/pai.dm	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	var/obj/item/wrapped = shown_item
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	look.set_icon(sprite_datum.sprite_icon)
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	look.state(sprite_datum.sprite_icon_state)
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(stat == DEAD && sprite_datum.has_dead_sprite)
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(sprite_datum.has_dead_sprite_overlay)
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(sprite_datum.has_glow_sprites && glowy_enabled)
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(LAZYLEN(robotdecal_on) && LAZYLEN(sprite_datum.sprite_decals) && has_eyes())
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(sprite_datum.has_eye_sprites && has_eyes())
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(lights_on && sprite_datum.has_eye_light_sprites && has_eyes())
-draw_untracked	code/modules/mob/living/silicon/robot/robot_look.dm	if(!sprite_datum.has_vore_belly_resting_sprites)
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	return (sprite_flags & flag_to_check)
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	if(has_sleeper_light_indicator || length(belly_light_list))
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	return (ourborg.rest_style in rest_sprite_options) ? ourborg.rest_style : "Default"
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	if(!(ourborg.resting && has_rest_sprites))
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	else if(ourborg.resting && has_rest_eyes_sprites)
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	else if(ourborg.resting && has_rest_lights_sprites)
-draw_untracked	code/modules/mob/living/silicon/robot/sprites/_sprite_datum.dm	if(has_custom_open_sprites)
 draw_untracked	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
 draw_untracked	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
-draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	if(vore_active && vore_fullness)
 draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	var/draw_icon = icon
 draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	look.eyes(src, eye_state, custom_eye_color, !isnull(eye_state))
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	look.state("flesh-[state ? "open" : "closed"]")
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	state = "[icon_living][previous ? 1 : 0]_hunt"
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	state = "[icon_living][previous ? 1 : 0]"
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(previous)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(previous) //midsection
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(previous) //midsection
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(next)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(next)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.watch(next)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.set_color(next.color)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.set_color(next.color)
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	if(shiny)
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = hat.color, appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	look.overlay(look_overlay_image(icon, mane_state, plane = PLANE_LIGHTING_ABOVE, color = mane_color, appearance_flags = (appearance_flags | RESET_COLOR)))
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/rakshasa_trap.dm	look.set_color(basecolor)
 draw_untracked	code/modules/modular_computers/computers/modular_computer/core.dm	var/datum/computer_file/program/running = active_program // the relation var itself, so rel_set/rel_clear redraw
 draw_untracked	code/modules/modular_computers/computers/modular_computer/core.dm	if(running && !QDELETED(running))
 draw_untracked	code/modules/modular_computers/computers/modular_computer/core.dm	var/program_state = running.program_icon_state ? running.program_icon_state : icon_state_menu
 draw_untracked	code/modules/modular_computers/computers/modular_computer/core.dm	look.overlay(running.program_key_state, when = !!running.program_key_state, icon = overlay_icon)
-draw_untracked	code/modules/multiz/ladders.dm	return !!(allowed_directions & UP)
 draw_untracked	code/modules/paperwork/clipboard.dm	return haspen
 draw_untracked	code/modules/paperwork/clipboard.dm	return toppaper
-draw_untracked	code/modules/paperwork/paper_bundle.dm	if(!length(pages))
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.state(top.icon_state)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	for(var/list/mark in top.stamp_marks)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.overlay(Ph.tiny)
-draw_untracked	code/modules/paperwork/paperbin.dm	look.state("paper_bin[amount ? "1" : "0"]")
-draw_untracked	code/modules/persistence/noticeboard.dm	look.state("[base_icon_state][appearance_count()]")
 draw_untracked	code/modules/power/cable.dm	if(!(flags & ATOM_INITIALIZED))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
-draw_untracked	code/modules/power/cell.dm	material_discharge_credit = material_discharge_limit
-draw_untracked	code/modules/power/cell.dm	material_discharge_credit = material_discharge_limit
-draw_untracked	code/modules/power/cell.dm	material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
-draw_untracked	code/modules/power/cell.dm	material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
 draw_untracked	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))
 draw_untracked	code/modules/power/fusion_coil.dm	look.overlay(mutable_appearance(icon, "fc_unstable"))
-draw_untracked	code/modules/power/gravitygenerator.dm	look.state("[get_status()]_[sprite_number]")
-draw_untracked	code/modules/power/lighting.dm	look.state("[base_state]-alert-[current_alert]")
 draw_untracked	code/modules/power/lighting.dm	overlay_layer = image(icon, "[provided_state]-overlay")
-draw_untracked	code/modules/power/lighting.dm	look.state(base_state)
 draw_untracked	code/modules/power/port_gen.dm	look.overlay(mutable_appearance(icon, "eggrad", alpha = 90)) //v.faint glow for reasons. the reasons being it's producing radiation as per code
 draw_untracked	code/modules/power/power_grid.dm	var/list/info = id > 0 ? vg_power_region_read(id) : null
 draw_untracked	code/modules/power/singularity/emitter.dm	return powered && power_region && avail(power_of(src).active) && active
 draw_untracked	code/modules/power/singularity/emitter.dm	var/image/emitterbeam = image(icon, "emitter-beam")
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	suffix = powered ? "p[strength]" : "c"
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	suffix = powered ? "p[strength]" : "c"
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	look.state("[reference][suffix]")
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_control.dm	look.state("[reference]p[strength]")
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_control.dm	look.state("[reference]p[strength]")
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_control.dm	look.state(assembled ? "[reference]p" : "u[reference]p")
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	look.overlay(look_overlay_image(icon, "[base]-material", color = target_material_color()))
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	var/power_percent = round((energy / max_energy) * 100)
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return material_stack.material?.icon_colour || "#aaaaaa"
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return material_stack.material?.icon_colour || "#aaaaaa"
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return material_stack.material?.icon_colour || "#aaaaaa"
-draw_untracked	code/modules/projectiles/ammunition.dm	for(var/idx in 1 to length(icon_keys))
-draw_untracked	code/modules/projectiles/ammunition.dm	new_state = LAZYACCESS(ammo_states, idx)
-draw_untracked	code/modules/projectiles/ammunition/handful.dm	if(caliber)
 draw_untracked	code/modules/projectiles/ammunition/smartmag.dm	return attached_cell
 draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_type", color = batt_color))
 draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_overlay_image(icon, "[capname]_cap", pixel_x = current * x_offset, color = batt.type_color)) //Caps don't need a pixel_y offset
-draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_overlay_image(icon, "[capname]_cap", pixel_x = current * x_offset, color = batt.type_color)) //Caps don't need a pixel_y offset
 draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm	look.overlay(look_appearance(icon, "[initial(icon_state)]_ends", color = type_color))
-draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/multi_cannon.dm	var/percent_charged = round((bat.charge/bat.max_charge)*100)
 draw_untracked	code/modules/projectiles/guns/energy/cell_loaded/multi_cannon.dm	look.overlay(look_overlay_image(icon, istate, color = indicator_colour))
 draw_untracked	code/modules/projectiles/guns/energy/cyborg.dm	look.overlay(look_appearance(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 draw_untracked	code/modules/projectiles/guns/energy/protector.dm	look.overlay(look_overlay_image(icon, charge_state, pixel_x = ammo_x_offset * (i - 1)))
 draw_untracked	code/modules/projectiles/guns/launcher/pneumatic.dm	return tank
-draw_untracked	code/modules/projectiles/guns/launcher/pneumatic.dm	return tank
 draw_untracked	code/modules/projectiles/guns/launcher/syringe_gun.dm	return syringe
-draw_untracked	code/modules/projectiles/guns/magnetic/magnetic.dm	else if(capacitor.charge < power_cost)
-draw_untracked	code/modules/projectiles/guns/projectile/automatic_serdy.dm	if(unique_reskin)
-draw_untracked	code/modules/projectiles/guns/projectile/dartgun.dm	look.state("[base_state][appearance_suffix()]")
 draw_untracked	code/modules/reagents/Chemistry-Colours.dm	if(!reagent_list || !reagent_list.len)
 draw_untracked	code/modules/reagents/Chemistry-Colours.dm	if(!reagent_list || !reagent_list.len)
-draw_untracked	code/modules/reagents/Chemistry-Colours.dm	return R.color
-draw_untracked	code/modules/reagents/Chemistry-Colours.dm	return R.color
-draw_untracked	code/modules/reagents/Chemistry-Colours.dm	WARNING("Reagent [R.id] has an incorrect color set ([R.color])")
-draw_untracked	code/modules/reagents/Chemistry-Colours.dm	WARNING("Reagent [R.id] has an incorrect color set ([R.color])")
-draw_untracked	code/modules/reagents/Chemistry-Colours.dm	colors[1] += hex2num(copytext(hex, 2, 4)) * R.volume * R.color_weight
-draw_untracked	code/modules/reagents/Chemistry-Colours.dm	colors[1] += hex2num(copytext(hex, 2, 4)) * R.volume * R.color_weight
 draw_untracked	code/modules/reagents/chemistry_service.dm	log_world("Chemistry service initialized: [length(chemical_reagents)] reagents, [length(chemical_reactions)] reactions.")
 draw_untracked	code/modules/reagents/chemistry_service.dm	log_world("Chemistry service initialized: [length(chemical_reagents)] reagents, [length(chemical_reactions)] reactions.")
 draw_untracked	code/modules/reagents/chemistry_service.dm	chemical_reactions += D
@@ -936,62 +672,39 @@ draw_untracked	code/modules/reagents/chemistry_service.dm	distilled_reactions_by
 draw_untracked	code/modules/reagents/chemistry_service.dm	LAZYINITLIST(chemical_reactions_by_product[D.result])
 draw_untracked	code/modules/reagents/chemistry_service.dm	chemical_reactions_by_product[D.result] |= D // for reverse lookup
 draw_untracked	code/modules/reagents/chemistry_service.dm	chemical_reagents[D.id] = D
-draw_untracked	code/modules/reagents/holder/holder.dm	if(A.volume > the_volume)
-draw_untracked	code/modules/reagents/holder/holder.dm	var/datum/reagent/current = reagent_by_id[id]
 draw_untracked	code/modules/reagents/holder/holder.dm	return current.volume >= amount ? 1 : 0
-draw_untracked	code/modules/reagents/holder/holder.dm	var/datum/reagent/current = reagent_by_id[id]
 draw_untracked	code/modules/reagents/holder/holder.dm	return current.volume
 draw_untracked	code/modules/reagents/machinery/bunsen_burner.dm	look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
 draw_untracked	code/modules/reagents/machinery/bunsen_burner.dm	look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
 draw_untracked	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	look.underlay(look_overlay_image(icon, "synth_catalyst", layer = -1, color = catalyst.reagents.tint))
-draw_untracked	code/modules/reagents/machinery/distillery.dm	look.overlay("[base_state]-input", InputBeaker)
-draw_untracked	code/modules/reagents/machinery/distillery.dm	if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
-draw_untracked	code/modules/reagents/machinery/pump.dm	look.watch(cell)
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.watch(cell)
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.overlay("[base]-lowpower", !(cell?.check_charge(power_of(src).active)))
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.overlay(look_overlay_image(icon, "[base]-volume", color = reagents.get_color()))
-draw_untracked	code/modules/reagents/machinery/pump.dm	if(open)
 draw_untracked	code/modules/reagents/machinery/pump.dm	look.overlay("[base]-cell", istype(cell))
-draw_untracked	code/modules/reagents/reagent_containers/blood_pack.dm	var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 draw_untracked	code/modules/reagents/reagent_containers/glass.dm	var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
-draw_untracked	code/modules/reagents/reagent_containers/glass.dm	var/percent = volume ? round((R.total_volume / volume) * 100) : 0
 draw_untracked	code/modules/reagents/reagent_containers/spray.dm	look.overlay("[icon_state]+hose")
 draw_untracked	code/modules/reagents/reagent_containers/syringes.dm	if(isstorage(loc))
 draw_untracked	code/modules/reagents/reagent_containers/syringes.dm	if(isstorage(loc))
-draw_untracked	code/modules/reagents/reagent_containers/syringes.dm	var/rounded_vol = round(reagents.total_volume, round(reagents.maximum_volume / 3))
 draw_untracked	code/modules/reagents/reagent_containers/syringes.dm	look.overlay(look_overlay_image(icon, "filler[rounded_vol]", color = reagents.tint))
 draw_untracked	code/modules/reagents/reagent_containers/syringes.dm	if(ismob(loc))
-draw_untracked	code/modules/recycling/disposal.dm	look.state("[base_icon_state]")
 draw_untracked	code/modules/refinery/core/industrial_reagent_filter.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = R.tint, dir = dir))
 draw_untracked	code/modules/refinery/core/industrial_reagent_furnace.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r", color = reagents.get_color(), dir = dir))
 draw_untracked	code/modules/refinery/core/industrial_reagent_grinder.dm	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
 draw_untracked	code/modules/refinery/core/industrial_reagent_hub.dm	look.overlay(look_overlay_image(icon, intake ? "hub_intakes" : "hub_cons", dir = dir))
 draw_untracked	code/modules/refinery/core/industrial_reagent_machines.dm	var/image/intake = image(icon, icon_state = overlay_state, dir = direction)
-draw_untracked	code/modules/refinery/core/industrial_reagent_mixer.dm	switch((R.total_volume / R.maximum_volume) * 100)
 draw_untracked	code/modules/refinery/core/industrial_reagent_mixer.dm	look.overlay(look_overlay_image(icon, "mixer_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
 draw_untracked	code/modules/refinery/core/industrial_reagent_pump.dm	look.overlay(look_overlay_image(icon, "pump_r", color = R.tint, dir = dir))
 draw_untracked	code/modules/refinery/core/industrial_reagent_reactor.dm	var/image/pipe = image(icon, icon_state = "reactor_cons", dir = dir)
-draw_untracked	code/modules/refinery/core/industrial_reagent_vat.dm	switch((R.total_volume / R.maximum_volume) * 100)
 draw_untracked	code/modules/refinery/core/industrial_reagent_vat.dm	look.overlay(look_overlay_image(icon, "vat_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
-draw_untracked	code/modules/refinery/core/industrial_reagent_vat.dm	look.overlay("vat_dot_[amount_per_transfer_from_this > 0 ? "on" : "off"]")
-draw_untracked	code/modules/refinery/equipment/chemcontainer.dm	switch((R.total_volume / R.maximum_volume) * 100)
 draw_untracked	code/modules/refinery/equipment/chemcontainer.dm	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_c[percent]", color = R.tint, dir = NORTH))
-draw_untracked	code/modules/refinery/equipment/pumprelay.dm	switch((R.total_volume / R.maximum_volume) * 100)
 draw_untracked	code/modules/refinery/equipment/pumprelay.dm	look.overlay(look_overlay_image(icon, "pumprelay_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
 draw_untracked	code/modules/research/tg/machinery/mech_fabricator.dm	look.overlay("fab-active", when = !!being_built)
 draw_untracked	code/modules/research/tg/machinery/mech_prosfab.dm	look.state(being_built ? "prosfab-active" : "prosfab")
-draw_untracked	code/modules/research/tg/server.dm	look.state("[base_icon_state]-[appearance_suffix()]")
-draw_untracked	code/modules/resleeving/machines.dm	return broken ? "g" : "0"
 draw_untracked	code/modules/shieldgen/energy_field.dm	look.overlay(look_overlay_image(icon, "shield_edge", dir = direction))
 draw_untracked	code/modules/skybox_service.dm	if(initialized)
 draw_untracked	code/modules/tables/tables.dm	layers += get_table_image(icon, connections?[i] || 0, 1<<(i-1))
 draw_untracked	code/modules/vehicles/Securitrain.dm	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = layer + 0.2)) // over mobs
 draw_untracked	code/modules/vehicles/bike.dm	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
-draw_untracked	code/modules/vehicles/cargo_train.dm	var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 draw_untracked	code/modules/vehicles/cargo_train.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r_[percent]", color = reagents.get_color(), dir = NORTH))
 draw_untracked	code/modules/vehicles/quad.dm	look.overlay(look_overlay_image(paint_icon, "[frame_state]_a", layer = layer, color = paint_color))
 draw_untracked	code/modules/vehicles/quad.dm	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = layer, color = paint_color))
-draw_untracked	code/modules/vore/fluffstuff/custom_items.dm	drawn_state = look.state("[base_icon][wielded][status]")
-draw_untracked	code/modules/vore/resizing/sizegun_slow.dm	look.state("[base_icon_state]-[sizeshift_mode][busy ? "-active" : ""]")
-draw_untracked	code/modules/weapons/MadokaSpear.dm	drawn_state = look.state("[base_icon][wielded]")
-draw_untracked	code/modules/xenoarcheaology/effect_master.dm	if(my_effect.activated)

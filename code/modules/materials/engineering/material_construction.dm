@@ -168,7 +168,7 @@
 
 /// Rebuild this object to another blueprint: template, total and chosen materials.
 /obj/proc/set_material_blueprint(template_path, total, list/materials_by_role)
-	material_template = template_path
+	set_material_template(template_path)
 	material_total = total
 	var/datum/material_template/template = get_material_template()
 	var/list/overrides = list()
@@ -180,8 +180,8 @@
 
 /// Make this object of one plain material, or of nothing with a null material.
 /obj/proc/set_bulk_material(material_id, total)
-	material_template = material_id ? /datum/material_template/bulk : null
-	material_bulk_material = material_id
+	set_material_template(material_id ? /datum/material_template/bulk : null)
+	set_material_bulk_material(material_id)
 	material_total = material_id ? total : 0
 	material_overrides_set(src, null)
 
@@ -215,7 +215,7 @@
 		return FALSE
 	if(source.material_template == /datum/material_template/mix)
 		var/datum/material_template/mix/mix = source.declared_material_mix()
-		material_template = null
+		set_material_template(null)
 		material_total = 0
 		if(mix)
 			// A mix is per type; carry the dominant material as plain bulk.
@@ -225,9 +225,9 @@
 					dominant = material_id
 			set_bulk_material(dominant, mix.total)
 	else
-		material_template = source.material_template
+		set_material_template(source.material_template)
 		material_total = source.material_total
-		material_bulk_material = source.material_bulk_material
+		set_material_bulk_material(source.material_bulk_material)
 		material_overrides_set(src, material_build_view(source).overrides)
 	if(material_assembly_of(source) || material_assembly_of(src))
 		var/datum/material_assembly/from = material_assembly_view(source)
@@ -304,7 +304,7 @@
 /// Replace this item's composition with an arbitrary mix (material id -> units).
 /// Takes ownership of the list; an empty or null mix means made of nothing.
 /obj/item/proc/set_material_mix(list/mix)
-	material_template = null
+	set_material_template(null)
 	material_overrides_set(src, null)
 	var/list/stored = length(mix) ? mix : null
 	if(stored || material_build_of(src))

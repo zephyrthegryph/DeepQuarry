@@ -120,7 +120,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/assembly/signaler/anomaly/flux/core = allocate(/obj/item/assembly/signaler/anomaly/flux, run_loc_floor_bottom_left)
 	var/obj/item/anomaly_releaser/rel = allocate(/obj/item/anomaly_releaser, run_loc_floor_bottom_left)
-	rel.used = TRUE
+	rel.set_used(TRUE)
 	user.put_in_active_hand(rel)
 	test_click(user, core, rel)
 	TEST_ASSERT_NULL(running(user), "a used releaser starts nothing")
@@ -184,7 +184,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/expedition_survey_beacon/B = allocate(/obj/structure/expedition_survey_beacon, run_loc_floor_bottom_left)
 	var/obj/item/survey_scanner/S = allocate(/obj/item/survey_scanner, run_loc_floor_bottom_left)
-	B.scanned = TRUE
+	B.set_scanned(TRUE)
 	user.put_in_active_hand(S)
 	test_chat_clear()
 	test_click(user, B, S)
@@ -352,7 +352,7 @@
 	var/mob/living/carbon/human/user = person()
 	user.ckey = "pinsearcher"
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
-	B.has_candy = FALSE
+	B.set_has_candy(FALSE)
 	test_chat_clear()
 	test_click(user, B, null)
 	TEST_ASSERT_NULL(running(user), "an empty bowl starts nothing")
@@ -791,7 +791,7 @@
 	TEST_ASSERT_NULL(running(user), "an unbolted cooler starts nothing")
 	TEST_ASSERT(said(user, "wrench down the cooler first"), "and says why")
 	C.set_anchored(TRUE)
-	C.cupholder = 1
+	C.set_cupholder(1)
 	test_chat_clear()
 	test_click(user, C, P)
 	TEST_ASSERT_NULL(running(user), "a cooler with a cup dispenser starts nothing")

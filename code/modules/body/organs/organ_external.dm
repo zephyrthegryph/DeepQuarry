@@ -96,9 +96,7 @@ TRACKED(/obj/item/organ/external, s_tone)
 TRACKED(/obj/item/organ/external, s_col)
 TRACKED(/obj/item/organ/external, model)
 TRACKED(/obj/item/organ/external, h_col)
-TRACKED(/obj/item/organ/external, damage_state)
 TRACKED(/obj/item/organ/external, open)
-TRACKED(/obj/item/organ/external, markings)
 
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
@@ -242,13 +240,13 @@ CAPABILITIES(/obj/item/organ/external)
 
 /// The scalpel cuts a closed limb open, or the necrotic tissue off a fully open one.
 /obj/item/organ/external/proc/at_scalpel_stage(datum/act/op/A)
-	return (stage == 0 || stage == 2) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 0 || stage == 2) ? null : /datum/msg/req_failed
 /obj/item/organ/external/proc/at_stage_1(datum/act/op/A)
-	return (stage == 1) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 1) ? null : /datum/msg/req_failed
 /obj/item/organ/external/proc/at_stage_2(datum/act/op/A)
-	return (stage == 2) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 2) ? null : /datum/msg/req_failed
 /obj/item/organ/external/proc/at_stage_3(datum/act/op/A)
-	return (stage == 3) ? null : /datum/msg/req_failed // ALLOW(reads): the bench stage is read when a tool is used, never from a cached menu
+	return (stage == 3) ? null : /datum/msg/req_failed
 
 /obj/item/organ/external/proc/bench_scalpel(datum/act/op/A)
 	if(stage == 2)
@@ -258,15 +256,15 @@ CAPABILITIES(/obj/item/organ/external)
 
 /obj/item/organ/external/proc/bench_incise(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts %T% open with [A.held]!"))
-	stage++
+	set_stage(stage + 1)
 
 /obj/item/organ/external/proc/bench_retract(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cracks %T% open like an egg with [A.held]!"))
-	stage++
+	set_stage(stage + 1)
 
 /obj/item/organ/external/proc/bench_cauterize(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " closes %T% with [A.held]!"))
-	stage--
+	set_stage(stage - 1)
 
 /obj/item/organ/external/proc/has_contents(datum/act/op/A)
 	return LAZYLEN(contents) > 0 // ALLOW(reads): the extraction question is asked from what the limb holds when the hemostat goes in
@@ -300,7 +298,7 @@ CAPABILITIES(/obj/item/organ/external)
 
 /obj/item/organ/external/proc/bench_fixovein(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " partially closes %T% with [A.held]!"))
-	stage--
+	set_stage(stage - 1)
 
 //Begin necrosis surgery
 /obj/item/organ/external/proc/bench_necrosis(datum/act/op/A)
@@ -308,14 +306,14 @@ CAPABILITIES(/obj/item/organ/external)
 		to_chat(A.actor, span_notice("The limb isn't necrotic, there's no need to fix it!"))
 		return
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts necrotic tissue off %T% with [A.held]!"))
-	stage++
+	set_stage(stage + 1)
 
 /obj/item/organ/external/proc/bench_rejuvenate(datum/act/op/A)
 	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " rejuvinates formerly necrotic tissue on %T% with [A.held]!"))
 	germ_level = 0
 	set_status(status & ~ORGAN_DEAD)
 	clear_necrosis() // the dead-tissue afflictions go too (audit D12)
-	stage-- //Go back to stage 2
+	set_stage(stage - 1) //Go back to stage 2
 
 /obj/item/organ/external/get_mechanics_info(list/additional_information)
 	if(!additional_information)

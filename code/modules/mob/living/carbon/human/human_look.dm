@@ -71,10 +71,6 @@
 	.[MOB_WATER_LAYER] = water_look()
 	worn_look(., look, !!tail && (tail[1] == TAIL_LOWER_LAYER || tail[1] == TAIL_UPPER_LAYER))
 
-TRACKED(/mob/living/carbon/human, wagging)
-TRACKED(/mob/living/carbon/human, flapping)
-TRACKED(/mob/living/carbon/human, struggle_anim_stomach)
-TRACKED(/mob/living/carbon/human, struggle_anim_taur)
 
 /// The human's layers as one flat list of images (look_layers()), less the layer indices in `discarded`.
 /mob/living/carbon/human/proc/look_layer_images(list/discarded)
@@ -90,9 +86,6 @@ TRACKED(/mob/living/carbon/human, struggle_anim_taur)
 		else if(entry)
 			. += entry
 
-TRACKED(/mob/living/carbon/human, all_underwear)
-TRACKED(/mob/living/carbon/human, all_underwear_metadata)
-TRACKED(/mob/living/carbon/human, hide_underwear)
 
 /// The underwear lists (what is worn, its tweaks, what is hidden) are edited in place: the editor says so, and the draw follows.
 /mob/living/carbon/human/proc/underwear_edited()
@@ -922,8 +915,6 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/water_depth = 0
 	var/water_color
 
-TRACKED(/mob/living, water_depth)
-TRACKED(/mob/living, water_color)
 
 /mob/living/proc/refresh_submersion()
 	var/depth = 0

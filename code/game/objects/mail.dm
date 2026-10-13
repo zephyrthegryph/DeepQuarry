@@ -84,7 +84,6 @@
 	special_handling = TRUE
 
 TRACKED(/obj/item/mail/blank, sealed)
-TRACKED(/obj/item/mail/blank, set_recipient)
 
 CAPABILITIES(/obj/item/mail/blank)
 	// a blank envelope is sealed or opened in hand, not unwrapped
@@ -167,8 +166,6 @@ CAPABILITIES(/obj/item/mail/blank)
 	set_sealed(TRUE)
 	return OP_OK
 
-TRACKED(/obj/item/mail, colored_envelope)
-TRACKED(/obj/item/mail, stamps)
 TRACKED(/obj/item/mail, postmarked)
 TRACKED(/obj/item/mail, postmark_dx)
 TRACKED(/obj/item/mail, postmark_roll)

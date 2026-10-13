@@ -21,7 +21,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
-TRACKED(/obj/structure/micro_tunnel, random)
 
 CAPABILITIES(/obj/structure/micro_tunnel)
 	// outside: climb in, or reach in (a creature that may squeeze in is asked which); a cyborg uses it from beside the hole

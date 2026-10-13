@@ -55,8 +55,6 @@ GLOBAL_PROTECT(href_token)
 
 	var/given_profiling = FALSE
 
-TRACKED(/datum/admins, admincaster_channel_ready)
-TRACKED(/datum/admins, admincaster_wanted_ready)
 
 CAPABILITIES(/datum/admins)
 	ref_many(nameof(tagged_datums), /datum)

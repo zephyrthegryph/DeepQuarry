@@ -18,7 +18,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 
-TRACKED(/obj/machinery/button/remote, shown_pressed)
 
 // ---- what a remote button is, declared ----
 //
@@ -97,12 +96,12 @@ CAPABILITIES(/obj/machinery/button/remote)
 
 /// A lock (an access list) is there to scorch off.
 /obj/machinery/button/remote/proc/has_access_lock(datum/act/A)
-	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock) // ALLOW(reads): the access lists are read when the sequencer is tried
+	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock)
 
 /// The sequencer scorches the access lock off.
 /obj/machinery/button/remote/proc/lock_scorched(datum/act/op/A)
-	req_access = null
-	req_one_access = null
+	set_req_access(null)
+	set_req_one_access(null)
 	play_sfx(src, SFX_SPARKS, 2)
 	return OP_OK
 

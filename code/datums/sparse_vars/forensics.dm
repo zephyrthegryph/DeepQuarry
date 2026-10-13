@@ -25,7 +25,6 @@ GLOBAL_LIST_INIT(dq_blood_color_by_type, list(
 
 /// Tracked: a drawn thing that shows its blood (a clothing item's stain) redraws when these change; the dq_set_* helpers below are the writers.
 TRACKED(/atom, forensic_was_bloodied)
-TRACKED(/atom, forensic_blood_color)
 TRACKED(/atom, forensic_fluorescent)
 
 // ---- Helpers (global procs to avoid /atom proc-table bloat) ----
