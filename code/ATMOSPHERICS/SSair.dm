@@ -56,7 +56,6 @@ SYSTEM_DEF(air)
 
 	// hotspots stays as a registry (counts, admin panel); they burn as kernel work items (LINDA_fire.dm). networks stays
 	// (pipe network wrappers). The rebuild/expansion queues below are unchanged.
-	var/list/hotspots = list()
 	var/list/datum/pipe_network/networks = list()
 	var/list/rebuild_queue = list()
 	//Subservient to rebuild queue
@@ -104,7 +103,7 @@ SYSTEM_DEF(air)
 	msg += "HP:[round(cost_highpressure,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "} "
-	msg += "\n  Count:{HS:[hotspots.len]|HPD:[high_pressure_delta.len]|PN:[networks.len]"
+	msg += "\n  Count:{HS:[REGISTRY_COUNT(REGISTRY_HOTSPOTS)]|HPD:[high_pressure_delta.len]|PN:[networks.len]"
 	msg += "|EV:[gas_events_last]|RX:[gas_reactions_last]|VIS:[gas_visuals_last]|PUSH:[gas_pressure_last]}"
 	if(length(stats) >= 17)
 		msg += "\n  Field:{FRAMES:[stats[1]]|CMD:[stats[2]]|FRAMEus:[round(stats[9], 1)]|BACKLOG:[stats[10]]|OVERLAY:[stats[11]]|AGE:[stats[12]]|SKIP:[stats[13]]|SHORT:[round(stats[14], 0.001)]|MODE:[stats[17] ? "fallback" : "overlay"]}"
@@ -612,7 +611,7 @@ CAPABILITIES(/datum/system/air)
 	data["fire_count"] = times_fired
 	data["excited_groups"] = list()
 	data["active_size"] = num_group_turfs_processed + num_equalize_processed
-	data["hotspots_size"] = hotspots.len
+	data["hotspots_size"] = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
 	data["excited_size"] = num_group_turfs_processed
 	data["conducting_size"] = 0
 	data["show_all"] = display_all_groups

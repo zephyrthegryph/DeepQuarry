@@ -138,7 +138,7 @@
 	admin_notice(span_notice("Holomaps initialized in [round(0.1*(world.timeofday-start_time),0.1)] seconds."), R_DEBUG)
 
 	// TODO - Check - They had a delayed init perhaps?
-	for (var/obj/machinery/station_map/S in station_holomaps)
+	for (var/obj/machinery/station_map/S in REGISTRY_MEMBERS(REGISTRY_STATION_HOLOMAPS))
 		S.setup_holomap()
 
 /// Transparent background key for the holomap PNGs; no holomap colour is opaque black.
