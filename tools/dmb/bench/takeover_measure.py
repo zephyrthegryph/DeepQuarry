@@ -33,7 +33,7 @@ BASELINE_DME_DEFINES = ["#define VERB_CAT_OOC_RESOURCES \"OOC.Resources\"", "#de
 
 def build(worktree, target):
     env = dict(os.environ, CARGO_HOME="E:/dq-cache/dmb-native-v2/cargo-home", CARGO_TARGET_DIR=target)
-    cmd = ["bash", SLOTS, "run", "cargo", "--label", "dmb-measure", "--", "E:/cargo/bin/cargo.exe",
+    cmd = [os.environ.get("DMB_GIT_BASH", "C:/Program Files/Git/bin/bash.exe"), SLOTS, "run", "cargo", "--label", "dmb-measure", "--", "E:/cargo/bin/cargo.exe",
            "build", "--release", "--locked", "--offline", "-p", "dmbc", "--bin", "dmbc"]
     subprocess.run(cmd, cwd=worktree / "tools/dmb", env=env, check=True)
     return target + "/release/dmbc.exe"
