@@ -1,6 +1,8 @@
 // Atomic publication of a synchronous setter cohort. Values are written by
 // their real setters; observers see the completed cohort at the outer boundary.
 // Queue rows contain weak handles and scalar keys only, never datum receivers.
+#define STATE_BATCH_NATIVE_KEY 1
+#define STATE_BATCH_ENGINE_KEY 2
 GLOBAL_VAR_INIT(state_batch_depth, 0)
 GLOBAL_VAR_INIT(state_batch_flushing, FALSE)
 GLOBAL_LIST_EMPTY(state_batch_pending)
@@ -47,13 +49,13 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 
 /// Native producer publications share the atomic boundary but retain their
 /// identity. They do not become stored-var writes or legacy state_changed calls.
-/proc/state_batch_queue_native_key(datum/receiver, key)
+/proc/state_batch_queue_native_key(datum/receiver, key, engine_key = FALSE)
 	var/handle = entity_handle(receiver)
 	var/list/record = GLOB.state_batch_pending[handle]
 	if(!record)
 		record = list()
 		GLOB.state_batch_pending[handle] = record
-	record["native:[key]"] = list(key, 0, TRUE)
+	record["[engine_key ? "engine" : "native"]:[key]"] = list(key, 0, engine_key ? STATE_BATCH_ENGINE_KEY : STATE_BATCH_NATIVE_KEY)
 
 /// Continue delivering the cohort after a receiver faults, then rethrow the
 /// first fault with all framework flags restored. A nested writer queues the
@@ -77,7 +79,9 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 				var/prior_pure_depth = GLOB.op_pure_depth
 				var/prior_output_depth = GLOB.derived_evaluating
 				try
-					if(length(change) >= 3 && change[3])
+					if(length(change) >= 3 && change[3] == STATE_BATCH_ENGINE_KEY)
+						engine_key_changed(receiver, change[1])
+					else if(length(change) >= 3 && change[3])
 						publish_key_changed(receiver, change[1])
 					else
 						state_changed(receiver, change[2], change[1])
@@ -91,3 +95,6 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 	GLOB.state_batch_flushing = FALSE
 	if(first_fault)
 		throw first_fault
+
+#undef STATE_BATCH_NATIVE_KEY
+#undef STATE_BATCH_ENGINE_KEY

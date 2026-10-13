@@ -182,7 +182,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let decls = Decls::get(tree);
     let ann = Annotations::get(&sem, &decls);
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed() } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
-    let publisher_files: BTreeSet<&str> = decls.publishers.values().flatten().map(|(rel, _)| rel.as_str()).collect();
+    let mut publisher_files: BTreeSet<&str> = decls.publishers.values().flatten().map(|(rel, _)| rel.as_str()).collect();
+    publisher_files.extend(tree.files.iter().filter(|file| file.code().text.contains("engine_key_changed"))
+        .map(|file| file.rel.as_str()));
     let mut publisher_headers = Vec::new();
     for ty in sem.objtree.iter_types() {
         for procedure in ty.iter_self_procs() {
@@ -239,6 +241,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written));
         }
     }
+    let native_publishers = draw_native_publishers(&sem, &publisher_headers);
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_native_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
@@ -294,6 +297,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                             format!("logical draw key {stored_key} lacks a declared native producer/setter")));
                     }
                 } else if draw_key_publisher_on_receiver(tree, &sem, &decls, &publisher_headers, &d.owner, &r.var)
+                    || draw_literal_key(tree, &r.var).is_some_and(|key| native_publishers.iter().any(|(base, published)|
+                        published == &key && sem.is_subtype(&d.owner, base)))
                     || trait_bases.entry(r.var.clone()).or_insert_with(|| draw_key_type_trait_bases(tree, &sem, &r.var))
                         .iter().any(|base| sem.is_subtype(&d.owner, base)) {
                     native_keys.insert(r.var.clone());
@@ -349,7 +354,21 @@ fn draw_key_publisher_on_receiver(tree: &crate::tree::Tree, sem: &crate::sem::Se
 /// Validated native type-trait publisher declarations.
 fn draw_key_type_trait_bases(tree: &crate::tree::Tree, sem: &crate::sem::Sem, key: &str) -> Vec<String> {
     use dreammaker::constants::Constant;
-    let literal_key = if key.starts_with('"') && key.ends_with('"') {
+    let Some(literal_key) = draw_literal_key(tree, key) else { return Vec::new() };
+    sem.objtree.iter_types().filter_map(|ty| {
+        let owner = &ty.get().path;
+        if !owner.starts_with("/datum/entry_engine/type_trait/") || !sem.is_subtype(owner, "/datum/entry_engine/type_trait") { return None; }
+        let Some(Constant::String(published)) = ty.get_value("publish_key").and_then(|v| v.constant.as_ref()) else { return None };
+        let Some(Constant::Prefab(base)) = ty.get_value("base_type").and_then(|v| v.constant.as_ref()) else { return None };
+        let Some(Constant::Prefab(trait_type)) = ty.get_value("trait_type").and_then(|v| v.constant.as_ref()) else { return None };
+        (published.as_ref() == literal_key
+            && sem.is_subtype(&format!("/{}", trait_type.path.join("/")), "/datum/type_trait"))
+            .then(|| format!("/{}", base.path.join("/")))
+    }).collect()
+}
+
+fn draw_literal_key(tree: &crate::tree::Tree, key: &str) -> Option<String> {
+    if key.starts_with('"') && key.ends_with('"') {
         Some(key.trim_matches('"').to_string())
     } else {
         // Literal key defines only; no guessed expression or name alias.
@@ -363,18 +382,73 @@ fn draw_key_type_trait_bases(tree: &crate::tree::Tree, sem: &crate::sem::Sem, ke
                 .flatten().map(|capture| capture[1].to_string())
         }).collect::<Vec<_>>()).collect();
         (values.len() == 1).then(|| values.iter().next().unwrap().clone())
-    };
-    let Some(literal_key) = literal_key else { return Vec::new() };
-    sem.objtree.iter_types().filter_map(|ty| {
-        let owner = &ty.get().path;
-        if !owner.starts_with("/datum/entry_engine/type_trait/") || !sem.is_subtype(owner, "/datum/entry_engine/type_trait") { return None; }
-        let Some(Constant::String(published)) = ty.get_value("publish_key").and_then(|v| v.constant.as_ref()) else { return None };
-        let Some(Constant::Prefab(base)) = ty.get_value("base_type").and_then(|v| v.constant.as_ref()) else { return None };
-        let Some(Constant::Prefab(trait_type)) = ty.get_value("trait_type").and_then(|v| v.constant.as_ref()) else { return None };
-        (published.as_ref() == literal_key
-            && sem.is_subtype(&format!("/{}", trait_type.path.join("/")), "/datum/type_trait"))
-            .then(|| format!("/{}", base.path.join("/")))
-    }).collect()
+    }
+}
+
+/// Literal native engine publications and a single immutable parameter's
+/// literal default are actual producer contracts. Arbitrary expressions,
+/// mutable defaults and publications on unrelated receivers prove nothing.
+fn draw_native_publishers(sem: &crate::sem::Sem, headers: &[crate::sem::procs::ProcDef]) -> BTreeSet<(String, String)> {
+    use dreammaker::ast::{Expression, Follow, Term, UnaryOp};
+    fn base(expression: &Expression) -> Option<&Term> {
+        match expression { Expression::Base { term, follow } if follow.is_empty() => Some(&term.elem), _ => None }
+    }
+    fn literal(expression: &Expression) -> Option<String> {
+        match base(expression)? {
+            Term::Int(value) => Some(value.to_string()),
+            Term::Float(value) if value.is_finite() => Some(value.to_string()),
+            Term::String(value) => Some(value.clone()),
+            _ => None,
+        }
+    }
+    let mut publishers = BTreeSet::new();
+    if sem.global_proc("engine_key_changed").is_none() { return publishers; }
+    for header in headers {
+        let procedure = if header.owner == "/" { sem.global_proc(&header.name) } else { sem.proc_ref(&header.owner, &header.name) };
+        let Some(procedure) = procedure else { continue };
+        if header.owner != "/" && sem.proc_ref(&header.owner, "engine_key_changed")
+            .is_some_and(|shadow| !shadow.ty().get().path.is_empty()) { continue; }
+        let Some(body) = procedure.get().code.as_ref() else { continue };
+        let parameters = &procedure.get().parameters;
+        let mut assigned = BTreeSet::new();
+        crate::sem::ast::walk_block(body, &mut |expression, _| {
+            if let Expression::AssignOp { lhs, .. } = expression {
+                if let Some(Term::Ident(name)) = base(lhs) { assigned.insert(name.to_string()); }
+            }
+            if let Expression::Base { term, follow } = expression {
+                if let Term::Ident(name) = &term.elem {
+                    if follow.iter().any(|follow| matches!(&follow.elem,
+                        Follow::Unary(UnaryOp::PreIncr | UnaryOp::PostIncr | UnaryOp::PreDecr | UnaryOp::PostDecr))) {
+                        assigned.insert(name.to_string());
+                    }
+                }
+            }
+        });
+        crate::sem::ast::walk_block(body, &mut |expression, _| {
+            let Some(Term::Call(name, args)) = base(expression) else { return };
+            if name != "engine_key_changed" || args.len() != 2 { return; }
+            let Some(Term::Ident(receiver)) = args.first().and_then(base) else { return };
+            let receiver_type = if receiver == "src" && header.owner != "/" { Some(header.owner.clone()) }
+                else { parameters.iter().find(|parameter| parameter.name.as_str() == receiver.as_str())
+                    .filter(|parameter| !parameter.var_type.type_path.is_empty())
+                    .map(|parameter| format!("/{}", parameter.var_type.type_path.join("/"))) };
+            let Some(receiver_type) = receiver_type else { return };
+            let key = match base(&args[1]) {
+                Some(Term::String(key)) => Some(key.clone()),
+                Some(Term::InterpString(prefix, parts)) if parts.len() == 1 && parts[0].1.is_empty() => {
+                    parts[0].0.as_ref().and_then(base).and_then(|term| match term {
+                        Term::Ident(name) if !assigned.contains(name.as_str()) => parameters.iter()
+                            .find(|parameter| parameter.name.as_str() == name.as_str()).and_then(|parameter| parameter.default.as_ref())
+                            .and_then(literal).map(|value| format!("{prefix}{value}")),
+                        _ => None,
+                    })
+                }
+                _ => None,
+            };
+            if let Some(key) = key { publishers.insert((receiver_type, key)); }
+        });
+    }
+    publishers
 }
 
 
@@ -500,6 +574,9 @@ mod native_draw_tests {
 #define STAT(T,N,R,A...)
 #define STAT_STORED 100001
 #define STAT_VIRTUAL_PROBE 8123 // a genuine explicit numeric override
+#define NATIVE_STATE_KEY "native_state"
+#define NATIVE_GRAPH_KEY "graph:3"
+#define CAP_CONSTRUCTION 3
 #define NATIVE_KEY "native_amount"
 #define TRAIT_KEY "trait_amount"
 /*
@@ -594,6 +671,49 @@ STAT(/datum/stat_base, virtual_probe, ANY, virtual = TRUE)
 READS_AS(/datum/stat_base/alias_child/proc/virtual_of, virtual_probe)
 /datum/stat_base/alias_child/proc/draw()
     return virtual_of()
+/proc/engine_key_changed(datum/holder, key)
+    return
+/proc/native_state_write(datum/native_state_holder/receiver)
+    engine_key_changed(receiver, NATIVE_STATE_KEY)
+/datum/native_state_holder/proc/value_of()
+    return 1
+READS_AS(/datum/native_state_holder/proc/value_of, NATIVE_STATE_KEY)
+/datum/native_state_holder/proc/draw()
+    return value_of()
+/datum/native_state_wrong/proc/value_of()
+    return 1
+READS_AS(/datum/native_state_wrong/proc/value_of, NATIVE_STATE_KEY)
+/datum/native_state_wrong/proc/draw()
+    return value_of()
+/proc/native_graph_write(datum/native_graph_holder/E, cap_id = CAP_CONSTRUCTION)
+    engine_key_changed(E, "graph:[cap_id]")
+/datum/native_graph_holder/proc/value_of()
+    return 1
+READS_AS(/datum/native_graph_holder/proc/value_of, NATIVE_GRAPH_KEY)
+/datum/native_graph_holder/proc/draw()
+    return value_of()
+/proc/native_graph_wrong_default(datum/native_graph_wrong/E, cap_id = 4)
+    engine_key_changed(E, "graph:[cap_id]")
+/datum/native_graph_wrong/proc/value_of()
+    return 1
+READS_AS(/datum/native_graph_wrong/proc/value_of, NATIVE_GRAPH_KEY)
+/datum/native_graph_wrong/proc/draw()
+    return value_of()
+/proc/native_graph_mutated(datum/native_graph_mutated/E, cap_id = CAP_CONSTRUCTION)
+    cap_id = 4
+    engine_key_changed(E, "graph:[cap_id]")
+/datum/native_graph_mutated/proc/value_of()
+    return 1
+READS_AS(/datum/native_graph_mutated/proc/value_of, NATIVE_GRAPH_KEY)
+/datum/native_graph_mutated/proc/draw()
+    return value_of()
+/proc/native_graph_unproven(datum/native_graph_unproven/E, cap_id)
+    engine_key_changed(E, "graph:[cap_id]")
+/datum/native_graph_unproven/proc/value_of()
+    return 1
+READS_AS(/datum/native_graph_unproven/proc/value_of, NATIVE_GRAPH_KEY)
+/datum/native_graph_unproven/proc/draw()
+    return value_of()
 "#;
         std::fs::write(root.join("code/probe.dm"), source).unwrap();
         let mut tree = Tree::from_files(vec![SourceFile::from_text("code/probe.dm", source)]);
@@ -615,6 +735,11 @@ READS_AS(/datum/stat_base/alias_child/proc/virtual_of, virtual_probe)
         assert!(result.draw_native_keys["/datum/stat_base/alias_child"].is_empty(), "a virtual stat display name is not its numeric native key");
         assert!(result.draw_native_errors.iter().filter(|(_, _, message)| message.contains("literal declared stat ID")).count() >= 3,
             "dynamic IDs, unknown IDs and incompatible receivers must fail native draw admission");
+        assert!(result.draw_native_keys["/datum/native_state_holder"].contains("NATIVE_STATE_KEY"), "actual native key call proves its compatible typed receiver");
+        assert!(result.draw_native_keys["/datum/native_graph_holder"].contains("NATIVE_GRAPH_KEY"), "actual immutable graph parameter default proves the interpolated key");
+        for rejected in ["/datum/native_state_wrong", "/datum/native_graph_wrong", "/datum/native_graph_mutated", "/datum/native_graph_unproven"] {
+            assert!(result.draw_native_keys[rejected].is_empty(), "wrong owner/default, mutated or unproven graph parameters cannot prove {rejected}");
+        }
         let _ = std::fs::remove_dir_all(root);
     }
 }

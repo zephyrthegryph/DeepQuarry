@@ -92,5 +92,35 @@ CAPABILITIES(/obj/dq_integrity_key_probe)
 	release(P, STAT_SUSPENDED, source)
 	test_drain()
 	TEST_ASSERT_EQUAL(P.icon_state, "active", "Releasing the actual source must restore the draw")
+
+/obj/dq_capability_key_draw_probe
+	abstract_type = /obj/dq_capability_key_draw_probe
+	var/mid_batch_icon
+/obj/dq_capability_key_draw_probe/draw(datum/look/look)
+	..()
+	look.state(cap_has(src, CAP_LOCKED) ? "locked" : "unlocked")
+/obj/dq_capability_key_draw_probe/proc/write_atomic_sample()
+	cap_set(src, CAP_LOCKED, TRUE)
+	test_drain()
+	mid_batch_icon = icon_state
+	cap_set(src, CAP_LOCKED, FALSE)
+
+/datum/unit_test/dq_integrity_native_key/capability_draw/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/obj/dq_capability_key_draw_probe/P = allocate(/obj/dq_capability_key_draw_probe, test_floor())
+	test_drain()
+	TEST_ASSERT_EQUAL(P.icon_state, "unlocked", "The capability-state draw must start warm")
+	state_batch(P, TYPE_PROC_REF(/obj/dq_capability_key_draw_probe, write_atomic_sample))
+	TEST_ASSERT_EQUAL(P.mid_batch_icon, "unlocked", "An intermediate capability publication must remain inside the atomic boundary")
+	test_drain()
+	TEST_ASSERT_EQUAL(P.icon_state, "unlocked", "The complete capability snapshot must remain unlocked")
+	TEST_ASSERT(cap_set(P, CAP_LOCKED, TRUE), "The real capability setter must change its bit")
+	test_drain()
+	TEST_ASSERT_EQUAL(P.icon_state, "locked", "The actual engine key must invalidate the warmed draw")
+	TEST_ASSERT(cap_set(P, CAP_LOCKED, FALSE), "The actual capability bit must clear")
+	test_drain()
+	TEST_ASSERT_EQUAL(P.icon_state, "unlocked", "Clearing the actual capability bit must restore the draw")
 #endif
 

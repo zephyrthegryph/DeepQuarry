@@ -546,12 +546,18 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /// readers of the key. E3 extends this with the inline recompute of the stats that read it.
 /proc/engine_key_changed(datum/holder, key)
 	OP_PURE_GUARD("[key] of [holder?.type] was published")
+	if(!holder || QDELING(holder))
+		return
+	if(GLOB.state_batch_depth)
+		state_batch_queue_native_key(holder, key, TRUE)
+		return
 	// The stat layer: a stat that reads this key (a gated contribution's condition, a capability key) is right before the writer's next line.
 	if(GLOB.stat_input_keys?[key] && key != GLOB.stat_writing)
 		stat_inputs_changed(holder, key)
 	op_changed(holder)
 	if(READERS(holder, key))
 		publish_change(holder, key)
+	draw_native_key_published(holder, key)
 
 // ---- explain ----
 
