@@ -41,6 +41,7 @@ stat_input_untracked	code/controllers/subsystems/job.dm	var/datum/department/dep
 stat_input_untracked	code/controllers/subsystems/job.dm	return department_datums[primary_department]
 stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
 stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
+stat_input_untracked	code/controllers/subsystems/tgui.dm	if(ui.user == user)
 stat_input_untracked	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 stat_input_untracked	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
 stat_input_untracked	code/datums/operations/req.dm	var/datum/req/known = GLOB.reqs_interned[signature]
