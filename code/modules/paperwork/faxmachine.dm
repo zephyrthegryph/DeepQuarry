@@ -12,7 +12,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 
 /// Files a copy of a fax sent to the admins; the oldest copies past ADMIN_FAX_KEEP are deleted.
 /proc/admin_fax_keep(obj/item/rcvdcopy)
-	admin_fax_keep(rcvdcopy)
+	GLOB.adminfaxes += rcvdcopy
 	while(length(GLOB.adminfaxes) > ADMIN_FAX_KEEP)
 		var/obj/item/oldest = GLOB.adminfaxes[1]
 		GLOB.adminfaxes.Cut(1, 2)
@@ -496,7 +496,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		return
 
 	rcvdcopy.moveToNullspace() //hopefully this shouldn't cause trouble
-	GLOB.adminfaxes += rcvdcopy
+	admin_fax_keep(rcvdcopy)
 
 	//message badmins that a fax has arrived
 
