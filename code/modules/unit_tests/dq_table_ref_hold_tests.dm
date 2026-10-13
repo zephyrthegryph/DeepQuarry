@@ -35,11 +35,13 @@
 /// One cycle on `T`: build `path` (and, with `neighbours`, tables north and east of it), put a pen beside it, delete it, settle, then probe.
 /// Returns list("probe" = extra references on a fresh pen of T, "held" = references still on the deleted subject or -1 when freed,
 /// "pen" = extra references on the pen that stood beside it).
-/datum/unit_test/dq_table_ref_hold/proc/dq_table_cycle(turf/T, turf/control, path, neighbours, label)
+/datum/unit_test/dq_table_ref_hold/proc/dq_table_cycle(turf/T, turf/control, path, neighbours, label, unanchor = FALSE)
 	var/list/out = list()
 	var/base = dq_table_probe(control)
 	var/obj/subject = new path(T)
 	var/subject_ref = ref(subject)
+	if(unanchor)
+		subject.anchored = FALSE // out of the adjacency index
 	subject = null
 	var/list/side = list()
 	if(neighbours)
@@ -50,20 +52,24 @@
 	var/obj/item/pen/pen = new(T)
 	var/pen_ref = ref(pen)
 	pen = null
+	refresh_flush()
+	wait_ticks(round(2 SECONDS / world.tick_lag))
+	refresh_flush()
 	var/pen_before = dq_table_refs_of(pen_ref)
-	GLOB.dq_lifecycle_trace_depth++
+	var/subject_before = dq_table_refs_of(subject_ref)
+	GLOB.dq_adjacency_trace++
 	qdel(locate(subject_ref))
+	GLOB.dq_adjacency_trace--
 	refresh_flush()
 	// Settle: the reported hold appeared about 6 s after the delete.
 	for(var/i in 1 to 10)
 		wait_ticks(round(1 SECONDS / world.tick_lag))
 		refresh_flush()
 		dq_test_gc_pass(GC_QUEUE_FILTER)
-	GLOB.dq_lifecycle_trace_depth--
 	out["held"] = dq_table_refs_of(subject_ref)
 	out["pen"] = dq_table_refs_of(pen_ref) - pen_before
 	out["probe"] = dq_table_probe(T) - dq_table_probe(control)
-	log_world("TABLE_REF_HOLD: [label]: control pen refs [base]; extra refs on the neighbour pen [out["pen"]], on a fresh pen of the tile [out["probe"]], subject [out["held"] == -1 ? "freed" : "held by [out["held"]]"]")
+	log_world("TABLE_REF_HOLD: [label]: control pen refs [base]; extra refs on the neighbour pen [out["pen"]], on a fresh pen of the tile [out["probe"]], (absolute: pen [pen_before] before and [dq_table_refs_of(pen_ref)] after, subject [subject_before] before) subject [out["held"] == -1 ? "freed" : "held by [out["held"]]"]")
 #ifdef REFERENCE_TRACKING
 	if(out["held"] > 0)
 		var/datum/D = locate(subject_ref)
@@ -79,11 +85,12 @@
 	TEST_ASSERT_NOTNULL(T, "no floor for the table test")
 	var/turf/control = dq_table_control_tile(T)
 	TEST_ASSERT_NOTNULL(control, "no open floor next to the test floor for the control")
-	// A closet shows what any deleted structure leaves; the tables must leave no more.
-	var/list/closet = dq_table_cycle(T, control, /obj/structure/closet, FALSE, "closet")
-	var/list/lone = dq_table_cycle(T, control, /obj/structure/table, FALSE, "lone table")
-	var/list/joined = dq_table_cycle(T, control, /obj/structure/table, TRUE, "table with neighbours")
-	for(var/list/cycle in list(closet, lone, joined))
-		TEST_ASSERT_EQUAL(cycle["probe"], 0, "a fresh object on the tile carries extra references after a delete")
-		TEST_ASSERT(cycle["pen"] <= 0, "an object that stood beside the deleted subject carries extra references after the settle time")
-		TEST_ASSERT_EQUAL(cycle["held"], -1, "the deleted subject was freed")
+	for(var/mode in list(0))
+		for(var/path in list(/obj/structure/table, /obj/structure/low_wall, /obj/structure/window/basic, /obj/structure/catwalk))
+			var/list/cycle = dq_table_cycle(T, control, path, FALSE, "[path][mode ? " unanchored" : ""]", mode)
+			if(cycle["probe"] != 0)
+				TEST_FAIL("a fresh object on the tile carries [cycle["probe"]] extra reference(s) after [path] is deleted")
+			if(cycle["pen"] > 0)
+				TEST_FAIL("an object beside the deleted [path] carries [cycle["pen"]] extra reference(s) after the settle time")
+			if(cycle["held"] != -1)
+				TEST_FAIL("the deleted [path] was not freed ([cycle["held"]] reference(s) besides the collector's)")

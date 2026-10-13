@@ -29,3 +29,4 @@ dq_capability_runtime_storage
 ownership_transfer_from_hand
 dq_proximity/object_moves
 dq_timed_pin/last_occupant/cryo_yes
+dq_gc_sweep
