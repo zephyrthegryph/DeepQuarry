@@ -350,7 +350,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating)
 		sleep(world.tick_lag)
 	TEST_ASSERT(F.slept_done, "the handler finished")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_records[length(GLOB.dispatch_records)], "sleepy|1|0", "recorded with a fingerprint for a living user")
-	TEST_ASSERT(F.refresh_queued || F.state_changes, "changed() ran after it finished")
+	TEST_ASSERT(F.refresh_queued || F.state_changes, "state_changed() ran after it finished")
 
 // ---------------------------------------------------------------- 10. ask re-validation and forms
 

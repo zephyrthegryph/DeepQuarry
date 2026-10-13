@@ -270,7 +270,7 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare)
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "no draw")
 	TEST_ASSERT_EQUAL(F.should_run_calls, checks, "no should_run()")
 	state_changed(F)
-	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_ALL, "a plain changed() still re-derives everything")
+	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_ALL, "a plain state_changed() still re-derives everything")
 	refresh_flush()
 	var/legacy_draws = L.draw_calls
 	L.set_tier(2)
