@@ -41,10 +41,10 @@ CAPABILITIES(/datum/system/vis_overlays)
 /datum/system/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 	var/obj/effect/overlay/vis/overlay = new
 	overlay.icon = icon
-	overlay.icon_state = iconstate
+	overlay.set_icon_state(iconstate)
 	overlay.layer = layer
 	overlay.plane = plane
-	overlay.dir = dir
+	overlay.set_dir(dir)
 	overlay.alpha = alpha
 	overlay.appearance_flags |= add_appearance_flags
 	overlay.vis_flags |= add_vis_flags

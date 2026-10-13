@@ -92,11 +92,11 @@ CAPABILITIES(/datum/robot_belly)
 		return
 	if(R.sight_mode & BORGANOMALOUS)
 		pounce.name = "bluespace pounce"
-		pounce.icon_state = "bluespace_pounce"
+		pounce.set_icon_state("bluespace_pounce")
 		pounce.bluespace = TRUE
 	else
 		pounce.name = initial(pounce.name)
-		pounce.icon_state = initial(pounce.icon_state)
+		pounce.set_icon_state(initial(pounce.icon_state))
 		pounce.desc = initial(pounce.desc)
 		pounce.bluespace = initial(pounce.bluespace)
 

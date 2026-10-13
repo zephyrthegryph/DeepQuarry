@@ -68,7 +68,7 @@
 /datum/body_effect/changeling_camouflage/on_end(mob/living/L, expired)
 	var/datum/changeling/comp = L.get_changeling_state()
 	animate(L,alpha = 10, alpha = 255, time = 10)
-	L.invisibility = initial(L.invisibility)
+	L.set_invisibility(initial(L.invisibility))
 	act_message(L, null, MSG_SELF(span_notice("We revert our camouflage, revealing ourselves.")), \
 		MSG_OTHERS(span_warning("%U% suddenly fades in, seemingly from nowhere!")))
 	L.set_m_intent(I_RUN)

@@ -129,14 +129,14 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 
 /obj/machinery/fusion_fuel_injector/proc/BeginInjecting()
 	if(!injecting && cur_assembly)
-		icon_state = "injector1"
+		set_icon_state("injector1")
 		set_injecting(TRUE)
 		set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/fusion_fuel_injector/proc/StopInjecting()
 	if(injecting)
 		set_injecting(FALSE)
-		icon_state = "injector0"
+		set_icon_state("injector0")
 		set_use_power(USE_POWER_OFF)
 
 /obj/machinery/fusion_fuel_injector/proc/Inject()

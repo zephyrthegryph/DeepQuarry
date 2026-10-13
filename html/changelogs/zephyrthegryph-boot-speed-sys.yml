@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Focused unit-test worlds skip boot work (ownership validation, early assets, lighting, radio, holomaps) when every selected test declares it does not need it (boot_needs)"

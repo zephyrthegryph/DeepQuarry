@@ -74,7 +74,7 @@ CAPABILITIES(/obj/skeleton)
 			new /obj/item/fossil/bone(src)
 			consume(W, user)
 			if(bnum==breq)
-				icon_state = "skel"
+				set_icon_state("skel")
 				src.bstate = 1
 				set_density(TRUE)
 				src.name = "alien skeleton display"

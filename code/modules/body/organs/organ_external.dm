@@ -1128,7 +1128,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		victim?.body?.on_status_changed()
 
 	after(victim, 0.1 SECONDS, GLOBAL_PROC_REF(droplimb_refresh_icons), with = list(victim))
-	dir = 2
+	set_dir(2)
 
 	var/atom/droploc = victim.drop_location()
 	switch(disintegrate)
@@ -1143,7 +1143,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				// Throw limb around.
 				if(src && istype(loc,/turf))
 					throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
-				dir = 2
+				set_dir(2)
 		if(DROPLIMB_BURN)
 			new /obj/effect/decal/cleanable/ash(droploc)
 			// Large foreign objects survive the fire; the parts burn with the limb.

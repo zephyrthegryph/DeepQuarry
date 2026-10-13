@@ -306,7 +306,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		rel_add(B, nameof(B.viruses), D.Copy())
 
 	dq_set_fluorescent(B, 0)
-	B.invisibility = INVISIBILITY_NONE
+	B.set_invisibility(INVISIBILITY_NONE)
 	return B
 
 #undef BLOOD_MINIMUM_STOP_PROCESS

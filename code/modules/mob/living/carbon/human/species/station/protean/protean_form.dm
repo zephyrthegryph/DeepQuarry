@@ -159,13 +159,13 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 /datum/form/protean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
 	..()
-	H.item_state = style_id
+	H.set_item_state(style_id)
 	H.vore_capacity = get_style().vore_capacity
 
 /datum/form/protean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(hiding)
 		set_hiding(H, FALSE)
-	H.item_state = null
+	H.set_item_state(null)
 	H.vore_capacity = initial(H.vore_capacity)
 	..()
 	to_chat(H, span_notice("You rapidly reassemble your form."))
@@ -185,10 +185,10 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 		return FALSE
 	style_id = new_style_id
 	H.vore_capacity = get_style().vore_capacity
-	H.item_state = style_id
+	H.set_item_state(style_id)
 	if(istype(H.loc, /obj/item/holder/protoblob))
 		var/obj/item/holder/protoblob/PB = H.loc
-		PB.item_state = style_id
+		PB.set_item_state(style_id)
 	return TRUE
 
 /// This character's layer states for a layered style, seeded from its defaults.

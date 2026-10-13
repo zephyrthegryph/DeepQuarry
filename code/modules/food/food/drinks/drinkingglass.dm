@@ -16,7 +16,7 @@
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/on_reagent_change()
 	if (!length(reagents?.reagent_list))
-		icon_state = "glass_empty"
+		set_icon_state("glass_empty")
 		name = "glass"
 		desc = "Your standard drinking glass."
 		center_of_mass_x = 16
@@ -25,9 +25,9 @@
 	var/datum/reagent/R = reagents.get_master_reagent()
 
 	if(R.glass_icon_state)
-		icon_state = R.glass_icon_state
+		set_icon_state(R.glass_icon_state)
 	else
-		icon_state = "glass_brown"
+		set_icon_state("glass_brown")
 
 	if(R.glass_name)
 		name = R.glass_name
@@ -63,7 +63,7 @@
 /obj/item/reagent_containers/food/drinks/cup/on_reagent_change()
 	..()
 	if (!length(reagents?.reagent_list))
-		icon_state = "cup_empty"
+		set_icon_state("cup_empty")
 		name = "coffee cup"
 		desc = "The container of oriental luxuries."
 		center_of_mass_x = 16
@@ -72,9 +72,9 @@
 	var/datum/reagent/R = reagents.get_master_reagent()
 
 	if(R.cup_icon_state)
-		icon_state = R.cup_icon_state
+		set_icon_state(R.cup_icon_state)
 	else
-		icon_state = "cup_brown"
+		set_icon_state("cup_brown")
 
 	if(R.cup_name)
 		var/prefix = " "
@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 
 /obj/item/reagent_containers/food/drinks/tall/on_reagent_change()
 	if (!length(reagents?.reagent_list))
-		icon_state = "tall_cup_empty"
+		set_icon_state("tall_cup_empty")
 		name = "tall cup"
 		desc = "A larger coffee cup."
 		center_of_mass_x = 16
@@ -196,9 +196,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	var/datum/reagent/R = reagents.get_master_reagent()
 
 	if(R.cup_icon_state)
-		icon_state = "tall_[R.cup_icon_state]"
+		set_icon_state("tall_[R.cup_icon_state]")
 	else
-		icon_state = "tall_cup_brown"
+		set_icon_state("tall_cup_brown")
 
 	if(R.cup_name)
 		var/prefix = " "
@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 
 /obj/item/reagent_containers/food/drinks/grande/on_reagent_change()
 	if (!length(reagents?.reagent_list))
-		icon_state = "grande_cup_empty"
+		set_icon_state("grande_cup_empty")
 		name = "grande cup"
 		desc = "A much taller coffee cup for people who really need their coffee."
 		center_of_mass_x = 16
@@ -247,9 +247,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	var/datum/reagent/R = reagents.get_master_reagent()
 
 	if(R.cup_icon_state)
-		icon_state = "grande_[R.cup_icon_state]"
+		set_icon_state("grande_[R.cup_icon_state]")
 	else
-		icon_state = "grande_cup_brown"
+		set_icon_state("grande_cup_brown")
 
 	if(R.cup_name)
 		var/prefix = " "
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 
 /obj/item/reagent_containers/food/drinks/venti/on_reagent_change()
 	if (!length(reagents?.reagent_list))
-		icon_state = "venti_cup_empty"
+		set_icon_state("venti_cup_empty")
 		name = "venti cup"
 		desc = "A huge coffee cup for people who literally cannot function without it."
 		center_of_mass_x = 16
@@ -298,9 +298,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask
 	var/datum/reagent/R = reagents.get_master_reagent()
 
 	if(R.cup_icon_state)
-		icon_state = "venti_[R.cup_icon_state]"
+		set_icon_state("venti_[R.cup_icon_state]")
 	else
-		icon_state = "venti_cup_brown"
+		set_icon_state("venti_cup_brown")
 
 	if(R.cup_name)
 		var/prefix = " "

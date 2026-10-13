@@ -8,6 +8,11 @@ SYSTEM_DEF(early_assets)
 	init_stage = INITSTAGE_EARLY
 
 /datum/system/early_assets/initialize()
+	#ifdef UNIT_TESTS
+	if(unit_test_boot_skips(BOOT_NEED_EARLY_ASSETS))
+		unit_test_boot_skipped(BOOT_NEED_EARLY_ASSETS, "Early Assets (get_asset_datum() builds each on first use)")
+		return
+	#endif
 	var/init_source = "early assets"
 	SSatoms.set_tracked_initalized(INITIALIZATION_INNEW_REGULAR, init_source)
 

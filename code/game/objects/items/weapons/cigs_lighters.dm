@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/flame/match)
 	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_LIT)
 	set_lit(1)
 	injury_kind = INJURY_BURN
-	icon_state = "match_lit"
+	set_icon_state("match_lit")
 	name = "burning match"
 	desc = "A match. This one is presently on fire."
 
@@ -79,8 +79,8 @@ CAPABILITIES(/obj/item/flame/match)
 	set_lit(0)
 	burnt = 1
 	injury_kind = INJURY_BLUNT
-	icon_state = "match_burnt"
-	item_state = "cigoff"
+	set_icon_state("match_burnt")
+	set_item_state("cigoff")
 	name = "burnt match"
 	desc = "A match. This one has seen better days."
 
@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	var/wanted = "[initial(item_state)][state_suffix()]"
 	if(item_state == wanted)
 		return
-	item_state = wanted
+	set_item_state(wanted)
 	if(ismob(loc))
 		var/mob/living/M = loc
 		changed(src)
@@ -640,9 +640,9 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 		return OP_REFUSED
 	if (src.reagents.total_volume == 0)
 		if (istype(src, /obj/item/reagent_containers/rollingpaper/blunt))                         //update the icon if this is the first thing we're adding to the paper
-			src.icon_state = "blunt_full"
+			set_icon_state("blunt_full")
 		else
-			src.icon_state = "paper_full"
+			set_icon_state("paper_full")
 	to_chat(user, span_notice("You add the [G.name] to the [src.name]."))
 	src.add_fingerprint(user)
 	if(G.reagents)
@@ -733,14 +733,14 @@ CAPABILITIES(/obj/item/flame/lighter)
 		return OP_DECLINE
 	if(!lit)
 		set_lit(TRUE)
-		icon_state = "lighteron"
+		set_icon_state("lighteron")
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice("After a few attempts, %U% manages to light %T%."))
 
 		set_glow(src, GLOW(2, 0.5, "#FF9933"))
 	else
 		set_lit(FALSE)
-		icon_state = "lighter"
+		set_icon_state("lighter")
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice("%U% quietly shuts off %T%."))
 
@@ -794,16 +794,16 @@ CAPABILITIES(/obj/item/flame/lighter)
 		base_state = icon_state
 	if(!lit)
 		set_lit(TRUE)
-		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_icon_state("[base_state]on")
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("Without even breaking stride, %U% flips open and lights %T% in one smooth movement.")))
 
 		set_glow(src, GLOW(2, 0.5, "#FF9933"))
 	else
 		set_lit(FALSE)
-		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_icon_state("[base_state]")
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing.")))
 
@@ -915,8 +915,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 		base_state = icon_state
 	if(!lit)
 		set_lit(1)
-		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_icon_state("[base_state]on")
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		if(prob(50))
 			act_message(user, src, others = span_notice(span_rose("%U% safely activates %T% with a push of a button!")))
@@ -942,8 +942,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 		set_glow(src, GLOW(2, null, null))
 	else
 		set_lit(0)
-		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_icon_state("[base_state]")
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		if(istype(src, /obj/item/flame/lighter/supermatter) )
 			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts %T% without even looking at what they're doing.")))
@@ -981,8 +981,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 		base_state = icon_state
 	if(!lit)
 		set_lit(1)
-		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_icon_state("[base_state]on")
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		if(prob(50))
 			act_message(user, src, others = span_notice(span_rose("%U% safely activates %T% with a push of a button!")))
@@ -1006,8 +1006,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 		set_glow(src, GLOW(2, null, null))
 	else
 		set_lit(0)
-		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_icon_state("[base_state]")
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		if(istype(src, /obj/item/flame/lighter/supermatter/syndismzippo) )
 			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts %T% without even looking at what they're doing.")))
@@ -1052,8 +1052,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 		base_state = icon_state
 	if (!lit)
 		set_lit(1)
-		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_icon_state("[base_state]on")
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		var/i = rand(1, 100)
 		switch(i)
@@ -1171,8 +1171,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 		set_glow(src, GLOW(5, null, null))
 	else
 		set_lit(0)
-		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_icon_state("[base_state]")
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		if (istype(src, /obj/item/flame/lighter/supermatter/expsmzippo))
 			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% closes %T%.")))

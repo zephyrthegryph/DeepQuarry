@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/dice)
 				result = loaded
 		else if(prob(75)) //makeshift weighted dice don't always work
 			result = loaded
-	icon_state = "[name][result]"
+	set_icon_state("[name][result]")
 	if(isliving(user)) //An omen can override dice rolls!
 		var/mob/living/roller = user
 		var/override = roller.omen_roll_override(src, silent, result)
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/dice)
 		return
 
 	result = to_value
-	icon_state = "[name][result]"
+	set_icon_state("[name][result]")
 	act_message(user, src, others = span_notice("%U% turned %T% to the face reading [result] manually."))
 
 /obj/item/dice/item_ctrl_click(mob/user)

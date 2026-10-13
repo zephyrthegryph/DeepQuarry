@@ -165,7 +165,7 @@
 	//We then update our icon state. For example:
 	//We have an item that has the icon_state of "cloak" and the prefix of "_direction" and we're facing NORTH
 	//The icon_state will be changed to cloak_direction_north
-	our_item.icon_state = initial(our_item.icon_state) + icon_prefix + "_" + directional_name
+	our_item.set_icon_state(initial(our_item.icon_state) + icon_prefix + "_" + directional_name)
 
 ///Variant of reactive_icon_update that allows for setting what slot is should be in to update it!
 /datum/reactive_icon_update/clothing

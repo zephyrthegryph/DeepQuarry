@@ -8,8 +8,8 @@
 
 	desc = copy.desc
 	name = copy.name
-	icon_state = copy.icon_state
-	item_state = copy.item_state
+	set_icon_state(copy.icon_state)
+	set_item_state(copy.item_state)
 	set_body_parts_covered(worn_of(copy).covers)
 	set_flags_inv(worn_of(copy).hides)
 
@@ -59,7 +59,7 @@
 /obj/item/clothing/under/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "psychedelic"
 	desc = "Groovy!"
-	icon_state = "psyche"
+	set_icon_state("psyche")
 	set_item_state_slots_at(slot_w_uniform_str, "psyche")
 	update_clothing_icon()
 
@@ -95,7 +95,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 /obj/item/clothing/head/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "grey cap"
 	desc = "It's a baseball hat in a tasteful grey colour."
-	icon_state = "greysoft"
+	set_icon_state("greysoft")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/head/chameleon)
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 /obj/item/clothing/suit/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "armor"
 	desc = "An armored vest that protects against some damage."
-	icon_state = "armor"
+	set_icon_state("armor")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/suit/chameleon)
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 /obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black shoes"
 	desc = "A pair of black shoes."
-	icon_state = "black"
+	set_icon_state("black")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/shoes/chameleon)
@@ -199,7 +199,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 /obj/item/storage/backpack/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "backpack"
 	desc = "You wear this on your back and put items into it."
-	icon_state = "backpack"
+	set_icon_state("backpack")
 	if (ismob(src.loc))
 		var/mob/M = src.loc
 		changed(src)
@@ -252,7 +252,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 /obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black gloves"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
-	icon_state = "black"
+	set_icon_state("black")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/gloves/chameleon)
@@ -287,7 +287,7 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 /obj/item/clothing/mask/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "gas mask"
 	desc = "It's a gas mask."
-	icon_state = "gas_alt" // file change
+	set_icon_state("gas_alt") // file change
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/chameleon)
@@ -329,7 +329,7 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon)
 /obj/item/clothing/glasses/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "Optical Meson Scanner"
 	desc = "It's a set of mesons."
-	icon_state = "meson"
+	set_icon_state("meson")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/glasses/chameleon)
@@ -361,7 +361,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 /obj/item/storage/belt/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "belt"
 	desc = "Can hold various things."
-	icon_state = "utilitybelt"
+	set_icon_state("utilitybelt")
 	if(ismob(src.loc))
 		var/mob/M = src.loc
 		changed(src)
@@ -402,7 +402,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 /obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black tie"
 	desc = "Looks like a black tie, but his one also has a dial inside."
-	icon_state = "blacktie"
+	set_icon_state("blacktie")
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/accessory/chameleon)
@@ -461,7 +461,7 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 	if(P && ispath(copy_projectile))
 		P.name = initial(copy_type.name)
 		P.icon = initial(copy_type.icon)
-		P.icon_state = initial(copy_type.icon_state)
+		P.set_icon_state(initial(copy_type.icon_state))
 		P.pass_flags = initial(copy_type.pass_flags)
 		P.fire_sound = initial(copy_type.fire_sound)
 		P.hitscan = initial(copy_type.hitscan)

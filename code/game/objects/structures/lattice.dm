@@ -95,5 +95,5 @@ CAPABILITIES(/obj/structure/lattice)
 			if(!(istype(get_step(src, direction), /turf/space)))
 				dir_sum += direction
 
-	icon_state = "lattice[dir_sum]"
+	set_icon_state("lattice[dir_sum]")
 	return

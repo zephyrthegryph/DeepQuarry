@@ -21,9 +21,9 @@
 
 /mob/living/bot/cleanbot/edCLN/update_icons()
 	if(on && bot_busy())
-		icon_state = "edCLN"
+		set_icon_state("edCLN")
 	else
-		icon_state = "edCLN[on]"
+		set_icon_state("edCLN[on]")
 
 /mob/living/bot/cleanbot/edCLN/handleIdle()
 	if(vocal && prob(10))
@@ -161,8 +161,8 @@ CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 
 /obj/item/secbot_assembly/edCLN_assembly/proc/bucket_added(datum/act/op/A)
 	name = "bucket/legs/frame assembly"
-	item_state = "edCLN_bucket"
-	icon_state = "edCLN_bucket"
+	set_item_state("edCLN_bucket")
+	set_icon_state("edCLN_bucket")
 	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
 	return OP_OK
 
@@ -173,8 +173,8 @@ CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 
 /obj/item/secbot_assembly/edCLN_assembly/sensor_added(datum/act/op/A)
 	name = "proximity bucket ED assembly"
-	item_state = "edCLN_prox"
-	icon_state = "edCLN_prox"
+	set_item_state("edCLN_prox")
+	set_icon_state("edCLN_prox")
 	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
 	return OP_OK
 
@@ -185,8 +185,8 @@ CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 
 /obj/item/secbot_assembly/edCLN_assembly/proc/mop_added(datum/act/op/A)
 	name = "mop ED-CLN assembly"
-	item_state = "edCLN_mop"
-	icon_state = "edCLN_mop"
+	set_item_state("edCLN_mop")
+	set_icon_state("edCLN_mop")
 	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
 	return OP_OK
 

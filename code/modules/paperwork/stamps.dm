@@ -140,6 +140,6 @@ CAPABILITIES(/obj/item/stamp/chameleon)
 
 		if(chosen_stamp)
 			name = initial(chosen_stamp.name)
-			icon_state = initial(chosen_stamp.icon_state)
+			set_icon_state(initial(chosen_stamp.icon_state))
 
 	return TRUE

@@ -196,9 +196,9 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(skin)
 		add_overlay("medskin_[skin]")
 	if(bot_busy())
-		icon_state = "medibots"
+		set_icon_state("medibots")
 	else
-		icon_state = "medibot[on]"
+		set_icon_state("medibot[on]")
 
 
 MSG_DEF(medbot/tipping, span_warning("You begin tipping over %T%..."), span_danger("%U% begins tipping over %T%."))

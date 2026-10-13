@@ -115,7 +115,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 	for(var/obj/singularity/singulo in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(singulo.z == z)
 			singulo.target = src
-	icon_state = "[icontype]1"
+	set_icon_state("[icontype]1")
 	set_active(1)
 	if(user)
 		to_chat(user, span_notice("You activate the beacon."))
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 	for(var/obj/singularity/singulo in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(singulo.target == src)
 			singulo.target = null
-	icon_state = "[icontype]0"
+	set_icon_state("[icontype]0")
 	set_active(0)
 	if(user)
 		to_chat(user, span_notice("You deactivate the beacon."))

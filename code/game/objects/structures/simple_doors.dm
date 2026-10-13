@@ -51,9 +51,9 @@ TRACKED(/obj/structure/simple_door, state)
 	material = get_material_by_name(material_name)
 	if(!material)
 		return
-	max_integrity = max(1,round(material.integrity/10)) * 10
+	set_max_integrity(max(1,round(material.integrity/10)) * 10)
 	update_integrity(max_integrity)
-	icon_state = material.door_icon_base
+	set_icon_state(material.door_icon_base)
 	name = "[material.display_name] door"
 	color = material.icon_colour
 	set_rad_insulation(material.radiation_transmission(RAD_DOOR_THICKNESS_MM))

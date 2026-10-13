@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		cell.forceMove(loc)
 		cell.add_fingerprint(user)
 
-		icon_state = "suspension"
+		set_icon_state("suspension")
 		rel_take(src, nameof(cell))
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
@@ -119,10 +119,10 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
 	if(anchored)
 		desc = "Its tracks are held firmly in place with securing bolts."
-		icon_state = "suspension_wrenched"
+		set_icon_state("suspension_wrenched")
 	else
 		desc = "It has stubby bolts aligned along its tracks for stabilising."
-		icon_state = "suspension"
+		set_icon_state("suspension")
 	play_sfx(loc, SFX_ITEMS_RATCHET, 0.8, vary = FALSE)
 	return OP_OK
 
@@ -136,7 +136,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 			if(!move_into(src, nameof(src.cell), W, user))
 				return TRUE
 			to_chat(user, span_info("You insert the power cell."))
-			icon_state = "suspension"
+			set_icon_state("suspension")
 	return TRUE
 
 /obj/machinery/suspension_gen/proc/interaction_swipe_card(datum/act/op/A)
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 
 	rel_set(src, nameof(suspension_field), new /obj/effect/suspension_field(T))
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
-	icon_state = "suspension_on"
+	set_icon_state("suspension_on")
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
@@ -192,14 +192,14 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		collected++
 
 	if(collected)
-		suspension_field.icon_state = "energynet"
+		suspension_field.set_icon_state("energynet")
 		add_overlay("shield2")
 		visible_message(span_blue("[icon2html(suspension_field,viewers(src))] [suspension_field] gently absconds [collected > 1 ? "something" : "several things"]."))
 	else
 		if(ismineralturf(T) || istype(T,/turf/simulated/wall))
-			suspension_field.icon_state = "shieldsparkles"
+			suspension_field.set_icon_state("shieldsparkles")
 		else
-			suspension_field.icon_state = "shield2"
+			suspension_field.set_icon_state("shield2")
 
 /obj/machinery/suspension_gen/proc/deactivate()
 	//drop anything we picked up
@@ -220,7 +220,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
 	rel_clear(src, nameof(suspension_field))
-	icon_state = "suspension_wrenched"
+	set_icon_state("suspension_wrenched")
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 
 // its field deactivates.

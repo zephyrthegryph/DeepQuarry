@@ -265,7 +265,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 		I.setPipingLayer(piping_layer)
 		if(istype(I, /obj/item/pipe/trinary/flippable))
 			var/obj/item/pipe/trinary/flippable/flip = I
-			flip.icon_state = "[flip.icon_state][flip.mirrored ? "m" : ""]"
+			flip.set_icon_state("[flip.icon_state][flip.mirrored ? "m" : ""]")
 		transfer_fingerprints_to(I)
 	destroyed(src)
 
@@ -280,7 +280,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 	setPipingLayer(set_layer)
 	// TODO - M.connect_types = src.connect_types - Or otherwise copy from item? Or figure it out from piping layer?
 	var/turf/T = get_turf(src)
-	level = !T.is_plating() ? 2 : 1
+	set_level(!T.is_plating() ? 2 : 1)
 	atmos_init()
 	if(QDELETED(src))
 		return // TODO - Eventually should get rid of the need for this.
@@ -297,22 +297,22 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 	// Do it the Polaris way
 	switch(piping_layer)
 		if(PIPING_LAYER_SCRUBBER)
-			icon_state = "[icon_state]-scrubbers"
+			set_icon_state("[icon_state]-scrubbers")
 			connect_types = CONNECT_TYPE_SCRUBBER
 			layer = PIPES_SCRUBBER_LAYER
 			set_icon_connect_type("-scrubbers")
 		if(PIPING_LAYER_SUPPLY)
-			icon_state = "[icon_state]-supply"
+			set_icon_state("[icon_state]-supply")
 			connect_types = CONNECT_TYPE_SUPPLY
 			layer = PIPES_SUPPLY_LAYER
 			set_icon_connect_type("-supply")
 		if(PIPING_LAYER_FUEL)
-			icon_state = "[icon_state]-fuel"
+			set_icon_state("[icon_state]-fuel")
 			connect_types = CONNECT_TYPE_FUEL
 			layer = PIPES_FUEL_LAYER
 			set_icon_connect_type("-fuel")
 		if(PIPING_LAYER_AUX)
-			icon_state = "[icon_state]-aux"
+			set_icon_state("[icon_state]-aux")
 			connect_types = CONNECT_TYPE_AUX
 			layer = PIPES_AUX_LAYER
 			set_icon_connect_type("-aux")
