@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Worn and held looks follow tracked state; the hand changed() marks and update_clothing_icon() are gone, machine conditions redraw through their keys"
