@@ -2,10 +2,12 @@
 use super::*;
 
 #[path = "service_housekeeping_allocations.rs"]
-mod allocations;
+pub(super) mod allocations;
 
 const EXECUTOR_IDLE: Duration = Duration::from_secs(30);
-const SESSION_IDLE: Duration = Duration::from_secs(600);
+// A retained session is the next edit's resident state; developers iterate in
+// minutes but not always within ten, so the whole-session release waits an hour.
+pub(super) const SESSION_IDLE: Duration = Duration::from_secs(3600);
 const RELEASES_PER_PASS: usize = 4;
 
 pub(super) struct Deadline(Instant);
@@ -28,7 +30,13 @@ const OPTIONAL_IMAGES: usize = 4;
 const COMPACT_SYMBOLIC: usize = 5;
 const REMAINING_OPTIONAL: usize = 6;
 const SESSION_RELEASE: usize = 7;
-fn target(age: Duration, pressured: bool, previous: usize) -> usize {
+// Soft pressure only sheds rich/transient buffers (tier 2). The symbolic memo,
+// generation, link bindings and frontend host that make the next edit resident
+// are released (tiers 3..7) only above the hard ceiling or after SESSION_IDLE.
+fn target(age: Duration, pressured: bool, hard: bool, previous: usize) -> usize {
+    if pressured && !hard {
+        return if age >= SESSION_IDLE { SESSION_RELEASE } else { 2 };
+    }
     if age >= SESSION_IDLE || pressured && previous >= REMAINING_OPTIONAL {
         SESSION_RELEASE
     } else if pressured && previous >= COMPACT_SYMBOLIC {
@@ -49,7 +57,7 @@ fn target(age: Duration, pressured: bool, previous: usize) -> usize {
 }
 
 impl Shared {
-    pub(super) fn housekeep(&self, now: Instant, pressured: bool) {
+    pub(super) fn housekeep(&self, now: Instant, pressured: bool, hard: bool) {
         let candidates = {
             let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
             let mut candidates = BTreeMap::new();
@@ -64,7 +72,7 @@ impl Shared {
                 }
                 let last = *slot.last.lock().unwrap_or_else(|e| e.into_inner());
                 let previous = slot.idle_tier.load(Ordering::Acquire);
-                let next = target(now.saturating_duration_since(last), pressured, previous);
+                let next = target(now.saturating_duration_since(last), pressured, hard, previous);
                 if next > previous {
                     candidates.insert((last, key.clone()), (Arc::clone(slot), next));
                     if candidates.len() > RELEASES_PER_PASS {
@@ -102,7 +110,7 @@ impl Shared {
                 drop(removed);
                 drop(slot);
                 super::super::emit_stderr(format_args!(
-                    "dmbd idle release tier=session project={} pressure={pressured} private-before={before:?} private-after={:?} seconds={:.6} rust-requested-live-before={requested_before} rust-requested-live-after={}",
+                    "dmbd idle release tier=session project={} pressure={pressured} hard={hard} private-before={before:?} private-after={:?} seconds={:.6} rust-requested-live-before={requested_before} rust-requested-live-after={}",
                     key.manifest.display(),
                     transport::private_bytes(),
                     started.elapsed().as_secs_f64(),
@@ -119,7 +127,7 @@ impl Shared {
                 let requested_before = allocations::requested_live();
                 self.reset_host(&mut host);
                 super::super::emit_stderr(format_args!(
-                    "dmbd idle release tier=queued-session project={} pressure={pressured} private-before={before:?} private-after={:?} rust-requested-live-before={requested_before} rust-requested-live-after={}",
+                    "dmbd idle release tier=queued-session project={} pressure={pressured} hard={hard} private-before={before:?} private-after={:?} rust-requested-live-before={requested_before} rust-requested-live-after={}",
                     key.manifest.display(),
                     transport::private_bytes(),
                     allocations::requested_live()
@@ -185,16 +193,23 @@ mod tests {
         assert!(!deadline.due(now + Duration::from_secs(40)));
     }
     #[test]
+    fn soft_pressure_never_reaches_symbolic_core_tiers() {
+        for previous in 0..=SESSION_RELEASE {
+            assert_eq!(target(Duration::ZERO, true, false, previous), 2);
+        }
+        assert_eq!(target(SESSION_IDLE, true, false, 2), SESSION_RELEASE);
+    }
+    #[test]
     fn idle_tiers_and_pressure_have_explicit_order() {
-        assert_eq!(target(Duration::from_secs(29), false, 0), 0);
-        assert_eq!(target(Duration::from_secs(30), false, 0), 1);
-        assert_eq!(target(Duration::from_secs(120), false, 1), 1);
-        assert_eq!(target(Duration::from_secs(599), false, 1), 1);
-        assert_eq!(target(Duration::from_secs(600), false, 2), SESSION_RELEASE);
-        assert_eq!(target(Duration::ZERO, true, 0), 2);
-        assert_eq!(target(Duration::ZERO, true, 2), 3);
-        assert_eq!(target(Duration::ZERO, false, 3), 0);
-        assert_eq!(target(Duration::ZERO, true, 3), OPTIONAL_IMAGES);
+        assert_eq!(target(Duration::from_secs(29), false, false, 0), 0);
+        assert_eq!(target(Duration::from_secs(30), false, false, 0), 1);
+        assert_eq!(target(Duration::from_secs(120), false, false, 1), 1);
+        assert_eq!(target(SESSION_IDLE - Duration::from_secs(1), false, false, 1), 1);
+        assert_eq!(target(SESSION_IDLE, false, false, 2), SESSION_RELEASE);
+        assert_eq!(target(Duration::ZERO, true, true, 0), 2);
+        assert_eq!(target(Duration::ZERO, true, true, 2), 3);
+        assert_eq!(target(Duration::ZERO, false, false, 3), 0);
+        assert_eq!(target(Duration::ZERO, true, true, 3), OPTIONAL_IMAGES);
     }
     #[test]
     fn bounded_eviction_is_deterministic_and_preserves_request_owned_slots() {
@@ -213,14 +228,14 @@ mod tests {
             connections: AtomicUsize::new(0),
         };
         let now = Instant::now();
-        let last = now - Duration::from_secs(601);
+        let last = now - SESSION_IDLE - Duration::from_secs(1);
         for name in ["f", "e", "d", "c", "b", "a"] {
             let slot = shared.slot(PathBuf::from(name), &BTreeMap::new(), None);
             *slot.last.lock().unwrap() = last;
         }
         let active = shared.slot(PathBuf::from("active"), &BTreeMap::new(), None);
         *active.last.lock().unwrap() = last - Duration::from_secs(1);
-        shared.housekeep(now, false);
+        shared.housekeep(now, false, false);
         let remaining = shared
             .slots
             .lock()
@@ -230,7 +245,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(remaining, ["active", "e", "f"].map(PathBuf::from));
         drop(active);
-        shared.housekeep(now, false);
+        shared.housekeep(now, false, false);
         assert!(shared.slots.lock().unwrap().is_empty());
     }
 }

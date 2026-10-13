@@ -8,7 +8,9 @@ use std::{
 };
 
 const MAX_WORKERS: usize = 8;
-const IDLE: Duration = Duration::from_secs(30);
+// Idle workers keep owning their allocator heaps (and the retained results
+// allocated on them) across edits; joining them abandons those pages.
+const IDLE: Duration = Duration::from_secs(600);
 struct Idle {
     executor: BuildExecutor,
     since: Instant,
@@ -188,6 +190,16 @@ mod tests {
         assert_eq!(owner.state.lock().unwrap().physical, 8);
         assert!(owner.state.lock().unwrap().idle.is_empty());
         drop(eight);
+        owner.trim(Instant::now() + IDLE, false);
+        assert_eq!(owner.state.lock().unwrap().physical, 0);
+    }
+    #[test]
+    fn idle_workers_survive_ordinary_idle_and_retire_at_the_pool_idle_limit() {
+        let owner = Arc::new(ExecutorPools::default());
+        drop(owner.checkout(2).unwrap());
+        // Ordinary idle shorter than the pool limit keeps worker heaps owned.
+        owner.trim(Instant::now() + Duration::from_secs(60), false);
+        assert_eq!(owner.state.lock().unwrap().physical, 2);
         owner.trim(Instant::now() + IDLE, false);
         assert_eq!(owner.state.lock().unwrap().physical, 0);
     }

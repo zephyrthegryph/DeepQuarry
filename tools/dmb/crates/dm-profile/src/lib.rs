@@ -947,7 +947,7 @@ impl Drop for ProfileGuard {
 #[path = "tests.rs"]
 mod interval_tests;
 mod allocator_maintenance;
-pub use allocator_maintenance::reclaim_unused_allocator_pages;
+pub use allocator_maintenance::{allocator_commit_bytes, print_allocator_stats, reclaim_unused_allocator_pages};
 
 /// Scoped wall timer for stage internals, printed to the process stderr when
 /// `DMB_TIMINGS_DETAIL=1`. It is a diagnostic only and has no effect otherwise.
