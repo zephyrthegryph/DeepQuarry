@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/lipstick)
 /obj/item/lipstick/proc/twisted(datum/act/op/A)
 	to_chat(A.actor, span_notice("You twist \the [src] [open ? "closed" : "open"]."))
 	set_open(!open)
-	icon_state = open ? "[initial(icon_state)]_[colour]" : initial(icon_state)
+	set_icon_state(open ? "[initial(icon_state)]_[colour]" : initial(icon_state))
 	return OP_OK
 
 /obj/item/lipstick/proc/clean_lips(datum/act/op/A)

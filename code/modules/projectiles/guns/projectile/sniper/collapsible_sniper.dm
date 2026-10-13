@@ -150,17 +150,17 @@ MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%
 		if(1)
 			name = initial(name)
 			set_w_class(ITEMSIZE_NORMAL)
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 		if(2)
 			if(barrel() && trigger_group())
 				name = "AM rifle barrel-trigger assembly"
-				icon_state = "heavysniper-trigbar"
+				set_icon_state("heavysniper-trigbar")
 			else if(stock() && trigger_group())
 				name = "AM rifle stock-trigger assembly"
-				icon_state = "heavysniper-trigstock"
+				set_icon_state("heavysniper-trigstock")
 			else if(stock() && barrel())
 				name = "AM rifle stock-barrel assembly"
-				icon_state = "heavysniper-barstock"
+				set_icon_state("heavysniper-barstock")
 			set_w_class(ITEMSIZE_LARGE)
 
 		if(3)

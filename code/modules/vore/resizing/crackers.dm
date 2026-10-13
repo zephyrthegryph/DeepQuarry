@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/cracker)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/cracker/proc/roll_look(datum/roller/R)
 	var/style = R.choose(list("blue","green","yellow","red","heart","hazard"))
-	item_state = style
+	set_item_state(style)
 	return style
 
 /obj/item/cracker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -178,7 +178,7 @@ CAPABILITIES(/obj/item/clothing/head/paper_crown)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/clothing/head/paper_crown/proc/roll_look(datum/roller/R)
 	var/style = R.choose(list("paper_crown_blue","paper_crown_green","paper_crown_yellow","paper_crown_red","paper_crown_pink"))
-	item_state = style
+	set_item_state(style)
 	return style
 
 /obj/item/paper/cracker_joke

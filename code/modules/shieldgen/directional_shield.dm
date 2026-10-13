@@ -124,7 +124,7 @@ TRACKED(/obj/item/shield_projector, regenerating)
 
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
 	var/obj/effect/directional_shield/S = new(newloc, src)
-	S.dir = new_dir
+	S.set_dir(new_dir)
 	rel_add(src, nameof(active_shields), S)
 
 /// An always-on projector raises its shields once init is done (after_init()).

@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's fitted with a prying head."
-			icon_state = "jaws_pry"
+			set_icon_state("jaws_pry")
 			set_usesound(SFX_ITEMS_JAWS_PRY)
 			set_pry(1)
 			tool_qualities = list(TOOL_CROWBAR)
@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
 				to_chat(user, span_notice("You attach the pry jaws to [src]."))
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's fitted with a cutting head."
-			icon_state = "jaws_cutter"
+			set_icon_state("jaws_cutter")
 			set_usesound(SFX_ITEMS_JAWS_CUT)
 			set_pry(0)
 			tool_qualities = list(TOOL_WIRECUTTER)
@@ -92,7 +92,7 @@ CAPABILITIES(/obj/item/tool/transforming/powerdrill)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's fitted with a bolt driver."
-			icon_state = "drill_bolt"
+			set_icon_state("drill_bolt")
 			set_sharp(FALSE)
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/tool/transforming/powerdrill)
 				to_chat(user, span_notice("You attach the bolt driver to [src]."))
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's fitted with a screw driver."
-			icon_state = "drill_screw"
+			set_icon_state("drill_screw")
 			set_sharp(TRUE)
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's currently in bolting mode."
-			icon_state = "altevian-wrench"
+			set_icon_state("altevian-wrench")
 			set_usesound(SFX_ITEMS_RATCHET)
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 				to_chat(user, span_notice("You reconfigure [src] into bolting mode."))
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's currently in prying mode."
-			icon_state = "altevian-crowbar"
+			set_icon_state("altevian-crowbar")
 			set_usesound(SFX_ITEMS_CROWBAR)
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 				to_chat(user, span_notice("You reconfigure [src] into prying mode."))
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's currently in cutting mode."
-			icon_state = "altevian-wirecutter"
+			set_icon_state("altevian-wirecutter")
 			set_usesound(SFX_ITEMS_WIRECUTTER)
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 				to_chat(user, span_notice("You reconfigure [src] into cutting mode."))
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's currently in screwing mode."
-			icon_state = "altevian-screwdriver"
+			set_icon_state("altevian-screwdriver")
 			set_usesound(SFX_ITEMS_SCREWDRIVER)
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 				to_chat(user, span_notice("You reconfigure [src] into screwing mode."))
 		if(TOOL_MULTITOOL)
 			desc = initial(desc) + " It's currently in pulsing mode."
-			icon_state = "altevian-pulser"
+			set_icon_state("altevian-pulser")
 			set_usesound(SFX_ITEMS_SCREWDRIVER)
 			tool_qualities = list(TOOL_MULTITOOL)
 			if(user)
@@ -171,7 +171,7 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 				to_chat(user, span_notice("You reconfigure [src] into pulsing mode."))
 		if(TOOL_WELDER)
 			desc = initial(desc) + " It's currently in welding mode."
-			icon_state = "altevian-welder-on"
+			set_icon_state("altevian-welder-on")
 			welder.set_usesound('sound/items/Welder2.ogg')
 			set_usesound(SFX_ITEMS_WELDER2)
 			tool_qualities = list(TOOL_WELDER)

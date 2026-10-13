@@ -278,7 +278,7 @@ CAPABILITIES(/obj/item/stack/flag)
 	if(!upright)
 		return OP_DECLINE
 	upright = 0
-	icon_state = base_state
+	set_icon_state(base_state)
 	set_anchored(FALSE)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " knocks down %T%."))
 	return OP_OK
@@ -302,7 +302,7 @@ CAPABILITIES(/obj/item/stack/flag)
 	newflag.upright = 1
 	newflag.set_anchored(TRUE)
 	newflag.name = newflag.singular_name
-	newflag.icon_state = "[newflag.base_state]_open"
+	newflag.set_icon_state("[newflag.base_state]_open")
 	act_message(user, newflag, others = span_infoplain(span_bold("%U%") + " plants %T% firmly in the ground."))
 	src.use(1)
 
@@ -388,7 +388,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 	set_color()
 
 /obj/structure/trailblazer/proc/set_color()
-	icon_state = "redtrail_light_on"
+	set_icon_state("redtrail_light_on")
 	set_glow(src, GLOW(2, 2, "#FF0000"))
 
 /obj/structure/trailblazer/proc/knock_down_done(datum/act/op/A)
@@ -409,7 +409,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 	stack_type = /obj/item/stack/lightpole/blue
 
 /obj/structure/trailblazer/blue/set_color()
-	icon_state = "bluetrail_light_on"
+	set_icon_state("bluetrail_light_on")
 	set_glow(src, GLOW(2, 2, "#C4FFFF"))
 
 /obj/structure/trailblazer/yellow
@@ -419,7 +419,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 	stack_type = /obj/item/stack/lightpole/yellow
 
 /obj/structure/trailblazer/yellow/set_color()
-	icon_state = "yellowtrail_light_on"
+	set_icon_state("yellowtrail_light_on")
 	set_glow(src, GLOW(2, 2, "#ffea00"))
 
 /// Accessor for a shared definition.

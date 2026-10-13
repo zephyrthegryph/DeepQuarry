@@ -102,7 +102,7 @@
 	F.set_dir(direction)
 	F.initialize_directions = direction
 	var/obj/machinery/atmospherics/pipe/simple/P = allocate(/obj/machinery/atmospherics/pipe/simple, B)
-	P.dir = direction | turn(direction, 180)
+	P.set_dir(direction | turn(direction, 180))
 	P.initialize_directions = P.dir
 	F.atmos_init()
 	P.atmos_init()
@@ -136,7 +136,7 @@
 	H.set_dir(direction)
 	H.initialize_directions = direction
 	var/obj/machinery/atmospherics/pipe/simple/P = allocate(/obj/machinery/atmospherics/pipe/simple, B)
-	P.dir = direction | turn(direction, 180)
+	P.set_dir(direction | turn(direction, 180))
 	P.initialize_directions = P.dir
 	H.atmos_init()
 	P.atmos_init()

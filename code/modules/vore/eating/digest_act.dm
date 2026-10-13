@@ -183,7 +183,7 @@
 	desc = "A partially digested card that has seen better days. The damage appears to be only cosmetic."
 	if(!sprite_stack || !istype(sprite_stack) || !(sprite_stack.len))
 		icon = 'icons/obj/card.dmi'
-		icon_state = "[initial(icon_state)]_digested"
+		set_icon_state("[initial(icon_state)]_digested")
 	else
 		if(!sprite_stack.Find("digested"))
 			set_sprite_stack(sprite_stack + "digested") // a new list: the card's own stack is never the shared initial one

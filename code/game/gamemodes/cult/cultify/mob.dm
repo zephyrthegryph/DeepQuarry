@@ -9,9 +9,9 @@
 /mob/observer/dead/cultify()
 	if(icon_state != "ghost-narsie")
 		icon = 'icons/mob/mob.dmi'
-		icon_state = "ghost-narsie"
+		set_icon_state("ghost-narsie")
 		overlays = 0
-		invisibility = INVISIBILITY_NONE
+		set_invisibility(INVISIBILITY_NONE)
 		to_chat(src, span_sinister("Even as a non-corporal being, you can feel Nar-Sie's presence altering you. You are now visible to everyone."))
 
 /mob/living/cultify()
@@ -23,9 +23,9 @@
 	else if(client)
 		var/mob/observer/dead/G = (ghostize())
 		G.icon = 'icons/mob/mob.dmi'
-		G.icon_state = "ghost-narsie"
+		G.set_icon_state("ghost-narsie")
 		G.overlays = 0
-		G.invisibility = INVISIBILITY_NONE
+		G.set_invisibility(INVISIBILITY_NONE)
 		to_chat(G, span_sinister("You feel relieved as what's left of your soul finally escapes its prison of flesh."))
 
 		rel_add(GLOB.cult, nameof(GLOB.cult.harvested), G.mind)

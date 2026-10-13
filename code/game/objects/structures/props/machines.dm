@@ -81,25 +81,25 @@
 	. = ..()
 	switch(state)
 		if("blue")
-			icon_state = "dominator-blue"
+			set_icon_state("dominator-blue")
 		if("red")
-			icon_state = "dominator-red"
+			set_icon_state("dominator-red")
 		if("orange")
-			icon_state = "dominator-orange"
+			set_icon_state("dominator-orange")
 		if("yellow")
-			icon_state = "dominator-yellow"
+			set_icon_state("dominator-yellow")
 		if("green")
-			icon_state = "dominator-green"
+			set_icon_state("dominator-green")
 		if("purple")
-			icon_state = "dominator-purple"
+			set_icon_state("dominator-purple")
 		if("damaged")
 			add_overlay("dom_damage")
 		if("undamaged")
 			cut_overlay("dom_damage")
 		if("broken")
-			icon_state = "dominator-broken"
+			set_icon_state("dominator-broken")
 		if("plain")
-			icon_state = "dominator"
+			set_icon_state("dominator")
 
 /obj/structure/prop/dominator/blue
 	icon_state = "dominator-blue"
@@ -127,9 +127,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "nt_solidifier"
+			set_icon_state("nt_solidifier")
 		if("on")
-			icon_state = "nt_solidifier_on"
+			set_icon_state("nt_solidifier_on")
 
 /obj/structure/prop/machine/solifier/starts_on
 	icon_state = "nt_solidifier_on"
@@ -147,10 +147,10 @@
 	. = ..()
 	switch(state)
 		if("on")
-			icon_state = "conduit_spin"
+			set_icon_state("conduit_spin")
 			flick("conduit_starting", src)
 		if("off")
-			icon_state = "conduit_off"
+			set_icon_state("conduit_off")
 			flick("conduit_stopping", src)
 
 /obj/structure/prop/machine/conduit/starts_on
@@ -171,15 +171,15 @@
 	. = ..()
 	switch(state)
 		if("on")
-			icon_state = "core_active"
+			set_icon_state("core_active")
 			flick("core_warmup", src)
 		if("off")
-			icon_state = "core_inactive"
+			set_icon_state("core_inactive")
 			flick("core_shutdown", src)
 		if("empty")
-			icon_state = "core_empty"
+			set_icon_state("core_empty")
 		if("loaded")
-			icon_state = "core_inactive"
+			set_icon_state("core_inactive")
 
 /obj/structure/prop/machine/core/starts_on
 	icon_state = "core_active"
@@ -207,10 +207,10 @@
 	. = ..()
 	switch(state)
 		if("down")
-			icon_state = "tube_on"
+			set_icon_state("tube_on")
 			flick("tube_down", src)
 		if("up")
-			icon_state = "tube_open"
+			set_icon_state("tube_open")
 			flick("tube_up", src)
 
 /obj/structure/prop/machine/tube/starts_down
@@ -231,9 +231,9 @@
 	. = ..()
 	switch(state)
 		if("on")
-			icon_state = "comm_tower_on"
+			set_icon_state("comm_tower_on")
 		if("off")
-			icon_state = "comm_tower"
+			set_icon_state("comm_tower")
 
 /obj/structure/prop/machine/comm_tower/starts_on
 	icon_state = "comm_tower_on"
@@ -279,9 +279,9 @@
 	. = ..()
 	switch(state)
 		if("whole")
-			icon_state = "tank_larva"
+			set_icon_state("tank_larva")
 		if("broken")
-			icon_state = "tank_broken"
+			set_icon_state("tank_broken")
 
 /obj/structure/prop/machine/alien_tank/starts_broken
 	icon_state = "tank_broken"
@@ -301,9 +301,9 @@
 	. = ..()
 	switch(state)
 		if("idle")
-			icon_state = "nt_optable-idle"
+			set_icon_state("nt_optable-idle")
 		if("active")
-			icon_state = "nt_optable-active"
+			set_icon_state("nt_optable-active")
 		if("panel_open")
 			cut_overlay("nt_optable_panel")
 			add_overlay("nt_optable_panel")
@@ -328,9 +328,9 @@
 	. = ..()
 	switch(state)
 		if("idle")
-			icon_state = "tradebeacon"
+			set_icon_state("tradebeacon")
 		if("active")
-			icon_state = "tradebeacon_active"
+			set_icon_state("tradebeacon_active")
 		if("panel_open")
 			cut_overlay("tradebeacon_panel")
 			add_overlay("tradebeacon_panel")
@@ -355,9 +355,9 @@
 	. = ..()
 	switch(state)
 		if("idle")
-			icon_state = "tradebeacon_sending"
+			set_icon_state("tradebeacon_sending")
 		if("active")
-			icon_state = "tradebeacon_sending_active"
+			set_icon_state("tradebeacon_sending_active")
 		if("panel_open")
 			cut_overlay("tradebeacon_sending_panel")
 			add_overlay("tradebeacon_sending_panel")
@@ -381,9 +381,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "nt_obelisk"
+			set_icon_state("nt_obelisk")
 		if("on")
-			icon_state = "nt_obelisk_on"
+			set_icon_state("nt_obelisk_on")
 
 /obj/structure/prop/machine/nt_obelisk/starts_on
 	icon_state = "nt_obelisk_on"
@@ -402,9 +402,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "sorter"
+			set_icon_state("sorter")
 		if("on")
-			icon_state = "sorter-process"
+			set_icon_state("sorter-process")
 
 /obj/structure/prop/machine/sorter/starts_on
 	icon_state = "sorter-process"
@@ -423,9 +423,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "smelter"
+			set_icon_state("smelter")
 		if("on")
-			icon_state = "smelter-process"
+			set_icon_state("smelter-process")
 
 /obj/structure/prop/machine/smelter/starts_on
 	icon_state = "smelter-process"
@@ -445,13 +445,13 @@
 	. = ..()
 	switch(state)
 		if("idle")
-			icon_state = "nt_cruciforge"
+			set_icon_state("nt_cruciforge")
 			flick("nt_cruciforge_finish", src) // 8ds
 		if("work")
-			icon_state = "nt_cruciforge_work"
+			set_icon_state("nt_cruciforge_work")
 			flick("nt_cruciforge_start", src) // 8ds
 		if("pause")
-			icon_state = "nt_cruciforge_pause"
+			set_icon_state("nt_cruciforge_pause")
 
 /obj/structure/prop/machine/nt_cruciforge/starts_working
 	icon_state = "nt_cruciforge_work"
@@ -471,9 +471,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "tgmc_console1"
+			set_icon_state("tgmc_console1")
 		if("on")
-			icon_state = "tgmc_console1_on"
+			set_icon_state("tgmc_console1_on")
 
 /obj/structure/prop/machine/tgmc_console1/starts_on
 	icon_state = "tgmc_console1_on"
@@ -492,9 +492,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "tgmc_console2"
+			set_icon_state("tgmc_console2")
 		if("on")
-			icon_state = "tgmc_console2_on"
+			set_icon_state("tgmc_console2_on")
 
 /obj/structure/prop/machine/tgmc_console2/starts_on
 	icon_state = "tgmc_console2_on"
@@ -513,9 +513,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "tgmc_console3"
+			set_icon_state("tgmc_console3")
 		if("on")
-			icon_state = "tgmc_console3_on"
+			set_icon_state("tgmc_console3_on")
 
 /obj/structure/prop/machine/tgmc_console3/starts_on
 	icon_state = "tgmc_console3_on"
@@ -534,9 +534,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "tgmc_console4"
+			set_icon_state("tgmc_console4")
 		if("on")
-			icon_state = "tgmc_console4_on"
+			set_icon_state("tgmc_console4_on")
 
 /obj/structure/prop/machine/tgmc_console4/starts_on
 	icon_state = "tgmc_console4_on"
@@ -555,9 +555,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "tgmc_console5"
+			set_icon_state("tgmc_console5")
 		if("on")
-			icon_state = "tgmc_console5_on"
+			set_icon_state("tgmc_console5_on")
 
 /obj/structure/prop/machine/tgmc_console5/starts_on
 	icon_state = "tgmc_console5_on"
@@ -598,7 +598,7 @@
 	// Alpha mask to make sure things don't sneak out
 	var/obj/effect/overlay/vis/mask = new
 	mask.icon = icon
-	mask.icon_state = "nt_pod_mask"
+	mask.set_icon_state("nt_pod_mask")
 	mask.render_target = "*nt_podmask[REF(src)]"
 	mask.vis_flags = VIS_INHERIT_ID
 	vis_contents += mask
@@ -703,7 +703,7 @@ CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 
 /obj/structure/prop/machine/nt_pod/proc/delayed_flick(obj/effect/overlay/ovrl, icon_state, flicked, get_out_time)
 	if(ovrl) // the overlay may be gone; the pod still has to finish changing state
-		ovrl.icon_state = icon_state
+		ovrl.set_icon_state(icon_state)
 		flick(flicked, ovrl)
 	// GET OUT
 	if(get_out_time)
@@ -733,11 +733,11 @@ CAPABILITIES(/obj/structure/prop/machine/centrifuge)
 	if(!on)
 		on = TRUE
 		act_message(user, src, others = "%U% turns on %T%.")
-		icon_state = "centrifuge_moving"
+		set_icon_state("centrifuge_moving")
 	else
 		on = FALSE
 		act_message(user, src, others = "%U% turns off %T%.")
-		icon_state = "centrifuge"
+		set_icon_state("centrifuge")
 
 	return TRUE
 
@@ -756,11 +756,11 @@ CAPABILITIES(/obj/structure/prop/machine/incubator)
 	if(!on)
 		on = TRUE
 		act_message(user, src, others = "%U% turns on %T%.")
-		icon_state = "incubator_on"
+		set_icon_state("incubator_on")
 	else
 		on = FALSE
 		act_message(user, src, others = "%U% turns off %T%.")
-		icon_state = "incubator"
+		set_icon_state("incubator")
 
 	return TRUE
 
@@ -779,11 +779,11 @@ CAPABILITIES(/obj/structure/prop/machine/disease_analyser)
 	if(!on)
 		on = TRUE
 		act_message(user, src, others = "%U% turns on %T%.")
-		icon_state = "analyser_"
+		set_icon_state("analyser_")
 	else
 		on = FALSE
 		act_message(user, src, others = "%U% turns off %T%.")
-		icon_state = "analyser"
+		set_icon_state("analyser")
 
 	return TRUE
 
@@ -802,11 +802,11 @@ CAPABILITIES(/obj/structure/prop/machine/isolator)
 	if(!on)
 		on = TRUE
 		act_message(user, src, others = "%U% turns on %T%.")
-		icon_state = "isolator_"
+		set_icon_state("isolator_")
 	else
 		on = FALSE
 		act_message(user, src, others = "%U% turns off %T%.")
-		icon_state = "isolator_in"
+		set_icon_state("isolator_in")
 
 	return TRUE
 

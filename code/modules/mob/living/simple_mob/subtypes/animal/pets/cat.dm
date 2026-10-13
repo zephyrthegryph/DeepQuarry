@@ -382,7 +382,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
 /mob/living/simple_mob/animal/passive/cat/tabiranth/on_death(gibbed)
 	. = ..()
 	cut_overlays()
-	icon_state = ""
+	set_icon_state("")
 	flick("kphaseout",src)
 	expire(1 SECOND) //Back from whence you came!
 

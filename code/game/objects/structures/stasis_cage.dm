@@ -62,7 +62,7 @@ MSG_DEF_SELF(stasis_cage/needs_net, "It's going to be difficult to convince the 
 	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
 		var/atom/movable/_tmp_buck_11 = animal?.buckled_to()
 		_tmp_buck_11.forceMove(animal.loc)
-	icon_state = "critter"
+	set_icon_state("critter")
 	desc = initial(desc) + " \The [contained()] is kept inside."
 
 /obj/structure/stasis_cage/proc/release()
@@ -75,7 +75,7 @@ MSG_DEF_SELF(stasis_cage/needs_net, "It's going to be difficult to convince the 
 		_tmp_buck_12.dropInto(src)
 	contained().set_stasis(null, src)
 	rel_clear(src, nameof(contained))
-	icon_state = "critteropen"
+	set_icon_state("critteropen")
 	underlays.Cut()
 	desc = initial(desc)
 

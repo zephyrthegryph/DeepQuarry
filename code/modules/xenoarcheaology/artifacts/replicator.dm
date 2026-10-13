@@ -140,7 +140,7 @@
 
 			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
-				icon_state = "borgcharger0(old)"
+				set_icon_state("borgcharger0(old)")
 
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/machinery/replicator)
 			spawning_types.Add(button["type"])
 			spawn_progress_time = 0
 			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "borgcharger1(old)"
+			set_icon_state("borgcharger1(old)")
 		else
 			visible_message(fail_message)
 
@@ -300,7 +300,7 @@ CAPABILITIES(/obj/machinery/replicator)
 
 			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
-				icon_state = "borgcharger0(old)"
+				set_icon_state("borgcharger0(old)")
 
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
@@ -522,7 +522,7 @@ CAPABILITIES(/obj/machinery/replicator)
 
 			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
-				icon_state = "borgcharger0(old)"
+				set_icon_state("borgcharger0(old)")
 
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))

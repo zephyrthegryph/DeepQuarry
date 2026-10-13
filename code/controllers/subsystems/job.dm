@@ -518,7 +518,7 @@ CAPABILITIES(/datum/system/job)
 				// Implants get special treatment
 				if(gaar_thing.slot == "implant")
 					var/obj/item/implant/gear_implant = gaar_thing.spawn_item(human_mob, active_gear_list[gaar_thing.display_name])
-					gear_implant.invisibility = INVISIBILITY_MAXIMUM
+					gear_implant.set_invisibility(INVISIBILITY_MAXIMUM)
 					gear_implant.implant_loadout(human_mob)
 					continue
 

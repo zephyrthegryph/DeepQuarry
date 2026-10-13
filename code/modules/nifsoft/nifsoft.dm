@@ -213,10 +213,10 @@ CAPABILITIES(/obj/item/disk/nifsoft)
 
 /// Plays the item animation upon using on a valid target.
 /obj/item/disk/nifsoft/proc/upload_started(datum/act/op/A)
-	icon_state = "[initial(icon_state)]-animate"
+	set_icon_state("[initial(icon_state)]-animate")
 
 /obj/item/disk/nifsoft/proc/upload_failed(datum/act/op/A)
-	icon_state = "[initial(icon_state)]"	//If it fails to apply to a valid target and doesn't get deleted, reset its icon state
+	set_icon_state("[initial(icon_state)]")	//If it fails to apply to a valid target and doesn't get deleted, reset its icon state
 
 /obj/item/disk/nifsoft/proc/upload_done(datum/act/op/A)
 	var/mob/living/carbon/human/Ht = A.target

@@ -617,7 +617,7 @@
 	TEST_ASSERT(test_turf, "A real beam test requires an in-bounds clear firing lane")
 	var/obj/machinery/target = new(get_step(test_turf, NORTH))
 	target.set_density(TRUE)
-	target.max_integrity = 10000
+	target.set_max_integrity(10000)
 	target.update_integrity(10000)
 	var/obj/machinery/power/emitter/emitter = new(test_turf)
 	emitter.set_dir(NORTH)

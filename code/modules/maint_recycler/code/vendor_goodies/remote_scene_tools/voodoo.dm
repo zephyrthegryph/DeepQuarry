@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 
 /obj/item/remote_scene_tool/voodoo_doll/Move(atom/newloc, direct, movetime)
 	. = ..()
-	dir = SOUTH //we need to do this
+	set_dir(SOUTH) //we need to do this
 
 /obj/item/remote_scene_tool/voodoo_doll/proc/get_outline_color(r,g,b,a, offset = 30)
 	var/new_rgba = rgb(r-offset,g-offset,b-offset,a)

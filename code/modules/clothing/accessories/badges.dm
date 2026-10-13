@@ -380,10 +380,10 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	var/obj/item/dosimeter_film/film = current_film
 	if(film)
 		film.set_state(tostate)
-		icon_state = "[initial(icon_state)][tostate]"
+		set_icon_state("[initial(icon_state)][tostate]")
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else
-		icon_state = "[initial(icon_state)]-empty"
+		set_icon_state("[initial(icon_state)]-empty")
 
 /obj/item/dosimeter_film
 	name = "dosimeter film"
@@ -398,7 +398,7 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 TRACKED(/obj/item/dosimeter_film, state)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
-	icon_state = tostate
+	set_icon_state(tostate)
 
 /obj/item/paper/dosimeter_manual
 	name = "Dosimeter manual"

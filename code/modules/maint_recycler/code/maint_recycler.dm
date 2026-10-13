@@ -156,7 +156,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	if(GLOB.recycler_locations.len > 0)
 		var/turf/spot = pick(GLOB.recycler_locations)
 		forceMove(spot)
-		dir = SOUTH
+		set_dir(SOUTH)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 		testing("[src] has been placed at [loc], [x],[y],[z]")
 	else
@@ -200,7 +200,7 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		if(consent)
 			if(user in range(1,src))
-				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
+				m.set_dir(SOUTH) //the disposal bins do that and it simply doesn't work.
 				move_into(src, nameof(src.inserted_item), m, user)
 			else
 				return OP_OK //too far away, dumbass.

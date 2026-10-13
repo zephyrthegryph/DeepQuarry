@@ -25,7 +25,7 @@ CAPABILITIES(/obj/structure/sign)
 	var/obj/item/sign/S = new(src.loc)
 	S.name = name
 	S.desc = desc
-	S.icon_state = icon_state
+	S.set_icon_state(icon_state)
 	S.sign_state = icon_state
 	S.original_type = type
 	replace_with(src, S)
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/sign)
 	S.pixel_y = offset_y
 	S.name = restored_name
 	S.desc = restored_desc
-	S.icon_state = restored_state
+	S.set_icon_state(restored_state)
 	to_chat(user, "You fasten \the [S] with your [tool].")
 	return OP_OK
 
@@ -1598,12 +1598,12 @@ CAPABILITIES(/obj/structure/sign/warning)
 		if(WEST)
 			P.pixel_x = -32
 
-	P.dir = placement_dir
+	P.set_dir(placement_dir)
 	if(flag_size)
-		P.icon_state = "[flag_path]_l"
+		P.set_icon_state("[flag_path]_l")
 		var/obj/structure/sign/flag/P2 = new(user.loc)
 		rel_set(P, nameof(P.linked_flag), P2)
-		P2.icon_state = "[flag_path]_r"
+		P2.set_icon_state("[flag_path]_r")
 		P2.set_dir(P.dir)
 		switch(P2.dir)
 			if(NORTH)
@@ -1623,7 +1623,7 @@ CAPABILITIES(/obj/structure/sign/warning)
 		P2.description_fluff = description_fluff
 		P2.flagtype = type
 	else
-		P.icon_state = "[flag_path]"
+		P.set_icon_state("[flag_path]")
 	P.name = name
 	P.desc = desc
 	P.description_fluff = description_fluff

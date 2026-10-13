@@ -27,7 +27,7 @@
 			inv_box.name =        gear_slot
 			inv_box.screen_loc =  slot_data["loc"]
 			inv_box.slot_id =     slot_data["slot"]
-			inv_box.icon_state =  slot_data["state"]
+			inv_box.set_icon_state(slot_data["state"])
 			slot_info["[inv_box.slot_id]"] = inv_box.screen_loc
 
 			if(slot_data["dir"])
@@ -43,7 +43,7 @@
 		using = new /atom/movable/screen()
 		using.name = "toggle"
 		using.icon = ui_style
-		using.icon_state = "other"
+		using.set_icon_state("other")
 		using.screen_loc = ui_inventory
 		using.hud_layerise()
 		using.color = ui_color
@@ -62,7 +62,7 @@
 	using = new /atom/movable/screen()
 	using.name = "mov_intent"
 	using.icon = ui_style
-	using.icon_state = (m_intent == I_RUN ? "running" : "walking")
+	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -73,7 +73,7 @@
 	using = new /atom/movable/screen()
 	using.name = "resist"
 	using.icon = ui_style
-	using.icon_state = "act_resist"
+	using.set_icon_state("act_resist")
 	using.screen_loc = ui_pull_resist
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -104,7 +104,7 @@
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "aw-select"
+	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
 	hud_elements |= aw
@@ -112,7 +112,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "lang"
+	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
@@ -120,7 +120,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "up"
+	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
@@ -128,7 +128,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "down"
+	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
@@ -153,7 +153,7 @@
 		using = new /atom/movable/screen()
 		using.name = "drop"
 		using.icon = ui_style
-		using.icon_state = "act_drop"
+		using.set_icon_state("act_drop")
 		using.screen_loc = ui_drop_throw
 		using.color = ui_color
 		using.alpha = ui_alpha
@@ -163,7 +163,7 @@
 		using = new /atom/movable/screen()
 		using.name = "equip"
 		using.icon = ui_style
-		using.icon_state = "act_equip"
+		using.set_icon_state("act_equip")
 		using.screen_loc = ui_equip
 		using.color = ui_color
 		using.alpha = ui_alpha
@@ -174,9 +174,9 @@
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "r_hand"
 		inv_box.icon = ui_style
-		inv_box.icon_state = "r_hand_inactive"
+		inv_box.set_icon_state("r_hand_inactive")
 		if(!hand)	//This being 0 or null means the right hand is in use
-			inv_box.icon_state = "r_hand_active"
+			inv_box.set_icon_state("r_hand_active")
 		inv_box.screen_loc = ui_rhand
 		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = ui_color
@@ -189,9 +189,9 @@
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "l_hand"
 		inv_box.icon = ui_style
-		inv_box.icon_state = "l_hand_inactive"
+		inv_box.set_icon_state("l_hand_inactive")
 		if(hand)	//This being 1 means the left hand is in use
-			inv_box.icon_state = "l_hand_active"
+			inv_box.set_icon_state("l_hand_active")
 		inv_box.screen_loc = ui_lhand
 		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = ui_color
@@ -204,7 +204,7 @@
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
 		using.icon = ui_style
-		using.icon_state = "hand1"
+		using.set_icon_state("hand1")
 		using.screen_loc = ui_swaphand1
 		using.color = ui_color
 		using.alpha = ui_alpha
@@ -213,7 +213,7 @@
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
 		using.icon = ui_style
-		using.icon_state = "hand2"
+		using.set_icon_state("hand2")
 		using.screen_loc = ui_swaphand2
 		using.color = ui_color
 		using.alpha = ui_alpha

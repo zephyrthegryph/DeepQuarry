@@ -30,7 +30,7 @@
 	match_windows(SOUTH, SOUTH)
 	match_windows(WEST, WEST)
 
-	icon_state = "[window_flags]_[wall_flags]"
+	set_icon_state("[window_flags]_[wall_flags]")
 
 	return icon_state
 

@@ -22,7 +22,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 /atom/movable/screen/radial/slice/set_parent(new_value)
 	. = ..()
 	if(parent())
-		icon_state = parent().radial_slice_icon
+		set_icon_state(parent().radial_slice_icon)
 
 /// after() target: hovering clicks, once the entry animation has played.
 /atom/movable/screen/radial/slice/proc/enable_hover_click()
@@ -38,16 +38,16 @@ CAPABILITIES(/atom/movable/screen/radial/slice)
 	var/mob/user = A.actor
 	if(!A.entered)
 		if(next_page || !parent())
-			icon_state = "radial_slice"
+			set_icon_state("radial_slice")
 		else
-			icon_state = parent().radial_slice_icon
+			set_icon_state(parent().radial_slice_icon)
 		if(tooltips)
 			closeToolTip(user, src)
 		return
 	if(next_page || !parent())
-		icon_state = "radial_slice_focus"
+		set_icon_state("radial_slice_focus")
 	else
-		icon_state = "[parent().radial_slice_icon]_focus"
+		set_icon_state("[parent().radial_slice_icon]_focus")
 	if(tooltips)
 		openToolTip(user, src, A.params, title = name)
 	if(click_on_hover && !isnull(user) && !isnull(parent()))
@@ -69,11 +69,11 @@ CAPABILITIES(/atom/movable/screen/radial/slice)
 
 /atom/movable/screen/radial/center/MouseEntered(location, control, params)
 	. = ..()
-	icon_state = "radial_center_focus"
+	set_icon_state("radial_center_focus")
 
 /atom/movable/screen/radial/center/MouseExited(location, control, params)
 	. = ..()
-	icon_state = "radial_center"
+	set_icon_state("radial_center")
 
 /atom/movable/screen/radial/center/Click(location, control, params)
 	if(usr.client == parent().current_user())
@@ -244,7 +244,7 @@ CAPABILITIES(/datum/radial_menu)
 	if(choice_id == NEXT_PAGE_ID)
 		E.name = "Next Page"
 		E.next_page = TRUE
-		E.icon_state = "radial_slice" // Resets the bg icon state to the default for next page buttons.
+		E.set_icon_state("radial_slice") // Resets the bg icon state to the default for next page buttons.
 		E.add_overlay("radial_next")
 	else
 		//This isn't granted to exist, so use the ?. operator for conditionals that use it.

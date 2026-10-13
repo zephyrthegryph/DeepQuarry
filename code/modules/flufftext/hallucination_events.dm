@@ -72,29 +72,29 @@
 	switch(rand(1,6))
 		if(1) //revolver
 			CI.icon = 'icons/obj/gun.dmi'
-			CI.icon_state = "revolver"
+			CI.set_icon_state("revolver")
 			CI.name = "Revolver"
 		if(2) //c4
 			CI.icon = 'icons/obj/assemblies.dmi'
-			CI.icon_state = "plastic-explosive0"
+			CI.set_icon_state("plastic-explosive0")
 			CI.name = "Mysterious Package"
 			if(prob(25))
-				CI.icon_state = "c4small_1"
+				CI.set_icon_state("c4small_1")
 		if(3) //sword
 			CI.icon = 'icons/obj/weapons.dmi'
-			CI.icon_state = "longsword"
+			CI.set_icon_state("longsword")
 			CI.name = "Sword"
 		if(4) //stun baton
 			CI.icon = 'icons/obj/weapons.dmi'
-			CI.icon_state = "stunbaton"
+			CI.set_icon_state("stunbaton")
 			CI.name = "Stun Baton"
 		if(5) //emag
 			CI.icon = 'icons/obj/card.dmi'
-			CI.icon_state = "emag"
+			CI.set_icon_state("emag")
 			CI.name = "Cryptographic Sequencer"
 		if(6) //flashbang
 			CI.icon = 'icons/obj/grenade.dmi'
-			CI.icon_state = "flashbang1"
+			CI.set_icon_state("flashbang1")
 			CI.name = "Flashbang"
 	rel_set(src, nameof(halitem), CI)
 	rel_set(src, nameof(halitem_client), our_human.client)
