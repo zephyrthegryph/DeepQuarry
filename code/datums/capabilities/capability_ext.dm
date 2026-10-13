@@ -59,7 +59,8 @@
 			LAZYREMOVE(capability_runtime(A).extras, C)
 			refresh_granted_verbs(A)
 			var/datum/data = capability_data(A)?[C.key]
-			LAZYREMOVE(capability_runtime(A).data, C.key)
+			var/datum/capability_runtime/runtime = capability_runtime(A)
+			rel_take(runtime, nameof(runtime.data), key = C.key)
 			if(isdatum(data))
 				spent(data)
 			state_changed(A) // the extra capability is gone from the holder's outputs

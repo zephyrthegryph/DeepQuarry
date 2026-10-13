@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 /// A pipe is worth its steel (a free dispenser pipe is not: no infinite steel).
 /obj/machinery/pipelayer/proc/pipe_has_steel(datum/act/op/A)
 	var/obj/item/pipe/P = A.held
-	return (istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT) ? null : MSG(pipelayer/thin_pipe) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT) ? null : MSG(pipelayer/thin_pipe)
 
 /obj/machinery/pipelayer/proc/room_for_pipe(datum/act/A)
 	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full)

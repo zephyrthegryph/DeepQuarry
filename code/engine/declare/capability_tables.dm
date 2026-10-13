@@ -6,8 +6,11 @@ GLOBAL_LIST(capability_runtime_records)
 
 /datum/capability_runtime
 	var/bits = 0
-	var/list/data
+	var/alist/data = alist()
 	var/list/extras
+
+CAPABILITIES(/datum/capability_runtime)
+	owns_many(nameof(data), /datum)
 
 /proc/capability_runtime(atom/holder)
 	RETURN_TYPE(/datum/capability_runtime)
@@ -31,9 +34,9 @@ READS_AS(/proc/capability_bits, OP_KEY_CAP_STATE)
 READS_AS(/proc/capability_data, OP_KEY_CAP_DATA)
 /proc/capability_data(atom/holder)
 	READS_FROM() // preserve the original holder field dependency through the UID store
-	RETURN_TYPE(/list)
+	RETURN_TYPE(/alist)
 	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
-	return runtime?.data
+	return length(runtime?.data) ? runtime.data : null
 
 READS_AS(/proc/capability_extras, OP_KEY_CAP_EXTRAS)
 /proc/capability_extras(atom/holder)
@@ -52,11 +55,9 @@ READS_AS(/proc/capability_extras, OP_KEY_CAP_EXTRAS)
 		return
 	// Normal caps_destroy already ended and cleared these values. If destruction aborted
 	// before that phase, finish each remaining datum independently, including its owned children.
-	var/list/data = runtime.data
-	runtime.data = null
+	var/list/data = rel_take_all(runtime, nameof(runtime.data))
 	runtime.extras = null // interned capability definitions are shared, never owned by this record
-	for(var/key in data)
-		var/datum/value = data[key]
+	for(var/datum/value as anything in data)
 		if(!isdatum(value))
 			continue
 		try

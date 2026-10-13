@@ -38,7 +38,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	if(D || !C.data_type)
 		return D
 	D = new C.data_type
-	LAZYSET(capability_runtime(A).data, C.key, D)
+	var/datum/capability_runtime/runtime = capability_runtime(A)
+	rel_add(runtime, nameof(runtime.data), D, key = C.key)
 	return D
 
 /datum/capability

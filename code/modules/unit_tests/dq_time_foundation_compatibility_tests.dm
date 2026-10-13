@@ -178,3 +178,45 @@
 	TEST_ASSERT(QDELETED(service), "Ending the assembly invokes its actual declared service ownership cleanup")
 	TEST_ASSERT(!after_pending(service, "material_service"), "No material-service timer survives the aborted holder")
 	TEST_ASSERT(!QDELETED(capability), "The shared capability definition survives its holder's aborted cleanup")
+
+/// Keyed capability storage preserves sparse numeric IDs and type-path IDs together.
+/datum/dq_runtime_map_counter
+	var/ended = 0
+
+/datum/dq_runtime_map_data
+	var/datum/dq_runtime_map_counter/counter
+
+CAPABILITIES(/datum/dq_runtime_map_data)
+	ref_one(nameof(counter), /datum/dq_runtime_map_counter)
+
+/datum/dq_runtime_map_data/on_destroy(force)
+	if(counter)
+		counter.ended++
+	return ..()
+
+/datum/unit_test/dq_capability_runtime_keyed_records/Run()
+	var/obj/holder = allocate(/obj, run_loc_floor_bottom_left)
+	var/datum/capability_runtime/runtime = capability_runtime(holder)
+	TEST_ASSERT_NULL(capability_data(holder), "An allocated but empty runtime still exposes no data")
+	var/datum/dq_runtime_map_counter/counter = allocate(/datum/dq_runtime_map_counter)
+	var/datum/dq_runtime_map_data/first = allocate(/datum/dq_runtime_map_data)
+	var/datum/dq_runtime_map_data/replacement = allocate(/datum/dq_runtime_map_data)
+	var/datum/dq_runtime_map_data/path_record = allocate(/datum/dq_runtime_map_data)
+	rel_set(first, nameof(first.counter), counter)
+	rel_set(replacement, nameof(replacement.counter), counter)
+	rel_set(path_record, nameof(path_record.counter), counter)
+	rel_add(runtime, nameof(runtime.data), path_record, key = /datum/dq_runtime_map_data)
+	rel_add(runtime, nameof(runtime.data), first, key = 37)
+	TEST_ASSERT_EQUAL(capability_data(holder)?[37], first, "A numeric ID remains a key even after a path was inserted")
+	TEST_ASSERT_EQUAL(capability_data(holder)?[/datum/dq_runtime_map_data], path_record, "The path key still resolves its own record")
+	rel_add(runtime, nameof(runtime.data), replacement, key = 37)
+	TEST_ASSERT(QDELETED(first), "Replacing a capability record disposes of the old owned record")
+	TEST_ASSERT_EQUAL(counter.ended, 1, "The replaced record ends exactly once")
+	TEST_ASSERT_EQUAL(rel_take(runtime, nameof(runtime.data), key = 37), replacement, "Taking a keyed record returns the live detached record")
+	TEST_ASSERT_NULL(owner_of(replacement), "A taken record is no longer owned by the runtime")
+	TEST_ASSERT(!QDELETED(replacement), "Taking does not delete the record")
+	spent(replacement)
+	TEST_ASSERT_EQUAL(counter.ended, 2, "Explicit teardown of a taken record ends it once")
+	qdel(holder)
+	TEST_ASSERT(QDELETED(path_record), "Holder teardown ends the remaining path-keyed record")
+	TEST_ASSERT_EQUAL(counter.ended, 3, "Holder teardown ends each remaining record exactly once")

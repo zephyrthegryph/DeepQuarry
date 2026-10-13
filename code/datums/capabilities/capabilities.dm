@@ -122,11 +122,10 @@
 	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
 	if(runtime)
 		runtime.extras = null
-		for(var/key in runtime.data)
-			var/datum/D = runtime.data[key]
+		var/list/data = rel_take_all(runtime, nameof(runtime.data))
+		for(var/datum/D as anything in data)
 			if(isdatum(D))
 				ended_with(D, holder)
-		runtime.data = null
 
 
 /// Examine lines from every capability, in list order (appended by /atom/examine()).

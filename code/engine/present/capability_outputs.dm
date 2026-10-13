@@ -42,7 +42,8 @@
 	var/datum/cap_engine_state/state = capability_data(A)?[/datum/cap_engine_state]
 	if(!state)
 		state = new
-		LAZYSET(capability_runtime(A).data, /datum/cap_engine_state, state)
+		var/datum/capability_runtime/runtime = capability_runtime(A)
+		rel_add(runtime, nameof(runtime.data), state, key = /datum/cap_engine_state)
 	return state
 
 

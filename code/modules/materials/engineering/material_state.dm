@@ -159,7 +159,8 @@ CAPABILITIES(/datum/material_build)
 	var/datum/material_assembly/assembly = capability_data(O)?[/datum/material_assembly]
 	if(!assembly)
 		assembly = new
-		LAZYSET(capability_runtime(O).data, /datum/material_assembly, assembly)
+		var/datum/capability_runtime/runtime = capability_runtime(O)
+		rel_add(runtime, nameof(runtime.data), assembly, key = /datum/material_assembly)
 	return assembly
 
 /// O's material service, or null when it has not been admitted to continuous exposure.
@@ -187,7 +188,7 @@ CAPABILITIES(/datum/material_build)
 	if(!build)
 		build = new
 		var/datum/capability_runtime/state = capability_runtime(O)
-		LAZYSET(state.data, /datum/material_build, build)
+		rel_add(state, nameof(state.data), build, key = /datum/material_build)
 		engine_key_changed(O, OP_KEY_CAP_DATA)
 	return build
 
@@ -202,7 +203,7 @@ CAPABILITIES(/datum/material_build)
 		if(!record)
 			continue
 		var/datum/capability_runtime/state = capability_runtime(O)
-		LAZYREMOVE(state.data, key)
+		rel_take(state, nameof(state.data), key = key)
 		engine_key_changed(O, OP_KEY_CAP_DATA)
 		spent(record)
 
