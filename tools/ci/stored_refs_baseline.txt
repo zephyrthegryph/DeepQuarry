@@ -1459,6 +1459,7 @@ list	code/controllers/subsystems/shuttles.dm	var/list/shuttles = list() // Maps 
 list	code/controllers/subsystems/shuttles.dm	var/list/sectors_to_initialize // Used to find all sector objects at the appropriate time.
 list	code/controllers/subsystems/tgui.dm	var/list/asset_generations = list()
 list	code/datums/containment/latency_policy.dm	GLOBAL_LIST_EMPTY(latency_sweep_holders)
+list	code/datums/datum.dm	var/tmp/list/open_tguis // FIXME: open_uis
 list	code/datums/gear/_gear.dm	GLOBAL_LIST_EMPTY_TYPED(loadout_categories, /datum/loadout_category)
 list	code/datums/gear/_gear.dm	GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 list	code/datums/gear/_gear.dm	var/list/gear = list() // ALLOW(instance_list): d: every loadout category holds its gear (singletons)

@@ -8,7 +8,6 @@
 
 CAPABILITIES(/datum)
 	owns_one(nameof(rule_binding), /datum/rule_binding)
-	ref_many(nameof(open_tguis), /datum/tgui)
 
 
 /proc/dq_rule_binding_of(datum/thing) as /datum/rule_binding

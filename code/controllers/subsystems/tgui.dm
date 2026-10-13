@@ -617,8 +617,7 @@ CAPABILITIES(/datum/system/tgui)
  */
 /datum/system/tgui/proc/on_open(datum/tgui/ui)
 	ui.user?.tgui_open_uis |= ui
-	var/datum/host = ui.src_object()
-	rel_add(host, nameof(host.open_tguis), ui)
+	LAZYOR(ui.src_object().open_tguis, ui)
 	rel_add(src, nameof(all_uis), ui)
 	sync_autoupdate(ui)
 
@@ -639,8 +638,7 @@ CAPABILITIES(/datum/system/tgui)
 	if(ui.user)
 		ui.user.tgui_open_uis -= ui
 	if(ui.src_object())
-		var/datum/host = ui.src_object()
-		rel_remove(host, nameof(host.open_tguis), ui)
+		LAZYREMOVE(ui.src_object().open_tguis, ui)
 	return TRUE
 
 /**
