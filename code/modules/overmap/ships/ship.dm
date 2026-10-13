@@ -55,14 +55,14 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	. = ..()
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
-	rel_add(SSshuttles, nameof(SSshuttles.ships), src)
+	SSshuttles.ships += src
 	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	SSflight?.register_vessel(src)
 
 // leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
-	rel_remove(SSshuttles, nameof(SSshuttles.ships), src)
+	SSshuttles.ships -= src
 	if(SSflight && flight_vessel_id)
 		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
 		if(vessel)

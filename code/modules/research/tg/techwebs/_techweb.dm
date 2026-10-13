@@ -337,7 +337,7 @@ CAPABILITIES(/datum/techweb)
 	return techweb_point_display_generic(research_points || list())
 
 /datum/techweb/proc/enqueue_node(id, mob/user)
-	var/user_handle = entity_handle(user)
+	var/user_h = entity_handle(user)
 	var/queue_first = FALSE
 	if(istype(user, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_user = user
@@ -352,12 +352,12 @@ CAPABILITIES(/datum/techweb)
 			return FALSE
 
 	for(var/node_id in research_queue_nodes)
-		if(LAZYACCESS(research_queue_nodes, node_id) == user_handle)
+		if(LAZYACCESS(research_queue_nodes, node_id) == user_h)
 			LAZYREMOVE(research_queue_nodes, node_id)
 
 	if (queue_first)
 		LAZYINITLIST(research_queue_nodes); research_queue_nodes.Insert(1, id)
-	LAZYSET(research_queue_nodes, id, user_handle)
+	LAZYSET(research_queue_nodes, id, user_h)
 
 	return TRUE
 

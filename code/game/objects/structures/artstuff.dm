@@ -422,12 +422,12 @@ CAPABILITIES(/obj/item/paint_palette)
 /obj/structure/sign/painting/Initialize(mapload)
 	. = ..()
 	if(persistence_id)
-		rel_add(SSpersistence, nameof(SSpersistence.painting_frames), src)
+		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 
 /// Phase 2: leaves the persistent painting frames.
 /obj/structure/sign/painting/lifecycle_dematerialize()
 	. = ..()
-	rel_remove(SSpersistence, nameof(SSpersistence.painting_frames), src)
+	SSpersistence.painting_frames -= src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 
 CAPABILITIES(/obj/structure/sign/painting)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

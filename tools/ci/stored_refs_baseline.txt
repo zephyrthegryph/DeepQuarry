@@ -1375,7 +1375,6 @@ var	code/modules/xenoarcheaology/tools/geosample_scanner.dm	var/tmp/obj/item/sca
 var	code/modules/xenoarcheaology/tools/suspension_generator.dm	var/tmp/obj/item/card/id/auth_card
 var	code/modules/xenoarcheaology/tools/tools.dm	var/tmp/datum/depth_scan/current
 list	code/ATMOSPHERICS/SSair.dm	var/list/hotspots = list()
-list	code/ATMOSPHERICS/SSair.dm	var/list/networks = list()
 list	code/ATMOSPHERICS/SSair.dm	var/list/planetary = list() //Lets cache static planetary mixes
 list	code/ATMOSPHERICS/SSair.dm	var/list/strings_to_mix = list()
 list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/immutable_air = list()
@@ -1412,10 +1411,6 @@ list	code/_helpers/global_lists.dm	GLOBAL_LIST_EMPTY(all_weavable)
 list	code/_helpers/global_lists.dm	GLOBAL_LIST_EMPTY(virusDB) // Stores discovered viruses
 list	code/_helpers/null_safety.dm	var/static/list/instances = list()
 list	code/_helpers/traits.dm	GLOBAL_LIST_EMPTY(trait_source_singletons)
-list	code/_onclick/hud/action/action_group.dm	var/list/atom/movable/screen/movable/action_button/actions
-list	code/_onclick/hud/hud.dm	GLOBAL_LIST_INIT(global_huds, list(
-list	code/_onclick/hud/radial.dm	GLOBAL_LIST_EMPTY(radial_menus)
-list	code/_onclick/item_attack.dm	GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 list	code/contracts/acts/context.dm	var/list/args
 list	code/controllers/kernel/kernel.dm	var/list/work_all = list()
 list	code/controllers/kernel/kernel.dm	var/list/work_by_key = list()
@@ -1425,28 +1420,16 @@ list	code/controllers/kernel/kernel.dm	var/list/urgent_queue = list()
 list	code/controllers/kernel/membership.dm	var/list/keys_of = list()
 list	code/controllers/kernel/work_item.dm	var/list/urgent_pending
 list	code/controllers/measure/meter.dm	var/list/systems
-list	code/controllers/measure/meter.dm	var/list/sets
 list	code/controllers/subsystems/admin_verbs.dm	var/list/datum/admin_verb/admin_verbs_by_type = list()
 list	code/controllers/subsystems/assets.dm	var/list/datum/asset_cache_item/cache = list()
-list	code/controllers/subsystems/atoms.dm	var/list/deferred_resolvers
 list	code/controllers/subsystems/atoms.dm	var/list/after_init_pending
 list	code/controllers/subsystems/atoms.dm	var/list/after_init_loose
 list	code/controllers/subsystems/atoms_batch.dm	var/list/after_inits
 list	code/controllers/subsystems/atoms_batch.dm	var/list/batch_trace
-list	code/controllers/subsystems/contracts.dm	var/list/contracts_by_id
-list	code/controllers/subsystems/contracts.dm	var/list/offered_contracts
-list	code/controllers/subsystems/contracts.dm	var/list/active_contracts
-list	code/controllers/subsystems/contracts.dm	var/list/grace_contracts
-list	code/controllers/subsystems/contracts.dm	var/list/closed_contracts
-list	code/controllers/subsystems/contracts.dm	var/list/offer_candidates
-list	code/controllers/subsystems/contracts.dm	var/list/lifecycle_history
 list	code/controllers/subsystems/contracts.dm	var/list/definitions
 list	code/controllers/subsystems/contracts.dm	var/list/subject_identities
-list	code/controllers/subsystems/contracts.dm	var/list/evidence_by_id
-list	code/controllers/subsystems/contracts.dm	var/list/recent_events
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_rules
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_windows
-list	code/controllers/subsystems/contracts.dm	var/list/opportunity_history
 list	code/controllers/subsystems/holomaps.dm	var/static/list/station_holomaps = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/pages = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/ores = list()
@@ -1460,7 +1443,6 @@ list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/genes = list(
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/foodrecipe = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/catalogs = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/spoiler_entries = list()
-list	code/controllers/subsystems/job.dm	var/list/mob/new_player/unassigned = list()
 list	code/controllers/subsystems/job.dm	var/list/department_datums = list()
 list	code/controllers/subsystems/lighting.dm	var/static/list/sources_queue = list() // List of lighting sources queued for update.
 list	code/controllers/subsystems/lighting.dm	var/static/list/corners_queue = list() // List of lighting corners queued for update.
@@ -1468,31 +1450,15 @@ list	code/controllers/subsystems/lighting.dm	var/static/list/objects_queue = lis
 list	code/controllers/subsystems/lighting.dm	var/static/list/sunlight_queue = list() // List of turfs that are affected by sunlight
 list	code/controllers/subsystems/lighting.dm	var/list/planet_shandlers = list() // Precomputed lighting values for tiles only affected by the sun
 list	code/controllers/subsystems/lighting.dm	var/list/z_to_pshandler = list()
-list	code/controllers/subsystems/media_tracks.dm	var/list/all_tracks = list()
-list	code/controllers/subsystems/media_tracks.dm	var/list/jukebox_tracks = list()
-list	code/controllers/subsystems/media_tracks.dm	var/list/lobby_tracks = list()
-list	code/controllers/subsystems/media_tracks.dm	var/list/casino_tracks = list()
 list	code/controllers/subsystems/persistence.dm	var/list/persistence_datums = list()
 list	code/controllers/subsystems/persistence.dm	var/list/obj/structure/sign/painting/painting_frames = list()
-list	code/controllers/subsystems/proximity.dm	var/list/members
 list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/cells = list()
 list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/eyes = list()
-list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/filed = list()
 list	code/controllers/subsystems/shuttles.dm	var/list/ships = list() // List of all ships.
 list	code/controllers/subsystems/shuttles.dm	var/list/shuttles = list() // Maps shuttle tags to shuttle datums, so that they can be looked up.
-list	code/controllers/subsystems/shuttles.dm	var/list/process_shuttles = list() // Simple list of shuttles, for processing
-list	code/controllers/subsystems/shuttles.dm	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to instances
-list	code/controllers/subsystems/shuttles.dm	var/list/docking_registry = list() // Docking controller tag -> docking controller program, mostly for init purposes.
-list	code/controllers/subsystems/shuttles.dm	var/list/landmarks_awaiting_sector = list() // Stores automatic landmarks that are waiting for a sector to finish loading.
-list	code/controllers/subsystems/shuttles.dm	var/list/landmarks_still_needed = list() // Stores landmark_tags that need to be assigned to the sector (landmark_tag = sector) when registered.
 list	code/controllers/subsystems/shuttles.dm	var/list/sectors_to_initialize // Used to find all sector objects at the appropriate time.
-list	code/controllers/subsystems/tgui.dm	var/list/autoupdating = list()
-list	code/controllers/subsystems/tgui.dm	var/list/all_uis = list()
 list	code/controllers/subsystems/tgui.dm	var/list/asset_generations = list()
-list	code/controllers/subsystems/ticker.dm	var/list/datum/mind/minds = list() //The characters in the game. Used for objective tracking.
-list	code/controllers/subsystems/ticker.dm	var/list/round_end_events
 list	code/datums/containment/latency_policy.dm	GLOBAL_LIST_EMPTY(latency_sweep_holders)
-list	code/datums/datum.dm	var/tmp/list/open_tguis // FIXME: open_uis
 list	code/datums/gear/_gear.dm	GLOBAL_LIST_EMPTY_TYPED(loadout_categories, /datum/loadout_category)
 list	code/datums/gear/_gear.dm	GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 list	code/datums/gear/_gear.dm	var/list/gear = list() // ALLOW(instance_list): d: every loadout category holds its gear (singletons)
@@ -1504,7 +1470,6 @@ list	code/datums/registries.dm	var/list/members
 list	code/datums/registries.dm	var/list/member_keys
 list	code/datums/registries.dm	var/list/present
 list	code/datums/underwear/underwear.dm	var/list/tweaks // Underwear customizations.
-list	code/domains/atmos/pipe_network.dm	var/list/external_air_volumes
 list	code/domains/heat/heat_entries.dm	GLOBAL_LIST_EMPTY(heat_entry_edges)
 list	code/engine/actions/change.dm	GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the order first marked
 list	code/engine/actions/every.dm	GLOBAL_LIST_EMPTY(every_hop_watches)
@@ -1559,10 +1524,8 @@ list	code/engine/declare/type_traits.dm	GLOBAL_LIST_EMPTY(type_trait_defaults)
 list	code/engine/declare/type_traits.dm	var/tmp/list/type_trait_overrides
 list	code/engine/io/db.dm	var/list/rows
 list	code/engine/io/jobs.dm	var/list/jobs
-list	code/engine/io/path.dm	var/list/queue = list()
 list	code/engine/kernel/cadences.dm	var/static/list/defs = list()
 list	code/engine/kernel/jobs.dm	var/list/jobs = list()
-list	code/engine/kernel/requests.dm	var/list/open = list()
 list	code/engine/kernel/sequence.dm	var/list/conds
 list	code/engine/kernel/sequence.dm	var/list/tables
 list	code/engine/kernel/sequence.dm	var/static/list/defs = list()
@@ -1577,7 +1540,6 @@ list	code/engine/lifeforms/derives.dm	GLOBAL_LIST_EMPTY(derives_running)
 list	code/engine/lifeforms/forms.dm	var/list/param_applies
 list	code/engine/lifeforms/forms.dm	var/list/param_drops
 list	code/engine/lifeforms/forms.dm	var/static/list/plans = list()
-list	code/engine/lifeforms/input.dm	GLOBAL_REAL_VAR(list/input_falling)
 list	code/engine/lifeforms/keeps_if.dm	GLOBAL_REAL_VAR(list/init_discard_pending)
 list	code/engine/lifeforms/lifetimes.dm	GLOBAL_REAL_VAR(list/ending_causes)
 list	code/engine/lifeforms/lifetimes.dm	GLOBAL_LIST_EMPTY(lives_in)
@@ -1600,10 +1562,6 @@ list	code/engine/parts/resolve.dm	var/list/ordered
 list	code/engine/parts/resource.dm	GLOBAL_LIST_EMPTY(resource_adapters)
 list	code/engine/parts/run.dm	var/list/reservations
 list	code/engine/parts/run.dm	var/list/step_answers
-list	code/engine/parts/run.dm	GLOBAL_LIST_EMPTY(op_pending_all)
-list	code/engine/parts/run.dm	var/list/watching
-list	code/engine/parts/run.dm	var/list/watch_extra
-list	code/engine/parts/run.dm	var/list/watch_index
 list	code/engine/present/appearance_builder.dm	var/list/vis
 list	code/engine/present/messages.dm	GLOBAL_LIST_EMPTY(msg_defs)
 list	code/engine/present/outputs.dm	var/static/list/tables = list()
@@ -1624,9 +1582,6 @@ list	code/engine/stats/store.dm	var/list/ct_targets
 list	code/engine/stats/store.dm	var/list/held_on
 list	code/engine/stats/store.dm	var/list/hop_targets
 list	code/engine/stats/store.dm	GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for their next slice
-list	code/game/antagonist/station/cultist.dm	var/list/harvested
-list	code/game/area/Space Station 13 areas.dm	var/asteroid_spawns
-list	code/game/area/Space Station 13 areas.dm	var/mob_spawns
 list	code/game/area/areas.dm	var/list/all_doors = null //Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
 list	code/game/area/areas.dm	var/list/all_arfgs = null //Similar, but a list of all arfgs adjacent to this area
 list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes, /datum/gene)
@@ -1635,103 +1590,55 @@ list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes_good, /datum/gene/t
 list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes_neutral, /datum/gene/trait)
 list	code/game/dna/dna2.dm	GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 list	code/game/gamemodes/changeling/state/changeling.dm	GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
-list	code/game/gamemodes/changeling/state/powers/hivemind.dm	GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 list	code/game/machinery/camera/camera.dm	var/client_huds = null
 list	code/game/machinery/camera/camera_assembly.dm	var/static/list/obj/item/possible_upgrades = list(/obj/item/assembly/prox_sensor, /obj/item/stack/material/osmium, /obj/item/stock_parts/scanning_module)
-list	code/game/machinery/camera/motion.dm	var/list/motionTargets = null
 list	code/game/machinery/frame.dm	GLOBAL_LIST(construction_frame_wall)
 list	code/game/machinery/frame.dm	GLOBAL_LIST(construction_frame_floor)
 list	code/game/machinery/machine_service.dm	var/list/pending_pump_transfers = list()
 list	code/game/machinery/machinery.dm	var/static/list/probes = list()
 list	code/game/machinery/status_display_ai.dm	GLOBAL_LIST_INIT(ai_status_emotions, list(
-list	code/game/machinery/telecomms/traffic_control.dm	var/list/viewingcode
-list	code/game/mecha/mecha.dm	var/list/cargo
 list	code/game/mecha/mecha_construction_paths.dm	var/static/list/known = list()
-list	code/game/objects/effects/shared_particle_holder.dm	GLOBAL_LIST_EMPTY(shared_particles)
 list	code/game/objects/explosion_service.dm	VAR_PRIVATE/list/resolved_atoms = list()
-list	code/game/objects/items/devices/communicator/communicator.dm	var/list/voice_requests
 list	code/game/objects/items/devices/radio/radio.dm	var/tmp/list/datum/radio_frequency/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
 list	code/game/objects/items/devices/radio/radio_service.dm	var/list/data = list() // ALLOW(instance_list): d: every signal carries data
-list	code/game/objects/items/devices/spy_bug.dm	var/list/obj/machinery/camera/bug/paired
-list	code/game/objects/items/devices/t_scanner.dm	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
-list	code/game/objects/items/weapons/storage/storage.dm	var/list/is_seeing
-list	code/game/objects/items/weapons/storage/storage.dm	var/list/obj/item/shown
-list	code/game/objects/mail_service.dm	var/admin_mail = list() // Mail added by Spawn Mail
-list	code/game/turfs/turf.dm	var/list/dangerous_objects // List of 'dangerous' objs that the turf holds that can cause something bad to happen when stepped on, used for AI mobs.
-list	code/library/operations/click_compatibility.dm	GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 list	code/modules/admin/admin_ranks.dm	GLOBAL_LIST_EMPTY(admin_ranks) //list of all admin_rank datums
 list	code/modules/admin/admin_ranks.dm	GLOBAL_LIST_EMPTY(protected_ranks) //admin ranks loaded from txt
-list	code/modules/admin/edit_player_panel.dm	GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 list	code/modules/admin/holder2.dm	GLOBAL_LIST_EMPTY(admin_datums)
 list	code/modules/admin/holder2.dm	GLOBAL_LIST_EMPTY(protected_admins)
 list	code/modules/admin/holder2.dm	var/list/datum/admin_rank/ranks
-list	code/modules/admin/holder2.dm	var/list/tagged_datums
-list	code/modules/admin/misc_admin_panels.dm	GLOBAL_LIST_EMPTY(dq_jobban_panels)
 list	code/modules/asset_cache/asset_list.dm	var/assets
 list	code/modules/belly_overlay/belly_overlay_asset.dm	GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
 list	code/modules/body/breath_profile.dm	var/static/list/instances = list()
 list	code/modules/body/worn_protection.dm	var/alist/armor_by_part
-list	code/modules/client/persistent_client.dm	var/list/datum/action/player_actions
 list	code/modules/client/preferences.dm	GLOBAL_LIST_EMPTY(preferences_datums)
-list	code/modules/detectivework/tools/uvlight.dm	var/list/scanned
-list	code/modules/detectivework/tools/uvlight.dm	var/list/stored_alpha
-list	code/modules/economy/cash_register.dm	var/list/verified_sale_items
 list	code/modules/economy/economy_misc.dm	GLOBAL_LIST_EMPTY_TYPED(department_accounts, /datum/money_account)
-list	code/modules/economy/retail_scanner.dm	var/list/verified_sale_items
-list	code/modules/economy/service_invoices.dm	var/list/verified_items
-list	code/modules/economy/supply_service.dm	var/list/shoppinglist = list() // Approved orders
-list	code/modules/events/event_container.dm	var/list/last_event_time
-list	code/modules/examine/examine.dm	/client/var/description_holders[0]
-list	code/modules/expedition/expedition_site.dm	var/list/participants
 list	code/modules/ghosttrap/trap.dm	GLOBAL_LIST(ghost_traps)
 list	code/modules/heat/heat_bind_batch.dm	GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
-list	code/modules/integrated_electronics/subtypes/camera.dm	var/list/obj/item/integrated_circuit/output/video_camera/paired_cameras
 list	code/modules/lighting/lighting_corner.dm	var/list/datum/light_source/affecting // Light sources affecting us.
 list	code/modules/lighting/lighting_fake_sun.dm	var/static/world_suns = list() //List of all the fake_suns in the world, used for checking for family members
 list	code/modules/lighting/lighting_source.dm	var/list/datum/lighting_corner/effect_str
-list	code/modules/lootpanel/_lootpanel.dm	var/list/datum/search_object/to_image
 list	code/modules/maps/map_load.dm	GLOBAL_LIST_EMPTY(map_load_queue)
-list	code/modules/maps/poi_service.dm	VAR_PRIVATE/list/obj/effect/landmark/poi_loader/poi_queue = list()
 list	code/modules/maps/reader.dm	GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special eviction
 list	code/modules/materials/engineering/material_templates.dm	var/static/list/interned
 list	code/modules/materials/engineering/material_templates.dm	GLOBAL_REAL_VAR(list/GLOB_material_mix_registry)
 list	code/modules/medical/causes/_cause.dm	GLOBAL_LIST_EMPTY(affliction_triggers_all)
 list	code/modules/medical/contagion/engineered/engineered.dm	GLOBAL_LIST_EMPTY(archive_diseases)
 list	code/modules/mob/dead/observer/chunk.dm	var/list/hidden_areas
-list	code/modules/mob/language/language_panel.dm	GLOBAL_LIST_EMPTY(dq_languages_panels)
-list	code/modules/mob/living/carbon/human/attacks_panel.dm	GLOBAL_LIST_EMPTY(dq_attacks_panels)
-list	code/modules/mob/living/carbon/human/flavor_panel.dm	GLOBAL_LIST_EMPTY(dq_flavor_panels)
 list	code/modules/mob/living/life/living_systems.dm	var/static/list/owned
-list	code/modules/mob/living/notes_panels.dm	GLOBAL_LIST_EMPTY(dq_private_notes_panels)
-list	code/modules/mob/living/notes_panels.dm	GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 list	code/modules/mob/living/organs.dm	var/list/organs_by_name // map organ names to organs
-list	code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm	var/list/active_ore_bags
 list	code/modules/mob/living/silicon/robot/robot_upgrade_detection.dm	var/static/list/prototypes = list()
 list	code/modules/mob/mob_chunks.dm	GLOBAL_LIST_EMPTY(mob_chunks)
-list	code/modules/mob/mob_defines.dm	var/list/embedded // Lazylist of embedded items, since simple mobs don't have organs. Usually empty.
-list	code/modules/mob/mob_defines.dm	var/tmp/list/mapobjs // Lazylist of overview screen objects. Usually empty/null.
-list	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	var/list/clients
-list	code/modules/modular_computers/NTNet/NTNet.dm	var/list/chat_channels
-list	code/modules/modular_computers/file_system/programs/security/digitalwarrant.dm	var/list/warrants
-list	code/modules/news/newspaper.dm	var/list/datum/feed_channel/news_content
 list	code/modules/overmap/turfs.dm	GLOBAL_LIST_EMPTY(map_sectors)
 list	code/modules/paperwork/faxmachine.dm	GLOBAL_LIST_EMPTY(adminfaxes) //cache for faxes that have been sent to admins
 list	code/modules/power/power_bridge.dm	var/alist/power_material_overlays = alist()
-list	code/modules/power/power_bridge.dm	var/list/power_material_cables = list() // SSmachines singleton (M3 power); one instance
 list	code/modules/power/power_grid.dm	var/alist/by_id
-list	code/modules/projectiles/projectile.dm	var/list/permutated = list() // we've passed through these atoms, don't try to hit them again
 list	code/modules/radiation/radiation_service.dm	var/list/dirty_turfs = list()
 list	code/modules/reagents/reagents/_reagents.dm	var/list/data = null
-list	code/modules/research/tg/techwebs/_techweb.dm	var/list/research_queue_nodes
-list	code/modules/resleeving/computers.dm	var/list/datum/transhuman/mind_record/stored = list() // ALLOW(instance_list): d: the disk's stored records
-list	code/modules/resleeving/transcore_service.dm	var/list/datum/transhuman/mind_record/has_left // Why do we even have this?
 list	code/modules/scripting/AST/Blocks.dm	var/list/statements
 list	code/modules/scripting/AST/Blocks.dm	var/list/functions = list() // ALLOW(instance_list): d: script AST node state
 list	code/modules/shuttles/emergency_shuttle_service.dm	var/list/escape_pods = list()
-list	code/modules/stockmarket/articles.dm	GLOBAL_LIST_EMPTY(FrozenAccounts)
 list	code/modules/surgery/surgery_ops.dm	GLOBAL_LIST_EMPTY(surgery_op_steps)
 list	code/modules/tgs_commands/vorestation.dm	GLOBAL_LIST_EMPTY(tgs_flow_senders)
 list	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
 list	code/modules/tgui/modal.dm	GLOBAL_LIST(tgui_modals)
-list	code/modules/tgui/ui_push.dm	var/list/pending
 list	code/modules/vore/eating/bellymodes_datum.dm	GLOBAL_LIST_INIT(digest_modes, list())

@@ -35,8 +35,8 @@ CAPABILITIES(/datum/pipe_network)
 	STOP_PROCESSING_PIPENET(src)
 	// External reservoirs are real containers and must take their volume share
 	// with them before the fixed topology is split into independent port mixes.
-	for(var/owner_handle in external_air_volumes?.Copy())
-		var/atom/movable/owner = resolve_handle(owner_handle)
+	for(var/owner_h in external_air_volumes?.Copy())
+		var/atom/movable/owner = resolve_handle(owner_h)
 		if(owner)
 			detach_external_air(owner, FALSE)
 	// Sever ownership before calling into members.  Atmos topology destruction can
@@ -158,11 +158,11 @@ CAPABILITIES(/datum/pipe_network)
 	if(length(giver_external))
 		if(!external_air_volumes)
 			external_air_volumes = list()
-		for(var/owner_handle in giver_external)
-			var/atom/movable/owner = resolve_handle(owner_handle)
+		for(var/owner_h in giver_external)
+			var/atom/movable/owner = resolve_handle(owner_h)
 			if(!owner)
 				continue
-			external_air_volumes[owner_handle] = giver_external[owner_handle]
+			external_air_volumes[owner_h] = giver_external[owner_h]
 			owner.set_port_network_air(air)
 
 	// The receiving network now owns every transferred member.  Leaving the
@@ -235,15 +235,15 @@ CAPABILITIES(/datum/pipe_network)
 	return TRUE
 
 /datum/pipe_network/proc/detach_external_air(atom/movable/owner, mark_after = TRUE)
-	var/owner_handle = entity_handle_of(owner)
-	if(!owner || !owner_handle || !external_air_volumes?[owner_handle] || !air)
+	var/owner_h = entity_handle_of(owner)
+	if(!owner || !owner_h || !external_air_volumes?[owner_h] || !air)
 		return FALSE
-	var/external_volume = external_air_volumes[owner_handle]
+	var/external_volume = external_air_volumes[owner_h]
 	var/current_volume = volume()
 	var/datum/gas_mixture/detached = air.remove_ratio(min(external_volume / max(current_volume, 1), 1))
 	detached.set_volume(max(external_volume, 1))
 	air.set_volume(max(current_volume - external_volume, 1))
-	external_air_volumes.Remove(owner_handle)
+	external_air_volumes.Remove(owner_h)
 	if(!length(external_air_volumes))
 		external_air_volumes = null
 	owner.set_port_network_air(detached)

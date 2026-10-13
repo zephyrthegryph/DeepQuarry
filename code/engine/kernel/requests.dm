@@ -228,7 +228,7 @@ CAPABILITIES(/datum/system/requests)
 		GLOB.test_prompts += R
 #endif
 	var/datum/system/requests/registry = SSrequests
-	rel_add(registry, nameof(open), R)
+	rel_add(registry, nameof(registry.open), R)
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
@@ -244,7 +244,7 @@ CAPABILITIES(/datum/system/requests)
 		if(why)
 			op_tell(request_payer(R), why)
 			log_game("request: [R.type] not opened: its costs cannot be paid ([reason_text(why)])")
-			rel_remove(registry, nameof(open), R)
+			rel_remove(registry, nameof(registry.open), R)
 			cancel_after(R, "request_timeout")
 			unobserve(owner, /datum/notice/qdeleting, R)
 			qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: one that never opened is deleted at once
@@ -355,7 +355,7 @@ CAPABILITIES(/datum/system/requests)
 	if(!istype(R) || !R.is_open())
 		return FALSE
 	var/datum/system/requests/registry = SSrequests
-	rel_remove(registry, nameof(open), R)
+	rel_remove(registry, nameof(registry.open), R)
 	if(outcome == REQ_ANSWERED && QDELETED(R.owner))
 		log_game("request: [R.type] answer dropped: its owner was deleted")
 		outcome = REQ_CANCELLED

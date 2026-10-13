@@ -5,7 +5,7 @@
 	var/record_slot = "active2"
 
 /datum/unit_test/dq_e2/machinery_record_arg_fields/run_gate()
-	set_var(SStgui, "modals", SStgui.modals)
+	set_var(GLOB, "tgui_modals", GLOB.tgui_modals)
 	var/mob/living/simple_mob/e0_fixture/user = actor()
 	var/obj/machinery/computer/console = allocate(console_type, get_turf(user))
 	console.set_grid_power(TRUE)

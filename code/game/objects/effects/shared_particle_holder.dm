@@ -105,10 +105,12 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 		GLOB.shared_particles[particle_key][SHARED_PARTICLE_USER_NUM_INDEX] -= 1
 
 		if (delete_on_empty && GLOB.shared_particles[particle_key][SHARED_PARTICLE_USER_NUM_INDEX] <= 0)
+			var/list/doomed_holders = list()
 			for (var/delete_handle in type_holders)
 				var/datum/doomed_holder = resolve_handle(delete_handle)
 				if (doomed_holder)
-					qdel(doomed_holder)
+					doomed_holders += doomed_holder
+			QDEL_LIST(doomed_holders)
 			GLOB.shared_particles -= particle_key
 		return
 

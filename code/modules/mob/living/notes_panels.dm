@@ -1,6 +1,10 @@
 // Private Notes / OOC Notes — structured TGUI panels via dedicated panel datums.
 // Owner edits gated to user==host; OOC view is open to anyone.
 
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
+GLOBAL_LIST_EMPTY(dq_private_notes_panels)
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
+GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 
 // ---- Private Notes --------------------------------------------------------
 
@@ -10,13 +14,13 @@
 /datum/private_notes_panel/New(mob/living/host_mob)
 	rel_set(src, nameof(host), host_mob)
 
-/// The host was deleted: the panel goes with it, and leaves SStgui.host_panels with it.
-/datum/private_notes_panel/proc/host_gone(old_host)
-	if(!QDELETED(src))
-		qdel(src)
+/// Phase 2: leaves the per-host panel index.
+/datum/private_notes_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host)
+		GLOB.dq_private_notes_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/private_notes_panel)
-	ref_one(nameof(host), /mob/living, on_unlink = PROC_REF(host_gone))
 	interface("PrivateNotes", state = nameof(GLOB.tgui_default_state))
 	op("edit", ui_act("edit"), then(PROC_REF(ui_act_edit)))
 	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
@@ -60,11 +64,11 @@ CAPABILITIES(/datum/private_notes_panel)
 	if(!private_notes)
 		private_notes = " "
 		return
-	var/key = "private_notes:[REF(src)]"
-	var/datum/private_notes_panel/panel = LAZYACCESS(SStgui.host_panels, key)
+	var/key = "[REF(src)]"
+	var/datum/private_notes_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_private_notes_panels, key))
 	if(!panel)
 		panel = new(src)
-		rel_add(SStgui, nameof(SStgui.host_panels), panel, key)
+		GLOB.dq_private_notes_panels[key] = entity_handle(panel)
 	panel.tgui_interact(user)
 
 // ---- OOC Notes ------------------------------------------------------------
@@ -75,13 +79,13 @@ CAPABILITIES(/datum/private_notes_panel)
 /datum/ooc_notes_panel/New(mob/living/host_mob)
 	rel_set(src, nameof(host), host_mob)
 
-/// The host was deleted: the panel goes with it, and leaves SStgui.host_panels with it.
-/datum/ooc_notes_panel/proc/host_gone(old_host)
-	if(!QDELETED(src))
-		qdel(src)
+/// Phase 2: leaves the per-host panel index.
+/datum/ooc_notes_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host)
+		GLOB.dq_ooc_notes_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/ooc_notes_panel)
-	ref_one(nameof(host), /mob/living, on_unlink = PROC_REF(host_gone))
 	interface("OocNotes", state = nameof(GLOB.tgui_default_state))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
@@ -187,10 +191,10 @@ CAPABILITIES(/datum/ooc_notes_panel)
 /mob/living/proc/ooc_notes_window(mob/user)
 	if(!identity().ooc_notes)
 		return
-	var/key = "ooc_notes:[REF(src)]"
-	var/datum/ooc_notes_panel/panel = LAZYACCESS(SStgui.host_panels, key)
+	var/key = "[REF(src)]"
+	var/datum/ooc_notes_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
 	if(!panel)
 		panel = new(src)
-		rel_add(SStgui, nameof(SStgui.host_panels), panel, key)
+		GLOB.dq_ooc_notes_panels[key] = entity_handle(panel)
 	panel.tgui_interact(user)
 

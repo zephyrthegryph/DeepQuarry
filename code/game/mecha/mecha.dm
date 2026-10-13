@@ -440,7 +440,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	for(var/atom/movable/A in src.cargo)
 		if(isturf(A.loc))
 			step_rand(A)
-	rel_clear(src, nameof(cargo))
 
 	if(loc)
 		loc.Exited(src)

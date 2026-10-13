@@ -92,20 +92,20 @@ TRACKED(/obj/machinery/door/firedoor, hatch_open)
 	var/area/A = get_area(src)
 	ASSERT(istype(A))
 
-	rel_add(A, nameof(A.all_doors), src)
+	LAZYADD(A.all_doors, src)
 	areas_added = list(A)
 
 	for(var/direction in GLOB.cardinal)
 		A = get_area(get_step(src,direction))
 		if(istype(A) && !(A in areas_added))
-			rel_add(A, nameof(A.all_doors), src)
+			LAZYADD(A.all_doors, src)
 			areas_added += A
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
 	. = ..()
 	for(var/area/A in areas_added)
-		rel_remove(A, nameof(A.all_doors), src)
+		LAZYREMOVE(A.all_doors, src)
 
 /obj/machinery/door/firedoor/get_material()
 	return get_material_by_name(MAT_STEEL)

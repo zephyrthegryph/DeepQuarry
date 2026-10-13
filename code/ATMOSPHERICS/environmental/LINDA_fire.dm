@@ -103,7 +103,7 @@ CAPABILITIES(/obj/effect/hotspot)
 // ALLOW(init/INSTANCE_STATE): a hotspot joins the air system's hotspots and a hot group, exposes its turf, and faces a random way
 /obj/effect/hotspot/Initialize(mapload)
 	. = ..()
-	rel_add(SSair, nameof(SSair.hotspots), src)
+	SSair.hotspots += src
 	if(!isnull(starting_volume))
 		volume = starting_volume
 	if(!isnull(starting_temperature))
@@ -359,7 +359,7 @@ CAPABILITIES(/obj/effect/hotspot)
 // a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/lifecycle_dematerialize()
 	..()
-	rel_remove(SSair, nameof(SSair.hotspots), src)
+	SSair.hotspots -= src
 
 /obj/effect/hotspot/on_destroy(force)
 	var/turf/open/cur_turf = loc

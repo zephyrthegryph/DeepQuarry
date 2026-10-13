@@ -342,7 +342,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	opportunity_rules_by_event = list()
 	opportunity_windows = list()
 	opportunity_cooldowns = list()
-	opportunity_history = list()
+	rel_clear(src, nameof(opportunity_history))
 	for(var/rule_type as anything in subtypesof(/datum/contract_opportunity_rule))
 		if(is_abstract(rule_type))
 			continue

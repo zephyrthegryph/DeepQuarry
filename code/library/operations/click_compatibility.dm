@@ -15,14 +15,14 @@ GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 /proc/dq_interaction_set_click_params(mob/actor, params)
 	if(!actor)
 		return null
-	var/actor_handle = entity_handle(actor) || entity_handle_of(actor)
-	if(!actor_handle)
+	var/actor_h = entity_handle(actor) || entity_handle_of(actor)
+	if(!actor_h)
 		return null
-	. = GLOB.interaction_entry_click_params[actor_handle]
+	. = GLOB.interaction_entry_click_params[actor_h]
 	if(params)
-		GLOB.interaction_entry_click_params[actor_handle] = params
+		GLOB.interaction_entry_click_params[actor_h] = params
 	else
-		GLOB.interaction_entry_click_params -= actor_handle
+		GLOB.interaction_entry_click_params -= actor_h
 
 /// The click parameters of the click `actor` is inside, or null.
 /proc/dq_interaction_click_params(mob/actor)

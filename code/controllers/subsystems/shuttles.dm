@@ -9,10 +9,8 @@
 
 CAPABILITIES(/datum/system/shuttles)
 	owns_many(nameof(specops_announcers))
-	ref_many(nameof(ships), /obj/effect/overmap/visitable/ship)
 	ref_many(nameof(process_shuttles), /datum/shuttle)
 	ref_many(nameof(landmarks_awaiting_sector), /obj/effect/shuttle_landmark/automatic)
-	ref_many(nameof(sectors_to_initialize), /obj/effect/overmap/visitable)
 
 SYSTEM_DEF(shuttles)
 	name = "Shuttles"
@@ -128,9 +126,9 @@ SYSTEM_DEF(shuttles)
 	shuttles_to_initialize = null
 
 /datum/system/shuttles/proc/initialize_sectors()
-	for(var/sector in sectors_to_initialize?.Copy())
+	for(var/sector in sectors_to_initialize)
 		initialize_sector(sector)
-	rel_clear(src, nameof(sectors_to_initialize))
+	sectors_to_initialize = null
 
 /datum/system/shuttles/proc/register_landmark(shuttle_landmark_tag, obj/effect/shuttle_landmark/shuttle_landmark)
 	if (get_landmark(shuttle_landmark_tag))

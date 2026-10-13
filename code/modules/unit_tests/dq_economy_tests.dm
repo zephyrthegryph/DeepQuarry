@@ -1263,3 +1263,28 @@
 /// What a direct call of an op effect hands it as its act: only the actor is read.
 /datum/dq_test_op_stub
 	var/mob/actor
+
+/// An order an event queued straight onto the supply system's shoppinglist (a shipping error) is bought with the next shuttle load: buy()
+/// once read a local list of the same name, so those orders were never delivered.
+/datum/unit_test/dq_supply_buy_ships_event_queued_orders
+
+/datum/shuttle/autodock/ferry/supply/unit_test
+	defer_initialisation = TRUE
+	shuttle_area = /area
+
+/datum/unit_test/dq_supply_buy_ships_event_queued_orders/Run()
+	var/datum/shuttle/autodock/ferry/supply/unit_test/fake_shuttle = new /datum/shuttle/autodock/ferry/supply/unit_test("Unit Test Supply")
+	fake_shuttle.shuttle_area = list(get_area(run_loc_floor_bottom_left))
+	var/datum/shuttle/autodock/ferry/supply/real_shuttle = SSsupply.shuttle
+	SSsupply.shuttle = fake_shuttle
+	var/datum/supply_order/order = new /datum/supply_order()
+	order.ordernum = supply_ordernum()
+	order.supply_pack_static = supply_supply_pack()[pick(supply_supply_pack())]
+	order.ordered_by = "Test Orderer"
+	rel_add(SSsupply, nameof(SSsupply.shoppinglist), order)
+	TEST_ASSERT(order in SSsupply.shoppinglist, "the queued order is on the shopping list")
+	SSsupply.buy()
+	TEST_ASSERT(order.status == SUP_ORDER_SHIPPED, "buy() shipped the order an event queued on the shopping list")
+	TEST_ASSERT(!(order in SSsupply.shoppinglist), "a shipped order leaves the shopping list")
+	SSsupply.shuttle = real_shuttle
+	qdel(fake_shuttle)

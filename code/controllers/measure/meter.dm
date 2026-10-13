@@ -204,7 +204,6 @@ CAPABILITIES(/datum/tick_meter)
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
 		ended_with(S, src)
-	rel_clear(src, nameof(sets))
 	live = null
 	..()
 

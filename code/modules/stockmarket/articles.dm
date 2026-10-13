@@ -19,11 +19,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 
 /proc/list_frozen()
 	for (var/A in GLOB.FrozenAccounts)
-		var/live = 0
-		for (var/borrow_handle in GLOB.FrozenAccounts[A])
-			if (resolve_handle(borrow_handle))
-				live++
-		to_chat(usr, "[A]: [live] borrows")
+		to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 
 /datum/article
 	var/headline = "Something big is happening"

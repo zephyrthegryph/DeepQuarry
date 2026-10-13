@@ -17,11 +17,6 @@ SYSTEM_DEF(mapping)
 	var/list/map_templates = list()
 	var/obj/effect/landmark/engine_loader/engine_loader
 	var/list/shelter_templates = list()
-	/// Async map loads waiting behind the running one, oldest first (map_load.dm): owned here, so a queued load lives until it starts.
-	var/list/map_load_queue
-
-CAPABILITIES(/datum/system/mapping)
-	owns_many(nameof(map_load_queue), /datum/map_load)
 
 	// TODO: Implement Later
 	var/datum/map/current_map

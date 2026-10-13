@@ -42,7 +42,6 @@ unknown_read	code/controllers/subsystems/overlays.dm	build_overlays[index] = ico
 unknown_read	code/controllers/subsystems/overlays.dm	if(!overlays)
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
-unknown_read	code/controllers/subsystems/tgui.dm	if(!LAZYLEN(src_object?.open_tguis))
 unknown_read	code/datums/chat_message.dm	return maptext_height
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
@@ -156,7 +155,6 @@ untracked_global	code/game/machinery/computer/skills.dm	if(!using_map || (read_o
 untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 untracked_global	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-untracked_global	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 untracked_global	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
 untracked_global	code/library/mob/statuses.dm	if(!GLOB.status_policies)
 untracked_global	code/library/mob/statuses.dm	return GLOB.status_policies
@@ -182,7 +180,6 @@ untracked_global	code/modules/modular_computers/file_system/programs/research/nt
 untracked_global	code/modules/overmap/helpers.dm	if(using_map.use_overmap)
 untracked_global	code/modules/overmap/helpers.dm	return GLOB.map_sectors["[z]"]
 untracked_global	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
-untracked_global	code/modules/pda/contracts.dm	var/datum/contract/faction_agent/agent_contract = service.contracts_by_id[A.args["id"]]
 untracked_global	code/modules/research/tg/machinery/mech_prosfab.dm	return (istype(D) && D.species && (D.species in GLOB.all_species)) ? null : MSG(prosfab/corrupted)
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location

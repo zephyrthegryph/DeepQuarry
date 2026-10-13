@@ -3,13 +3,15 @@
 /mob/living/carbon/human/proc/dq_open_flavor_panel(mob/user)
 	if(!istype(user))
 		return
-	var/key = "flavor:[REF(src)]"
-	var/datum/flavor_panel/panel = LAZYACCESS(SStgui.host_panels, key)
+	var/key = "[REF(src)]"
+	var/datum/flavor_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_flavor_panels, key))
 	if(!panel)
 		panel = new(src)
-		rel_add(SStgui, nameof(SStgui.host_panels), panel, key)
+		GLOB.dq_flavor_panels[key] = entity_handle(panel)
 	panel.tgui_interact(user)
 
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
+GLOBAL_LIST_EMPTY(dq_flavor_panels)
 
 /datum/flavor_panel
 	var/mob/living/carbon/human/host
@@ -17,13 +19,13 @@
 /datum/flavor_panel/New(mob/living/carbon/human/host_mob)
 	rel_set(src, nameof(host), host_mob)
 
-/// The host was deleted: the panel goes with it, and leaves SStgui.host_panels with it.
-/datum/flavor_panel/proc/host_gone(old_host)
-	if(!QDELETED(src))
-		qdel(src)
+/// Phase 2: leaves the per-host panel index.
+/datum/flavor_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host)
+		GLOB.dq_flavor_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/flavor_panel)
-	ref_one(nameof(host), /mob/living/carbon/human, on_unlink = PROC_REF(host_gone))
 	interface("FlavorText", title = "Update Flavour Text", state = nameof(GLOB.tgui_default_state))
 	op("edit", ui_act("edit", arg("key", schema_text(4096))), then(PROC_REF(ui_act_edit)))
 	op("done", ui_act("done"), then(PROC_REF(ui_act_done)))

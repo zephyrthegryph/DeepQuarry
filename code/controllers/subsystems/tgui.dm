@@ -71,10 +71,6 @@ SYSTEM_DEF(tgui)
 	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
-	/// The current modal of each host datum, keyed by REF(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
-	var/list/modals
-	/// The per-host TGUI panels (languages, attacks, flavor text, private and OOC notes), keyed "<kind>:<REF(host)>": owned here, a panel is deleted with its host.
-	var/list/host_panels
 	/// The HTML base used for all UIs.
 	var/basehtml
 	/// interface name -> list of code-split chunk files (`*.chunk.js`/`.css`) that
@@ -104,8 +100,6 @@ SYSTEM_DEF(tgui)
 CAPABILITIES(/datum/system/tgui)
 	ref_many(nameof(autoupdating), /datum/tgui)
 	ref_many(nameof(all_uis), /datum/tgui)
-	owns_many(nameof(modals), /datum/tgui_modal)
-	owns_many(nameof(host_panels), /datum)
 
 /datum/system/tgui/preinit()
 	basehtml = file2text('tgui/public/tgui.html')

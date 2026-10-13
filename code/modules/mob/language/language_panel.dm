@@ -3,13 +3,15 @@
 /proc/dq_open_languages_panel(mob/source, mob/user)
 	if(!istype(user))
 		return
-	var/key = "languages:[REF(source)]"
-	var/datum/languages_panel/panel = LAZYACCESS(SStgui.host_panels, key)
+	var/key = "[REF(source)]"
+	var/datum/languages_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_languages_panels, key))
 	if(!panel)
 		panel = new(source)
-		rel_add(SStgui, nameof(SStgui.host_panels), panel, key)
+		GLOB.dq_languages_panels[key] = entity_handle(panel)
 	panel.tgui_interact(user)
 
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
+GLOBAL_LIST_EMPTY(dq_languages_panels)
 
 /datum/languages_panel
 	var/mob/host
@@ -17,13 +19,13 @@
 /datum/languages_panel/New(mob/host_mob)
 	rel_set(src, nameof(host), host_mob)
 
-/// The host was deleted: the panel goes with it, and leaves SStgui.host_panels with it.
-/datum/languages_panel/proc/host_gone(old_host)
-	if(!QDELETED(src))
-		qdel(src)
+/// Phase 2: leaves the per-host panel index.
+/datum/languages_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host)
+		GLOB.dq_languages_panels -= "[REF(host)]"
 
 CAPABILITIES(/datum/languages_panel)
-	ref_one(nameof(host), /mob, on_unlink = PROC_REF(host_gone))
 	interface("LanguagesPanel", title = "Known Languages", state = nameof(GLOB.tgui_always_state))
 	op("set_default", ui_act("set_default", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_set_default)))
 	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))
