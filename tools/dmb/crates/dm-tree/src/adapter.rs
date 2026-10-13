@@ -717,6 +717,7 @@ impl SharedAdaptedDeclarations {
     ) -> Result<TreeSnapshot, SnapshotError> {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
+        let seed_timer = dm_profile::detail_timer("tree.seed_hierarchy");
         let hierarchy = seed_hierarchy_rows(self.skeletons.iter(), seed).map_err(|error| {
             let error = SnapshotError::Tree(error);
             on_error(&error, &self.skeletons.view().diagnostic_rows(), &origins);
@@ -736,8 +737,10 @@ impl SharedAdaptedDeclarations {
         }
         let engine_count = skeletons.len();
         skeletons.append(self.skeletons);
+        drop(seed_timer);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
+        let build_timer = dm_profile::detail_timer("tree.build_members");
         let mut tree = crate::build_with_intrinsic_members_structural(
             self.symbols,
             skeletons.view(),
@@ -762,6 +765,8 @@ impl SharedAdaptedDeclarations {
         })?;
         // The source ledger is a projection, not a made-up origin for seeds.
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
+        drop(build_timer);
+        let intrinsics_timer = dm_profile::detail_timer("tree.engine_intrinsics");
         if let Some(seed) = seed {
             let hierarchy = hierarchy.unwrap();
             tree = if let Some((declarations, retained)) = normalization {
@@ -795,6 +800,8 @@ impl SharedAdaptedDeclarations {
                 error
             })?;
         }
+        drop(intrinsics_timer);
+        let _occurrence_timer = dm_profile::detail_timer("tree.occurrence_table");
         let occurrences = Arc::new(crate::OccurrenceTable::build(&tree, origins).map_err(
             |error| {
                 let error = SnapshotError::Origins(error);

@@ -43,6 +43,13 @@ pub struct MemoCounts {
     /// Supported result wire creation, excluding staging IO.
     pub encode_ns: AtomicU64,
     pub staging_ns: AtomicU64,
+    /// Unchanged-local fast path: bodies that reached it and bodies it admitted.
+    /// The decline reasons are in `lowering::local_decline_stats()`.
+    pub local_attempts: AtomicU64,
+    pub local_hits: AtomicU64,
+    /// Summed worker time inside the local path (hit or miss) and the keyed path.
+    pub local_ns: AtomicU64,
+    pub keyed_ns: AtomicU64,
 }
 const PENDING_LIMIT: usize = 64 * 1024 * 1024;
 const RESIDENT_LIMIT: usize = dm_session::DEFAULT_RESIDENT_BYTES;

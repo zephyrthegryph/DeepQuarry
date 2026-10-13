@@ -272,9 +272,34 @@ pub(super) fn encode_model(
     };
     Ok(encoded)
 }
+/// Whether composition repeats checks that only re-prove what construction
+/// already guaranteed: the engine and output reference validation and the
+/// independent decode of every encoded image. Debug builds (all unit tests)
+/// verify by default; release builds skip unless `DMB_VERIFY_OUTPUT=1`.
+/// `DMB_VERIFY_OUTPUT=0` forces them off. The byte oracle (fresh native build
+/// comparison) is the correctness backstop for the skipped release path.
+pub(crate) fn full_verification() -> bool {
+    static MODE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *MODE.get_or_init(|| {
+        let (enabled, source) = match std::env::var("DMB_VERIFY_OUTPUT").as_deref() {
+            Ok("1") => (true, "DMB_VERIFY_OUTPUT=1"),
+            Ok("0") => (false, "DMB_VERIFY_OUTPUT=0"),
+            _ if cfg!(debug_assertions) => (true, "debug build default"),
+            _ => (false, "release build default"),
+        };
+        crate::daemon_eprintln!(
+            "composition verification (decode round-trip, reference validation): {} ({source})",
+            if enabled { "on" } else { "off" }
+        );
+        enabled
+    })
+}
 pub(super) fn validate_encoded(
     encoded: &byond_dmb::dmb::EncodedDmb,
 ) -> Result<(), CompositionError> {
+    if !full_verification() {
+        return Ok(());
+    }
     let _profile = dm_profile::stage("composition.independent_roundtrip");
     Dmb::from_bytes(encoded.bytes())
         .and_then(|decoded| decoded.validate_references())
@@ -284,6 +309,15 @@ pub(super) fn validate_encoded(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn debug_builds_verify_composition_output_by_default() {
+        // Unit tests keep the decode round-trip on unless the environment says otherwise.
+        if std::env::var_os("DMB_VERIFY_OUTPUT").is_none() {
+            assert_eq!(full_verification(), cfg!(debug_assertions));
+        }
+        let encoded = model().encode().unwrap();
+        validate_encoded(&encoded).unwrap();
+    }
     fn model() -> Dmb {
         Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap()
     }

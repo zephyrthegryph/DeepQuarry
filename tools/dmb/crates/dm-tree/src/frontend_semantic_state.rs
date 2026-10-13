@@ -332,6 +332,7 @@ impl RetainedSemanticTree {
             same_engine(entry.engine.as_ref(), engine)
                 && entry.index.skeletons().eq(adapted.skeletons.iter())
         });
+        let update_timer = dm_profile::detail_timer("tree.metadata_update_attempt");
         let updated = self.entry.as_ref().and_then(|entry| {
             index.as_ref()?;
             if !same_engine(entry.engine.as_ref(), engine) {
@@ -345,6 +346,10 @@ impl RetainedSemanticTree {
                 executor,
             )
         });
+        drop(update_timer);
+        let _full_timer = updated
+            .is_none()
+            .then(|| dm_profile::detail_timer("tree.full_resolution_total"));
         if let Some(mut tree) = updated {
             tree.selection_publication_deferred = true;
             if !unchanged_declarations {

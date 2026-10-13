@@ -618,6 +618,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         .map_err(ColdError::Initializer)?;
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
+    let pre_lowering_timer = dm_profile::detail_timer("cold.pre_lowering_setup");
     let owned_roster = if prepared_roster.is_none() {
         Some(crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?)
     } else {
@@ -631,6 +632,8 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         .expect("current prepared symbolic namespace");
     let freeze_detail =
         std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
+    drop(pre_lowering_timer);
+    let lowering_stage_timer = dm_profile::detail_timer("cold.lowering_stage_call");
     let complete = |unit: crate::lowering::CompletedInput| {
         unit.prepare(
             plan.symbols.as_ref(),
@@ -656,6 +659,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         true,
         &complete,
     );
+    drop(lowering_stage_timer);
     // Completion has consumed all rich units; the prepared roster owns the
     // immutable current symbolic namespace until this request finishes.
     let lowering = stage.elapsed();

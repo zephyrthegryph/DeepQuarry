@@ -46,6 +46,7 @@ struct DeclineCounters {
 }
 #[path = "symbolic_local.rs"]
 mod local;
+pub use local::local_decline_stats;
 
 pub(super) fn local_certificate(
     roster: &LocalInputRoster<'_>,

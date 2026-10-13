@@ -234,6 +234,86 @@ fn six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes() {
         .all(|slot| slot.newest.lock().unwrap().is_empty()));
 }
 
+#[test]
+fn edit_sequences_and_reverts_match_fresh_bytes_and_return_to_initial() {
+    // Body edit, leaf variable edit, new procedure, then each undone. Every
+    // revision is compared with an independent fresh compile inside
+    // compare_revision; reverting must reproduce the earlier bytes exactly, so
+    // no short-circuit may keep state from the intermediate source.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    let initial = compare_revision(&shared, &roots);
+    let body = SOURCE.replace("return value", "return value + 2");
+    let leaf = SOURCE.replace("var/value = 7", "var/value = 8");
+    let added = format!("{SOURCE}/proc/added_later()
+    return 3
+");
+    let mut previous = initial.clone();
+    for (label, source) in [("body", &body), ("leaf variable", &leaf), ("new proc", &added)] {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        let edited = compare_revision(&shared, &roots);
+        assert_ne!(edited[0], initial[0], "{label} edit must publish new content");
+        assert_ne!(edited[0], previous[0], "{label} edit must differ from the prior revision");
+        for index in 0..6 {
+            roots.edit(index, SOURCE);
+        }
+        assert_eq!(
+            compare_revision(&shared, &roots),
+            initial,
+            "reverting the {label} edit must reproduce the initial bytes"
+        );
+        previous = edited;
+    }
+}
+
+#[test]
+fn subtype_leaf_variable_and_define_edits_match_fresh_bytes_and_revert() {
+    // A variable edit on a type that has subtypes must reach the subtype's
+    // inherited default; a define edit must reach every procedure using it.
+    // Each revision is compared with a fresh compile, and each revert must
+    // return to the earlier bytes exactly.
+    let tree = format!(
+        "#define BONUS 3
+{SOURCE}/datum/base/child
+    var/own = 2
+    result()
+        return value + own + BONUS
+/proc/uses_bonus()
+    return BONUS * 2
+"
+    );
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    for index in 0..6 {
+        roots.edit(index, &tree);
+    }
+    let initial = compare_revision(&shared, &roots);
+    let edits = [
+        ("parent variable with subtype", tree.replace("var/value = 7", "var/value = 9")),
+        ("define", tree.replace("#define BONUS 3", "#define BONUS 5")),
+        ("subtype variable", tree.replace("var/own = 2", "var/own = 4")),
+    ];
+    for (label, source) in &edits {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        let edited = compare_revision(&shared, &roots);
+        assert_ne!(edited[0], initial[0], "{label} edit must publish new content");
+        for index in 0..6 {
+            roots.edit(index, &tree);
+        }
+        assert_eq!(
+            compare_revision(&shared, &roots),
+            initial,
+            "reverting the {label} edit must reproduce the initial bytes"
+        );
+    }
+}
+
 // This captures the production daemon diagnostic byte stream, without replacing
 // the compiler or introducing a diagnostic/cache implementation in the fixture.
 fn run_captured(

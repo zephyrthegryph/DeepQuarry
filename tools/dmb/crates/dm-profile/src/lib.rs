@@ -948,3 +948,26 @@ impl Drop for ProfileGuard {
 mod interval_tests;
 mod allocator_maintenance;
 pub use allocator_maintenance::reclaim_unused_allocator_pages;
+
+/// Scoped wall timer for stage internals, printed to the process stderr when
+/// `DMB_TIMINGS_DETAIL=1`. It is a diagnostic only and has no effect otherwise.
+pub struct DetailTimer {
+    label: &'static str,
+    started: Option<Instant>,
+}
+/// Starts a [`DetailTimer`]; free when detail timings are disabled.
+pub fn detail_timer(label: &'static str) -> DetailTimer {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    let enabled = *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|v| v == "1"));
+    DetailTimer {
+        label,
+        started: enabled.then(Instant::now),
+    }
+}
+impl Drop for DetailTimer {
+    fn drop(&mut self) {
+        if let Some(started) = self.started {
+            eprintln!("detail {}: {:.3}s", self.label, started.elapsed().as_secs_f64());
+        }
+    }
+}

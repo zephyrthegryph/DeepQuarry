@@ -4,23 +4,30 @@ use super::*;
 #[derive(Debug)]
 pub(crate) struct TargetOccurrenceIndex {
     targets: Arc<[Target]>,
-    groups: HashMap<Target, Arc<[OccurrenceId]>>,
+    /// Built on first lookup: the grouping costs seconds on a full tree and
+    /// only target queries read it, never the compile pipeline.
+    groups: std::sync::OnceLock<HashMap<Target, Arc<[OccurrenceId]>>>,
 }
 impl TargetOccurrenceIndex {
     fn capture(tree: &SemanticTree) -> Arc<Self> {
-        let mut groups: HashMap<Target, Vec<OccurrenceId>> = HashMap::new();
-        for (ordinal, target) in tree.declarations().iter().copied().enumerate() {
-            groups
-                .entry(target)
-                .or_default()
-                .push(OccurrenceId(ordinal as u32));
-        }
         Arc::new(Self {
             targets: Arc::clone(&tree.declaration_targets),
-            groups: groups
+            groups: std::sync::OnceLock::new(),
+        })
+    }
+    fn groups(&self) -> &HashMap<Target, Arc<[OccurrenceId]>> {
+        self.groups.get_or_init(|| {
+            let mut groups: HashMap<Target, Vec<OccurrenceId>> = HashMap::new();
+            for (ordinal, target) in self.targets.iter().copied().enumerate() {
+                groups
+                    .entry(target)
+                    .or_default()
+                    .push(OccurrenceId(ordinal as u32));
+            }
+            groups
                 .into_iter()
                 .map(|(target, ids)| (target, ids.into()))
-                .collect(),
+                .collect()
         })
     }
     fn admits(&self, tree: &SemanticTree) -> bool {
@@ -36,7 +43,7 @@ impl TargetOccurrenceIndex {
             index.targets.len(),
             std::mem::size_of_val(index.targets.as_ref()),
         );
-        for ids in index.groups.values() {
+        for ids in index.groups.get().into_iter().flat_map(|groups| groups.values()) {
             visit(
                 ids.as_ptr() as usize,
                 ids.len(),
@@ -97,7 +104,7 @@ impl OccurrenceTable {
     }
     pub fn for_target(&self, target: Target) -> &[OccurrenceId] {
         self.index
-            .groups
+            .groups()
             .get(&target)
             .map(AsRef::as_ref)
             .unwrap_or(&[])

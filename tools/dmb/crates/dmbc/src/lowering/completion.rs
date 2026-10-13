@@ -120,24 +120,29 @@ pub fn lower_frontend_completed_input_on_execution<
         .filter(|roster| roster.authenticates(frontend));
     // A foreign request owner is never authority; compatibility callers take
     // the ordinary current-input path, including its own diagnostics.
+    let retain_timer = dm_profile::detail_timer("lowering.retain_current");
     if symbolic {
         if let Some(store) = memo.and_then(|memo| memo.symbolic.as_ref()) {
             store.retain_current(frontend, prepared);
         }
     }
+    drop(retain_timer);
     let request_admission = memo
         .and_then(|memo| memo.symbolic.as_ref())
         .filter(|_| !host.observes_reads())
         .map(|_| symbolic_input::RequestAdmission::new(host));
     let request_admission = request_admission.as_ref();
+    let candidate_timer = dm_profile::detail_timer("lowering.candidate_roster");
     let candidate_roster = request_admission
         .filter(|_| (symbolic || execution.selections_only) && !execution.capture_references)
         .and_then(|admission| {
             memo.and_then(|memo| memo.symbolic.as_ref())?
                 .candidate_roster(admission)
         });
+    drop(candidate_timer);
     // A complete current body issuer is required alongside the already admitted
     // ABI graph. Custom policies and absent current rosters decline.
+    let local_inputs_timer = dm_profile::detail_timer("lowering.local_inputs");
     let local_inputs = prepared.and_then(|_| {
         policy.current_local_inputs(
             frontend,
@@ -146,7 +151,25 @@ pub fn lower_frontend_completed_input_on_execution<
             }),
         )
     });
+    drop(local_inputs_timer);
+    if execution.progress_enabled {
+        // One line per stage: which precondition of the unchanged-local fast path
+        // holds, so a miss is attributable without a profiler.
+        crate::daemon_eprintln!(
+            "native lowering local fast path: symbolic={} capture_references={} selections_only={} store={} prepared_roster={} local_inputs={} candidate_roster={} observes_reads={} verification={}",
+            symbolic,
+            execution.capture_references,
+            execution.selections_only,
+            memo.is_some_and(|memo| memo.symbolic.is_some()),
+            prepared.is_some(),
+            local_inputs.is_some(),
+            candidate_roster.is_some(),
+            host.observes_reads(),
+            memo.is_some_and(|memo| memo.verification.enabled()),
+        );
+    }
     let chunk = config.max_chunk.clamp(1, 256);
+    let bodies_timer = dm_profile::detail_timer("lowering.bodies_setup");
     let bodies = if execution.selected_bodies.is_none() && prepared.is_some() {
         CurrentBodies::Prepared(prepared.expect("checked current roster"))
     } else {
@@ -241,6 +264,8 @@ pub fn lower_frontend_completed_input_on_execution<
             ))
         })
     };
+    drop(bodies_timer);
+    let _loop_timer = dm_profile::detail_timer("lowering.admission_loop_and_aggregate");
     let mut outcomes: Vec<_> = (0..bodies.len()).map(|_| None).collect();
     // Bound live miss preparation to one worker-sized window. Cold requests
     // must not retain every parsed body and proof ledger before producing code.
@@ -274,7 +299,11 @@ pub fn lower_frontend_completed_input_on_execution<
                     memo,
                 ) {
                     if !memo.verification.enabled() {
-                        if let Some(input) = store.lookup_unchanged_local(
+                        memo.counts
+                            .local_attempts
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let local_started = std::time::Instant::now();
+                        let local = store.lookup_unchanged_local(
                             roster,
                             candidates,
                             memo.policy,
@@ -282,16 +311,25 @@ pub fn lower_frontend_completed_input_on_execution<
                             frontend,
                             row,
                             execution.bodies,
-                        ) {
+                        );
+                        memo.counts.local_ns.fetch_add(
+                            local_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                            std::sync::atomic::Ordering::Relaxed,
+                        );
+                        if let Some(input) = local {
                             memo.counts
                                 .resident_hits
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            memo.counts
+                                .local_hits
                                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                             return Ok((Some(consume(start + *local_position, Ok(input))), None));
                         }
                     }
                 }
             }
-            memo::admit_one_input(
+            let keyed_started = std::time::Instant::now();
+            let keyed = memo::admit_one_input(
                 frontend,
                 body,
                 host,
@@ -307,8 +345,14 @@ pub fn lower_frontend_completed_input_on_execution<
                 execution.selections_only,
                 execution.disk_replay_bindings,
                 *prepared_body,
-            )
-            .map(|attempt| match attempt {
+            );
+            if let Some(memo) = memo {
+                memo.counts.keyed_ns.fetch_add(
+                    keyed_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+            }
+            keyed.map(|attempt| match attempt {
                 memo::Admission::Admitted(input) => {
                     (Some(consume(start + *local_position, Ok(input))), None)
                 }
