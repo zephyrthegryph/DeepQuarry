@@ -183,7 +183,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "legacy_field_forms_banned_in_converted_folders",
             "legacy field forms: banned in converted folders",
-            "Use TRACKED/TRACKED_BRIDGED or the actual capability state setter; these folders completed their field migration.",
+            "Use TRACKED or the actual capability state setter; these folders completed their field migration.",
             Files::Code,
             line(r"^(OM_FIELD(_[A-Z_]+)?|OM_DERIVE_FIELD|OM_FLAG_FIELD)\("),
         )

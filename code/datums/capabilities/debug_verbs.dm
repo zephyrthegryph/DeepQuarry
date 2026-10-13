@@ -1,7 +1,7 @@
 // Debugging automatic behaviour (doc/rewrite/dx_conventions.md, M10): "why did this redraw?" traces the next
 // marks of an atom with where they came from. (Why an op is refused: the admin explain tools, code/library/operations/admin_explain.dm.)
 
-ADMIN_VERB_AND_CONTEXT_MENU(dx_why_redrawn, R_DEBUG, "Why Redrawn", "Traces the next marks of an atom (who called changed()), or shows the trace so far.", ADMIN_CATEGORY_DEBUG, atom/target in world)
+ADMIN_VERB_AND_CONTEXT_MENU(dx_why_redrawn, R_DEBUG, "Why Redrawn", "Traces the next marks of an atom (who marked it), or shows the trace so far.", ADMIN_CATEGORY_DEBUG, atom/target in world)
 	var/ref_text = REF(target)
 	if(ref_text in GLOB.refresh_traced)
 		var/list/lines = GLOB.refresh_traced[ref_text]

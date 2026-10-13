@@ -1,8 +1,8 @@
 //! Port of `tools/ci/tracked_lint.py`: the tracked-var write lint (doc/rewrite/dx_conventions.md sec 1,
 //! final_design.md sec 1).
 //!
-//! `TRACKED(T, var, channel)` (code/__defines/capabilities.dm) declares that `var` on type T (and its
-//! subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls changed().
+//! `TRACKED(T, var)` (code/__defines/capabilities.dm) declares that `var` on type T (and its
+//! subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls tracked_changed().
 //! `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var
 //! tracked the same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the
 //! setter body. Reads are unrestricted. A `derive()` value (`. += derive(nameof(var), ...)` in a
@@ -165,7 +165,7 @@ fn tracked_from_text_with(f: &SourceFile, tracked: &mut Tracked, stats: bool) {
                 continue;
             }
             let re = pat_match!(
-                r"\s*(?:TRACKED(?:_BRIDGED)?\(\s*(/[\w/]+)\s*,\s*(\w+)\s*[,)]|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))"
+                r"\s*(?:TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*[,)]|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))"
             );
             if let Some(m) = re.captures(line) {
                 let var = if m.s(2).is_empty() { m.s(4) } else { m.s(2) };
@@ -523,7 +523,7 @@ pub struct StoredHit {
     pub fix: Option<Fix>,
 }
 
-/// The tracked list vars (`TRACKED` / `TRACKED_BRIDGED` on a `list` var): the vars whose generated procs exist, as `{var: {types}}`.
+/// The tracked list vars (`TRACKED` on a `list` var): the vars whose generated procs exist, as `{var: {types}}`.
 pub fn tracked_lists(cx: &Cx) -> Tracked {
     let mut lists: Tracked = BTreeMap::new();
     let Some(sem) = cx.sem() else { return lists };

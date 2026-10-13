@@ -205,7 +205,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /proc/native_key_name(key)
 	return GLOB.native_key_names[num2text(key, 12)]
 
-/// `E`'s value under `key` (a Rust channel mask, or a DM CHANGE_* channel) changed. Reactions hear it through
+/// `E`'s value under `key` (a Rust channel mask) changed. Reactions hear it through
 /// publish_change() under the key's `native("...")` name (READERS demand-gates it). The entity_raise_change() call is
 /// the bridge for OM-era readers that key on channel bits: om_listen listeners, declared appearances, caches
 /// and periodic work (code/datums/om/entity.dm om_dispatch_change).

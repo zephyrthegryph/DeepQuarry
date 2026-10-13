@@ -230,7 +230,7 @@
 /// declared fields it reads (by name) and of raw channels for inputs that are not fields (a datum's
 /// own channel). Its channel is the union of the inputs' channels, resolved once per
 /// type (scheduler_field_field_table()), so every input setter raises it: nothing refreshes a derived field by
-/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_DATUM_A))`
+/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity"))`
 #define OM_DERIVE_FIELD(T, F, INPUTS) /datum/scheduler_field_definition##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
 
 // ---------------------------------------------------------------- om_prompt requires (prompt.dm)

@@ -62,7 +62,7 @@ B1:code/modules/admin/verbs/randomverbs.dm:SSemergency_shuttle 2
 B1:code/modules/admin/verbs/randomverbs.dm:SSjob 1
 B1:code/modules/admin/verbs/secrets.dm:SSnightshift 3
 B1:code/modules/admin/view_variables/reference_tracking.dm:SSgarbage 6
-B1:code/modules/asset_cache/asset_list.dm:SSassets 33
+B1:code/modules/asset_cache/asset_list.dm:SSassets 31
 B1:code/modules/asset_cache/assets/tgui.dm:SSassets 2
 B1:code/modules/asset_cache/iconforge/batched_spritesheet.dm:SSassets 9
 B1:code/modules/asset_cache/transports/asset_transport.dm:SSassets 3

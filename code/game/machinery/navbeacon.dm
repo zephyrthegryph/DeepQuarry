@@ -29,7 +29,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 // hide the object if turf is intact
 /obj/machinery/navbeacon/hide(intact)
 	hide_under_floor(src, intact)
-	changed(src)
 
 // update the icon_state
 /// The look (the draw sweep: from its template).

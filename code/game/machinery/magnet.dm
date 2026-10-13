@@ -40,7 +40,6 @@
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
 	hide_under_floor(src, intact)
-	changed(src)
 
 // update the icon_state
 /// The look (the draw sweep: from its template).
