@@ -24,6 +24,7 @@ CAPABILITIES(/datum/datacore)
 	owns_many(nameof(locked))
 	owns_many(nameof(medical))
 	owns_many(nameof(security))
+	ref_many(nameof(warrants), /datum/data/record/warrant) // warrants on file (digitalwarrant.dm): a deleted warrant leaves the list
 
 
 /datum/datacore/proc/get_manifest(monochrome, OOC,snowflake = FALSE)

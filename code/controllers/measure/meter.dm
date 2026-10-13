@@ -141,7 +141,7 @@
 	/// ms of input work (clicks handled outside the MC, plus the input subsystems) since the last end_tick().
 	var/input_ms = 0
 	/// Active stats sets; sets[1] is the live one.
-	var/list/sets
+	var/list/datum/km_stats_set/sets
 	var/datum/km_stats_set/live
 
 	// The flight recorder: flat fixed lists of ring_len entries (top systems: KM_TOP_N per entry).
@@ -179,6 +179,9 @@
 	var/list/last_overrun_top
 	var/last_overrun_usage = 0
 
+CAPABILITIES(/datum/tick_meter)
+	ref_many(nameof(sets), /datum/km_stats_set)
+
 /datum/tick_meter/New(ring_len = KM_RING_LEN)
 	src.ring_len = ring_len
 	tick_ms = new /list(KM_MAX_SYSTEMS)
@@ -196,12 +199,11 @@
 	fr_top_sys = new /list(ring_len * KM_TOP_N)
 	fr_top_ms = new /list(ring_len * KM_TOP_N)
 	live = new
-	sets = list(live)
+	rel_add(src, nameof(sets), live)
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
 		ended_with(S, src)
-	sets = null
 	live = null
 	..()
 
@@ -211,13 +213,13 @@
 	S.mark_start()
 	if(sched)
 		S.rollup_base = km_rollup(sched)
-	sets += S
+	rel_add(src, nameof(sets), S)
 	return S
 
 /// Stops feeding `S` (its numbers stay readable). The caller qdels it when done.
 /datum/tick_meter/proc/close_set(datum/km_stats_set/S)
 	if(S != live)
-		sets -= S
+		rel_remove(src, nameof(sets), S)
 
 /// The measured BYOND reserve: how much of a tick SendMaps has recently taken, in percent (see TICK_BYOND_RESERVE).
 /datum/tick_meter/proc/byond_reserve()

@@ -126,4 +126,5 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 /// LC-refs: the actions granted to this player on each login are theirs.
 
 CAPABILITIES(/datum/persistent_client)
+	ref_many(nameof(player_actions), /datum/action)
 	links(/datum/persistent_client::mob, /mob::persistent_client)

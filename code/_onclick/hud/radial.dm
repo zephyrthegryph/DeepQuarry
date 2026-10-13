@@ -1,5 +1,6 @@
 #define NEXT_PAGE_ID "__next__"
 
+/// Open prompt ring id -> its entity_handle (a ring that was deleted without dismiss() resolves to null).
 GLOBAL_LIST_EMPTY(radial_menus)
 
 /atom/movable/screen/radial

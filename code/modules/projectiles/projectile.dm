@@ -162,6 +162,7 @@ CAPABILITIES(/obj/item/projectile)
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
 	owns_many(nameof(beam_segments))
+	ref_many(nameof(permutated)) // the atoms passed through: a deleted one leaves the list
 
 // ALLOW(init/INSTANCE_STATE): binds to the casing it is made inside
 /obj/item/projectile/Initialize(mapload)
@@ -381,7 +382,7 @@ CAPABILITIES(/obj/item/projectile)
 	trajectory_ignore_forcemove = FALSE
 	rel_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
 	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
-	permutated = list()
+	rel_clear(src, nameof(permutated))
 	originalRange = range
 	fired = TRUE
 	if(hitscan)
@@ -655,7 +656,7 @@ CAPABILITIES(/obj/item/projectile)
 	if(passthrough)
 		trajectory_ignore_forcemove = TRUE
 		forceMove(target_turf)
-		permutated.Add(A)
+		rel_add(src, nameof(permutated), A)
 		trajectory_ignore_forcemove = FALSE
 		return FALSE
 

@@ -4,21 +4,6 @@
 	Uses the same visual objects for all players.
 */
 GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
-GLOBAL_LIST_INIT(global_huds, list(
-		GLOB.global_hud.druggy,
-		GLOB.global_hud.blurry,
-		GLOB.global_hud.whitense,
-		GLOB.global_hud.heavy_whitense,
-		GLOB.global_hud.vimpaired,
-		GLOB.global_hud.darkMask,
-		GLOB.global_hud.centermarker,
-		GLOB.global_hud.nvg,
-		GLOB.global_hud.thermal,
-		GLOB.global_hud.meson,
-		GLOB.global_hud.science,
-		GLOB.global_hud.material,
-		GLOB.global_hud.holomap
-))
 
 /datum/global_hud
 	var/atom/movable/screen/druggy

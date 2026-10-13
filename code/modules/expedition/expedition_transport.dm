@@ -39,7 +39,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	EXPIRY_STAMP(site(), last_occupied, CLOCK_WORLD)
 	for(var/area/A in shuttle.shuttle_area)
 		for(var/mob/living/L in contents_of(A))
-			site().participants |= L
+			rel_add(site(), nameof(/datum/expedition_site::participants), L)
 
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.

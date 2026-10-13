@@ -258,7 +258,7 @@
 
 /mob/living/proc/embed(obj/O, def_zone=null)
 	O.forceMove(src)
-	LAZYADD(src.embedded, O)
+	rel_add(src, nameof(embedded), O)
 	grant(src, granted_verb(/mob/proc/yank_out_object), src)
 	throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 

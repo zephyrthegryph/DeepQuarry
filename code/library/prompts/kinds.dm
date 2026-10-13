@@ -121,14 +121,14 @@
 /datum/prompt/choice/proc/present_radial(mob/user)
 	var/atom/where = anchor || user
 	var/id = uniqueid || "defmenu_[REF(user)]_[REF(where)]"
-	var/datum/radial_menu/prompt/open_menu = GLOB.radial_menus[id]
+	var/datum/radial_menu/prompt/open_menu = resolve_handle(GLOB.radial_menus[id])
 	if(open_menu)
 		// asking again while it is open toggles it shut (and this question with it)
 		open_menu.close_menu()
 		return null
 	var/datum/radial_menu/prompt/menu = new
 	menu.menu_id = id
-	GLOB.radial_menus[id] = menu
+	GLOB.radial_menus[id] = entity_handle(menu)
 	if(radius)
 		menu.radius = radius
 	menu.entry_animation = entry_animation

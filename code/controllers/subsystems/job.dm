@@ -22,6 +22,9 @@ SYSTEM_DEF(job)
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 
+CAPABILITIES(/datum/system/job)
+	ref_many(nameof(unassigned), /mob/new_player)
+
 /datum/system/job/proc/get_all_job_icons() //For all existing HUD icons
 	return occupation_with_excludes + GLOB.alt_titles_with_icons + list("Prisoner")
 
@@ -182,7 +185,7 @@ SYSTEM_DEF(job)
 			job_debug_message("Player: [player] is now Rank: [rank], JCP:[job.current_positions], JPL:[position_limit]")
 			player.mind.assigned_role = rank
 			player.mind.role_alt_title = get_player_alt_title(player, rank)
-			unassigned -= player
+			rel_remove(src, nameof(unassigned), player)
 			job.current_positions++
 			if(job.camp_protection && round_duration_in_ds < SStransfer.get_hard_end() - 30 MINUTES)
 				job.register_shift_key(player.client.ckey)
@@ -267,7 +270,7 @@ SYSTEM_DEF(job)
 		if((job.current_positions < job.spawn_positions) || job.spawn_positions == -1)
 			job_debug_message("GRJ Random job given, Player: [player], Job: [job]")
 			assign_role(player, job.title)
-			unassigned -= player
+			rel_remove(src, nameof(unassigned), player)
 			break
 
 /datum/system/job/proc/reset_occupations()
@@ -276,7 +279,7 @@ SYSTEM_DEF(job)
 			player.mind.assigned_role = null
 			player.mind.special_role = null
 	setup_occupations()
-	unassigned = list()
+	rel_clear(src, nameof(unassigned))
 	return
 
 ///This proc is called before the level loop of DivideOccupations() and will try to select a head, ignoring ALL non-head preferences for every level until it locates a head or runs out of levels to check
@@ -352,14 +355,14 @@ SYSTEM_DEF(job)
 	//Get the players who are ready
 	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.ready && player.mind && !player.mind.assigned_role)
-			unassigned += player
+			rel_add(src, nameof(unassigned), player)
 
 	job_debug_message("DO, Len: [length(unassigned)]")
 	if(!length(unassigned))
 		return FALSE
 
 	//Shuffle players and jobs
-	unassigned = shuffle(unassigned)
+	shuffle_inplace(unassigned)
 
 	handle_feedback_gathering()
 
@@ -421,7 +424,7 @@ SYSTEM_DEF(job)
 					if((job.current_positions < job.spawn_positions) || job.spawn_positions == -1)
 						job_debug_message("DO pass, Player: [player], Level:[level], Job:[job.title]")
 						assign_role(player, job.title)
-						unassigned -= player
+						rel_remove(src, nameof(unassigned), player)
 						break
 
 	// Hand out random jobs to the people who didn't get any in the last check
@@ -444,7 +447,7 @@ SYSTEM_DEF(job)
 	for(var/mob/new_player/player in unassigned)
 		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == RETURN_TO_LOBBY)
 			player.ready = PLAYER_NOT_READY
-			unassigned -= player
+			rel_remove(src, nameof(unassigned), player)
 	return TRUE
 
 /datum/system/job/proc/equip_rank(mob/living/carbon/human/human_mob, rank, joined_late = 0, announce = TRUE)
