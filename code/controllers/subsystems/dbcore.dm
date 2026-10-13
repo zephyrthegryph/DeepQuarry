@@ -69,16 +69,16 @@ SYSTEM_DEF(dbcore)
 		EXPIRY_SET(src, failed_connection_timeout, 5 SECONDS, CLOCK_WORLD)
 		return FALSE
 
-	if(!CONFIG_GET(flag/sql_enabled))
-		return FALSE
-
 #ifdef UNIT_TESTS
-	// A test world has no database: the attempt only costs a failed connect (about 1.5 s of boot) and a log line.
+	// A test world has no database: never attempt a connect, whatever the config says (sql_enabled is normally off there, so this is mostly a logged guarantee).
 	if(!last_error)
 		last_error = "skipped: unit-test world"
 		log_sql("Connect() skipped: unit-test world, no database is used.")
 	return FALSE
 #endif
+	if(!CONFIG_GET(flag/sql_enabled))
+		return FALSE
+
 
 	var/user = CONFIG_GET(string/feedback_login)
 	var/pass = CONFIG_GET(string/feedback_password)
