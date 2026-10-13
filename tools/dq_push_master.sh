@@ -34,6 +34,12 @@ cd "$(git rev-parse --show-toplevel)"
 
 die() { echo "dq_push_master: REFUSED: $*" >&2; exit 1; }
 
+# In the shared merge worktree only the batch that holds the merge lock (tools/dq_merge_worktree.sh) may push; a landed push (or a HEAD
+# already in origin/master) ends the batch and frees the lock.
+. "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+merge_lock_require || exit 1
+release_batch() { if [ "$(_slots_norm "$(git rev-parse --show-toplevel)")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then merge_lock_release; fi; }
+
 dirty() {
 	git update-index -q --refresh >/dev/null 2>&1
 	if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -151,6 +157,7 @@ for round in 1 2 3; do
 		git merge-base --is-ancestor "$t" "$sha" || die "expected lane tip ${t:0:12} is not in HEAD ${sha:0:12}: the merge worktree was moved or the lane was not merged; re-merge it and rerun the gates"
 	done
 	if git merge-base --is-ancestor "$sha" origin/master && [ "${DQ_PUSH_ALLOW_NOOP:-0}" != "1" ]; then
+		release_batch
 		die "HEAD ${sha:0:12} is already in origin/master: pushing would change nothing (the lane's work is not in this HEAD, or it already landed)"
 	fi
 
@@ -161,6 +168,7 @@ for round in 1 2 3; do
 	echo "== pushing ${sha:0:12} to origin/master"
 	if DQ_PUSH_VERIFIED="$sha" git push origin "$sha:refs/heads/master"; then
 		verify_landed "$sha"
+		release_batch
 		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
 		exit 0
 	fi
