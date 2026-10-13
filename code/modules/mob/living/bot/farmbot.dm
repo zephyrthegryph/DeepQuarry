@@ -128,9 +128,9 @@ CAPABILITIES(/mob/living/bot/farmbot)
 
 /mob/living/bot/farmbot/update_icons()
 	if(on && action)
-		icon_state = "farmbot_[action]"
+		set_icon_state("farmbot_[action]")
 	else
-		icon_state = "farmbot[on]"
+		set_icon_state("farmbot[on]")
 
 /mob/living/bot/farmbot/handleRegular()
 	if(emagged && prob(1))

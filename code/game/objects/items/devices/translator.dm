@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/universal_translator)
 	set_translation_enabled(TRUE)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	if(mult_icons)
-		icon_state = "[initial(icon_state)]1"
+		set_icon_state("[initial(icon_state)]1")
 	to_chat(A.actor, span_notice("You enable \the [src], translating into [langset().name]."))
 	return OP_OK
 
@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/universal_translator)
 	set_translation_enabled(FALSE)
 	registry_leave(REGISTRY_LISTENING_OBJECTS, src)
 	set_langset_static(null)
-	icon_state = "[initial(icon_state)]"
+	set_icon_state("[initial(icon_state)]")
 	to_chat(A.actor, span_notice("You disable \the [src]."))
 	return OP_OK
 

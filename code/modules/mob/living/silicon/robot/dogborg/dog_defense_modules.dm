@@ -78,7 +78,7 @@ MSG_DEF_SELF(self_repair/nothing, "The repair system has nothing it can mend.")
 			components -= C
 	if(!length(components))
 		return /datum/msg/self_repair/nothing
-	icon_state = active_icon
+	set_icon_state(active_icon)
 	repairing = TRUE
 
 /obj/item/self_repair_system/proc/self_repair_interval(datum/act/op/A)
@@ -102,7 +102,7 @@ MSG_DEF_SELF(self_repair/nothing, "The repair system has nothing it can mend.")
 /// However it ended, the system is idle again.
 /obj/item/self_repair_system/proc/self_repair_finished(datum/act/op/A)
 	repairing = FALSE
-	icon_state = disabled_icon
+	set_icon_state(disabled_icon)
 
 // To repair multiple modules
 /obj/item/self_repair_system/advanced

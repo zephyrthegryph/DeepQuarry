@@ -49,6 +49,7 @@ GLOBAL_LIST_EMPTY(resource_adapters)
 		GLOB.resource_adapters["built"] = TRUE
 	return GLOB.resource_adapters["[res_id]"]
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/resource)
 /datum/resource
 	/// RES_X.
 	var/res_id

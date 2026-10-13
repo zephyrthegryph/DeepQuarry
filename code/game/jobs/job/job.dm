@@ -205,7 +205,7 @@ CAPABILITIES(/datum/job)
 	if(!job_job_icon_cache()[title])
 		var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin("#job_icon")
 		dress_mannequin(mannequin)
-		mannequin.dir = SOUTH
+		mannequin.set_dir(SOUTH)
 		mannequin.ImmediateOverlayUpdate()
 		var/icon/preview_icon = getFlatIcon(mannequin)
 

@@ -28,6 +28,7 @@
 /proc/radio_listen(freq, filter = null, via = null)
 	return entry_make(ENTRY_RADIO_LISTEN, "radio_listen", list("freq" = freq, "filter" = filter, "via" = via))
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 /// The keyed index of one registry id.
 /datum/lifeform_index
 	var/id

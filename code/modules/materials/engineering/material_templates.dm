@@ -38,6 +38,7 @@
 		. = new template_path
 		templates[template_path] = .
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/material_template)
 /datum/material_template
 	/// MATERIAL_APPLICATION_* this blueprint serves, or null for plain bulk material.
 	var/application

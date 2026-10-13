@@ -70,6 +70,7 @@ MSG_DEF_SELF(stage/mecha/step_22, "It is partly built.")
 /// about to take.
 GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, STAGE_MECHA_STEP_2, STAGE_MECHA_STEP_3, STAGE_MECHA_STEP_4, STAGE_MECHA_STEP_5, STAGE_MECHA_STEP_6, STAGE_MECHA_STEP_7, STAGE_MECHA_STEP_8, STAGE_MECHA_STEP_9, STAGE_MECHA_STEP_10, STAGE_MECHA_STEP_11, STAGE_MECHA_STEP_12, STAGE_MECHA_STEP_13, STAGE_MECHA_STEP_14, STAGE_MECHA_STEP_15, STAGE_MECHA_STEP_16, STAGE_MECHA_STEP_17, STAGE_MECHA_STEP_18, STAGE_MECHA_STEP_19, STAGE_MECHA_STEP_20, STAGE_MECHA_STEP_21, STAGE_MECHA_STEP_22))
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/mecha_blueprint)
 /// What a chassis becomes, as data: one type per chassis.
 /datum/mecha_blueprint
 	var/id
@@ -188,7 +189,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 	if(mecha_parts_done(A))
 		var/datum/mecha_blueprint/plan = mecha_blueprint()
 		icon = plan.icon_finished
-		icon_state = "[plan.icon_prefix]0"
+		set_icon_state("[plan.icon_prefix]0")
 		set_density(TRUE)
 	log_world("MECHA CONSTRUCTION: [A.actor] attached [part] to [src] ([blueprint]), parts [parts_mask]")
 	return OP_OK
@@ -267,7 +268,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 		spent(src, A.actor)
 		return OP_OK
 	if(row["fwd_icon"])
-		icon_state = row["fwd_icon"]
+		set_icon_state(row["fwd_icon"])
 	return OP_OK
 
 /// A step is taken back (what it took in is handed back by the graph): its sound, its lines, its picture.
@@ -277,7 +278,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 	mecha_step_sound(row["backkey"])
 	mecha_step_say(A.actor, A.held, row["back_self"], row["back_others"], row["back_span"])
 	if(row["back_icon"])
-		icon_state = row["back_icon"]
+		set_icon_state(row["back_icon"])
 	return OP_OK
 
 /datum/mecha_blueprint/ripley

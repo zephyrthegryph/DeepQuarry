@@ -1117,10 +1117,10 @@
 	am_set_air(T)
 	am_set_air(pipe_turf)
 	var/obj/machinery/atmospherics/unary/vent_pump/siphon/on/atmos/V = allocate(/obj/machinery/atmospherics/unary/vent_pump/siphon/on/atmos, T)
-	V.dir = direction
+	V.set_dir(direction)
 	V.initialize_directions = direction
 	var/obj/machinery/atmospherics/pipe/simple/P = allocate(/obj/machinery/atmospherics/pipe/simple, pipe_turf)
-	P.dir = direction | REVERSE_DIR(direction)
+	P.set_dir(direction | REVERSE_DIR(direction))
 	P.initialize_directions = P.dir
 	V.atmos_init()
 	P.atmos_init()

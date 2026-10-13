@@ -48,7 +48,7 @@ CAPABILITIES(/obj/structure/casino_table/board_game)
 	if(game_ui)
 		rel_clear(src, nameof(game_ui))
 	rel_set(src, nameof(game_ui), new new_game(src))
-	icon_state = game_ui.table_icon
+	set_icon_state(game_ui.table_icon)
 
 /datum/board_game
 	var/name

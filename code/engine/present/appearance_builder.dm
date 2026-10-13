@@ -643,10 +643,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		if(look_icon_has_state(A.icon, candidate))
 			resolved = candidate
 	if(!isnull(icon_state) || resolved != base)
-		A.icon_state = resolved
+		A.look_set_icon_state(resolved)
 		now |= LOOK_SET_ICON_STATE
 	else if(was & LOOK_SET_ICON_STATE)
-		A.icon_state = initial(A.icon_state)
+		A.look_set_icon_state(initial(A.icon_state))
 	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
 		A.look_changed_sprite(old_icon, old_state)
 	if(!isnull(color))
@@ -660,10 +660,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	else if(was & LOOK_SET_ALPHA)
 		A.alpha = initial(A.alpha)
 	if(!isnull(invisibility))
-		A.invisibility = invisibility
+		A.look_set_invisibility(invisibility)
 		now |= LOOK_SET_INVISIBILITY
 	else if(was & LOOK_SET_INVISIBILITY)
-		A.invisibility = initial(A.invisibility)
+		A.look_set_invisibility(initial(A.invisibility))
 	if(transform)
 		A.transform = transform
 		now |= LOOK_SET_TRANSFORM
@@ -759,6 +759,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		for(var/atom/movable/thing as anything in vis)
 			T.vis_contents |= thing
 			LAZYADD(cache.look_vis, thing)
+	vis = null // the atoms this draw showed are on the target's cache now: the look keeps none of them
 	if(flick_state)
 		flick(flick_state, A)
 

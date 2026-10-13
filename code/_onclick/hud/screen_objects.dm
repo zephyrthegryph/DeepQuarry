@@ -177,7 +177,7 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	var/obj/effect/overlay/zone_sel/overlay_object = hover_overlays_cache[choice]
 	if(!overlay_object)
 		overlay_object = new
-		overlay_object.icon_state = "[choice]"
+		overlay_object.set_icon_state("[choice]")
 		rel_add(src, nameof(hover_overlays_cache), overlay_object, choice)
 	vis_contents += overlay_object
 
@@ -1076,7 +1076,7 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 		else
 			warned = TRUE
 			var/atom/movable/screen/ammo/F = new /atom/movable/screen/ammo(src)
-			F.icon_state = "frame"
+			F.set_icon_state("frame")
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
 			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty), keeps_dead = TRUE)

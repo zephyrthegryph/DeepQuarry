@@ -662,7 +662,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 			growth++
 		if(growth > growth_trigger)
 			name = "proto-organ"
-			icon_state = "lattice-grown"
+			set_icon_state("lattice-grown")
 			desc = "A half grown proto-organ ready for chemical injection."
 			prepared = TRUE
 			growth = 0
@@ -714,7 +714,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 	// BEGIN MUTATION PROCESS
 	chem_target = reagent
 	name = "mutoid"
-	icon_state = "crypto" // TEMP TODO: "lattice-mutated"
+	set_icon_state("crypto") // TEMP TODO: "lattice-mutated"
 	desc = "A fully grown mutoid ready for radiation training."
 	growth = 0
 	growth_trigger = rand(160,210) // we will quickly start dying now unless trained

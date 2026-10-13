@@ -152,7 +152,7 @@ CAPABILITIES(/obj/item/tape_roll)
 
 /obj/item/ducttape/proc/attach(obj/item/W)
 	own_move(W, src, nameof(src.stuck)) // CONTAINED: the move takes it in
-	icon_state = W.icon_state + "_taped"
+	set_icon_state(W.icon_state + "_taped")
 	name = W.name + " (taped)"
 	overlays = W.overlays
 

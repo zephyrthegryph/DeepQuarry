@@ -48,7 +48,7 @@
 	rel_set(detonator, nameof(detonator.bomb), src)
 
 /obj/item/syndie/c4explosive/proc/detonate()
-	icon_state = "c-4[size]_1"
+	set_icon_state("c-4[size]_1")
 	play_sfx(src, SFX_WEAPONS_ARMBOMB, extrarange = 0)
 	for(var/mob/O in hearers(src, null))
 		O.show_message("[icon2html(src, O.client)] " + span_warning(" The [src.name] beeps!"))
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 	if(!lit)
 		base_state = icon_state
 		set_lit(TRUE)
-		icon_state = "[base_state]1"
+		set_icon_state("[base_state]1")
 		act_message(user, src, others = span_rose("Without even breaking stride, %U% flips open %T% in one smooth movement."))
 
 	else if(lit && detonator_mode)
@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 	switch(A.answer.value)
 		if("Press the button.")
 			to_chat(user, span_warning("You press the button."))
-			icon_state = "[base_state]click"
+			set_icon_state("[base_state]click")
 			if(bomb())
 				var/obj/item/syndie/c4explosive/bomb_to_explode = bomb()
 				rel_clear(src, nameof(bomb)) //clear up our ref
@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/syndie/c4explosive)
 
 		if("Close the lighter.")
 			set_lit(FALSE)
-			icon_state = "[base_state]"
+			set_icon_state("[base_state]")
 			act_message(user, src, others = span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing."))
 
 

@@ -229,9 +229,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 				else
 					medical["empty"] = 1
 			if(MED_DATA_V_DATA)
-				data["virus"] = list()
-				for(var/datum/data/record/v in GLOB.virusDB)
-					data["virus"] += list(list("name" = v.fields["name"], "D" = "\ref[v]"))
+				data["virus"] = medical_virus_entries()
 			if(MED_DATA_MEDBOT)
 				data["medbots"] = list()
 				for(var/mob/living/bot/medbot/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -674,3 +672,12 @@ CAPABILITIES(/obj/machinery/computer/med_data/laptop)
 /// The selected record (a relation view).
 /obj/machinery/computer/med_data/proc/active2() as /datum/data/record
 	return active2
+
+/// The discovered viruses the console lists: GLOB.virusDB is virus id -> its record, so the records are its values.
+/proc/medical_virus_entries()
+	. = list()
+	for(var/virus_id in GLOB.virusDB)
+		var/datum/data/record/v = GLOB.virusDB[virus_id]
+		if(!istype(v))
+			continue
+		. += list(list("name" = v.fields["name"], "D" = "\ref[v]"))

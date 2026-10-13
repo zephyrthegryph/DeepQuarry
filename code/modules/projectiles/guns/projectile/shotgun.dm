@@ -248,8 +248,8 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 		act_message(user, null, MSG_SELF(span_warning("You unfold the shotgun's stock and foregrip.")), \
 			MSG_OTHERS(span_warning("With a fluid movement, %U% unfolds their shotgun's stock and foregrip.")), \
 			MSG_BLIND("You hear an ominous click."))
-		icon_state = "compshot"
-		item_state = icon_state
+		set_icon_state("compshot")
+		set_item_state(icon_state)
 		set_w_class(ITEMSIZE_LARGE)
 		one_handed_penalty = 15 //Stock extended to steady it, even with just the one hand.
 		recoil = 1 //As above, stock and foregrip would help with the kick
@@ -257,8 +257,8 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 		act_message(user, null, MSG_SELF(span_notice("You fold the shotgun's stock and foregrip.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their shotgun's stock and fold it's foregrip.")), \
 			MSG_BLIND("You hear a click."))
-		icon_state = "compshotc"
-		item_state = icon_state
+		set_icon_state("compshotc")
+		set_item_state(icon_state)
 		set_w_class(ITEMSIZE_NORMAL)
 		one_handed_penalty = 30
 		recoil = 5

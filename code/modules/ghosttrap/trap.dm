@@ -16,6 +16,7 @@ GLOBAL_LIST(ghost_traps)
 		var/datum/ghosttrap/G = new traptype
 		GLOB.ghost_traps[G.object] = G
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/ghosttrap)
 /datum/ghosttrap
 	var/object = "positronic brain"
 	var/pref_check = BE_AI
@@ -101,7 +102,7 @@ CAPABILITIES(/datum/ghosttrap)
 		return
 	P.searching = 0
 	P.name = "positronic brain ([P.get_occupant()?.name])"
-	P.icon_state = "posibrain-occupied"
+	P.set_icon_state("posibrain-occupied")
 
 // Allows people to set their own name. May or may not need to be removed for posibrains if people are dumbasses.
 /datum/ghosttrap/proc/set_new_name(mob/target)

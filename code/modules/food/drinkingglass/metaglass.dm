@@ -27,9 +27,9 @@
 			icon = initial(icon)
 
 		if(R.glass_icon_state)
-			icon_state = R.glass_icon_state
+			set_icon_state(R.glass_icon_state)
 		else
-			icon_state = "glass_brown"
+			set_icon_state("glass_brown")
 
 		if(R.glass_name)
 			name = R.glass_name
@@ -54,13 +54,13 @@
 			price_tag = null
 	else
 		if(type == /obj/item/reagent_containers/food/drinks/metaglass/metapint)
-			icon_state = "pglass_empty"
+			set_icon_state("pglass_empty")
 			name = "metamorphic pint glass"
 			desc = "This glass changes shape and form depending on the drink inside... fancy!"
 			center_of_mass_x = 16
 			center_of_mass_y= 10
 		else
-			icon_state = "glass_empty"
+			set_icon_state("glass_empty")
 			name = "metamorphic glass"
 			desc = "This glass changes shape and form depending on the drink inside... fancy!"
 			center_of_mass_x = 16

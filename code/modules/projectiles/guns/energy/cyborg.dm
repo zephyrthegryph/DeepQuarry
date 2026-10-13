@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 		if(R.sprite_datum?.dogborg_sprites)
 			if(emagged)
 				name = "combat jaws"
-				icon_state = "jaws"
+				set_icon_state("jaws")
 				desc = "The jaws of the law."
 				set_force(30)
 				set_armor_penetration(25)
@@ -202,7 +202,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 			else
 				name = "puppy jaws"
-				icon_state = "smalljaws"
+				set_icon_state("smalljaws")
 				desc = "The jaws of a small dog."
 				set_force(15)
 				set_armor_penetration(0)
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				name = "claymore"
 				desc = "Now this is a knife!"
 				icon = 'icons/obj/tools_robot.dmi'
-				icon_state = "claymore_cyborg"
+				set_icon_state("claymore_cyborg")
 				set_hitsound(SFX_WEAPONS_SLICE)
 				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
 				set_force(30)
@@ -222,7 +222,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 			else
 				name = "self defense knife"
 				icon = 'icons/obj/tools_robot.dmi'
-				icon_state = "knife_cyborg"
+				set_icon_state("knife_cyborg")
 				set_hitsound(SFX_WEAPONS_SLASH)
 				desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use."
 				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))

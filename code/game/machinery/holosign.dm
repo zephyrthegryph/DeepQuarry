@@ -83,7 +83,7 @@ CAPABILITIES(/obj/machinery/button/holosign)
 	use_power(5)
 
 	set_active(!active)
-	icon_state = "light[active]"
+	set_icon_state("light[active]")
 
 	for(var/obj/machinery/holosign/M as anything in controlled_signs)
 		M.toggle()

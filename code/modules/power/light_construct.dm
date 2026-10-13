@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/light_construct)
 
 /// The picture follows how far the frame is built.
 /obj/machinery/light_construct/proc/update_state()
-	icon_state = built(src, STAGE_LIGHT_FRAME_WIRED) ? "[construct_state]-construct-stage2" : "[construct_state]-construct-stage1"
+	set_icon_state(built(src, STAGE_LIGHT_FRAME_WIRED) ? "[construct_state]-construct-stage2" : "[construct_state]-construct-stage1")
 
 /obj/machinery/light_construct/proc/takes_cells(datum/act/A)
 	return (cell_connectors) ? null : MSG(light_frame/no_cells)

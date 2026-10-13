@@ -157,6 +157,7 @@ CAPABILITIES(/obj/item/rig/protean)
 	without("ui_open")
 	ui_shape(cooling = num(), sealing = any, emagged = num(), coverlock = num(), interfacelock = num(), aicontrol = num(), aioverride = num(), securitycheck = num(), malf = num(), primarysystem = schema_text(), ai = bool(), sealed = bool(), helmet = schema_text(), gauntlets = schema_text(), boots = schema_text(), chest = schema_text(), helmetDeployed = bool(), gauntletsDeployed = bool(), bootsDeployed = bool(), chestDeployed = bool(), charge = num(), maxcharge = num(), chargestatus = num(), modules = list_of())
 	drag_onto(PROC_REF(mousedrop_input))
+	ref_one(nameof(myprotean), /mob/living/carbon/human)
 	param(nameof(myprotean), pos = 1, apply = PROC_REF(bind_protean))
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
@@ -688,7 +689,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	suit_state = R.suit_state
 	name = R.name
 	icon = R.icon
-	icon_state = R.icon_state
+	set_icon_state(R.icon_state)
 	user.drop_item(R)
 	R.forceMove(src)
 	assimilated_rig = R
@@ -704,7 +705,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			piece.set_armor(get_armor())
 			piece.set_max_pressure_protection(rigsuit_max_pressure)
 			piece.set_max_heat_protection_temperature(protection_of(src).max_heat)
-			piece.icon_state = src.icon_state
+			piece.set_icon_state(src.icon_state)
 			piece.icon = initial(piece.icon)
 			piece.set_default_worn_icon(worn_of_type(piece.type).worn_icon)
 
@@ -723,7 +724,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		slowdown = initial(slowdown)
 		name = tempRig.name
 		icon = tempRig.icon // Reset the icon back to its original
-		icon_state = tempRig.icon_state
+		set_icon_state(tempRig.icon_state)
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
 		wearer()?.worn_protection_changed()

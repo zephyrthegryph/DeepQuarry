@@ -26,6 +26,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 
 // ---------------------------------------------------------------- the definition
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 /// A sequence: one per type (sequence_def()), never written after it is built.
 /datum/sequence
 	abstract_type = /datum/sequence

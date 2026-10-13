@@ -13,7 +13,7 @@
 	add_fingerprint(user)
 	use_power(50)
 	set_on(!(on))
-	icon_state = text("igniter[]", on)
+	set_icon_state(text("igniter[]", on))
 	return TRUE
 
 /// Keeps its tile ignited every machine frame while on; off, it sleeps until toggled on, and
@@ -43,9 +43,9 @@ CAPABILITIES(/obj/machinery/igniter)
 /obj/machinery/igniter/power_change()
 	. = ..()
 	if(!power_lost())
-		icon_state = "igniter[on]"
+		set_icon_state("igniter[on]")
 	else
-		icon_state = "igniter0"
+		set_icon_state("igniter0")
 
 // Wall mounted remote-control igniter.
 
@@ -66,9 +66,9 @@ CAPABILITIES(/obj/machinery/igniter)
 	. = ..()
 	if(!power_lost() && disable == 0)
 
-		icon_state = "[base_state]"
+		set_icon_state("[base_state]")
 	else
-		icon_state = "[base_state]-p"
+		set_icon_state("[base_state]-p")
 
 /obj/machinery/sparker/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -78,10 +78,10 @@ CAPABILITIES(/obj/machinery/igniter)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	if(disable)
 		act_message(user, src, MSG_SELF(span_warning("You disable the connection to %T%.")), MSG_OTHERS(span_warning("%U% has disabled %T%!")))
-		icon_state = "[base_state]-d"
+		set_icon_state("[base_state]-d")
 	else
 		act_message(user, src, MSG_SELF(span_warning("You fix the connection to %T%.")), MSG_OTHERS(span_warning("%U% has reconnected %T%!")))
-		icon_state = powered() ? "[base_state]" : "[base_state]-p"
+		set_icon_state(powered() ? "[base_state]" : "[base_state]-p")
 	return OP_OK
 
 /// Old attack_ai: the AI triggers it directly while it is anchored.
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/button/ignition)
 		return TRUE
 
 	set_active(TRUE)
-	icon_state = "launcheract"
+	set_icon_state("launcheract")
 
 	for(var/obj/machinery/sparker/M as anything in controlled_sparkers)
 		M.ignite()
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/machinery/button/ignition)
 	for(var/obj/machinery/igniter/M as anything in controlled_igniters)
 		use_power(50)
 		M.set_on(!(M.on))
-		M.icon_state = text("igniter[]", M.on)
+		M.set_icon_state(text("igniter[]", M.on))
 
 	if(!after_pending(src, "finish_trigger"))
 		after(src, 5 SECONDS, PROC_REF(finish_trigger), key = "finish_trigger")
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/button/ignition)
 /obj/machinery/button/ignition/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)
 
-	icon_state = "launcherbtt"
+	set_icon_state("launcherbtt")
 	set_active(FALSE)
 
 

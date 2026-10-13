@@ -395,7 +395,7 @@ CAPABILITIES(/datum/trader_review)
 	if(pt.len > 0)
 		var/obj/dt = pick(pt)
 		forceMove(get_turf(dt))
-		dir = dt.dir
+		set_dir(dt.dir)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 	else
 		log_and_message_admins("[src] tried to move itself but its target pick list was empty, so it was not moved. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)

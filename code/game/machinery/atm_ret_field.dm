@@ -16,7 +16,6 @@
 
 	var/hatch_open = FALSE
 	var/wires_intact = TRUE
-	var/list/areas_added
 	var/field_type = /obj/structure/atmospheric_retention_field
 	circuit = /obj/item/circuitboard/arf_generator
 TRACKED(/obj/machinery/atmospheric_field_generator, hatch_open)
@@ -146,7 +145,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		return
 	else
 		set_isactive(TRUE)
-		icon_state = "arfg_on"
+		set_icon_state("arfg_on")
 		new field_type (src.loc)
 		src.visible_message(span_warning("The ARF-G crackles to life!"),span_warning("You hear an ARF-G coming online!"))
 		set_use_power(USE_POWER_ACTIVE)
@@ -157,7 +156,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 		if(alwaysactive == TRUE && operable()) //If we're not damaged, don't turn off if we're always on.
 			return
 		else
-			icon_state = "arfg_off"
+			set_icon_state("arfg_off")
 			for(var/obj/structure/atmospheric_retention_field/F in contents_of(loc))
 				spent(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
@@ -173,17 +172,6 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 			log_mapping("Duplicate ARFGS at [x],[y],[z]")
 			return INITIALIZE_HINT_QDEL
 
-	var/area/A = get_area(src)
-	ASSERT(istype(A))
-
-	LAZYADD(A.all_arfgs, src)
-	areas_added = list(A)
-
-	for(var/direction in GLOB.cardinal)
-		A = get_area(get_step(src,direction))
-		if(istype(A) && !(A in areas_added))
-			LAZYADD(A.all_arfgs, src)
-			areas_added += A
 
 /obj/structure/atmospheric_retention_field
 	resistance_flags = BOMB_PROOF

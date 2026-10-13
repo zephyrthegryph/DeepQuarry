@@ -330,11 +330,6 @@ CAPABILITIES(/datum/material_power_overlay)
 	..()
 
 
-/datum/material_power_overlay/lifecycle_unbind()
-	. = ..()
-	if(region_id && SSmachines.power_material_overlays[region_id] == src)
-		SSmachines.power_material_overlays -= region_id
-
 /datum/material_power_overlay/proc/add_cable(obj/structure/cable/C)
 	rel_add(src, nameof(cables), C) // two-sided: sets C.material_overlay
 	invalidate_material_cache()

@@ -105,17 +105,17 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 
 /obj/structure/transit_tube/station/proc/open_animation()
 	if(icon_state == "closed")
-		icon_state = "opening"
+		set_icon_state("opening")
 		after(src, OPEN_DURATION, PROC_REF(finish_animation), with = list("opening", "open"))
 
 /obj/structure/transit_tube/station/proc/close_animation()
 	if(icon_state == "open")
-		icon_state = "closing"
+		set_icon_state("closing")
 		after(src, CLOSE_DURATION, PROC_REF(finish_animation), with = list("closing", "closed"))
 
 /obj/structure/transit_tube/station/proc/finish_animation(from_state, to_state)
 	if(icon_state == from_state)
-		icon_state = to_state
+		set_icon_state(to_state)
 
 /obj/structure/transit_tube/station/proc/launch_pod()
 	for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
@@ -437,7 +437,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 
 /obj/structure/transit_tube/proc/select_automatic_icon_state(directions)
 	if(length(directions) == 2)
-		icon_state = "[dir2text_short(directions[1])]-[dir2text_short(directions[2])]"
+		set_icon_state("[dir2text_short(directions[1])]-[dir2text_short(directions[2])]")
 
 // Look for diagonal directions, generate the decorative corners in each.
 /obj/structure/transit_tube/proc/generate_automatic_corners(directions)
@@ -464,7 +464,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 			return
 
 	var/obj/structure/transit_tube/tube = new(location)
-	tube.icon_state = state
+	tube.set_icon_state(state)
 	tube.init_dirs()
 
 // Uses a list() to cache return values. Since they should

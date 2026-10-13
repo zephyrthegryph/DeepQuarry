@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/radio/electropack)
 	if(!ui_gate(A))
 		return FALSE
 	on = !on
-	icon_state = "electropack[on]"
+	set_icon_state("electropack[on]")
 	return TRUE
 
 /obj/item/radio/electropack/proc/ui_act_freq(datum/act/op/A, delta_arg)

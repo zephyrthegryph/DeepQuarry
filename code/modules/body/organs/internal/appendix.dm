@@ -46,7 +46,7 @@
 */
 /obj/item/organ/internal/appendix/removed()
 	if(inflamed)
-		icon_state = "[initial(icon_state)]inflamed"
+		set_icon_state("[initial(icon_state)]inflamed")
 		name = "inflamed appendix"
 	..()
 

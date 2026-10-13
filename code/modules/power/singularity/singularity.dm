@@ -137,7 +137,7 @@ CAPABILITIES(/obj/singularity)
 			desc = "A gravitational singularity."
 			current_size = STAGE_ONE
 			icon = 'icons/obj/singularity.dmi'
-			icon_state = "singularity_s1"
+			set_icon_state("singularity_s1")
 			pixel_x = 0
 			pixel_y = 0
 			grav_pull = 4
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/singularity)
 			desc = "A gravitational singularity."
 			current_size = STAGE_TWO
 			icon = 'icons/effects/96x96.dmi'
-			icon_state = "singularity_s3"
+			set_icon_state("singularity_s3")
 			pixel_x = -32
 			pixel_y = -32
 			grav_pull = 6
@@ -175,7 +175,7 @@ CAPABILITIES(/obj/singularity)
 				desc = "A gravitational singularity."
 				current_size = STAGE_THREE
 				icon = 'icons/effects/160x160.dmi'
-				icon_state = "singularity_s5"
+				set_icon_state("singularity_s5")
 				pixel_x = -64
 				pixel_y = -64
 				grav_pull = 8
@@ -196,7 +196,7 @@ CAPABILITIES(/obj/singularity)
 				desc = "A gravitational singularity."
 				current_size = STAGE_FOUR
 				icon = 'icons/effects/224x224.dmi'
-				icon_state = "singularity_s7"
+				set_icon_state("singularity_s7")
 				pixel_x = -96
 				pixel_y = -96
 				grav_pull = 10
@@ -216,7 +216,7 @@ CAPABILITIES(/obj/singularity)
 			desc = "A gravitational singularity."
 			current_size = STAGE_FIVE
 			icon = 'icons/effects/288x288.dmi'
-			icon_state = "singularity_s9"
+			set_icon_state("singularity_s9")
 			pixel_x = -128
 			pixel_y = -128
 			grav_pull = 10
@@ -234,7 +234,7 @@ CAPABILITIES(/obj/singularity)
 			desc = "A gravitational singularity with the properties of supermatter. <b>It has the power to destroy worlds.</b>"
 			current_size = STAGE_SUPER
 			icon = 'icons/effects/352x352.dmi'
-			icon_state = "singularity_s11"//uh, whoever drew that, you know that black holes are supposed to look dark right? What's this, the clown's singulo?
+			set_icon_state("singularity_s11")//uh, whoever drew that, you know that black holes are supposed to look dark right? What's this, the clown's singulo?
 			pixel_x = -160
 			pixel_y = -160
 			grav_pull = 16

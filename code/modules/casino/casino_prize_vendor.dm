@@ -229,10 +229,10 @@
 /obj/machinery/casino_prize_dispenser/power_change()
 	. = ..()
 	if(broken_now())
-		icon_state = "[initial(icon_state)]-broken"
+		set_icon_state("[initial(icon_state)]-broken")
 	else
 		if(!power_lost())
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 		else
 			after(src, rand(0 SECONDS, 1.5 SECONDS), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 

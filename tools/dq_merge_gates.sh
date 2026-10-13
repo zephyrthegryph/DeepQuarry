@@ -29,6 +29,8 @@
 # What it still leaves to dq_push_master.sh: the second merge of origin/master, and any stamp it cannot honor (a different HEAD,
 # an unclean tree). It never runs build.sh lint (DreamChecker + analyze + tgui lint, all covered above).
 set -uo pipefail
+# The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
+export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
 
 tests_arg=()
@@ -144,7 +146,8 @@ fi
 if [ "$run_tests" -eq 1 ] && [ "$smoke" -eq 1 ] && [ -f tools/ci/gameplay_tests.txt ]; then
 	while IFS= read -r line; do
 		line="${line%%#*}"
-		line="$(echo "$line" | tr -d '' | xargs)"
+		line="$(echo "$line" | tr -d '
+' | xargs)"
 		[ -n "$line" ] && add_test "$line"
 	done <tools/ci/gameplay_tests.txt
 fi

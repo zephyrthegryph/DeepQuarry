@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/button/neonsign)
 	use_power(5)
 
 	set_active(!active)
-	icon_state = "light[active]"
+	set_icon_state("light[active]")
 
 	for(var/obj/machinery/neonsign/M as anything in controlled_signs)
 		M.toggle()

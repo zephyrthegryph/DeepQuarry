@@ -639,7 +639,7 @@ CAPABILITIES(/obj/item/projectile/beam/medigun)
 		if(M.is_injured())
 			var/obj/effect/overlay/pulse = new /obj/effect/overlay(get_turf(M))
 			pulse.icon = 'icons/effects/effects.dmi'
-			pulse.icon_state = XENO_CHEM_HEAL
+			pulse.set_icon_state(XENO_CHEM_HEAL)
 			pulse.name = XENO_CHEM_HEAL
 			pulse.set_anchored(TRUE)
 			pulse.expire(2 SECONDS)

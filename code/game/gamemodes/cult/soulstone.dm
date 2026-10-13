@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/soulstone)
 		to_chat(A2, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [user.name]'s will. Help them suceed in their goals at all costs.")))
 		A2.forceMove(user.loc)
 		A2.cancel_camera()
-		icon_state = "soulstone"
+		set_icon_state("soulstone")
 	return TRUE
 
 ///////////////////////////Transferring to constructs/////////////////////////////////////////////////////
@@ -138,10 +138,10 @@ CAPABILITIES(/obj/structure/constructshell)
 		T.drop_from_inventory(W)
 
 	new /obj/effect/decal/remains/human(T.loc) //Spawns a skeleton
-	T.invisibility = INVISIBILITY_ABSTRACT
+	T.set_invisibility(INVISIBILITY_ABSTRACT)
 
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( T.loc )
-	animation.icon_state = "blank"
+	animation.set_icon_state("blank")
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), T)
 	flick("dust-h", animation)
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/structure/constructshell)
 	S.name = "Shade of [T.real_name]"
 	S.set_real_name("Shade of [T.real_name]")
 	S.icon = T.icon
-	S.icon_state = T.icon_state
+	S.set_icon_state(T.icon_state)
 	S.overlays = T.overlays
 	S.color = rgb(254,0,0)
 	S.alpha = 127
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/structure/constructshell)
 	S.cancel_camera()
 
 
-	src.icon_state = "soulstone2"
+	set_icon_state("soulstone2")
 	src.name = "Soul Stone: [S.real_name]"
 	to_chat(S, "Your soul has been captured! You are now bound to [U.name]'s will, help them suceed in their goals at all costs.")
 	to_chat(U, span_notice("Capture successful!") + ": [T.real_name]'s soul has been ripped from their body and stored within the soul stone.")
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/structure/constructshell)
 	T.enable_godmode()
 	T.canmove = 0
 	T.fully_heal()
-	src.icon_state = "soulstone2"
+	set_icon_state("soulstone2")
 
 	to_chat(T, "Your soul has been recaptured by the soul stone, its arcane energies are reknitting your ethereal form")
 	to_chat(U, span_notice("Capture successful!") + ": [T.name]'s has been recaptured and stored within the soul stone.")

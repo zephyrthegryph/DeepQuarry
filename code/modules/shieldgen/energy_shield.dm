@@ -28,10 +28,10 @@
 		enabled_icon_state = icon_state
 
 	if(disabled_for || diffused_for)
-		icon_state = "shield_broken"
+		set_icon_state("shield_broken")
 		overlays.Cut() // Snowflake handling, avoiding SSoverlays
 	else
-		icon_state = enabled_icon_state
+		set_icon_state(enabled_icon_state)
 		//flags |= OVERLAY_QUEUED //Trick SSoverlays
 		//SSoverlays.queue += src
 

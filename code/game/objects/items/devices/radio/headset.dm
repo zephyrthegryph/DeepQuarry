@@ -750,7 +750,7 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	if(wearer())
 		rel_clear(src, nameof(wearer))
 		if(glow_of(src).power)
-			light_on = 0
+			set_light_on(0)
 		if(effect_icon)
 			H.cut_overlay(effect_overlay)
 		if(length(remove_spells))

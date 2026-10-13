@@ -281,7 +281,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/otie/phoron)
 /obj/structure/largecrate/animal/otie/interaction_hand(datum/act/op/A)
 	if(taped == 1)
 		play_sfx(src, SFX_ITEMS_POSTER_RIPPED, 0.5)
-		icon_state = "otiecrate"
+		set_icon_state("otiecrate")
 		taped = 0
 	return ..()
 

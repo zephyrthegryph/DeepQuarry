@@ -28,7 +28,7 @@
 
 /obj/machinery/power/terminal/hide(i)
 	hide_under_floor(src, i)
-	icon_state = i ? "term-f" : "term"
+	set_icon_state(i ? "term-f" : "term")
 
 /obj/machinery/power/terminal/hides_under_flooring()
 	return 1

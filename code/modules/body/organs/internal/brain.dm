@@ -96,11 +96,11 @@ CAPABILITIES(/obj/item/organ/internal/brain)
 /obj/item/organ/internal/brain/proc/implant_assist(targ_icon_state = null)
 	name = "[owner.real_name]'s assisted [initial(name)]"
 	if(targ_icon_state)
-		icon_state = targ_icon_state
+		set_icon_state(targ_icon_state)
 		if(dead_icon)
 			dead_icon = "[targ_icon_state]_dead"
 	else
-		icon_state = "[initial(icon_state)]_assisted"
+		set_icon_state("[initial(icon_state)]_assisted")
 	if(dead_icon)
 		dead_icon = "[initial(dead_icon)]_assisted"
 

@@ -1189,13 +1189,13 @@ CAPABILITIES(/obj/item/clothing/suit/caution)
 	if(!user || user.stat || user.lying || user.restrained() || !Adjacent(user))
 		return
 	else if(icon_state == "caution")
-		icon_state = "caution_blinking"
-		item_state = "caution_blinking"
+		set_icon_state("caution_blinking")
+		set_item_state("caution_blinking")
 		user.show_message("You turn the wet floor sign on.")
 		play_sfx(src.loc, SFX_MACHINES_BUTTON)
 	else
-		icon_state = "caution"
-		item_state = "caution"
+		set_icon_state("caution")
+		set_item_state("caution")
 		user.show_message("You turn the wet floor sign off.")
 	update_clothing_icon()
 

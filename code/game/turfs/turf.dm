@@ -563,15 +563,15 @@ CAPABILITIES(/turf)
 	if(!V)
 		return
 	if(toxvomit == VOMIT_PURPLE)
-		V.icon_state = "vomitpurp_1"
+		V.set_icon_state("vomitpurp_1")
 		V.random_icon_states = list("vomitpurp_1", "vomitpurp_2", "vomitpurp_3", "vomitpurp_4")
 	else if (toxvomit == VOMIT_TOXIC)
-		V.icon_state = "vomittox_1"
+		V.set_icon_state("vomittox_1")
 		V.random_icon_states = list("vomittox_1", "vomittox_2", "vomittox_3", "vomittox_4")
 	else if (toxvomit == VOMIT_NANITE)
 		V.name = "metallic slurry"
 		V.desc = "A puddle of metallic slury that looks vaguely like very fine sand. It almost seems like it's moving..."
-		V.icon_state = "vomitnanite_1"
+		V.set_icon_state("vomitnanite_1")
 		V.random_icon_states = list("vomitnanite_1", "vomitnanite_2", "vomitnanite_3", "vomitnanite_4")
 	if(purge && ishuman(M))
 		var/mob/living/carbon/human/H = M

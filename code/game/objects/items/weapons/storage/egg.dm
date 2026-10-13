@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/storage/vore_egg)
 /obj/item/storage/vore_egg/open(mob/user as mob)
 	if(isobserver(user))
 		return
-	icon_state = "[initial(icon_state)]_open"
+	set_icon_state("[initial(icon_state)]_open")
 	..()
 
 /obj/item/storage/vore_egg/proc/hatch(mob/living/user as mob)

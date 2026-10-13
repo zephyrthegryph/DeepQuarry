@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/buttonofnormal)
 	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		colorindex = (colorindex + 1) % 6
-		icon_state = "mobcap[colorindex]"
+		set_icon_state("mobcap[colorindex]")
 	if(istype(W, /obj/item/card/id))
 		rel_clear(src, nameof(capsuleowner))
 	return OP_DECLINE
@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/buttonofnormal)
 		colorindex += 1
 		if(colorindex >= 6)
 			colorindex = 0
-		icon_state = "mobcap[colorindex]"
+		set_icon_state("mobcap[colorindex]")
 	return OP_DECLINE
 
 CAPABILITIES(/obj/item/daredevice)
