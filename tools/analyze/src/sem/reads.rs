@@ -723,7 +723,14 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     /// Walks one proc body with `this` as src. `bind` are the evaluated args for its params.
     fn run_proc(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool) {
-        if p.is_builtin() || self.depth > MAX_DEPTH {
+        if p.is_builtin() {
+            return;
+        }
+        if self.depth > MAX_DEPTH {
+            if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                let rel = self.rel.clone();
+                self.lookup_diag("dynamic_read", &rel, self.line, "endpoint requirement traversal exceeded its proof depth; inputs cannot be silently omitted".into());
+            }
             return;
         }
         let owner = {
@@ -736,7 +743,12 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         self.out.followed.insert(format!("{}::{}", owner, p.name()));
         if let Some(summary) = self.eng.ann.summaries.get(&(owner.clone(), p.name().to_string())) {
-            self.apply_summary(&owner, p.name(), summary, &this, bind);
+            if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                let rel = self.rel.clone();
+                self.lookup_diag("dynamic_read", &rel, self.line, "endpoint requirements cannot replace actual body validation with PROC_SUMMARY".into());
+            } else {
+                self.apply_summary(&owner, p.name(), summary, &this, bind);
+            }
             return;
         }
         let value = p.get();
@@ -1436,7 +1448,11 @@ impl<'a, 'e> Walk<'a, 'e> {
                 return Val::local(None);
             }
             if let Some(summary) = self.eng.ann.summaries.get(&("/".to_string(), name.to_string())) {
-                self.apply_summary("/", name, summary, &Val::local(None), &argv);
+                if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &rel, line, "endpoint requirements cannot replace actual global body validation with PROC_SUMMARY".into());
+                } else {
+                    self.apply_summary("/", name, summary, &Val::local(None), &argv);
+                }
                 return Val::local(None);
             }
             if self.eng.virtual_dispatch && self.eng.sem.rel(p.get().location).starts_with("code/__defines/verdigris/") {

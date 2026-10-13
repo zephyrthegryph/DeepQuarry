@@ -580,6 +580,78 @@ TRACKED(/datum/requirement_definition/tracked_config, custom_flag)
         std::fs::remove_dir_all(root).unwrap();
     }
 
+
+    #[test]
+    fn endpoint_closed_contract_rejects_summaries_and_traversal_exhaustion() {
+        use crate::sem::{Sem, reads::{Annotations, ReadsEngine}};
+        let root = std::env::temp_dir().join(format!("dq-endpoint-closed-contract-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let mut source = String::from(r#"#define TRACKED(T,V)
+#define PROC_SUMMARY(P,A...)
+/datum/global_state
+    var/mutable_flag = 1
+var/global/datum/global_state/GLOB
+/datum/act
+    var/datum/source
+/datum/act/eval/endpoint_query
+    var/datum/target
+/datum/endpoint
+    var/ready = 1
+TRACKED(/datum/endpoint, ready)
+/datum/endpoint/proc/accept()
+    return ready ? null : "base refusal"
+/datum/endpoint/override
+    var/unsafe = 1
+/datum/endpoint/override/accept()
+    return unsafe ? null : "override refusal"
+/datum/requirement_definition/proc/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return null
+PROC_SUMMARY(/datum/requirement_definition/summarized_callback/proc/endpoint_reason, reads = list(), writes = list())
+/datum/requirement_definition/summarized_callback/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return GLOB.mutable_flag ? null : "hidden callback refusal"
+PROC_SUMMARY(/datum/requirement_definition/summarized_method/proc/hidden_helper, reads = list(), writes = list())
+/datum/requirement_definition/summarized_method/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return hidden_helper()
+/datum/requirement_definition/summarized_method/proc/hidden_helper()
+    return GLOB.mutable_flag ? null : "hidden method refusal"
+PROC_SUMMARY(/proc/hidden_global, reads = list(), writes = list())
+/proc/hidden_global(datum/endpoint/S)
+    return GLOB.mutable_flag ? null : "hidden global refusal"
+/datum/requirement_definition/summarized_global/endpoint_reason(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/S = A.source
+    return hidden_global(S)
+/datum/requirement_definition/virtual_receiver/endpoint_reason(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/S = A.source
+    return S.accept()
+/datum/requirement_definition/deep/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return layer_0(A)
+"#);
+        // The final mutable read is beyond MAX_DEPTH. An empty descriptor is
+        // unsafe: reaching the proof limit must itself reject the callback.
+        for layer in 0..30 {
+            source.push_str(&format!("/datum/requirement_definition/deep/proc/layer_{layer}(datum/act/eval/endpoint_query/A)\n    return layer_{}(A)\n", layer + 1));
+        }
+        source.push_str("/datum/requirement_definition/deep/proc/layer_30(datum/act/eval/endpoint_query/A)\n    return GLOB.mutable_flag ? null : \"hidden deep refusal\"\n");
+        std::fs::write(root.join("code/content/probe.dm"), &source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", &source)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &annotations).closed();
+        for ty in ["/datum/requirement_definition/summarized_callback", "/datum/requirement_definition/summarized_method", "/datum/requirement_definition/summarized_global"] {
+            let set = eng.analyze_handler(ty, "endpoint_reason", Ctx::Endpoint.type_path());
+            assert!(set.diags.iter().any(|d| d.rule == "dynamic_read" && d.msg.contains("PROC_SUMMARY")), "manual metadata must not hide an actual endpoint body: {ty}");
+        }
+        let deep = eng.analyze_handler("/datum/requirement_definition/deep", "endpoint_reason", Ctx::Endpoint.type_path());
+        assert!(deep.diags.iter().any(|d| d.rule == "dynamic_read" && d.msg.contains("proof depth")), "traversal exhaustion must fail closed instead of producing an empty descriptor");
+        let analysis = crate::sem::handlers::analyzed(&tree).expect("automatic endpoint callback discovery must run semantic analysis");
+        let virtual_handler = analysis.handlers.iter().find(|h| h.on == "/datum/requirement_definition/virtual_receiver").unwrap();
+        assert!(virtual_handler.set.as_ref().unwrap().reads.iter().any(|r| r.root == "source" && r.var == "unsafe"), "standalone endpoint semantic analysis must walk a typed receiver's real overrides");
+        assert!(virtual_handler.unknown.iter().any(|(_, var, _, _, _)| var == "unsafe"), "a virtual override's untracked input must not be omitted from semantic rejection");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     fn handlers(source: &str) -> Vec<HandlerRef> {
         let file = SourceFile::from_text("code/content/probe.dm", source);
         let tree = Tree::from_files(vec![file]);

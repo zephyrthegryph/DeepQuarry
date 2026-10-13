@@ -115,7 +115,7 @@ fn compute(tree: &Tree) -> Analysis {
         };
         let set = if proc_found && !h.cap_proc {
             Some(if h.ctx == hooks::Ctx::Endpoint {
-                ReadsEngine::new(&sem, &decls, &ann).analyze_handler(&on, &h.proc, h.ctx.type_path())
+                ReadsEngine::new(&sem, &decls, &ann).closed().analyze_handler(&on, &h.proc, h.ctx.type_path())
             } else { eng.analyze_handler(&on, &h.proc, h.ctx.type_path()) })
         } else { None };
         let mut unknown = Vec::new();
