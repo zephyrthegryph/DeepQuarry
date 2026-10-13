@@ -1269,8 +1269,8 @@
 /mob/observer/eye	897023a2b55a9db2	*
 /mob/observer/eye/aiEye	7798bf1c4a3f2bc7	*
 /mob/observer/eye/aiEye/pic_in_pic	1f0c289a3fa73311	*
-/mob/observer/eye/ar_soul	3395255ef382746c	*
-/mob/observer/eye/ar_soul/vore	9c84f53a1bf1aee1	*
+/mob/observer/eye/ar_soul	1779a53f10ceb999	*
+/mob/observer/eye/ar_soul/vore	2f77b777764c7cbf	*
 /mob/observer/eye/maskEye	9927a36bceb65733	*
 /mob/proccall_handler	67ce89ba61ad2098	*
 /obj/aiming_overlay	7e618ae89bd902d2	*
