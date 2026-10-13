@@ -55,10 +55,6 @@
 	var/tmp/datum/materialize_batch/active_batch
 	/// Test hook: when set to list(owner, PROC_REF), every chunk boundary suspends the frame and calls owner.proc(batch).
 	var/tmp/list/batch_yield_probe
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// Every frame that opened, in order, when a test is recording (else null).
-	var/list/batch_trace
-#endif
 
 
 /// Opens a frame for one InitializeAtoms() call and makes it the active one.
