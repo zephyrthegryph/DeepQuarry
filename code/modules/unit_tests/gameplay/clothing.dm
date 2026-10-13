@@ -31,9 +31,6 @@
 
 /// A tailed player in a jumpsuit: walking north (seen from behind) the tail is drawn over the uniform; walking south it is under it.
 /datum/unit_test/dq_gameplay/tail_over_uniform
-	// /atom/proc/set_dir() returns null, so /mob/living/carbon/human/set_dir()'s `if(. && (species.tail || tail_style))` never redraws the
-	// suit and tail layers when the player turns: the tail keeps the layer of the direction it was drawn facing (human draw lane).
-	expected_failure = "the tail is not redrawn when the player turns: /atom/proc/set_dir() returns null, so human set_dir() never calls update_inv_wear_suit()"
 
 /datum/unit_test/dq_gameplay/tail_over_uniform/play()
 	var/mob/living/carbon/human/H = spawn_player(tile(2, 1), species = SPECIES_TAJARAN)
