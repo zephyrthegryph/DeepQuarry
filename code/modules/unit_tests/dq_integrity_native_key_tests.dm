@@ -93,6 +93,17 @@ CAPABILITIES(/obj/dq_integrity_key_probe)
 	test_drain()
 	TEST_ASSERT_EQUAL(P.icon_state, "active", "Releasing the actual source must restore the draw")
 
+/datum/unit_test/dq_integrity_native_key/preboot_registry/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/obj/dq_integrity_key_probe/P = allocate(/obj/dq_integrity_key_probe, test_floor())
+	var/list/registry = GLOB.generated_draw_native_keys
+	TEST_ASSERT(draw_reads_native_key(P, ATOM_INTEGRITY_KEY), "The actual generated registry must contain this native draw consumer")
+	set_global(nameof(GLOB.generated_draw_native_keys), null)
+	TEST_ASSERT(!draw_reads_native_key(P, ATOM_INTEGRITY_KEY), "Early ownership publication must safely tolerate an uninitialized registry")
+	TEST_ASSERT(!draw_reads_native_key(null, ATOM_INTEGRITY_KEY), "A missing owner must not be indexed during boot")
+	set_global(nameof(GLOB.generated_draw_native_keys), registry)
+	TEST_ASSERT(draw_reads_native_key(P, ATOM_INTEGRITY_KEY), "Restoring the registry must restore the actual dependency without recompilation")
+
 /obj/dq_capability_key_draw_probe
 	abstract_type = /obj/dq_capability_key_draw_probe
 	var/mid_batch_icon

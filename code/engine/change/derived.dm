@@ -635,7 +635,13 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 /// Exact native accessor keys consumed by this draw. Empty child rows stop
 /// inheritance; key identity is generated from registered READS_AS producers.
 /proc/draw_reads_native_key(datum/holder, key)
+	if(!GLOB || !isdatum(holder) || QDELING(holder))
+		return FALSE
 	var/list/table = GLOB.generated_draw_native_keys
+	// Systems and starting relations publish before global registry initialization.
+	// Their initial draws are built after the generated registry is available.
+	if(!islist(table))
+		return FALSE
 	var/path = holder.type
 	while(path)
 		var/list/keys = table["[path]"]
