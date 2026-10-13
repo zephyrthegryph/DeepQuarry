@@ -105,7 +105,6 @@
 		return
 	if(L.body_effect_state(type) != G.effect_color)
 		L.set_body_effect_state(type, G.effect_color)
-		L.update_modifier_visuals()
 
 /datum/body_effect/shield_projection/overlay_color(mob/living/L)
 	var/obj/item/personal_shield_generator/G = generator_of(L)

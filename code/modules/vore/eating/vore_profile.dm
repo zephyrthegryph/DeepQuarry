@@ -83,6 +83,10 @@
 	var/soulcatcher_pref_flags = NONE			//Default disabled
 	var/persistend_edit_mode = FALSE
 
+// The belly sprites' colours and multiply flags: a human's look reads them.
+TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_color)
+TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_multiply)
+
 /mob
 	/// The player's vore preferences (a profile record, built before init).
 	var/datum/record/vore_prefs/vore_prefs

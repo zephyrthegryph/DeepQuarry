@@ -522,8 +522,6 @@
 			else if(removed > meltdose)
 				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_HEAD)] melts away!"))
 				H.slot_clear(SLOT_ID_HEAD)
-				H.update_inv_head(1)
-				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
@@ -536,8 +534,6 @@
 			else if(removed > meltdose)
 				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_MASK)] melts away!"))
 				H.slot_clear(SLOT_ID_MASK)
-				H.update_inv_wear_mask(1)
-				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
@@ -549,7 +545,6 @@
 			else if(removed > meltdose)
 				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_EYES)] melt away!"))
 				H.slot_clear(SLOT_ID_EYES)
-				H.update_inv_glasses(1)
 				removed -= meltdose / 2
 		if(removed <= 0)
 			return

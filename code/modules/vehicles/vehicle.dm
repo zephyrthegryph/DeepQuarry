@@ -76,14 +76,14 @@ CAPABILITIES(/obj/vehicle)
 
 /obj/vehicle/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
 	. = ..()
-	M.update_water()
+	M.refresh_submersion()
 	if(riding_datum)
 		rel_set(riding_datum, nameof(riding_datum.ridden), src)
 		riding_datum.handle_vehicle_offsets()
 
 /obj/vehicle/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	. = ..(buckled_mob, force)
-	buckled_mob?.update_water()
+	buckled_mob?.refresh_submersion()
 	if(riding_datum)
 		riding_datum.restore_position(buckled_mob)
 		riding_datum.handle_vehicle_offsets() // So the person in back goes to the front.

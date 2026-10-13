@@ -282,13 +282,10 @@ emp_act
 					if(bloody)//Apply blood
 						if(get_equipped_item(SLOT_ID_MASK))
 							get_equipped_item(SLOT_ID_MASK).add_blood(src)
-							update_inv_wear_mask(0)
 						if(get_equipped_item(SLOT_ID_HEAD))
 							get_equipped_item(SLOT_ID_HEAD).add_blood(src)
-							update_inv_head(0)
 						if(get_equipped_item(SLOT_ID_EYES) && prob(33))
 							get_equipped_item(SLOT_ID_EYES).add_blood(src)
-							update_inv_glasses(0)
 				if(BP_TORSO)//Easier to score a stun but lasts less time
 					if(prob(effective_force + 10))
 						apply_effect(6, WEAKEN, blocked)
@@ -474,15 +471,12 @@ emp_act
 	else
 		add_blood(source)
 		bloody_hands = amount
-	update_inv_gloves()		//updates on-mob overlays for bloody hands and/or bloody gloves
 
 /mob/living/carbon/human/proc/bloody_body(mob/living/source)
 	if(get_equipped_item(SLOT_ID_SUIT))
 		get_equipped_item(SLOT_ID_SUIT).add_blood(source)
-		update_inv_wear_suit(0)
 	if(get_equipped_item(SLOT_ID_UNIFORM))
 		get_equipped_item(SLOT_ID_UNIFORM).add_blood(source)
-		update_inv_w_uniform(0)
 
 /// Human post-injury reactions: rig soak / suit breaches, damage overlays,
 /// agony screams and burn husking of corpses.
@@ -492,7 +486,6 @@ emp_act
 		handle_suit_punctures(kind, amount, zone)
 		if(injury_is_located(kind))
 			damageoverlaytemp = 20
-			UpdateDamageIcon()
 		// A corpse burned past 3.5x its species health is husked.
 		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
 			ChangeToHusk()

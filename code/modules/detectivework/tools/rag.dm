@@ -3,6 +3,8 @@
 	var/track_blood = 0
 	var/list/feet_blood_DNA
 	var/feet_blood_color
+TRACKED(/mob, feet_blood_color)
+TRACKED(/mob, feet_blood_DNA)
 
 /obj/item/clothing/gloves
 	var/transfer_blood = 0

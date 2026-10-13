@@ -333,8 +333,8 @@
 	looks.set_facial_style("Shaved")
 	if(dna.species == "Human") //no more xenos losing ears/tentacles
 		looks.set_hair_style(pick("Bedhead", "Bedhead 2", "Bedhead 3"))
-	LAZYCLEARLIST(all_underwear)
-	regenerate_icons()
+	clear_all_underwear()
+	underwear_edited()
 
 /atom/movable/screen/ling
 	invisibility = INVISIBILITY_ABSTRACT

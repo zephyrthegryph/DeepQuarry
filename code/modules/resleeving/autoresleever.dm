@@ -251,7 +251,6 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 			new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 
 	//A redraw for good measure
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 

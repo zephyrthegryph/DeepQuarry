@@ -66,7 +66,8 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	var/metadata = H.all_underwear_metadata[underwear_category]
 	if(!metadata)
 		metadata = list()
-		H.all_underwear_metadata[underwear_category] = metadata
+		H.set_all_underwear_metadata_at(underwear_category, metadata)
+		H.underwear_edited()
 
 	var/tweak_data = metadata["[gt]"]
 	if(!tweak_data)
@@ -112,18 +113,16 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	var/datum/category_item/underwear/selected_underwear = UWC?.items_by_name[A.answer.value]
 	if(!selected_underwear)
 		return
-	LAZYSET(H.all_underwear, category, selected_underwear)
-	H.hide_underwear[category] = FALSE
-	H.update_underwear()
+	H.set_all_underwear_at(category, selected_underwear)
+	H.set_hide_underwear_at(category, FALSE)
+	H.underwear_edited()
+	changed(src)
 
 /obj/structure/undies_wardrobe/proc/ui_act_remove_underwear(datum/act/op/A, category)
 	var/mob/living/carbon/human/H = A.actor
-	var/changed = FALSE
 	if(category in H.all_underwear)
-		LAZYREMOVE(H.all_underwear, category)
-		changed = TRUE
-	if(changed)
-		H.update_underwear()
+		H.remove_all_underwear(category)
+		H.underwear_edited()
 	return TRUE
 
 /obj/structure/undies_wardrobe/proc/ui_act_change_underwear(datum/act/op/A, category)
@@ -165,6 +164,7 @@ MSG_DEF_SELF(undies_wardrobe/not_human, "You can't use that.")
 	if(!istype(H) || !(underwear in H.all_underwear))
 		return
 	set_metadata(H, underwear, gt, new_metadata)
-	H.hide_underwear[underwear] = FALSE
-	H.update_underwear()
+	H.set_hide_underwear_at(underwear, FALSE)
+	H.underwear_edited()
+	changed(src)
 	SStgui.update_uis(src)
