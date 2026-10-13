@@ -50,6 +50,7 @@
 deepquarry.dme merge=union
 code/modules/unit_tests/_unit_tests.dm merge=union
 
-## look_keys.txt is regenerated from the tree by every merge script (tools/ci/check_look_keys_format.sh --regen); the union
-## driver keeps a plain `git merge` from ever conflicting on it, and the regeneration replaces whatever the union produced.
+## look_keys.txt records the look keys a pin run actually probed and matched. The union driver keeps both sides' rows so a plain `git
+## merge` never conflicts on it; the merge scripts then run tools/ci/check_look_keys_format.sh --normalize, which only drops rows (a type
+## whose merged key matches no row stays unverified and is probed by the next pin run). Nothing regenerates it from the tree.
 code/modules/unit_tests/snapshots/look_keys.txt merge=union

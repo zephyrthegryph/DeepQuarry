@@ -447,6 +447,7 @@ fi
 LOOK_PARAMS=""
 LOOK_PLAN_FILE=""
 LOOK_STALE_COUNT=-1
+LOOK_STALE_FILE=""
 look_prepare() {
 	# The analyzer's plan: a key and a probe list per type. Without it (no engine, an old one) the pins run full and unnarrowed.
 	local bin plan keys stale universe
@@ -459,9 +460,11 @@ look_prepare() {
 		if [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
 			stale="data/look-types.$$.txt"
 			focus_files+=("$stale")
-			awk -F'\t' 'NR == FNR { have[$1] = $2; next } have[$1] != $2 { print $1 }' "$keys" "$plan" >"$stale"
+			# The unverified set: types whose current key is not a recorded (probed and matched) row; the script that owns the file defines it.
+			bash tools/ci/check_look_keys_format.sh --diff "$plan" >"$stale"
+			LOOK_STALE_FILE="$stale"
 			LOOK_STALE_COUNT="$(wc -l <"$stale" | tr -d ' ')"
-			echo "== look pins: $LOOK_STALE_COUNT of $universe types changed since the recorded keys (--full probes all)"
+			echo "== look pins: $LOOK_STALE_COUNT of $universe types unverified (no recorded row at their current key; --full probes all)"
 			LOOK_PARAMS="$LOOK_PARAMS&look-types=$stale"
 		else
 			echo "== look pins: full run over $universe types"
@@ -697,22 +700,23 @@ look_dump_merge() {
 	echo "== look dump merged under $look_dump/merged ($(find "$look_dump/merged" -name '*.txt' | wc -l | tr -d ' ') files)"
 }
 
-# A passing run that covered both pins records the plan's keys: those types' rows are what the snapshots say.
+# A passing run that covered both pins records a key only for a type it probed (the unverified set, or every type with --full) and
+# keeps the rows already verified at their current key. Nothing else writes look_keys.txt: a merge or a lane that only regenerates
+# it would mark types verified that no pin ever probed. tools/ci/check_look_keys_format.sh owns the rule.
 look_keys_record() {
 	if [ "$look_world" -ne 1 ] || [ -z "$LOOK_PLAN_FILE" ] || [ ! -f "$LOOK_PLAN_FILE" ] || [ -n "$look_order" ]; then return 0; fi
 	if [[ " ${look_group[*]} " != *" dq_look_state_pin "* || " ${look_group[*]} " != *" dq_look_tree_pin "* ]]; then return 0; fi
-	# One writer format: the analyzer's plan verbatim (type, key, probes), byte-identical to `analyze look-keys` output.
-	cp "$LOOK_PLAN_FILE" code/modules/unit_tests/snapshots/look_keys.txt
-	if ! cmp -s "$LOOK_PLAN_FILE" code/modules/unit_tests/snapshots/look_keys.txt; then
-		echo "== look pins: FAIL: recorded look_keys.txt differs from the analyzer plan"
-		return 1
+	if [ -n "$LOOK_STALE_FILE" ] && [ -f "$LOOK_STALE_FILE" ]; then
+		bash tools/ci/check_look_keys_format.sh --record "$LOOK_PLAN_FILE" "$LOOK_STALE_FILE" || return 1
+	else
+		bash tools/ci/check_look_keys_format.sh --record "$LOOK_PLAN_FILE" || return 1
 	fi
-	echo "== look pins: recorded $(wc -l <code/modules/unit_tests/snapshots/look_keys.txt | tr -d ' ') type keys in code/modules/unit_tests/snapshots/look_keys.txt (commit it with the snapshots)"
+	echo "== look pins: recorded the probed types in code/modules/unit_tests/snapshots/look_keys.txt (commit it with the snapshots)"
 }
 
 # A look run with no stale type and nothing else to run needs no world at all.
 if [ "$look_world" -eq 1 ] && [ "$look_single" -eq 0 ] && [ "$LOOK_STALE_COUNT" -eq 0 ] && [ ${#main_group[@]} -eq 0 ] && [ ${#slow_group[@]} -eq 0 ]; then
-	echo "FOCUSED RESULT: 0 passed, 0 failed (look pins: no type changed since the recorded keys, nothing probed; --full probes all)"
+	echo "FOCUSED RESULT: 0 passed, 0 failed (look pins: every type is verified at its current key, nothing probed; --full probes all)"
 	status_write passed "result=look pins: nothing stale" "passed=0" "failed=0" "exit_code=0"
 	ledger_add 0 0 ""
 	exit 0

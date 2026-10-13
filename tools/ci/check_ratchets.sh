@@ -48,7 +48,7 @@ if ! "$bin" check --ci "$@"; then
 fi
 
 if ! bash tools/ci/check_look_keys_format.sh; then
-	failed+=("look_keys currency")
+	failed+=("look_keys format")
 fi
 
 wait
