@@ -35,12 +35,12 @@
 /// never published a change between null and a falsy value; null is a different state from 0, "" and FALSE.
 #define TRACKED_UNCHANGED(OLD, NEW) (((OLD) == (NEW)) && (isnull(OLD) == isnull(NEW)))
 
-#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(src.V, value)) { return FALSE }; src.V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
 
 /// A field of a profile record (/datum/record, code/engine/declare/profiles.dm) that something draws or reacts to: its setter
 /// publishes the field on the record and on the record's holder, so the holder's draw and on_change() follow it. A record's only procs
 /// are its accessors (base_vars records_data_only), so its set_<field>() is its setter by name: VV and record_copy() call it.
-#define TRACKED_DATA(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; record_changed(src, #V); return TRUE }
+#define TRACKED_DATA(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(src.V, value)) { return FALSE }; src.V = value; record_changed(src, #V); return TRUE }
 
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):

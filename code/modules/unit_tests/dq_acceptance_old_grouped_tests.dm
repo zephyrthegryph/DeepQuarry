@@ -71,12 +71,14 @@
 	var/datum/property_def/size_def = dq_property_registry().defs[PROP_SIZE_CLASS]
 	TEST_ASSERT(size_def, "Actual registry defines size property")
 	TEST_ASSERT_EQUAL(size_def.unit, PROP_UNIT_SIZE_CLASS, "Limit uses actual declared numeric unit")
-	B.set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL), PROP_UNIT_SIZE_CLASS), mode = ACCEPTANCE_REPLACE))
+	B.set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL)), mode = ACCEPTANCE_REPLACE))
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, wrong_type, null), "it doesn't take that", "First type refusal wins even when size also fails")
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_HOLD, exact, null), "Inclusive <= allows exact numeric threshold")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, above, null), "too big: size 3 > size 2", "Matching type exposes exact subsequent size reason")
-	B.set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL), PROP_UNIT_SIZE_CLASS), req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE))
+	B.set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL)), req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE))
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, wrong_type, null), "too big: size 3 > size 2", "Reversing declaration order changes first real refusal")
+	B.restrict_hold(list(/obj/item/pen), ITEMSIZE_SMALL)
+	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, above, null), "too big: size 3 > size 2", "The actual hold restriction helper preserves the unit-aware default refusal too")
 
 /datum/unit_test/dq_acceptance_old_grouped/suit_storage/Run()
 	var/turf/T = run_loc_floor_bottom_left

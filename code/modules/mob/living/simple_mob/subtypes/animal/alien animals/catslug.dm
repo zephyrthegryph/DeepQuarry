@@ -788,11 +788,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 		return
 	var/list/possible_targets = list()
 	for(var/obj/machinery/computer/ship/helm/h in world)
-		if(h.z in using_map.player_levels)
-			possible_targets |= h
+		var/turf/destination = get_turf(h)
+		if(destination && (destination.z in using_map.player_levels))
+			possible_targets.Add(destination)
 	if(!length(possible_targets))
 		return
-	forceMove(get_turf(pick(possible_targets)))
+	forceMove(pick(possible_targets))
 	set_ghostjoin(TRUE)
 
 /datum/category_item/catalogue/fauna/catslug/custom/pilotslug

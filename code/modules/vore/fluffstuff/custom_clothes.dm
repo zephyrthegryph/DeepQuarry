@@ -797,7 +797,8 @@ CAPABILITIES(/obj/item/clothing/head/fluff/avida)
 	..()
 	var/mob/living/carbon/human/H = draw_wearer
 	look.watch(H)
-	var/state = initial(item_state)
+	// null held_state means no change; restore the original visible sprite explicitly.
+	var/state = initial(item_state) || initial(icon_state)
 	if(H && H.get_equipped_item(SLOT_ID_HEAD) == src)
 		var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
 		look.watch(H.ear_style)

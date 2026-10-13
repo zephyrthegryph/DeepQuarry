@@ -1,5 +1,8 @@
 author: "Codex"
 delete-after: true
 changes:
+  - bugfix: "Tracked fields named value now retain setter writes."
+  - bugfix: "Saddlebags and Avida hats follow their actual wearer and restore their original appearance."
+  - bugfix: "Pilot slugs ignore ship helms without a valid destination."
   - bugfix: "Nikki's RIG owns its configured cape without treating it as a space-suit chest."
   - bugfix: "Equipment refusal menus follow changes to garment names and grammar."

@@ -4897,3 +4897,17 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+# Acceptance retirement repair (2026-10-13)
+
+Saddlebag and Avida admission requirements are pure: asking whether equipment fits
+does not change its appearance. Their equipped visuals still follow the actual
+BACK/HEAD wearer through the containment ledger. The concrete types now register
+their slot hooks, and Avida explicitly restores its original icon state when its
+item state is null. Tests require real equip, transfer and ear/style changes;
+the old query-side-effect assertions have been replaced with those boundaries.
+
+No pin rows are blessed for the numeric setter, unit-argument or paperwork
+dependency repairs. They restore the existing stored values and refusal text.
+The pilot-slug helm selector introduced by master d863720479 now ignores helms
+without a turf; valid helm weighting and the no-candidate no-op are preserved.
+Its runtime is fixed rather than recorded as an appearance.

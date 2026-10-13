@@ -797,6 +797,8 @@
 
 /datum/type_metadata_registry/register_defaults()
 	register(/obj/item/organ, TYPE_META_SLOT_HOOKS, TRUE)
+	register(/obj/item/storage/backpack/saddlebag_common, TYPE_META_SLOT_HOOKS, TRUE)
+	register(/obj/item/clothing/head/fluff/avida, TYPE_META_SLOT_HOOKS, TRUE)
 	register(/obj/machinery, TYPE_META_LATENT_CONTENTS, TRUE)
 	register(/obj/structure/closet, TYPE_META_LATENT_CONTENTS, TRUE)
 	register(/obj/item/storage, TYPE_META_LATENT_CONTENTS, TRUE)

@@ -21,3 +21,15 @@
 /datum/property_provider/type_var/size_class/requirement_read_keys(datum/thing)
 	var/obj/O = thing
 	return list(list(O, nameof(O.w_class)))
+
+// These providers read the actual immutable trait definitions and their native override key.
+/datum/property_provider/type_var/tag/slot_flag/requirement_read_keys(datum/thing)
+	return list(list(thing, ITEM_WORN_KEY))
+
+/datum/property_provider/type_var/tag/sharp/requirement_read_keys(datum/thing)
+	return list(list(thing, ITEM_COMBAT_KEY))
+
+// Classification is solely the immutable concrete type: no state_var or variant_var.
+// Unlike mutable tags, paper/photo/bundle ancestry cannot change on a live datum.
+/datum/property_provider/type_var/tag/paperwork/requirement_read_keys(datum/thing)
+	return list()

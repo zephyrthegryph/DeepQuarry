@@ -51,14 +51,14 @@ TRACKED(/obj/item, constraint_overrides)
 		if(!isnull(types))
 			parts += req_acceptance_type(types, because = "it doesn't take that")
 		if(!isnull(max_size))
-			parts += req_acceptance_max_size(SIZE_CLASS(max_size), PROP_UNIT_SIZE_CLASS)
+			parts += req_acceptance_max_size(SIZE_CLASS(max_size))
 		set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, parts, mode = ACCEPTANCE_REPLACE))
 		return
 	var/list/new_parts = list()
 	if(!isnull(types))
 		new_parts += req_acceptance_type(types, because = "it doesn't take that")
 	if(!isnull(max_size))
-		new_parts += req_acceptance_max_size(SIZE_CLASS(max_size), PROP_UNIT_SIZE_CLASS)
+		new_parts += req_acceptance_max_size(SIZE_CLASS(max_size))
 	set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, new_parts, mode = ACCEPTANCE_REPLACE))
 
 /// Snapshot the source's immutable declared plan; an absent source remains a no-op.

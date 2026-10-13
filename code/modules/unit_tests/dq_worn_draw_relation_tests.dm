@@ -45,7 +45,7 @@
 		settle_looks()
 		TEST_ASSERT_EQUAL(I.item_state, "saddlebag_[replacement.icon_sprite_tag]", "A real style change invalidates the already-worn bag without a manual draw")
 	else
-		TEST_ASSERT_NOTEQUAL(I.item_state, "avidahatnoears", "The bunny-ear wearer retains the original hat appearance")
+		TEST_ASSERT_EQUAL(I.item_state, initial(I.icon_state), "The bunny-ear wearer retains the exact original visible hat appearance")
 		rel_set(first, nameof(first.ear_style), null)
 		settle_looks()
 		TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Removing the actual ears redraws the already-worn hat without manual hooks or draw calls")

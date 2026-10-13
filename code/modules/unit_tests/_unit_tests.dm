@@ -294,6 +294,7 @@
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
 #include "dq_native_numeric_tests.dm"
+#include "dq_pilotslug_helm_destination_tests.dm"
 #include "dq_vore_native_consent_tests.dm"
 #include "dq_containment_sharp_native.dm"
 #include "dq_constraint_tests.dm"

@@ -184,27 +184,7 @@
 	if(!thing)
 		return
 	var/datum/property_registry/R = dq_property_registry()
-	for(var/datum/property_provider/P as anything in R.contributors[property])
-		if(istype(thing, P.applies_to))
-			CRASH("acceptance property contributor [P.type] needs native dependency metadata")
-	var/datum/property_provider/base = R.base_provider(thing.type, property)
-	if(istype(base, /datum/property_provider/type_var/tag/slot_flag))
-		var/obj/item/I = thing
-		if(istype(I))
-			. += list(list(I, ITEM_WORN_KEY))
-		return
-	if(istype(base, /datum/property_provider/type_var/tag/sharp))
-		var/obj/item/I = thing
-		if(istype(I))
-			. += list(list(I, ITEM_COMBAT_KEY))
-		return
-	if(property == PROP_SIZE_CLASS && base?.state_var == "w_class")
-		var/obj/O = thing
-		if(istype(O))
-			. += list(list(O, nameof(O.w_class)))
-		return
-	if(base)
-		CRASH("acceptance property base [base.type] needs native dependency metadata")
+	return R.requirement_read_keys(thing, property)
 
 /datum/entry/part/req/acceptance_leaf/type/read_keys(datum/act/op/A)
 	return null
