@@ -56,7 +56,6 @@
 	var/tmp/gradual_charge_left = 0
 
 TRACKED(/obj/item/cell, charge)
-TRACKED(/obj/item/cell, maxcharge)
 TRACKED(/obj/item/cell, self_recharge)
 TRACKED(/obj/item/cell, recharging)
 TRACKED(/obj/item/cell, gradual_charge_left)

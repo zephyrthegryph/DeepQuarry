@@ -23,8 +23,6 @@
 		"NW",
 		"N"
 	)
-TRACKED(/obj/compass_holder, compass_heading_marker)
-TRACKED(/obj/compass_holder, compass_waypoint_markers)
 
 CAPABILITIES(/obj/compass_holder)
 	owns_many(nameof(compass_waypoints))

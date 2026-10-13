@@ -28,7 +28,6 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/opossum, get_ai_behaviors, list
 				set_resting(TRUE)
 				COOLDOWN_START(src, play_dead_until, rand(1 MINUTE, 2 MINUTES))
 
-TRACKED(/mob/living/simple_mob/animal/passive/opossum, is_angry)
 
 /// The base look, with the opossum's own state last (it plays dead, hisses or sleeps). Reads the local is_angry flag instead of the deleted ai_holder.
 /mob/living/simple_mob/animal/passive/opossum/draw(datum/look/look)

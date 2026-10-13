@@ -64,7 +64,6 @@ CAPABILITIES(/obj/item/bodybag)
 	var/contains_body = FALSE
 	var/has_label = FALSE
 
-TRACKED(/obj/structure/closet/body_bag, has_label)
 
 /obj/item/bodybag/large
 	name = "mass grave body bag"

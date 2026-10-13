@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/door/window)
 
 /// It has taken damage a welder can mend.
 /obj/machinery/door/window/proc/damaged_now(datum/act/A)
-	return (get_integrity() < max_integrity) ? null : MSG(windoor/good_condition) // ALLOW(reads): a door's max_integrity is its type's constant
+	return (get_integrity() < max_integrity) ? null : MSG(windoor/good_condition)
 
 /// An energy blade slices through the glass: the door gives way as to an emag (it stays open for good).
 /obj/machinery/door/window/proc/sliced_open(datum/act/op/A)

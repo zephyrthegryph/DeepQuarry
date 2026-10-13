@@ -7,7 +7,7 @@
 	TEST_ASSERT_EQUAL(machine.toner, initial(machine.toner), "the actual machine starts with its declared toner supply")
 	TEST_ASSERT(cartridge.toner_amount > 0, "the actual original cartridge has a positive declared refill")
 	var/refill_amount = cartridge.toner_amount
-	machine.toner = 10
+	machine.set_toner(10)
 	var/obj/item/pen/wrong_item = allocate(/obj/item/pen, T)
 	TEST_ASSERT(user.put_in_active_hand(wrong_item), "the actor holds a real non-toner pen")
 	test_op_handler(machine, "interaction_insert_toner_impl", user, wrong_item)

@@ -61,8 +61,6 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
-TRACKED(/obj/machinery/computer/message_monitor, emag)
-TRACKED(/obj/machinery/computer/message_monitor, hacking)
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
 	configure(light_glow(color = "#00b000"))

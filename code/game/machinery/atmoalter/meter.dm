@@ -16,7 +16,6 @@
 	var/needle = "meterX"
 	var/sent_kpa
 
-TRACKED(/obj/machinery/meter, needle)
 TRACKED(/obj/machinery/meter, open)
 TRACKED(/obj/machinery/meter, id)
 

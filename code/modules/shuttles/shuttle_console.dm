@@ -205,8 +205,8 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 /obj/machinery/computer/shuttle_control/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if (!hacked)
-		req_access = list()
-		req_one_access = list()
+		set_req_access(list())
+		set_req_one_access(list())
 		hacked = 1
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return OP_OK

@@ -27,10 +27,6 @@
 	/// The device's four ports, in GLOB.cardinal order (owned: rel_add in Initialize()).
 	var/list/datum/omni_port/ports
 
-TRACKED(/obj/machinery/atmospherics/omni, configuring)
-TRACKED(/obj/machinery/atmospherics/omni, overlays_on)
-TRACKED(/obj/machinery/atmospherics/omni, overlays_off)
-TRACKED(/obj/machinery/atmospherics/omni, overlays_error)
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)
 	owns_many(nameof(ports), /datum/omni_port)

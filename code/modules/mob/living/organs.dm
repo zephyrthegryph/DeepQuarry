@@ -37,7 +37,7 @@ TYPE_TABLE_DECLARE(/mob/living, butchery_organ_types, null)
 	for(var/path in TYPE_TABLE_GET(src, butchery_organ_types))
 		var/obj/item/organ/neworg = new path(src, TRUE)
 		neworg.name = "[name] [neworg.name]"
-		neworg.meat_type = meat_type
+		neworg.set_meat_type(meat_type)
 
 /mob/living/gib()
 	if(butchery_drops_organs)

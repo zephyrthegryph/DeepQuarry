@@ -232,7 +232,7 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
 	if(is_fulltile())
-		P.fulltile = TRUE
+		P.set_fulltile(TRUE)
 		P.icon_state = "fwindow"
 	P.max_integrity = max_integrity
 	P.update_integrity(get_integrity())
@@ -327,7 +327,6 @@ CAPABILITIES(/obj/structure/window)
 		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
 		grant(src, granted_verb(/atom/movable/proc/turn_around), src)
 
-TRACKED(/obj/structure/window, silicate)
 TRACKED(/obj/structure/window, tilt_sign)
 
 /// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).

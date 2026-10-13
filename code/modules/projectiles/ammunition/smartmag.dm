@@ -205,7 +205,7 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 
 	if(change)
 		to_chat(user, span_notice("[msg]"))
-		caliber = new_caliber
+		set_caliber(new_caliber)
 		ammo_type = new_ammo_type
 		set_production_cost(ammo_type)	// Update our cost
 
@@ -235,7 +235,7 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 
 	to_chat(H, span_notice("You clear \the [src]'s data buffers."))
 
-	caliber = null
+	set_caliber(null)
 	ammo_type = null
 	production_cost = null
 

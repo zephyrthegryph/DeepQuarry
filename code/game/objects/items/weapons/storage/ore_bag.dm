@@ -59,8 +59,6 @@ CAPABILITIES(/obj/item/ore_bag/holding)
 CAPABILITIES(/obj/item/ore_bag/sleeper)
 	configure(item_worn(flags = INDESTRUCTIBLE | ABSTRACT))
 
-TRACKED(/obj/item/ore_bag, current_capacity)
-TRACKED(/obj/item/ore_bag, max_storage_space)
 
 CAPABILITIES(/obj/item/ore_bag)
 	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET, flags = FLAMMABLE))

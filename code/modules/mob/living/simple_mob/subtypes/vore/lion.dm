@@ -108,8 +108,6 @@
 	if(A.answer.value)
 		set_mane_color(A.answer.value)
 
-TRACKED(/mob/living/simple_mob/vore/retaliate/lion, has_mane)
-TRACKED(/mob/living/simple_mob/vore/retaliate/lion, mane_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)

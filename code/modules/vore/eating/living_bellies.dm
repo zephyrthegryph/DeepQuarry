@@ -24,8 +24,6 @@
 	return TRUE
 SETTER(/mob, vore_fullness_ex)
 
-TRACKED(/mob, vore_fullness)
-TRACKED(/mob, vore_icons)
 
 /mob/proc/update_fullness()
 	if(updating_fullness)

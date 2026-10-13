@@ -68,7 +68,6 @@
 
 	return TRUE
 
-TRACKED(/obj/item/gun/energy/gun/protector, gun_light_on)
 
 /// The look: the fire mode lamp, the charge pips (or the empty lamp) and the flashlight.
 /obj/item/gun/energy/gun/protector/draw_charge_state(datum/look/look)

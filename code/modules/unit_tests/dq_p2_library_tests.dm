@@ -25,7 +25,7 @@
 /// An ID card that opens the p2 box.
 /datum/unit_test/dq_p2_lib/proc/box_id()
 	var/obj/item/card/id/card = allocate(/obj/item/card/id)
-	card.access = list(ACCESS_ENGINE_EQUIP)
+	card.set_access(list(ACCESS_ENGINE_EQUIP))
 	return card
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -64,7 +64,7 @@
 	var/obj/machinery/p2_box/B = allocate(/obj/machinery/p2_box)
 	var/obj/item/card/id/good = box_id()
 	var/obj/item/card/id/bad = allocate(/obj/item/card/id)
-	bad.access = list(ACCESS_CAPTAIN)
+	bad.set_access(list(ACCESS_CAPTAIN))
 	var/obj/item/card/emag/emag = allocate(/obj/item/card/emag)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar)
 	touch(M, B, bad)

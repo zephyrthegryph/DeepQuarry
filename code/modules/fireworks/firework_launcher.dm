@@ -20,9 +20,9 @@
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
 
 /obj/machinery/firework_launcher/RefreshParts()
-	launch_cooldown = 5 MINUTES
+	set_launch_cooldown(5 MINUTES)
 	var/rating = get_part_rating(/obj/item/stock_parts/micro_laser) - get_part_count(/obj/item/stock_parts/micro_laser)
-	launch_cooldown = max(0, (launch_cooldown - ((rating*30) SECONDS)))			// For every part tier above 1 on the two lasers, reduce cooldown by 30 seconds. 1 minute cooldown on the tier 5 parts, 3 minutes on tier 3.
+	set_launch_cooldown(max(0, (launch_cooldown - ((rating*30) SECONDS))))			// For every part tier above 1 on the two lasers, reduce cooldown by 30 seconds. 1 minute cooldown on the tier 5 parts, 3 minutes on tier 3.
 
 	. = ..()
 
@@ -88,7 +88,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return "close the panel first"
 	if(!loaded_star())
 		return "there is no firework star loaded in \the [src]"
-	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	if(ELAPSED_SINCE(src, last_launch, CLOCK_WORLD) <= launch_cooldown)
 		return "\The [src] is still re-priming for launch"
 	if(!anchored)
 		return "\The [src] must be firmly secured to the ground before firework can be launched"

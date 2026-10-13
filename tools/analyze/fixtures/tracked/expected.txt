@@ -71,8 +71,6 @@ outside_setter	code/modules/trk/shapes.dm	32
 outside_setter	code/modules/trk/shapes.dm	43
 outside_setter	code/modules/trk/shapes.dm	45
 outside_setter	code/modules/trk/shapes.dm	48
-outside_setter	code/modules/trk/shapes.dm	51
-outside_setter	code/modules/trk/shapes.dm	55
 outside_setter	code/modules/trk/shapes.dm	59
 outside_setter	code/modules/trk/shapes.dm	61
 outside_setter	code/modules/trk/shapes.dm	63

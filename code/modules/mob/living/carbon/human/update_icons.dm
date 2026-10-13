@@ -8,7 +8,6 @@ GLOBAL_LIST_EMPTY(light_overlay_cache) //see make_worn_icon() on helmets // ALLO
 	/// or null for the still sprite. A dead human's tail is drawn still whatever this holds.
 	var/tail_anim_state
 
-TRACKED(/mob/living/carbon/human, tail_anim_state)
 
 /mob/living/carbon/human/update_transform(instant = FALSE)
 	var/desired_scale_x = size_multiplier * icon_scale_x

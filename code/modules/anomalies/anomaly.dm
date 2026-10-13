@@ -196,7 +196,6 @@ CAPABILITIES(/obj/item/gun/energy/anomaly)
 	var/picked = FALSE
 	anomaly_type = /obj/effect/anomaly/flux // Default
 
-TRACKED(/obj/item/assembly/signaler/anomaly/choice, picked)
 CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
 	extend("use", asks(/datum/prompt/choice, fields = list("question" = "Choose an anomaly core.", "title" = "Anomaly Core Selection", "choices" = computed(PROC_REF(core_choices)), "timeout" = 0), step = "core", when = PROC_REF(core_wanted)))
 

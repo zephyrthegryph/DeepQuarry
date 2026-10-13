@@ -7,7 +7,7 @@
 	if(material_template == /datum/material_template/pump)
 		return
 	material_total = get_material_total() + 3 * SHEET_MATERIAL_AMOUNT
-	material_template = /datum/material_template/pump
+	set_material_template(/datum/material_template/pump)
 	if(notify)
 		material_service_changed()
 

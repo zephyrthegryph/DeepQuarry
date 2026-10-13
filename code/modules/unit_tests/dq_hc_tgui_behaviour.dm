@@ -717,7 +717,7 @@
 	press(H, P, "PRG_backtomenu")
 	TEST_ASSERT_NULL(P.error, "the error is cleared")
 	P.loaded_data = "unsaved"
-	P.is_edited = TRUE
+	P.set_is_edited(TRUE)
 	press(H, P, "PRG_openfile", list("PRG_openfile" = "doc"))
 	TEST_ASSERT(p2cl_has_question(H), "unsaved changes are asked about first")
 	p2cl_answer(H, FALSE)

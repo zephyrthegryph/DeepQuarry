@@ -42,7 +42,7 @@ use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
-use crate::tree::{SourceFile, View, CODE_MAPS_DM};
+use crate::tree::{SourceFile, View, CODE_DM, CODE_MAPS_DM};
 use crate::util::{is_py_space, py_lstrip, py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
@@ -88,6 +88,14 @@ static META_TESTS: Meta = Meta {
 
 /// The test and benchmark trees `tracked_tests` reads (and `tracked` leaves to it).
 const TEST_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"];
+
+/// The procs that construct an instance. A write of the instance's own tracked var there (`v = x`, `src.v = x`, `LAZYADD(v, x)`) is the construction of
+/// the instance, not a change of a live one: nothing reads or watches an object that is still being built, so the write sets the var and publishes
+/// nothing (the same as a type-level default, which is not a write either). A write to a part of the instance a loop walks (`for(var/T/P in ports)`, `P.v = x`) is the same construction. A write to ANOTHER object's tracked var (`O.v = x`) is judged as anywhere
+/// else, and so is a write in `on_holder_init()`, `after_init()` and every other proc, which run once the holder is live. The init lint counts each
+/// imperative line of an `Initialize()` body (`init_lines`), so rewriting these lines to setter calls would also change their fingerprints and read as
+/// new init debt: the two lints agree by leaving construction alone.
+const PRE_LIVE: &[&str] = &["Initialize", "New"];
 
 const OPS: &str = r"(?:=(?!=)|\+=|-=|\*=|/=|\|=|&=|\^=|<<=|>>=|\+\+|--)";
 
@@ -246,6 +254,18 @@ pub struct Fix {
     pub end: u32,
     pub was: String,
     pub text: String,
+    /// Further edits of the same rewrite on later lines (a multi-line right-hand side closes its setter call where it ends).
+    pub more: Vec<MoreEdit>,
+}
+
+/// An edit of a [`Fix`] on a later line: `line_off` lines after the hit's.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize, Default)]
+pub struct MoreEdit {
+    pub line_off: u32,
+    pub start: u32,
+    pub end: u32,
+    pub was: String,
+    pub text: String,
 }
 
 /// The in-place list mutations of tracked list vars (`LAZYADD(v, x)`, `v.Add(x)`, `v[i] = x`).
@@ -343,7 +363,7 @@ fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holder: &str, va
                 ("LAZYNULL", 1) => format!("{pre}set_{var}(null)"),
                 _ => return None,
             };
-            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text })
+            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text, more: Vec::new() })
         }
         "method" => {
             // A statement: nothing before it on the line, and the call closes the line.
@@ -367,7 +387,7 @@ fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holder: &str, va
                 ("Swap", 2) => format!("{pre}swap_{var}({}, {})", arg(spans[0]), arg(spans[1])),
                 _ => return None,
             };
-            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text })
+            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text, more: Vec::new() })
         }
         "index" => {
             if !clean[..m_start].trim().is_empty() {
@@ -399,14 +419,176 @@ fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holder: &str, va
             let end = clean.trim_end().trim_end_matches(';').trim_end().len();
             let value_start = clean.len() - rest.len();
             let value = raw[value_start..end].trim();
-            if value.is_empty() {
-                return None;
+            if value.is_empty() || value.matches(['(', '[', '{']).count() != value.matches([')', ']', '}']).count() {
+                return None; // a value that continues on the next line
             }
             let idx = raw[open + 1..close].trim();
-            Some(Fix { start: m_start as u32, end: end as u32, was: raw[m_start..end].to_string(), text: format!("{pre}set_{var}_at({idx}, {value})") })
+            Some(Fix { start: m_start as u32, end: end as u32, was: raw[m_start..end].to_string(), text: format!("{pre}set_{var}_at({idx}, {value})"), more: Vec::new() })
         }
         _ => None,
     }
+}
+
+/// Whether `prefix` (the clean text before a write) leaves the write a statement of its own: nothing, `else`, `if(...)` or `else if(...)`.
+fn statement_prefix_ok(prefix: &str) -> bool {
+    let p = prefix.trim();
+    if p.is_empty() {
+        return true;
+    }
+    // A statement before it on the same line (`a = 1; b = 2`): the prefix is whole statements when its brackets balance.
+    if p.ends_with(';') {
+        let mut depth = 0i32;
+        for c in p.chars() {
+            match c {
+                '(' | '[' | '{' => depth += 1,
+                ')' | ']' | '}' => depth -= 1,
+                _ => {}
+            }
+        }
+        return depth == 0;
+    }
+    let p = match p.strip_prefix("else") {
+        Some(rest) if rest.is_empty() || rest.starts_with(char::is_whitespace) || rest.starts_with('(') => rest.trim_start(),
+        _ => p,
+    };
+    if p.is_empty() {
+        return true;
+    }
+    let Some(rest) = p.strip_prefix("if") else { return false };
+    let rest = rest.trim_start();
+    if !rest.starts_with('(') {
+        return false;
+    }
+    close_paren(rest, 0) == Some(rest.len() - 1)
+}
+
+/// Where the statement whose right-hand side starts at `(line, col)` ends: the first `;` at depth 0, or the end of the line that closes every
+/// bracket opened on the way. Returns `(line_off, end_col)` of the last non-blank character plus one, or None when the statement continues in a
+/// way this cannot follow (a trailing `\`, a bracket closed that this statement did not open, no end within 80 lines).
+fn statement_end(clean: &[&str], line: usize, col: usize) -> Option<(usize, usize)> {
+    let mut depth = 0i32;
+    let mut last: Option<(usize, usize)> = None;
+    for off in 0..80 {
+        let text = clean.get(line - 1 + off)?;
+        let start = if off == 0 { col } else { 0 };
+        let mut stopped = false;
+        for (i, c) in text[start..].char_indices() {
+            let at = start + i;
+            match c {
+                '(' | '[' | '{' => depth += 1,
+                ')' | ']' | '}' => {
+                    depth -= 1;
+                    if depth < 0 {
+                        return None;
+                    }
+                }
+                ';' if depth == 0 => {
+                    stopped = true;
+                    break;
+                }
+                _ => {}
+            }
+            if !c.is_whitespace() {
+                last = Some((off, at + c.len_utf8()));
+            }
+        }
+        if stopped || depth == 0 {
+            if text.trim_end().ends_with('\\') {
+                return None;
+            }
+            return last;
+        }
+    }
+    None
+}
+
+/// The rewrite of one raw write of a tracked var to its setter call, or None when the write is not a statement this can express (a write whose
+/// value is used, one inside a `for(...)` header or a conditional expression, a chained assignment). `clean` and `raw` are the physical lines
+/// of the file (the same indexing), `number` the 1-based line of the hit and `m_start` where the match starts on it.
+fn setter_fix(clean: &[&str], raw: &[&str], number: usize, m_start: usize, holder: &str, var: &str, list: bool) -> Option<Fix> {
+    let cl = *clean.get(number - 1)?;
+    let rl = *raw.get(number - 1)?;
+    if cl.len() != rl.len() || !statement_prefix_ok(&cl[..m_start]) {
+        return None;
+    }
+    let pre = holder_prefix(holder);
+    let read = if holder.is_empty() { var.to_string() } else { format!("{holder}.{var}") };
+    let tlen = read.len();
+    let s = &cl[m_start..];
+    let (pre_op, after_target) = if s.starts_with("++") || s.starts_with("--") {
+        let rest = s[2..].trim_start();
+        let skipped = s.len() - rest.len();
+        if !rest.starts_with(&read) || rest[tlen..].starts_with(|c: char| c.is_alphanumeric() || c == '_' || c == '.') {
+            return None;
+        }
+        (Some(s[..2].to_string()), m_start + skipped + tlen)
+    } else {
+        if !s.starts_with(&read) {
+            return None;
+        }
+        (None, m_start + tlen)
+    };
+    let tail = &cl[after_target..];
+    let op_at = after_target + (tail.len() - tail.trim_start().len());
+    let optext = &cl[op_at..];
+    let end_of_line = cl.trim_end().trim_end_matches(';').trim_end().len();
+    // `++V` / `--V` / `V++` / `V--` as a statement
+    if let Some(op) = &pre_op {
+        let rest = cl[after_target..].trim();
+        if (!rest.is_empty() && !rest.starts_with(';')) || list {
+            return None;
+        }
+        let delta = if op == "++" { "+" } else { "-" };
+        return Some(Fix { start: m_start as u32, end: end_of_line as u32, was: rl[m_start..end_of_line].to_string(), text: format!("{pre}set_{var}({read} {delta} 1)"), more: Vec::new() });
+    }
+    if optext.starts_with("++") || optext.starts_with("--") {
+        let rest = cl[op_at + 2..].trim();
+        if (!rest.is_empty() && !rest.starts_with(';')) || list {
+            return None;
+        }
+        let delta = if optext.starts_with("++") { "+" } else { "-" };
+        return Some(Fix { start: m_start as u32, end: end_of_line as u32, was: rl[m_start..end_of_line].to_string(), text: format!("{pre}set_{var}({read} {delta} 1)"), more: Vec::new() });
+    }
+    // `=` or a compound assignment
+    let op = ["<<=", ">>=", "+=", "-=", "*=", "/=", "|=", "&=", "^=", "="].iter().find(|o| optext.starts_with(**o))?;
+    if *op == "=" && optext[1..].starts_with('=') {
+        return None;
+    }
+    let rhs_from = op_at + op.len();
+    let rhs_start = rhs_from + (cl[rhs_from..].len() - cl[rhs_from..].trim_start().len());
+    if rhs_start >= cl.len() {
+        return None; // the right-hand side starts on the next line
+    }
+    let (end_off, end_col) = statement_end(clean, number, rhs_start)?;
+    if end_off > 0 && clean.get(number - 1 + end_off).map(|c| c.len()) != raw.get(number - 1 + end_off).map(|r| r.len()) {
+        return None;
+    }
+    let simple = end_off == 0 && rl[rhs_start..end_col].chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.');
+    let (open_text, close_text) = if *op == "=" {
+        (format!("{pre}set_{var}("), ")")
+    } else if list {
+        let proc = match *op {
+            "+=" => "add",
+            "-=" => "remove",
+            "|=" => "include",
+            _ => return None,
+        };
+        (format!("{pre}{proc}_{var}("), ")")
+    } else {
+        let binop = &op[..op.len() - 1];
+        if simple {
+            (format!("{pre}set_{var}({read} {binop} "), ")")
+        } else {
+            (format!("{pre}set_{var}({read} {binop} ("), "))")
+        }
+    };
+    Some(Fix {
+        start: m_start as u32,
+        end: rhs_start as u32,
+        was: rl[m_start..rhs_start].to_string(),
+        text: open_text,
+        more: vec![MoreEdit { line_off: end_off as u32, start: end_col as u32, end: end_col as u32, was: String::new(), text: close_text.to_string() }],
+    })
 }
 
 /// `scan` for one file: its hits (in order) and the setters it defines `(owner, proc name)`.
@@ -416,8 +598,12 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
     if !pats.any.is_match(f.text()) {
         return (hits, setters);
     }
+    let clean_lines: Vec<&str> = f.clean().text.split('\n').collect();
+    let raw_lines: Vec<&str> = f.raw().text.split('\n').collect();
     for p in parse_procs(f.clean()) {
         let owner = if p.owner != "/" { normalize_type(p.owner) } else { "/".to_string() };
+        // Construction of the instance (see PRE_LIVE): its own tracked vars are written plainly there.
+        let pre_live = PRE_LIVE.contains(&p.name);
         let mut is_setter_of: Option<String> = None;
         if let Some(var) = p.name.strip_prefix("set_") {
             if tracked_type_of(tracked, var, &owner).map(|b| !b.is_empty()).unwrap_or(false) {
@@ -427,6 +613,8 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
         }
         let mut locals: HashSet<String> = HashSet::new();
         let mut typed: HashMap<String, String> = HashMap::new();
+        // Locals that walk one of the instance's own parts (`for(var/datum/omni_port/P in ports)`): parts the instance is still building.
+        let mut own_parts: HashSet<String> = HashSet::new();
         let arg_typed = pat!(r"(?:^|[(,])\s*(?:var/)?((?:/?[\w]+/)*[\w]+)/(\w+)\s*(?==|,|\)|$|\bas\b)");
         for m in arg_typed.captures_iter(p.args) {
             typed.insert(m.s(2).to_string(), normalize_type(m.s(1)));
@@ -442,6 +630,11 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
             for m in pat!(r"(?:\bvar)?(/[\w/]+)/(\w+)\b").captures_iter(line) {
                 typed.insert(m.s(2).to_string(), normalize_type(m.s(1)));
             }
+            if pre_live {
+                for m in pat!(r"\bfor\s*\(\s*var/(?:[\w/]*/)?(\w+)\s+in\s+(?:src\.)?(\w+)\s*\)").captures_iter(line) {
+                    own_parts.insert(m.s(1).to_string());
+                }
+            }
             for m in pats.bare.captures_iter(line) {
                 if named_args.contains(&(*number, m.start(0) + 1)) {
                     continue; // this exact AST expression names a call argument, not storage
@@ -451,6 +644,9 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                     continue;
                 }
                 let written_via_src = m.whole().contains(&format!("src.{}", var));
+                if pre_live {
+                    continue;
+                }
                 if locals.contains(var) && !written_via_src {
                     continue;
                 }
@@ -460,7 +656,9 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                 let base = tracked_type_of(tracked, var, &owner).filter(|b| !b.is_empty());
                 if let Some(base) = base {
                     if !sink.allowed(f, *number, LINT) {
-                        hits.push(Hit { line: *number, msg: format!("{} written outside {}/proc/set_{}()", var, base, var), rule: RULE_SETTER, fix: None });
+                        let is_list = tracked_type_of(lists, var, &owner).is_some();
+                        let fix = setter_fix(&clean_lines, &raw_lines, *number, m.start(0), if written_via_src { "src" } else { "" }, var, is_list);
+                        hits.push(Hit { line: *number, msg: format!("{} written outside {}/proc/set_{}()", var, base, var), rule: RULE_SETTER, fix });
                     }
                 }
             }
@@ -470,10 +668,15 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                 if holder == "src" {
                     continue; // the bare pattern counts src.V
                 }
+                if own_parts.contains(holder) {
+                    continue; // a part the instance is building (see PRE_LIVE)
+                }
                 let base = typed.get(holder).and_then(|t| tracked_type_of(tracked, var, t)).filter(|b| !b.is_empty());
                 if let Some(base) = base {
                     if !sink.allowed(f, *number, LINT) {
-                        hits.push(Hit { line: *number, msg: format!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var), rule: RULE_SETTER, fix: None });
+                        let is_list = typed.get(holder).and_then(|t| tracked_type_of(lists, var, t)).is_some();
+                        let fix = setter_fix(&clean_lines, &raw_lines, *number, m.start(0), holder, var, is_list);
+                        hits.push(Hit { line: *number, msg: format!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var), rule: RULE_SETTER, fix });
                     }
                 }
             }
@@ -487,6 +690,9 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                         let var = m.s(var_group);
                         let base = if holder.is_empty() || holder == "src" {
                             let written_via_src = holder == "src";
+                            if pre_live {
+                                continue;
+                            }
                             if (locals.contains(var) && !written_via_src) || Pat::cached(&format!(r"\bvar/(?:[\w/]*/)?{}\b", regex::escape(var))).is_match(line) {
                                 continue;
                             }
@@ -544,7 +750,7 @@ pub fn collect<'a>(cx: &Cx<'a>, tracked: &Tracked, tests: bool) -> Option<Collec
     let files: Vec<&SourceFile> = if tests { cx.all_files().into_iter().filter(|f| TEST_PREFIXES.iter().any(|p| f.rel.starts_with(p))).collect() } else { cx.files() };
     let semantic = cx.sem();
     let key = incr::ctx_key(&(tracked, &lists));
-    let hits: Vec<Vec<StoredHit>> = incr::keyed(if tests { "tracked-tests-judge-2" } else { "tracked-judge-2" }, key, &files, |f| {
+    let hits: Vec<Vec<StoredHit>> = incr::keyed(if tests { "tracked-tests-judge-3" } else { "tracked-judge-3" }, key, &files, |f| {
         let mut sink = Sink::new();
         sink.cur = f.rel.clone();
         let named = semantic.as_ref().map(|sem| crate::sem::checks::named_argument_positions(sem, &f.rel)).unwrap_or_default();
@@ -797,6 +1003,66 @@ mod named_argument_tests {
     }
 }
 
+/// `analyze fix --drop-declared [--apply]`: deletes the `TRACKED(T, v)` lines of vars reactive code reads. Read-driven tracking
+/// (`gens::auto_tracked`) generates the same setter from the read set, so the declaration is redundant. A line stays when something else defines
+/// `set_v` on the type's path (a subtype override that calls `..()`), which the generated setter would clash with, and when it is not a plain
+/// `TRACKED(T, v)` (`TRACKED_BRIDGED`, `TRACKED_DATA`, `SETTER` and the schema forms carry more than the setter).
+fn drop_declared(engine: &crate::run::Engine, root: &std::path::Path, apply: bool, prefixes: &[String]) -> std::process::ExitCode {
+    use std::process::ExitCode;
+    let tree = &engine.tree;
+    let an = crate::gens::deps::analyzed(tree);
+    let Some(an) = an.as_ref().as_ref() else {
+        eprintln!("analyze fix: the dependency analysis is unavailable");
+        return ExitCode::from(2);
+    };
+    let Some(sem) = crate::sem::sem_for(tree) else {
+        eprintln!("analyze fix: the semantic model is unavailable");
+        return ExitCode::from(2);
+    };
+    let defs = crate::gens::auto_tracked::setter_defs(&sem);
+    let outside = crate::gens::auto_tracked::writes_outside_setters(&sem);
+    let scopes = crate::scopes::Scopes::load(&root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
+    let exclude: Vec<String> = scopes.for_lint("auto_tracked", "").list("exclude").iter().chain(scopes.for_lint("auto_tracked", "").list("exclude_fixtures")).chain(scopes.for_lint("auto_tracked", "").list("exclude_heat")).chain(scopes.for_lint("auto_tracked", "").list("exclude_memo")).cloned().collect();
+    let line_pat = pat_match!(r"^(\s*)TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)\s*(?://.*)?$");
+    let (mut dropped, mut kept) = (0usize, 0usize);
+    for f in tree.select(&CODE_DM) {
+        if f.rel == crate::gens::auto_tracked::AUTO_REL || f.rel == "code/__defines/capabilities.dm" || crate::sem::gen::test_only(&f.rel) || f.rel.contains("benchmarks/") || (!prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str()))) {
+            continue;
+        }
+        if !f.text().contains("TRACKED(") {
+            continue;
+        }
+        let text = f.raw().text.to_string();
+        let mut out: Vec<&str> = Vec::new();
+        let mut changed = false;
+        for line in text.split('\n') {
+            let content = line.trim_end_matches('\r');
+            if let Some(m) = line_pat.captures(content) {
+                let (ty, var) = (m.s(2), m.s(3));
+                let read = an.reads.iter().any(|(o, v)| v == var && (o == ty || sem.is_subtype(ty, o) || sem.is_subtype(o, ty)));
+                let written = crate::gens::auto_tracked::set_calls(tree).contains(var) || outside.contains(var) || (crate::gens::auto_tracked::set_calls(tree).contains(&format!("{var}[]")));
+                let alone = defs.get(&format!("set_{}", var)).is_none_or(|types| types.iter().all(|t| t == ty));
+                let excluded = exclude.iter().any(|e| e == var || e == &format!("{ty}::{var}"));
+                let builtin = sem.var_decl(ty, var).is_none_or(|s| s.file.is_empty() || s.is_static || s.is_const);
+                if read && written && alone && !excluded && !builtin {
+                    println!("{}: drop {}", f.rel, content.trim());
+                    dropped += 1;
+                    changed = true;
+                    continue;
+                }
+                kept += 1;
+            }
+            out.push(line);
+        }
+        if changed && apply {
+            let _ = std::fs::write(root.join(&f.rel), out.join("
+"));
+        }
+    }
+    println!("{} TRACKED declaration(s) {}, {} kept (no reactive reader, or another set_<v> on the path)", dropped, if apply { "dropped" } else { "droppable (dry run; --apply writes them)" }, kept);
+    ExitCode::SUCCESS
+}
+
 /// `analyze fix [--apply] [--tests] [--path PREFIX]...`: rewrites the in-place edits of tracked list vars (`list_mutation`) to the
 /// generated procs. Prints each rewrite (or, with `--apply`, makes it) and the sites it cannot express, which stay for hand conversion.
 pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCode {
@@ -820,12 +1086,20 @@ pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCod
             return ExitCode::from(2);
         }
     };
+    if args.iter().any(|a| a == "--drop-declared") {
+        return drop_declared(&engine, root, apply, &prefixes);
+    }
     let meta = if tests { &META_TESTS } else { &META };
     let scope = engine.scopes.for_lint(meta.name, meta.group);
     let cx = Cx { tree: &engine.tree, meta, scope: &scope };
     let mut tracked: Tracked = BTreeMap::new();
     for f in cx.all_files() {
         tracked_from_text_with(f, &mut tracked, tests);
+    }
+    // A STAT var (tracked_tests also counts it) has no set_<var>(): the stat engine writes it, and a test sets it with set_var().
+    let mut has_setter: Tracked = BTreeMap::new();
+    for f in cx.all_files() {
+        tracked_from_text_with(f, &mut has_setter, false);
     }
     let Some(c) = collect(&cx, &tracked, tests) else {
         println!("no tracked vars");
@@ -836,7 +1110,7 @@ pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCod
         if !prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str())) {
             continue;
         }
-        let list: Vec<&StoredHit> = hits.iter().filter(|h| h.rule == RULE_LIST).collect();
+        let list: Vec<&StoredHit> = hits.iter().collect();
         if list.is_empty() {
             continue;
         }
@@ -844,14 +1118,22 @@ pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCod
         let Ok(bytes) = std::fs::read(&path) else { continue };
         let Ok(text) = String::from_utf8(bytes) else { continue };
         let mut lines: Vec<String> = text.split('\n').map(|s| s.to_string()).collect();
-        let mut changed = false;
+        // Every edit of the file, checked against the original text and applied from the end so none moves another.
+        let mut edits: Vec<(usize, u32, u32, String, String)> = Vec::new();
         for h in list {
-            let Some(line) = lines.get_mut(h.line as usize - 1) else { continue };
-            match &h.fix {
-                Some(fx) if line.get(fx.start as usize..fx.end as usize) == Some(fx.was.as_str()) => {
-                    println!("{}:{}: {}  ->  {}", f.rel, h.line, fx.was, fx.text);
-                    line.replace_range(fx.start as usize..fx.end as usize, &fx.text);
-                    changed = true;
+            let line_at = h.line as usize;
+            let ok = h.fix.as_ref().is_some_and(|fx| {
+                lines.get(line_at - 1).and_then(|l| l.get(fx.start as usize..fx.end as usize)) == Some(fx.was.as_str())
+                    && fx.more.iter().all(|m| lines.get(line_at - 1 + m.line_off as usize).and_then(|l| l.get(m.start as usize..m.end as usize)) == Some(m.was.as_str()))
+            });
+            let var = h.msg.split(' ').next().unwrap_or("").rsplit('.').next().unwrap_or("");
+            match (&h.fix, ok && (h.rule == RULE_LIST || has_setter.contains_key(var))) {
+                (Some(fx), true) => {
+                    println!("{}:{}: {}  ->  {}{}", f.rel, h.line, fx.was, fx.text, if fx.more.is_empty() { "" } else { " ..." });
+                    edits.push((line_at, fx.start, fx.end, fx.was.clone(), fx.text.clone()));
+                    for m in &fx.more {
+                        edits.push((line_at + m.line_off as usize, m.start, m.end, m.was.clone(), m.text.clone()));
+                    }
                     fixed += 1;
                 }
                 _ => {
@@ -859,6 +1141,11 @@ pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCod
                     left += 1;
                 }
             }
+        }
+        edits.sort_by(|a, b| (b.0, b.1, b.2).cmp(&(a.0, a.1, a.2)));
+        let changed = !edits.is_empty();
+        for (line, start, end, _was, text) in edits {
+            lines[line - 1].replace_range(start as usize..end as usize, &text);
         }
         if changed && apply {
             let _ = std::fs::write(&path, lines.join("\n"));
@@ -942,5 +1229,106 @@ mod list_mutation_tests {
     #[test]
     fn reads_and_non_tracked_are_not_hits() {
         assert!(run("\tvar/n = length(items)\n\tfor(var/i in items)\n\t\tn += i\n\treturn items[1]\n\tif(items.Find(x))\n\t\treturn 1\n\tother.Add(1)", "").is_empty());
+    }
+}
+
+#[cfg(test)]
+mod setter_fix_tests {
+    use super::*;
+
+    const DECL: &str = "/obj/box\n\tvar/plain = 0\n\tvar/list/items\n\tvar/other = 0\nTRACKED(/obj/box, plain)\nTRACKED(/obj/box, items)\n";
+
+    /// The rewritten file of `body`, a proc `header` of /obj/box (None when nothing was a hit); the hits that have no rewrite are listed as `residue`.
+    fn run(header: &str, body: &str) -> (Option<String>, usize) {
+        let source = format!("{DECL}{header}\n{body}\n");
+        let f = SourceFile::from_text("code/fixture.dm", &source);
+        let mut tracked = Tracked::new();
+        tracked.insert("plain".into(), BTreeSet::from(["/obj/box".into()]));
+        tracked.insert("items".into(), BTreeSet::from(["/obj/box".into()]));
+        let mut lists = Tracked::new();
+        lists.insert("items".into(), BTreeSet::from(["/obj/box".into()]));
+        let pats = build_pats(&tracked).unwrap();
+        let lpats = build_list_pats(&lists);
+        let (hits, _) = scan_one(&tracked, &pats, &lists, lpats.as_ref(), &f, &mut Sink::new(), &BTreeSet::new());
+        if hits.is_empty() {
+            return (None, 0);
+        }
+        let mut lines: Vec<String> = source.split('\n').map(|s| s.to_string()).collect();
+        let mut edits: Vec<(usize, usize, usize, String)> = Vec::new();
+        let mut residue = 0;
+        for h in &hits {
+            match &h.fix {
+                Some(fx) => {
+                    assert_eq!(&lines[h.line - 1][fx.start as usize..fx.end as usize], fx.was);
+                    edits.push((h.line, fx.start as usize, fx.end as usize, fx.text.clone()));
+                    for m in &fx.more {
+                        edits.push((h.line + m.line_off as usize, m.start as usize, m.end as usize, m.text.clone()));
+                    }
+                }
+                None => residue += 1,
+            }
+        }
+        edits.sort_by(|a, b| (b.0, b.1, b.2).cmp(&(a.0, a.1, a.2)));
+        for (line, start, end, text) in edits {
+            lines[line - 1].replace_range(start..end, &text);
+        }
+        let skip = DECL.matches('\n').count() + 1;
+        (Some(lines[skip..].join("\n").trim_end().to_string()), residue)
+    }
+
+    fn fixed(body: &str) -> String {
+        run("/obj/box/proc/probe(obj/box/B)", body).0.unwrap_or_default()
+    }
+
+    #[test]
+    fn a_plain_assignment_becomes_the_setter_call() {
+        assert_eq!(fixed("\tplain = 5"), "\tset_plain(5)");
+        assert_eq!(fixed("\tsrc.plain = 5 // note"), "\tset_plain(5) // note");
+        assert_eq!(fixed("\tB.plain = compute(1, 2);"), "\tB.set_plain(compute(1, 2));");
+        assert_eq!(fixed("\tif(other) plain = 1"), "\tif(other) set_plain(1)");
+        assert_eq!(fixed("\tplain = 1; other = 2"), "\tset_plain(1); other = 2");
+        assert_eq!(fixed("\tother = 2; plain = 1"), "\tother = 2; set_plain(1)");
+    }
+
+    #[test]
+    fn compound_and_incrementing_writes_keep_their_arithmetic() {
+        assert_eq!(fixed("\tplain += 2"), "\tset_plain(plain + 2)");
+        assert_eq!(fixed("\tplain |= FLAG_A | FLAG_B"), "\tset_plain(plain | (FLAG_A | FLAG_B))");
+        assert_eq!(fixed("\tB.plain -= other * 2"), "\tB.set_plain(B.plain - (other * 2))");
+        assert_eq!(fixed("\tplain++"), "\tset_plain(plain + 1)");
+        assert_eq!(fixed("\t--plain"), "\tset_plain(plain - 1)");
+        assert_eq!(fixed("\tB.plain++ // up"), "\tB.set_plain(B.plain + 1) // up");
+    }
+
+    #[test]
+    fn a_multi_line_value_closes_the_call_where_it_ends() {
+        assert_eq!(fixed("\tplain = list(\n\t\t\"a\",\n\t\t\"b\"\n\t)"), "\tset_plain(list(\n\t\t\"a\",\n\t\t\"b\"\n\t))");
+    }
+
+    #[test]
+    fn a_list_var_uses_its_generated_procs_for_compound_ops() {
+        assert_eq!(fixed("\titems += x"), "\tadd_items(x)");
+        assert_eq!(fixed("\titems -= x"), "\tremove_items(x)");
+        assert_eq!(fixed("\titems |= x"), "\tinclude_items(x)");
+        assert_eq!(fixed("\titems = list()"), "\tset_items(list())");
+    }
+
+    #[test]
+    fn a_write_whose_value_is_used_is_left_for_hand_conversion() {
+        let (text, residue) = run("/obj/box/proc/probe()", "\tvar/n = (plain = 5)\n\tfor(plain = 0; plain < 3; plain++)\n\t\tn++");
+        assert!(text.is_some());
+        assert_eq!(residue, 3);
+    }
+
+    #[test]
+    fn construction_writes_its_own_vars_plainly() {
+        assert_eq!(run("/obj/box/Initialize(mapload)", "\t. = ..()\n\tplain = 5\n\tsrc.plain += 1\n\tLAZYADD(items, 1)").0, None);
+        assert_eq!(run("/obj/box/New(loc)", "\tplain = 5").0, None);
+        // another object's var, and a proc that runs once the holder is live, are judged as anywhere else
+        assert!(run("/obj/box/Initialize(mapload, obj/box/B)", "\tB.plain = 5").0.is_some());
+        assert!(run("/obj/box/proc/after_setup()", "\tplain = 5").0.is_some());
+        // a part the instance walks while it is built is construction too
+        assert_eq!(run("/obj/box/Initialize(mapload)", "\t. = ..()\n\tfor(var/obj/box/P in parts)\n\t\tP.plain = 5").0, None);
+        assert!(run("/obj/box/Initialize(mapload)", "\t. = ..()\n\tfor(var/obj/box/P in range(1))\n\t\tP.plain = 5").0.is_some());
     }
 }

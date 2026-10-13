@@ -33,14 +33,14 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/reagent)
 			return
 
 	name = "[spill_name]"
-	dryname = "dried [spill_name]"
+	set_dryname("dried [spill_name]")
 	desc = "It's a puddle of [spill_name]"
-	drydesc = "It's a dried puddle of [spill_name]"
+	set_drydesc("It's a dried puddle of [spill_name]")
 	set_basecolor(spill_color)
 
-	custombasename = "[spill_name]"
-	custombasedesc = "It's a puddle of [spill_name]"
-	custombasecolor = basecolor
+	set_custombasename("[spill_name]")
+	set_custombasedesc("It's a puddle of [spill_name]")
+	set_custombasecolor(basecolor)
 
 /// A puddle of a reagent other than blood or water is drawn in the reagent's colour, under its name; blood and water keep the blood's own look.
 /obj/effect/decal/cleanable/blood/reagent/cleanable_look(datum/look/look)

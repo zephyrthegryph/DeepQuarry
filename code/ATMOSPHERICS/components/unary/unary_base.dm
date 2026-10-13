@@ -113,8 +113,8 @@ MSG_DEF_SELF(air_device/welded, "You cannot unwrench it, it is welded down firml
 		then(TYPE_PROC_REF(/obj/machinery/atmospherics, unfastened))))
 
 /obj/machinery/atmospherics/unary/proc/pipe_reachable(datum/act/A)
-	var/turf/T = loc
-	return (!(node && node.level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating) // ALLOW(reads): a pipe's level is fixed by its type; the node is the pipe network's link
+	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe on a floor stays where it was built
+	return (!(node && node.level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating)
 
 /obj/machinery/atmospherics/unary/proc/not_welded(datum/act/A)
 	return (!weld_shut_welded(src, null)) ? null : MSG(air_device/welded)

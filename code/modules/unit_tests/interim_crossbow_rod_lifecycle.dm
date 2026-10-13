@@ -15,7 +15,7 @@
 		TEST_ASSERT_NULL(user.get_active_hand(), "actual loading releases the rod's original hand slot")
 		user.swap_hand()
 		TEST_ASSERT_EQUAL(user.get_active_hand(), bow, "the actual loaded crossbow becomes the actor's active item")
-		bow.tension = 1
+		bow.set_tension(1)
 		test_op_handler(bow, "gun_self", user, bow)
 		own_turf_contents(T)
 		TEST_ASSERT_NULL(bow.bolt, "actual unloading clears the crossbow's owned bolt")

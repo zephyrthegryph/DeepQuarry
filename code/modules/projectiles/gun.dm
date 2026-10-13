@@ -110,9 +110,6 @@
 	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
-TRACKED(/obj/item/gun, dna_lock)
-TRACKED(/obj/item/gun, silenced)
-TRACKED(/obj/item/gun, mode_name)
 CAPABILITIES(/obj/item/gun)
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_thrown(force = 5))
@@ -185,11 +182,11 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		var/mob/living/M = loc
 		if(istype(M))
 			if(M.can_wield_item(src) && src.is_held_twohanded(M))
-				LAZYSET(item_state_slots, slot_l_hand_str, wielded_item_state)
-				LAZYSET(item_state_slots, slot_r_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_l_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_r_hand_str, wielded_item_state)
 			else
-				LAZYSET(item_state_slots, slot_l_hand_str, initial(item_state))
-				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_l_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_r_hand_str, initial(item_state))
 	..()
 
 //Checks whether a given mob can use the gun

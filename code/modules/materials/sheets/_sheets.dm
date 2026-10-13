@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/stack/material)
 	if(!new_stack)
 		return null
 	new_stack.default_type = material.name
-	new_stack.material = material
+	new_stack.set_material(material)
 	new_stack.recipes = material.get_recipes()
 	new_stack.stacktype = material.stack_type
 	new_stack.feedstock_purity = feedstock_purity

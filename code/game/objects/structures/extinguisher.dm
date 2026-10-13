@@ -40,14 +40,14 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 				return OP_OK
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
-			opened = !opened
+			set_opened(!opened)
 	else
-		opened = !opened
+		set_opened(!opened)
 	return OP_OK
 
 /// The wrench on a full cabinet: it opens or shuts.
 /obj/structure/extinguisher_cabinet/proc/toggled(datum/act/op/A)
-	opened = !opened
+	set_opened(!opened)
 	return OP_OK
 
 /// The wrench's wait ran out on an empty cabinet: it comes off the wall as its frame.
@@ -70,9 +70,9 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
 		rel_take(src, nameof(has_extinguisher))
-		opened = 1
+		set_opened(1)
 	else
-		opened = !opened
+		set_opened(!opened)
 	return OP_OK
 
 /// Telekinesis pulls the extinguisher out at range, or opens or shuts the cabinet.
@@ -82,14 +82,14 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
 		rel_take(src, nameof(has_extinguisher))
-		opened = 1
+		set_opened(1)
 	else
-		opened = !opened
+		set_opened(!opened)
 	return OP_OK
 
 /// owns(on_lost =): the extinguisher left the cabinet (taken, or destroyed in it): the cabinet stands open.
 /obj/structure/extinguisher_cabinet/proc/extinguisher_lost(obj/item/extinguisher/E)
-	opened = TRUE
+	set_opened(TRUE)
 
 /obj/structure/extinguisher_cabinet/proc/appearance_suffix()
 	if(!has_extinguisher)

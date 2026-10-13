@@ -31,9 +31,6 @@
 	var/cost_plastic_small = 25
 	var/cost_plastic_large = 250
 	var/capacity_plastic = 60000 // 30 sheets of plastic
-TRACKED(/obj/machinery/injector_maker, count_large_injector)
-TRACKED(/obj/machinery/injector_maker, count_plastic)
-TRACKED(/obj/machinery/injector_maker, count_small_injector)
 
 
 MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")

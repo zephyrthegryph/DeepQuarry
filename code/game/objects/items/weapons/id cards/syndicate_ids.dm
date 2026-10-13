@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 	if(!proximity) return
 	if(istype(O, /obj/item/card/id))
 		var/obj/item/card/id/I = O
-		src.access |= I.GetAccess()
+		include_access(I.GetAccess())
 		if(SSantag.player_is_antag(user.mind) || registered_user() == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 

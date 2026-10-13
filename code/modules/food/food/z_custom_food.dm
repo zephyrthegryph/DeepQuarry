@@ -140,13 +140,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable/sandwich)
 	op("top", item(/obj/item/reagent_containers/food/snacks/slice/bread), priority(OP_PRIORITY_PART + 1), when(PROC_REF(open_topped)), label("Close it"), then(PROC_REF(topped)))
 
 /obj/item/reagent_containers/food/snacks/customizable/sandwich/proc/open_topped(datum/act/op/A)
-	return !addTop // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !addTop
 
 /obj/item/reagent_containers/food/snacks/customizable/sandwich/proc/topped(datum/act/op/A)
 	var/obj/item/I = A.held
 	I.reagents.trans_to_holder(reagents,I.reagents.total_volume)
 	consume(I, A.actor)
-	addTop = 1
+	set_addTop(1)
 	drawTopping()
 	return OP_OK
 

@@ -120,7 +120,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
 /// The battery panel is open.
 /obj/machinery/pump/proc/battery_panel_open(datum/act/op/A)
-	return open ? null : (unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight)) // ALLOW(reads): the panel is read when a cell is offered to it, never from a cached menu
+	return open ? null : (unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight))
 
 /// No cell is installed.
 /obj/machinery/pump/proc/no_cell(datum/act/op/A)
@@ -162,7 +162,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 	if(open)
 		return OP_OK
 	to_chat(user, span_notice("You [unlocked ? "screw" : "unscrew"] the battery panel."))
-	unlocked = !unlocked
+	set_unlocked(!unlocked)
 	return OP_OK
 
 /obj/machinery/pump/proc/crowbar_used(datum/act/op/A)
@@ -170,7 +170,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 	if(!unlocked)
 		return OP_OK
 	to_chat(user, open ? span_notice("You crowbar the battery panel in place.") : span_notice("You remove the battery panel."))
-	open = !open
+	set_open(!open)
 	return OP_OK
 
 /obj/machinery/pump/proc/wrench_used(datum/act/op/A)

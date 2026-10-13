@@ -112,7 +112,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 
 /// A finished painting takes no more strokes.
 /obj/item/canvas/proc/canvas_open(datum/act/op/A)
-	return (!finalized) ? null : MSG(canvas/finished) // ALLOW(reads): a finished painting is read when a stroke is made, never from a cached menu
+	return (!finalized) ? null : MSG(canvas/finished)
 
 /// Old attackby outside combat mode: open the canvas to paint on it (the click goes on).
 /obj/item/canvas/proc/interaction_paint(datum/act/op/A)
@@ -144,7 +144,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 		finalize(A.actor)
 
 /obj/item/canvas/proc/finalize(mob/user)
-	finalized = TRUE
+	set_finalized(TRUE)
 	author_name = user.real_name
 	author_ckey = user.ckey
 	generate_proper_overlay()
@@ -571,7 +571,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	new_canvas.fill_grid_from_icon(I)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
-	new_canvas.finalized = TRUE
+	new_canvas.set_finalized(TRUE)
 	new_canvas.painting_name = title
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
@@ -665,7 +665,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	new_canvas.fill_grid_from_icon(I)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
-	new_canvas.finalized = TRUE
+	new_canvas.set_finalized(TRUE)
 	new_canvas.painting_name = title
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey

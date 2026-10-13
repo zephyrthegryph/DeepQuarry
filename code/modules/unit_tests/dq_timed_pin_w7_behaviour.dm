@@ -896,7 +896,7 @@
 /datum/unit_test/dq_timed_pin_w7/s_weaver_trap_takes_ten_seconds/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/datum/trait_state/weaver/W = s_weaver(user)
-	W.silk_reserve = 300
+	W.set_silk_reserve(300)
 	test_ui(user, W, "weave_trap", list())
 	TEST_ASSERT(!isnull(running(user)), "the button starts a timed action")
 	test_time(9 SECONDS)
@@ -926,7 +926,7 @@
 /datum/unit_test/dq_timed_pin_w7/s_weaver_not_enough_silk/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/datum/trait_state/weaver/W = s_weaver(user)
-	W.silk_reserve = 10
+	W.set_silk_reserve(10)
 	test_chat_clear()
 	test_ui(user, W, "weave_floor", list())
 	TEST_ASSERT_NULL(running(user), "too little silk starts nothing")
@@ -1146,8 +1146,8 @@
 	var/mob/living/silicon/robot/R = r_borg(get_step(run_loc_floor_bottom_left, EAST))
 	if(R.cell)
 		qdel(R.cell)
-	R.opened = TRUE
-	R.wiresexposed = TRUE
+	R.set_opened(TRUE)
+	R.set_wiresexposed(TRUE)
 	while(wires_cut_random(R))
 		continue
 	var/obj/item/mmi/M = new /obj/item/mmi(R)
@@ -1312,7 +1312,7 @@
 	var/mob/living/simple_mob/vore/alienanimals/teppi/teppi = allocate(/mob/living/simple_mob/vore/alienanimals/teppi, get_step(run_loc_floor_bottom_left, EAST))
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	teppi.teppi_wool = FALSE
-	teppi.resting = TRUE
+	teppi.set_resting(TRUE)
 	hold(user, K)
 	var/datum/T = begin(user, teppi, K, 5 SECONDS)
 	user.forceMove(get_step(user, NORTH))
@@ -1328,7 +1328,7 @@
 	var/mob/living/simple_mob/vore/alienanimals/teppi/teppi = allocate(/mob/living/simple_mob/vore/alienanimals/teppi, get_step(run_loc_floor_bottom_left, EAST))
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	teppi.teppi_wool = FALSE
-	teppi.resting = FALSE
+	teppi.set_resting(FALSE)
 	hold(user, K)
 	test_click(user, teppi, K)
 	TEST_ASSERT_NULL(running(user), "an awake teppi starts nothing")
@@ -1562,7 +1562,7 @@
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	N.quick_implant(H)
 	test_time(2 SECONDS)
-	N.stat = NIF_WORKING
+	N.set_stat(NIF_WORKING)
 	return N
 
 /// TRUE when `N` holds a flashprot nifsoft.
@@ -1789,7 +1789,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_grinder_monkey/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/carbon/human/monkey/M = allocate(/mob/living/carbon/human/monkey, run_loc_floor_bottom_left)
-	M.stat = DEAD
+	M.set_stat(DEAD)
 	var/obj/item/slime_grinder/G = allocate(/obj/item/slime_grinder, run_loc_floor_bottom_left)
 	hold(user, G)
 	v_use_grinder(user, M, G)
@@ -1807,7 +1807,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_grinder_monkey_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/carbon/human/monkey/M = allocate(/mob/living/carbon/human/monkey, run_loc_floor_bottom_left)
-	M.stat = DEAD
+	M.set_stat(DEAD)
 	var/obj/item/slime_grinder/G = allocate(/obj/item/slime_grinder, run_loc_floor_bottom_left)
 	hold(user, G)
 	v_use_grinder(user, M, G)
@@ -1829,8 +1829,8 @@
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/carbon/human/monkey/M = allocate(/mob/living/carbon/human/monkey, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/monkey/M2 = allocate(/mob/living/carbon/human/monkey, run_loc_floor_bottom_left)
-	M.stat = DEAD
-	M2.stat = DEAD
+	M.set_stat(DEAD)
+	M2.set_stat(DEAD)
 	var/obj/item/slime_grinder/G = allocate(/obj/item/slime_grinder, run_loc_floor_bottom_left)
 	hold(user, G)
 	v_use_grinder(user, M, G)
@@ -1848,7 +1848,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/simple_mob/slime/S = allocate(/mob/living/simple_mob/slime, run_loc_floor_bottom_left)
 	S.cores = 2
-	S.stat = DEAD
+	S.set_stat(DEAD)
 	var/obj/item/slime_grinder/G = allocate(/obj/item/slime_grinder, run_loc_floor_bottom_left)
 	hold(user, G)
 	v_use_grinder(user, S, G)
@@ -1875,7 +1875,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/simple_mob/slime/S = allocate(/mob/living/simple_mob/slime, run_loc_floor_bottom_left)
 	S.cores = 3
-	S.stat = DEAD
+	S.set_stat(DEAD)
 	var/obj/item/slime_grinder/G = allocate(/obj/item/slime_grinder, run_loc_floor_bottom_left)
 	hold(user, G)
 	v_use_grinder(user, S, G)
@@ -1900,7 +1900,7 @@
 	var/obj/machinery/processor/P = allocate(/obj/machinery/processor, run_loc_floor_bottom_left)
 	var/mob/living/simple_mob/slime/S = allocate(/mob/living/simple_mob/slime, run_loc_floor_bottom_left)
 	S.cores = 2
-	S.stat = DEAD
+	S.set_stat(DEAD)
 	P.insert(S, user)
 	TEST_ASSERT_EQUAL(S.loc, P, "the slime is inside")
 	test_click(user, P, null)
@@ -1981,7 +1981,7 @@
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
 	var/obj/belly/B = pair[3]
-	pred.stat = UNCONSCIOUS
+	pred.set_stat(UNCONSCIOUS)
 	test_chat_clear()
 	B.relay_resist(prey)
 	TEST_ASSERT(!isnull(running(prey)), "struggling in the belly of someone out cold starts a timed action")
@@ -1999,10 +1999,10 @@
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
 	var/obj/belly/B = pair[3]
-	pred.stat = UNCONSCIOUS
+	pred.set_stat(UNCONSCIOUS)
 	B.relay_resist(prey)
 	TEST_ASSERT(!isnull(running(prey)), "struggling in the belly of someone out cold starts a timed action")
-	pred.stat = CONSCIOUS
+	pred.set_stat(CONSCIOUS)
 	B.escapable = B_ESCAPABLE_NONE
 	test_chat_clear()
 	test_time(7 SECONDS)
@@ -2016,7 +2016,7 @@
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
 	var/obj/belly/B = pair[3]
-	pred.stat = UNCONSCIOUS
+	pred.set_stat(UNCONSCIOUS)
 	B.relay_resist(prey)
 	var/datum/T = running(prey)
 	TEST_ASSERT(!isnull(T), "struggling in the belly of someone out cold starts a timed action")

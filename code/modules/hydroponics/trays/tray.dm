@@ -177,7 +177,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /// A ghost may become the living plant product of a ripe tray (the old attack_ghost). Silent unless the ghost itself may not.
 /obj/machinery/portable_atmospherics/hydroponics/proc/can_ghost_harvest(datum/act/op/A)
 	READS_FROM() // the ripeness and the candidate's bans are read when the ghost clicks, never cached
-	if(!(harvest && seed && seed.has_mob_product)) // ALLOW(reads): ripeness and the plant's kind are read when the ghost clicks, never cached
+	if(!(harvest && seed && seed.has_mob_product))
 		return /datum/msg/req_silent
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	return G?.candidate_refusal(A.actor)
@@ -223,17 +223,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 /obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
 TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, waterlevel)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, nutrilevel)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, pestlevel)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, weedlevel)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, toxins)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, dead)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, harvest)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, age)
 TRACKED(/obj/machinery/portable_atmospherics/hydroponics, health)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, closed_system)
-TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /// Everything but cryogenically frozen (frozen == 1) grows.
 /obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()

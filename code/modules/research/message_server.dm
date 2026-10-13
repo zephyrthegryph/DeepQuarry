@@ -157,7 +157,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /// No side effects: whether this server can currently take the upgrade board.
 /obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
-	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
 
 /// Requirement (was REQ_* can_upgrade): the legacy check answers TRUE to pass.
 /obj/machinery/message_server/proc/can_upgrade_holds(datum/act/op/A)
@@ -169,7 +169,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	var/obj/item/O = A.held
 	if(!consume(O, user))
 		return TRUE
-	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
+	set_spamfilter_limit(spamfilter_limit + (round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)))
 	to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
 	return TRUE
 

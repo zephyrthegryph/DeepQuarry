@@ -35,7 +35,6 @@
 
 // BubbleWrap - A box can be folded up to make card
 
-TRACKED(/obj/item/storage/box, trash)
 
 CAPABILITIES(/obj/item/storage/box)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))

@@ -8,7 +8,7 @@
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
 	door.set_autoclose(FALSE)
-	door.req_access = list(ACCESS_SECURITY)
+	door.set_req_access(list(ACCESS_SECURITY))
 	var/list/access_before = door.req_access
 	card.uses = 3
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual airlock actor holds the real charged emag")

@@ -120,15 +120,9 @@
 TRACKED(/obj/machinery/power/apc, operating)
 TRACKED(/obj/machinery/power/apc, chargemode)
 TRACKED(/obj/machinery/power/apc, grid_check)
-TRACKED(/obj/machinery/power/apc, charging)
 TRACKED(/obj/machinery/power/apc, main_status)
 TRACKED(/obj/machinery/power/apc, coverlocked)
-TRACKED(/obj/machinery/power/apc, nightshift_setting)
-TRACKED(/obj/machinery/power/apc, station_night)
 TRACKED(/obj/machinery/power/apc, emergency_lights)
-TRACKED(/obj/machinery/power/apc, equipment)
-TRACKED(/obj/machinery/power/apc, lighting)
-TRACKED(/obj/machinery/power/apc, environ)
 
 /// The APC distributes power now: it works (STAT_OPERABLE: not broken, its electronics fastened, no pulse or power failure holding it down).
 /// What Rust and the area read; the breaker, the short and the grid check are their own settings beside it.

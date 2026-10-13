@@ -105,7 +105,7 @@
 	rel_set(smasher, nameof(smasher.target), target)
 	rel_set(smasher, nameof(smasher.reagent_container), beaker)
 	rel_add(smasher, nameof(smasher.storage), stored)
-	smasher.successful_craft = TRUE
+	smasher.set_successful_craft(TRUE)
 	TEST_ASSERT_EQUAL(smasher.target, target, "Setup fills the real target slot")
 	TEST_ASSERT_EQUAL(smasher.reagent_container(), beaker, "Setup fills the real reagent bay")
 	TEST_ASSERT(stored in smasher.storage, "Setup fills the real fabrication storage")

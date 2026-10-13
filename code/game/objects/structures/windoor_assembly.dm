@@ -174,17 +174,17 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	var/side = facing == "l" ? "left" : "right"
 	var/open_state = secure ? "[side]secure" : side
 	windoor.icon_state = "[open_state]open"
-	windoor.base_state = open_state
+	windoor.set_base_state(open_state)
 	windoor.set_dir(dir)
 	windoor.set_density(FALSE)
 	if(created_name)
 		windoor.name = created_name
 	after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close), key = "autoclose", clock = CLOCK_WORLD)
 	if(electronics.one_access)
-		windoor.req_access = null
-		windoor.req_one_access = electronics.conf_access
+		windoor.set_req_access(null)
+		windoor.set_req_one_access(electronics.conf_access)
 	else
-		windoor.req_access = electronics.conf_access
+		windoor.set_req_access(electronics.conf_access)
 	electronics.forceMove(windoor)
 	rel_move(src, nameof(electronics), windoor, nameof(windoor.electronics))
 	replace_with(src, windoor)
@@ -205,8 +205,6 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 		name = "anchored "
 	name += "[secure ? "secure " : ""]windoor assembly[created_name ? " ([created_name])" : ""]"
 
-TRACKED(/obj/structure/windoor_assembly, facing)
-TRACKED(/obj/structure/windoor_assembly, secure)
 
 /obj/structure/windoor_assembly/draw(datum/look/look)
 	..()

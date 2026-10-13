@@ -80,8 +80,6 @@
 
 TRACKED(/obj/item/resonator, burst_time)
 TRACKED(/obj/item/resonator, spreadmode)
-TRACKED(/obj/item/resonator, fieldsactive)
-TRACKED(/obj/item/resonator, cascading)
 TRACKED(/obj/item/resonator, fieldlimit)
 
 CAPABILITIES(/obj/item/resonator)

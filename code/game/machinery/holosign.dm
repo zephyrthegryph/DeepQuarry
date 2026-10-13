@@ -19,7 +19,7 @@ CAPABILITIES(/obj/machinery/holosign)
 /obj/machinery/holosign/proc/toggle()
 	if(!operable())
 		return
-	lit = !lit
+	set_lit(!lit)
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
 /obj/machinery/holosign/draw(datum/look/look)
@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/holosign)
 /obj/machinery/holosign/power_change()
 	. = ..()
 	if(power_lost())
-		lit = 0
+		set_lit(0)
 		set_use_power(USE_POWER_OFF)
 
 

@@ -282,7 +282,7 @@
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/borghypo/service/S = allocate(/obj/item/reagent_containers/borghypo/service)
 	var/obj/item/reagent_containers/glass/beaker/B = rc_filled(/obj/item/reagent_containers/glass/beaker, 0)
-	S.saved_recipes = list("mix" = list(list("id" = REAGENT_ID_WATER, "amount" = 5), list("id" = REAGENT_ID_SUGAR, "amount" = 10)))
+	S.set_saved_recipes(list("mix" = list(list("id" = REAGENT_ID_WATER, "amount" = 5), list("id" = REAGENT_ID_SUGAR, "amount" = 10))))
 	S.selected_recipe_id = "mix"
 	S.is_dispensing_recipe = TRUE
 	rc_click(H, B, S)

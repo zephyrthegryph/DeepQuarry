@@ -56,7 +56,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 		. += settings[2]
 
 TRACKED(/obj/machinery/holoposter, alerting)
-TRACKED(/obj/machinery/holoposter, poster)
 
 /// What the poster shows: dark without power, a glitch when broken, the alert while the station is on alert, else its advert, lit in the
 /// advert's colour.

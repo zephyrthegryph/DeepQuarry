@@ -17,7 +17,7 @@
 
 /proc/dx_review_cap(path, label, layer_order, examine_order)
 	var/datum/capability/dx_review/C = new path
-	C.label = label
+	C.set_label(label)
 	C.layer_order = layer_order
 	C.examine_order = examine_order
 	return C
@@ -126,7 +126,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value)
 	TEST_ASSERT_EQUAL(F.alpha, 200, "alpha applied")
 	TEST_ASSERT(F.get_filter("outline"), "filter applied")
 	var/key = F.rx?.look_key
-	F.tint = "#00ff00"
+	F.set_tint("#00ff00")
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_key != key, "a color change changes the key")
@@ -214,7 +214,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value)
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(glow_of(F).range, 2, "the look's light applied")
-	F.lit = FALSE
+	F.set_lit(FALSE)
 	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(!glow_of(F).range, "the light went off when the look stopped setting it")

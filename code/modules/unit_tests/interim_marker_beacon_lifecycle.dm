@@ -3,7 +3,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/marker_beacon/beacon = allocate(/obj/structure/marker_beacon, T)
-	beacon.picked_color = "Cerulean"
+	beacon.set_picked_color("Cerulean")
 	var/datum/forensics_crime/evidence = beacon.init_forensic_data()
 	TEST_ASSERT(evidence.add_prints(user), "the deployed beacon carries actual fingerprint evidence")
 	var/list/prints = evidence.get_prints().Copy()

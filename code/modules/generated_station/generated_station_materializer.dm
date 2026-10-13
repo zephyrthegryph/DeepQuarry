@@ -126,7 +126,7 @@ CAPABILITIES(/obj/item/card/id/generated_station_master)
 	after_init(0, then(PROC_REF(grant_station_access)))
 
 /obj/item/card/id/generated_station_master/proc/grant_station_access(datum/act/timer/A)
-	access |= SSaccess.get_all_station_access()
+	include_access(SSaccess.get_all_station_access())
 
 /// Shared baseline area used when generated geometry releases turf ownership.
 /// Creates a generated-station area without letting it claim the global
@@ -1405,15 +1405,15 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	if(spec().security_tier > 1)
 		switch(department_id)
 			if("command", "ai")
-				airlock.req_access = list(ACCESS_HEADS)
+				airlock.set_req_access(list(ACCESS_HEADS))
 			if("security")
-				airlock.req_access = list(ACCESS_SECURITY)
+				airlock.set_req_access(list(ACCESS_SECURITY))
 			if("medical")
-				airlock.req_access = list(ACCESS_MEDICAL)
+				airlock.set_req_access(list(ACCESS_MEDICAL))
 			if("engineering")
-				airlock.req_access = list(ACCESS_ENGINE)
+				airlock.set_req_access(list(ACCESS_ENGINE))
 			if("logistics")
-				airlock.req_access = list(ACCESS_CARGO)
+				airlock.set_req_access(list(ACCESS_CARGO))
 
 /// Turns unavoidable short route termini into deliberate rest alcoves.
 /datum/generated_station_materializer/proc/furnish_transit_alcoves()
@@ -1540,10 +1540,10 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			ChangeArea(side_turf, A)
 		var/obj/machinery/door/airlock/maintenance/inner = new(hull_turf)
 		inner.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
-		inner.req_access = list(ACCESS_MAINT_TUNNELS)
+		inner.set_req_access(list(ACCESS_MAINT_TUNNELS))
 		var/obj/machinery/door/airlock/generated_station_exterior/exterior = new(outer)
 		exterior.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
-		exterior.req_access = list(ACCESS_MAINT_TUNNELS)
+		exterior.set_req_access(list(ACCESS_MAINT_TUNNELS))
 		rel_add(result, nameof(result.doors), inner)
 		rel_add(result, nameof(result.doors), exterior)
 		result.door_count += 2

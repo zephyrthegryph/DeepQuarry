@@ -33,14 +33,8 @@
 	thermal_conductivity = 0.040
 	heat_capacity = FLOOR_HEAT_CAPACITY
 
-TRACKED(/turf/simulated/floor, flooring)
-TRACKED(/turf/simulated/floor, flooring_override)
-TRACKED(/turf/simulated/floor, plating_damage_state)
-TRACKED(/turf/simulated/floor, plating_exposed)
-TRACKED(/turf/simulated/floor, scorch_state)
 
 TRACKED(/turf/simulated/floor, broken)
-TRACKED(/turf/simulated/floor, burnt)
 
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)

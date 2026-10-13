@@ -36,7 +36,7 @@
 	var/obj/item/card/id/W = new id_type(player)
 	if(!W) return
 	if(LAZYLEN(default_access))
-		W.access |= default_access
+		W.include_access(default_access)
 	W.assignment = "[assignment]"
 	player.set_id_info(W)
 	if(equip) player.equip_to_slot_or_del(W, SLOT_ID_ID)

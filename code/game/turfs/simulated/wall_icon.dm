@@ -80,9 +80,6 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 	check_radioactive()
 
 TRACKED(/turf/simulated/wall, material)
-TRACKED(/turf/simulated/wall, reinf_material)
-TRACKED(/turf/simulated/wall, wall_connections)
-TRACKED(/turf/simulated/wall, damage_step)
 
 /// The step of the damage overlay the wall shows (0: none), tracked so a hit redraws it: synced when the integrity or the material cap changes.
 /turf/simulated/wall/var/damage_step = 0

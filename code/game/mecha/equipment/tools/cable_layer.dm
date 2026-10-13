@@ -31,7 +31,6 @@
 	occupant_message(message)
 	return
 
-TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, cable_length)
 
 MSG_DEF_SELF(mecha_cable/no_cable, "There's no more cable on the reel.")
 

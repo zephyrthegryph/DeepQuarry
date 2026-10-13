@@ -84,8 +84,6 @@ CAPABILITIES(/obj/machinery/firealarm)
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
-TRACKED(/obj/machinery/firealarm, detecting)
-TRACKED(/obj/machinery/firealarm, seclevel)
 
 /// What the alarm shows: dark with its panel open, broken or unpowered; else its detector state and the security level, lit red while the
 /// detector is off and in the level's colour while it detects.

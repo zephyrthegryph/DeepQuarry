@@ -34,7 +34,6 @@
 
 	var/passtable_reset		// For crawling
 	var/passtable_crawl_checked = FALSE
-TRACKED(/mob/living, fuzzy)
 
 /mob/living/proc/handle_special_unlocks()
 	return

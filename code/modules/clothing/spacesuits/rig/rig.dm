@@ -602,7 +602,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		electrified--
 
 	if(malfunction_delay > 0)
-		malfunction_delay--
+		set_malfunction_delay(malfunction_delay - 1)
 	else if(malfunctioning)
 		malfunctioning--
 		malfunction()
@@ -871,7 +871,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	if(emp_protection < 30) //for ninjas, really.
 		malfunctioning += 10
 		if(malfunction_delay <= 0)
-			malfunction_delay = max(malfunction_delay, round(30/packet.severity))
+			set_malfunction_delay(max(malfunction_delay, round(30/packet.severity)))
 
 	//drain some charge
 	if(cell) cell.emp_act(packet.severity + 15)

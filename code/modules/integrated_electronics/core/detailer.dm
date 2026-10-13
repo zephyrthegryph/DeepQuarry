@@ -37,7 +37,7 @@
 /obj/item/integrated_electronics/detailer/proc/ui_act_change_color(datum/act/op/A, color)
 	if(!(color in color_list))
 		return // to prevent href exploits causing runtimes
-	detail_color = color_list[color]
+	set_detail_color(color_list[color])
 	return TRUE
 
 CAPABILITIES(/obj/item/integrated_electronics/detailer)

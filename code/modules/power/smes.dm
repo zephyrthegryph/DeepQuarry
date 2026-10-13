@@ -94,20 +94,14 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 
 // What Rust is told (push_to_rust() reads these), and what the look and the window read.
 TRACKED(/obj/machinery/power/smes, capacity)
-TRACKED(/obj/machinery/power/smes, input_attempt)
-TRACKED(/obj/machinery/power/smes, inputting)
 TRACKED(/obj/machinery/power/smes, input_level)
 TRACKED(/obj/machinery/power/smes, input_level_max)
-TRACKED(/obj/machinery/power/smes, output_attempt)
-TRACKED(/obj/machinery/power/smes, outputting)
 TRACKED(/obj/machinery/power/smes, output_level)
 TRACKED(/obj/machinery/power/smes, output_level_max)
 TRACKED(/obj/machinery/power/smes, input_available)
 TRACKED(/obj/machinery/power/smes, output_used)
-TRACKED(/obj/machinery/power/smes, last_disp)
 TRACKED(/obj/machinery/power/smes, input_cut)
 TRACKED(/obj/machinery/power/smes, output_cut)
-TRACKED(/obj/machinery/power/smes, unwired)
 TRACKED(/obj/machinery/power/smes, grid_check)
 
 /// The unit moves power now: it works (not broken, wired) and no grid check holds it. What push_to_rust() sends as the switches' gate.
@@ -248,7 +242,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 	if(vg_entity)
 		adjust_charge(delta)
 	else
-		initial_charge = max(initial_charge + delta, 0)
+		set_initial_charge(max(initial_charge + delta, 0))
 
 /// Sets the stored charge (mapped presets, admin, tests).
 /obj/machinery/power/smes/proc/set_stored_charge(value)
@@ -431,7 +425,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// The casing has damage to weld.
 /obj/machinery/power/smes/proc/casing_damaged(datum/act/A)
-	return (get_integrity() < max_integrity) ? null : MSG(smes/whole) // ALLOW(reads): a unit's max_integrity is its type's constant
+	return (get_integrity() < max_integrity) ? null : MSG(smes/whole)
 
 /// The weld is done: every point of damage is repaired.
 /obj/machinery/power/smes/proc/casing_repaired(datum/act/op/A)

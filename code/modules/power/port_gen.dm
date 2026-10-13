@@ -131,7 +131,6 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/sheet_left = 0		//How much is left of the current sheet
 	var/temperature = 0		//The current temperature
 	var/overheating = 0		//if this gets high enough the generator explodes
-TRACKED(/obj/machinery/power/port_gen/pacman, overheating)
 
 TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
 TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)

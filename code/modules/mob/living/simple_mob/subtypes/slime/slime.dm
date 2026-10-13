@@ -123,7 +123,6 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
-TRACKED(/mob/living/simple_mob/slime, mood)
 
 /mob/living/simple_mob/slime/draw(datum/look/look)
 	..()
