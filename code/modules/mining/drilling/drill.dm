@@ -392,7 +392,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 	var/list/braces = supports
 	if(!length(braces) && initial(anchored) == 0)
-		icon_state = "mining_drill"
+		set_icon_state("mining_drill")
 		set_anchored(FALSE)
 		set_active(0)
 	else
@@ -554,7 +554,7 @@ CAPABILITIES(/obj/machinery/mining/brace)
 	if(!connected())
 		return
 
-	icon_state = "mining_brace_active"
+	set_icon_state("mining_brace_active")
 
 	// rel_set() above already listed us in the drill's supports (the pair).
 	connected().check_supports()
@@ -563,7 +563,7 @@ CAPABILITIES(/obj/machinery/mining/brace)
 
 	if(!connected()) return
 
-	icon_state = "mining_brace"
+	set_icon_state("mining_brace")
 
 	var/obj/machinery/mining/drill/drill = connected()
 	rel_clear(src, nameof(connected)) // leaves the drill's supports too (the pair)

@@ -510,12 +510,12 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	var/mob/user = A.actor
 	var/gaiterstring = "You pull [src] "
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]_up"
+		set_icon_state("[icon_state]_up")
 		gaiterstring += "up over your nose[breath_masked ? " and secure the mask tucked underneath." : "."]"
 		if(breath_masked)
 			set_item_flags(worn_of(src).flags | (AIRTIGHT))
 	else
-		src.icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		gaiterstring += "down around your neck[breath_masked ? " and dislodge the mask tucked underneath." : "."]"
 		set_body_parts_covered(worn_of(src).covers & (~FACE))
 		if(breath_masked)
@@ -781,7 +781,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 /obj/item/clothing/accessory/collar/shock/proc/ui_act_power(datum/act/op/A)
 	on = !on
 	if(!istype(src, /obj/item/clothing/accessory/collar/shock/bluespace))
-		icon_state = "collar_shk[on]"
+		set_icon_state("collar_shk[on]")
 	. = TRUE
 
 /obj/item/clothing/accessory/collar/shock/proc/ui_act_tag(datum/act/op/A)
@@ -1457,13 +1457,13 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 /obj/item/clothing/accessory/poncho/roles/cloak/half/proc/half_cloak_flip_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]_open"
-		src.item_state = "[item_state]_open"
+		set_icon_state("[icon_state]_open")
+		set_item_state("[item_state]_open")
 		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You flip the cloak over your shoulder.")
 	else
-		src.icon_state = initial(icon_state)
-		src.item_state = initial(item_state)
+		set_icon_state(initial(icon_state))
+		set_item_state(initial(item_state))
 		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You pull the cloak over your shoulder.")
 	update_clothing_icon()
@@ -1544,13 +1544,13 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 /obj/item/clothing/accessory/poncho/roles/neo_ranger/proc/neo_ranger_adjust_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]_open"
-		src.item_state = "[item_state]_open"
+		set_icon_state("[icon_state]_open")
+		set_item_state("[item_state]_open")
 		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You adjust your poncho.")
 	else
-		src.icon_state = initial(icon_state)
-		src.item_state = initial(item_state)
+		set_icon_state(initial(icon_state))
+		set_item_state(initial(item_state))
 		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You adjust your poncho.")
 	update_clothing_icon()

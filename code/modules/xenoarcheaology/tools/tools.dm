@@ -245,16 +245,16 @@ TRACKED(/obj/item/beacon_locator, scan_ticks)
 		set_dir(get_dir(src,target_radio()))
 		switch(get_dist(src,target_radio()))
 			if(0 to 3)
-				icon_state = "pinondirect"
+				set_icon_state("pinondirect")
 			if(4 to 10)
-				icon_state = "pinonclose"
+				set_icon_state("pinonclose")
 			if(11 to 30)
-				icon_state = "pinonmedium"
+				set_icon_state("pinonmedium")
 			if(31 to INFINITY)
-				icon_state = "pinonfar"
+				set_icon_state("pinonfar")
 	else
 		if(scan_ticks)
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			set_scan_ticks(scan_ticks + 1)
 			if(prob(scan_ticks * 10))
 				//scan radios in the world to try and find one
@@ -273,7 +273,7 @@ TRACKED(/obj/item/beacon_locator, scan_ticks)
 				else
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] sadly.")
 		else
-			icon_state = "pinoff"
+			set_icon_state("pinoff")
 
 
 CAPABILITIES(/obj/item/beacon_locator)

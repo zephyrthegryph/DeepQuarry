@@ -161,7 +161,7 @@ GLOBAL_VAR(bomb_set)
 			visible_message(span_warning("\The [src] makes a highly unpleasant crunching noise. It looks like the anchoring bolts have been cut."))
 		if(!lighthack)
 			flick("nuclearbombc", src)
-			icon_state = "nuclearbomb1"
+			set_icon_state("nuclearbomb1")
 		set_extended(1)
 	return TRUE
 
@@ -305,7 +305,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	timing = !timing
 	if(timing)
 		if(!lighthack)
-			icon_state = "nuclearbomb2"
+			set_icon_state("nuclearbomb2")
 		if(!safety)
 			GLOB.bomb_set = 1
 			set_security_level("delta")
@@ -316,7 +316,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 		GLOB.bomb_set = 0
 		set_security_level("red")
 		if(!lighthack)
-			icon_state = "nuclearbomb1"
+			set_icon_state("nuclearbomb1")
 	return TRUE
 
 /obj/machinery/nuclearbomb/proc/ui_act_safety(datum/act/op/A)
@@ -357,7 +357,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 		explode()
 	if(timing_wire == wire)
 		if(!lighthack && icon_state == "nuclearbomb2")
-			icon_state = "nuclearbomb1"
+			set_icon_state("nuclearbomb1")
 		timing = 0
 		GLOB.bomb_set = 0
 		set_security_level("red")
@@ -388,7 +388,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 		if(safety == 1)
 			visible_message(span_notice("The [src] quiets down."))
 			if(!lighthack && icon_state == "nuclearbomb2")
-				icon_state = "nuclearbomb1"
+				set_icon_state("nuclearbomb1")
 		else
 			visible_message(span_notice("The [src] emits a quiet whirling noise!"))
 	return TRUE
@@ -429,7 +429,7 @@ MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and li
 	yes_code = 0
 	safety = 1
 	if(!lighthack)
-		icon_state = "nuclearbomb3"
+		set_icon_state("nuclearbomb3")
 	world << sound('sound/machines/Alarm.ogg') // The nuclear alarm is audible world-wide.
 	if(SSticker && ticker_mode())
 		ticker_mode().explosion_in_progress = 1

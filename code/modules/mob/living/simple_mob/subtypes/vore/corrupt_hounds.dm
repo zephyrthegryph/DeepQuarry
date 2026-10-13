@@ -109,7 +109,7 @@
 /mob/living/simple_mob/vore/aggressive/corrupthound/on_death(gibbed)
 	.=..()
 	set_resting(0)
-	icon_state = icon_dead
+	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
@@ -353,7 +353,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/on_death(gibbed)
 	.=..()
 	set_resting(0)
-	icon_state = icon_dead
+	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
 	configure(mob_kind(death_message = "shudders and collapses!"))

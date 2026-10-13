@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		act_message(user, null, MSG_SELF(span_warning("You extend the white cane.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends the white cane.")), \
 			MSG_BLIND("You hear an ominous click."))
-		icon_state = "whitecane1out"
+		set_icon_state("whitecane1out")
 		set_item_state_slots(list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane"))
 		set_w_class(ITEMSIZE_NORMAL)
 		set_force(5)
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		act_message(user, null, MSG_SELF(span_notice("You collapse the white cane.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses the white cane.")), \
 			MSG_BLIND("You hear a click."))
-		icon_state = "whitecane1in"
+		set_icon_state("whitecane1in")
 		set_item_state_slots(list(slot_r_hand_str = null, slot_l_hand_str = null))
 		set_w_class(ITEMSIZE_SMALL)
 		set_force(3)

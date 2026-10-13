@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/target)
 		bmark.pixel_x = p_x
 		bmark.pixel_y = p_y
 		bmark.icon = 'icons/effects/effects.dmi'
-		bmark.icon_state = "scorch"
+		bmark.set_icon_state("scorch")
 
 		if(decaltype == 1)
 			// Energy weapons are hot. they scorch!
@@ -114,15 +114,15 @@ CAPABILITIES(/obj/item/target)
 			bmark.pixel_y--
 
 			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
-				bmark.icon_state = "scorch"
+				bmark.set_icon_state("scorch")
 				bmark.set_dir(pick(NORTH,SOUTH,EAST,WEST)) // random scorch design
 
 			else
-				bmark.icon_state = "light_scorch"
+				bmark.set_icon_state("light_scorch")
 		else
 
 			// Bullets are hard. They make dents!
-			bmark.icon_state = "dent"
+			bmark.set_icon_state("dent")
 
 		if(Proj.damage >= 10 && length(bulletholes) <= 35) // maximum of 35 bullet holes
 			if(decaltype == 2) // bullet

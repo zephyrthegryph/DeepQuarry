@@ -74,7 +74,7 @@
 	spent(holder)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
-	animation.icon_state = "liquify"
+	animation.set_icon_state("liquify")
 	flick("liquify",animation)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reappear(atom/movable/overlay/animation, mob/living/target)

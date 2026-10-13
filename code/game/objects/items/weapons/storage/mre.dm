@@ -395,19 +395,19 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tgmc_mre_component)
 
 	switch(newflavor)
 		if("boneless pork ribs", "grilled chicken", "pizza square", "spaghetti", "chicken tenders")
-			icon_state = "tgmcmre_entree"
+			set_icon_state("tgmcmre_entree")
 			nutriment_amt = 5
 			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("meatballs", "cheese spread", "beef turnover", "mashed potatoes")
-			icon_state = "tgmcmre_side"
+			set_icon_state("tgmcmre_side")
 			nutriment_amt = 3
 			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("biscuit", "pretzels", "peanuts", "cracker")
-			icon_state = "tgmcmre_snack"
+			set_icon_state("tgmcmre_snack")
 			nutriment_amt = 2
 			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("spiced apples", "chocolate brownie", "sugar cookie", "choco bar")
-			icon_state = "tgmcmre_dessert"
+			set_icon_state("tgmcmre_dessert")
 			nutriment_amt = 2
 			seasoning = REAGENT_ID_SUGAR
 

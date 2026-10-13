@@ -103,7 +103,48 @@ const OPS: &str = r"(?:=(?!=)|\+=|-=|\*=|/=|\|=|&=|\^=|<<=|>>=|\+\+|--)";
 type Tracked = BTreeMap<String, BTreeSet<String>>;
 
 fn is_subtype(path: &str, base: &str) -> bool {
-    path == base || (path.starts_with(base) && path.as_bytes().get(base.len()) == Some(&b'/'))
+    let (path, base) = (builtin_full_path(path), builtin_full_path(base));
+    path == base || (path.starts_with(base.as_str()) && path.as_bytes().get(base.len()) == Some(&b'/'))
+}
+
+/// DM's implicit parents: `/obj` and `/mob` are `/atom/movable/...`, `/turf` and `/area` are `/atom/...`. A `SETTER(/atom, dir)` covers a
+/// proc of `/obj/item/x` only when the path is compared in full.
+fn builtin_full_path(path: &str) -> String {
+    for (short, full) in [("/obj", "/atom/movable/obj"), ("/mob", "/atom/movable/mob"), ("/turf", "/atom/turf"), ("/area", "/atom/area")] {
+        if path == short || (path.starts_with(short) && path.as_bytes().get(short.len()) == Some(&b'/')) {
+            return format!("{}{}", full, &path[short.len()..]);
+        }
+    }
+    path.to_string()
+}
+
+/// A bare `name = x` at `pos` that is a named argument of a call the AST did not see (inside a macro's arguments, `image(...)` or
+/// `new/icon(...)`): the text before it on the line is `call(` or `..., ` at a paren depth above zero, and the innermost open paren is a
+/// call's, not `for(`/`if(`/`while(`/`switch(`.
+fn in_call_args(line: &str, pos: usize) -> bool {
+    let before = &line[..pos];
+    match before.trim_end().chars().last() {
+        Some('(') | Some(',') => {}
+        _ => return false,
+    }
+    let bytes = before.as_bytes();
+    let mut depth = 0i32;
+    let mut i = bytes.len();
+    while i > 0 {
+        i -= 1;
+        match bytes[i] {
+            b')' | b']' => depth += 1,
+            b'(' | b'[' if depth > 0 => depth -= 1,
+            b'(' => {
+                let head = before[..i].trim_end();
+                let word: String = head.chars().rev().take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '/').collect::<Vec<_>>().into_iter().rev().collect();
+                return !word.is_empty() && !matches!(word.as_str(), "for" | "if" | "while" | "switch" | "return");
+            }
+            b'[' => return false,
+            _ => {}
+        }
+    }
+    false
 }
 
 /// `normalize_type`: strip, a leading `/`, no trailing `/`.
@@ -636,7 +677,7 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                 }
             }
             for m in pats.bare.captures_iter(line) {
-                if named_args.contains(&(*number, m.start(0) + 1)) {
+                if named_args.contains(&(*number, m.start(0) + 1)) || in_call_args(line, m.start(0)) {
                     continue; // this exact AST expression names a call argument, not storage
                 }
                 let var = if m.s(1).is_empty() { m.s(2) } else { m.s(1) };
@@ -997,6 +1038,12 @@ mod named_argument_tests {
     fn bare_state_assignment_remains_a_violation() {
         assert_eq!(hits("\tstate = 1"), vec![5]);
     }
+    #[test]
+    fn named_argument_inside_a_macro_or_image_call_is_not_a_write() {
+        assert_eq!(hits("	LAZYADD(images, image('x.dmi', loc = M, state = \"t\"))"), Vec::<usize>::new());
+        assert_eq!(hits("	for(state = 1; state < 3; state++)"), vec![5, 5]);
+    }
+
     #[test]
     fn named_argument_does_not_hide_real_assignment_on_same_line() {
         assert_eq!(hits("\tstate = 2; interface(\"SpaceHeater\", state = 1)"), vec![5]);

@@ -86,13 +86,13 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 		return
 	rel_set(src, nameof(owned_field), new /obj/effect/fusion_em_field(loc, src))
 	owned_field.ChangeFieldStrength(field_strength)
-	icon_state = "core1"
+	set_icon_state("core1")
 	set_use_power(USE_POWER_ACTIVE)
 	. = 1
 
 /obj/machinery/power/fusion_core/proc/Shutdown(force_rupture)
 	if(owned_field)
-		icon_state = "core0"
+		set_icon_state("core0")
 		if(force_rupture || owned_field.plasma_temperature > 1000)
 			owned_field.MRC()
 		else

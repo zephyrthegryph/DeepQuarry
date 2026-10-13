@@ -41,7 +41,7 @@ CAPABILITIES(/datum/global_hud)
 	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //
 	screen.screen_loc = "SOUTHWEST to NORTHEAST" // Will tile up to the whole screen, scaling beyond 15x15 if needed.
 	screen.icon = 'icons/obj/hud_tiled_vr.dmi'
-	screen.icon_state = icon_state
+	screen.set_icon_state(icon_state)
 	screen.layer = SCREEN_LAYER
 	screen.plane = PLANE_FULLSCREEN
 	screen.mouse_opacity = 0
@@ -140,18 +140,18 @@ CAPABILITIES(/datum/global_hud)
 
 	for(i = 1, i <= 4, i++)
 		O = vimpaired[i]
-		O.icon_state = "dither50"
+		O.set_icon_state("dither50")
 		O.plane = PLANE_FULLSCREEN
 		O.mouse_opacity = 0
 
 		O = darkMask[i]
-		O.icon_state = "dither50"
+		O.set_icon_state("dither50")
 		O.plane = PLANE_FULLSCREEN
 		O.mouse_opacity = 0
 
 	for(i = 5, i <= 8, i++)
 		O = darkMask[i]
-		O.icon_state = "black"
+		O.set_icon_state("black")
 		O.plane = PLANE_FULLSCREEN
 		O.mouse_opacity = 2
 

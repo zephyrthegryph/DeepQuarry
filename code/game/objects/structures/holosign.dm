@@ -85,11 +85,11 @@ CAPABILITIES(/obj/structure/holosign/barrier/medical)
 			play_sfx(get_turf(src), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 			EXPIRY_SET(src, buzzed, 6 SECONDS, CLOCK_WORLD)
 
-		icon_state = "holo_medical-deny"
+		set_icon_state("holo_medical-deny")
 		after(src, 10 SECONDS, PROC_REF(reset_deny_icon), key = "medical_holosign_deny_reset")
 
 /obj/structure/holosign/barrier/medical/proc/reset_deny_icon()
-	icon_state = "holo_medical"
+	set_icon_state("holo_medical")
 
 /obj/structure/holosign/barrier/medical/proc/CheckHuman(mob/living/carbon/human/H)
 	if(H.get_species() == SPECIES_XENOCHIMERA)

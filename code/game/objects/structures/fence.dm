@@ -150,11 +150,11 @@ CAPABILITIES(/obj/structure/fence)
 
 	switch(hole_size)
 		if(NO_HOLE)
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 		if(MEDIUM_HOLE)
-			icon_state = "straight_cut2"
+			set_icon_state("straight_cut2")
 		if(LARGE_HOLE)
-			icon_state = "straight_cut3"
+			set_icon_state("straight_cut3")
 			set_density(FALSE)
 
 //FENCE DOORS
@@ -247,10 +247,10 @@ CAPABILITIES(/obj/structure/fence/door)
 	switch(open)
 		if(FALSE)
 			set_density(TRUE)
-			icon_state = "door_closed"
+			set_icon_state("door_closed")
 		if(TRUE)
 			set_density(FALSE)
-			icon_state = "door_opened"
+			set_icon_state("door_opened")
 
 /obj/structure/fence/door/proc/can_open(mob/user)
 	if(locked)

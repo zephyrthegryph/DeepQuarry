@@ -40,7 +40,7 @@
 	P.creator = null
 	P.icon = 'icons/obj/objects.dmi'
 	P.failchance = 0
-	P.icon_state = "anom"
+	P.set_icon_state("anom")
 	P.name = "wormhole"
 	do_after_cooldown()
 	src = null

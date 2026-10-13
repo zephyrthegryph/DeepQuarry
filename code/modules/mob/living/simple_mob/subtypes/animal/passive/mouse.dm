@@ -118,7 +118,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 /mob/living/simple_mob/animal/passive/mouse/proc/splat()
 	src.set_stat(DEAD)
 	src.set_icon_dead("mouse_[body_color]_splat")
-	src.icon_state = "mouse_[body_color]_splat"
+	set_icon_state("mouse_[body_color]_splat")
 	layer = MOB_LAYER
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
@@ -213,8 +213,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	if(!A.answer)
 		return
 	var/new_mouse_colour = A.answer.value
-	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
-	item_state = "mouse_[new_mouse_colour]"
+	set_icon_state(resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]")
+	set_item_state("mouse_[new_mouse_colour]")
 	set_icon_living("mouse_[new_mouse_colour]")
 	set_icon_dead("mouse_[new_mouse_colour]_dead")
 	set_icon_rest("mouse_[new_mouse_colour]_sleep")
@@ -327,7 +327,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining)
 /mob/living/simple_mob/animal/passive/mouse/mining/splat()
 	src.set_stat(DEAD)
 	src.set_icon_dead("mouse_miner_splat")
-	src.icon_state = "mouse_miner_splat"
+	set_icon_state("mouse_miner_splat")
 	layer = MOB_LAYER
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)

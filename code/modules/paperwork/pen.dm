@@ -136,9 +136,9 @@ CAPABILITIES(/obj/item/pen/multi)
 	colour = colors[selectedColor]
 
 	if(colour == "black")
-		icon_state = "pen"
+		set_icon_state("pen")
 	else
-		icon_state = "pen_[colour]"
+		set_icon_state("pen_[colour]")
 
 	to_chat(user, span_notice("Changed color to '[colour].'"))
 
@@ -219,7 +219,7 @@ CAPABILITIES(/obj/item/pen/blade)
 	if(active)
 		return
 	active = 1
-	icon_state = active_icon_state
+	set_icon_state(active_icon_state)
 	embed_chance = active_embed_chance
 	set_force(active_force)
 	set_throwforce(active_throwforce)
@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/pen/blade)
 		return
 	play_sfx(src, SFX_WEAPONS_SABEROFF, 0.3)
 	active = 0
-	icon_state = default_icon_state
+	set_icon_state(default_icon_state)
 	embed_chance = initial(embed_chance)
 	set_force(combat_of_type(type).force)
 	set_throwforce(thrown_of_type(type).force)

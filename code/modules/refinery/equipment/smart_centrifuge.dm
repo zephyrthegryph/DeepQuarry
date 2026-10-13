@@ -104,7 +104,7 @@ TRACKED(/obj/machinery/smart_centrifuge, working)
 		else
 			CD = new /obj/item/reagent_containers/glass/bottle(src)
 			CD.name = "[RL.name] bottle"
-			CD.icon_state = "bottle-1"
+			CD.set_icon_state("bottle-1")
 		// Transfer if possible
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		reagents.trans_id_to( CD, RL.id, min(RL.volume,CD.reagents.maximum_volume), TRUE)

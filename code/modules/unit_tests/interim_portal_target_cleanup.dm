@@ -27,11 +27,11 @@
 	portal.teleport(excluded)
 	TEST_ASSERT(!QDELETED(portal) && !QDELETED(excluded), "actual effect exclusion precedes targetless cleanup")
 	TEST_ASSERT_EQUAL(excluded.loc, T, "actual excluded effect retains its floor")
-	portal.icon_state = "portal1"
+	portal.set_icon_state("portal1")
 	TEST_ASSERT_EQUAL(test_op_handler(portal, "interaction_enter_portal", user, null), TRUE, "actual disabled portal entry is handled")
 	TEST_ASSERT(!QDELETED(portal), "actual disabled state prevents targetless cleanup")
 	TEST_ASSERT_EQUAL(user.loc, T, "actual disabled entry preserves its actor floor")
-	portal.icon_state = initial(portal.icon_state)
+	portal.set_icon_state(initial(portal.icon_state))
 	TEST_ASSERT_EQUAL(test_op_handler(portal, "interaction_enter_portal", user, null), TRUE, "actual targetless living entry is handled")
 	TEST_ASSERT(QDELETED(portal), "actual living entry consumes a targetless portal")
 	TEST_ASSERT(!(portal in REGISTRY_MEMBERS(REGISTRY_PORTALS)), "actual portal cleanup removes its registry membership")

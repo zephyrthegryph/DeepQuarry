@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/vehicle_assembly)
 	if(new_name)
 		name = new_name
 	if(isnum(stage))
-		icon_state = "[initial(icon_state)][stage]"
+		set_icon_state("[initial(icon_state)][stage]")
 
 /// A stage was built: its picture and name, and what the actor is told.
 /obj/item/vehicle_assembly/proc/step_done(datum/act/op/A, stage, new_name, message)

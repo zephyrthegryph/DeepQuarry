@@ -209,17 +209,17 @@ CAPABILITIES(/obj/item/pickaxe/excavationdrill)
 	to_chat(user, span_notice("You set the depth to [depth]cm."))
 	switch(depth)
 		if(1 to 5)
-			icon_state = "excavationdrill0"
+			set_icon_state("excavationdrill0")
 		if(6 to 10)
-			icon_state = "excavationdrill1"
+			set_icon_state("excavationdrill1")
 		if(11 to 15)
-			icon_state = "excavationdrill2"
+			set_icon_state("excavationdrill2")
 		if(16 to 20)
-			icon_state = "excavationdrill3"
+			set_icon_state("excavationdrill3")
 		if(21 to 25)
-			icon_state = "excavationdrill4"
+			set_icon_state("excavationdrill4")
 		if(26 to 60)
-			icon_state = "excavationdrill5" //The other 2 sprites are comically long. Let's just cut it at 5.
+			set_icon_state("excavationdrill5") //The other 2 sprites are comically long. Let's just cut it at 5.
 	return TRUE
 
 /obj/item/pickaxe/excavationdrill/examine(mob/user)

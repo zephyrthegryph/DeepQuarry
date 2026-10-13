@@ -23,7 +23,7 @@ MSG_DEF_SELF(mint/no_coins, "You can't make coins out of that.")
 /obj/machinery/mineral/mint/proc/press_started(datum/act/op/A)
 	var/obj/item/stack/material/M = A.held
 	act_message(A.actor, src, others = "%U% starts to feed a sheet of [M.default_type] into %T%.")
-	icon_state = "coinpress1"
+	set_icon_state("coinpress1")
 
 /// Another sheet follows while the stack has any left.
 /obj/machinery/mineral/mint/proc/press_more(datum/act/op/A)
@@ -32,7 +32,7 @@ MSG_DEF_SELF(mint/no_coins, "You can't make coins out of that.")
 
 /obj/machinery/mineral/mint/proc/press_interrupted(datum/act/op/A)
 	to_chat(A.actor, span_warning("\The [src] is hand-operated and requires your full attention!"))
-	icon_state = "coinpress0"
+	set_icon_state("coinpress0")
 
 /// One sheet pressed.
 /obj/machinery/mineral/mint/proc/press_sheet(datum/act/op/A)
@@ -47,6 +47,6 @@ MSG_DEF_SELF(mint/no_coins, "You can't make coins out of that.")
 /// The stack ran out.
 /obj/machinery/mineral/mint/proc/press_finished(datum/act/op/A)
 	var/obj/item/stack/material/M = A.held
-	icon_state = "coinpress0"
+	set_icon_state("coinpress0")
 	spent(M)	//clean it up just to be sure
 	src.visible_message(span_notice("\The [src] has run out of usable materials."))

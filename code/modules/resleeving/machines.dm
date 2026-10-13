@@ -544,7 +544,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		return
 	slot_remove(occupant, get_turf(src))
 	set_occupant(null)
-	icon_state = "implantchair"
+	set_icon_state("implantchair")
 	return
 
 /obj/machinery/transhuman/resleever/proc/put_mob(mob/living/carbon/human/M, mob/user)
@@ -560,7 +560,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		return
 	set_occupant(M)
 	src.add_fingerprint(user)
-	icon_state = "implantchair_on"
+	set_icon_state("implantchair_on")
 	return 1
 
 /// Old EJECT Occupant verb.

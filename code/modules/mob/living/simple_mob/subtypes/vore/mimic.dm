@@ -41,7 +41,7 @@
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
-			new_mimic.icon_state = "open"
+			new_mimic.set_icon_state("open")
 			new_mimic.set_icon_living("open")
 		else
 			return ..()
@@ -179,7 +179,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
-			new_mimic.icon_state = "amimicopen"
+			new_mimic.set_icon_state("amimicopen")
 			new_mimic.set_icon_living("amimicopen")
 		else
 			spent(src.loc)
@@ -264,7 +264,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
-			new_mimic.icon_state = "cmimicopen"
+			new_mimic.set_icon_state("cmimicopen")
 			new_mimic.set_icon_living("cmimicopen")
 		else
 			return ..()

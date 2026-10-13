@@ -87,3 +87,11 @@
 /// How the look applies a dir to its holder; the atom layer answers with set_dir() (code/game/atom/_atom.dm).
 /atom/proc/look_set_dir(new_dir)
 	return
+
+/// How the look applies a base icon_state; the atom layer answers with set_icon_state(), which publishes it (code/game/atom/_atom.dm).
+/atom/proc/look_set_icon_state(new_state)
+	return
+
+/// How the look applies an invisibility level; the atom layer answers with set_invisibility(), which publishes it (code/game/atom/_atom.dm).
+/atom/proc/look_set_invisibility(new_invisibility)
+	return

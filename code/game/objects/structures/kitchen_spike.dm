@@ -45,12 +45,12 @@ CAPABILITIES(/obj/structure/kitchenspike)
 		var/mob/living/carbon/human/H = victim
 		if(istype(H.species, /datum/species/monkey))
 			meat_type = H.species.meat_type
-			icon_state = "spikebloody"
+			set_icon_state("spikebloody")
 		else
 			return 0
 	else if(istype(victim, /mob/living/carbon/alien))
 		meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
-		icon_state = "spikebloodygreen"
+		set_icon_state("spikebloodygreen")
 	else
 		return 0
 
@@ -68,6 +68,6 @@ CAPABILITIES(/obj/structure/kitchenspike)
 		to_chat(user, "You cut some meat from \the [victim_name]'s body.")
 	else if(meat == 1)
 		to_chat(user, "You remove the last piece of meat from \the [victim_name]!")
-		icon_state = "spike"
+		set_icon_state("spike")
 		set_occupied(FALSE)
 	return OP_OK

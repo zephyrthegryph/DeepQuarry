@@ -176,7 +176,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		for(var/obj/belly/B as anything in vore_organs)
 			B.escapable = initial(B.escapable)
 
-		invisibility = initial(invisibility)
+		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
 		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
@@ -188,7 +188,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		var/obj/effect/temp_visual/shadekin/phase_in/phaseanim = new SK.phase_in_anim(src.loc)
 		phaseanim.pixel_y = (src.size_multiplier - 1) * 16 // Pixel shift for the animation placement
 		phaseanim.adjust_scale(src.size_multiplier, src.size_multiplier)
-		phaseanim.dir = dir
+		phaseanim.set_dir(dir)
 		alpha = 0
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
 
@@ -296,7 +296,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		var/obj/effect/temp_visual/shadekin/phase_out/phaseanim = new SK.phase_out_anim(src.loc)
 		phaseanim.pixel_y = (src.size_multiplier - 1) * 16 // Pixel shift for the animation placement
 		phaseanim.adjust_scale(src.size_multiplier, src.size_multiplier)
-		phaseanim.dir = dir
+		phaseanim.set_dir(dir)
 		alpha = 0
 		apply_body_effect(/datum/body_effect/shadekin_phase_vision)
 		if(SK.normal_phase)
@@ -305,7 +305,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 
 /mob/living/proc/complete_phase_out(original_canmove, datum/shadekin/SK)
-	invisibility = INVISIBILITY_SHADEKIN
+	set_invisibility(INVISIBILITY_SHADEKIN)
 	see_invisible = INVISIBILITY_SHADEKIN
 	set_see_invisible_default(INVISIBILITY_SHADEKIN) // Allow seeing phased entities while phased.
 	alpha = 127

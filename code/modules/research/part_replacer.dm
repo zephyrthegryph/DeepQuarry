@@ -62,8 +62,8 @@ CAPABILITIES(/obj/item/storage/part_replacer)
 		return
 	if(!unique_reskin[pick])
 		return
-	icon_state = unique_reskin[pick]
-	item_state = unique_reskin[pick]
+	set_icon_state(unique_reskin[pick])
+	set_item_state(unique_reskin[pick])
 	reskin_ran = TRUE
 	to_chat(M, "[src] is now '[pick]'.")
 
