@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Boot: a type's table build no longer re-runs the declaration constructors of ancestor blocks that are already compiled; datum signatures read a per-type var list"
