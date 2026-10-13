@@ -1,33 +1,28 @@
-# Acceptance retirement preparation: remaining handoff dependencies
+# Acceptance retirement preparation
 
-This branch contains unverified source preparation. It is not a finished or
-stamped landing, and its requirement/compiler bans have not been verified.
+This branch is source preparation until its new lane-ready run completes. No stamp
+has been reconstructed from the earlier passing but unstamped 149-table run.
 
-The preceding 149-table batch, `codex/acceptance-final-1011`, passed the normal
-gate on `8a27794954eaeeffe6580b74ce8b5adff14bca4f`: production compilation,
-DreamChecker, ratchets, and 41 focused tests passed. The outer lane-ready wrapper
-then refused the runtime evidence because its commit is `8a27794954`, while the
-wrapper requires the full SHA. No lane-ready stamp was reconstructed.
+The 149-table cohort and final 24 tables use native acceptance plans, role-aware
+requirements and unit-aware numeric thresholds. Runtime identity writers use
+registered setters. Six concrete appearance fields are tracked. Saddlebag and
+Avida looks now follow a declared weak wearer relation maintained by the real
+slot lifecycle; focused tests exercise transfer, drop and wearer destruction.
 
-The last 24 tables require genuine garment name/gender publication so cached
-refusal wording remains correct. Runtime writers and registered engine identity
-writers have setter-based preparation here. Four constructor writes remain for
-the init lane, as explicitly directed by the user:
+Capability runtime records use a declared owned associative map. Allocation
+honors the inherited declared map shape even when the first key is a type path;
+ordinary list declarations retain their old allocation rules. Both ordinary
+cleanup and aborted-runtime cleanup detach records before invoking their cleanup
+handlers. A narrow generator regression and runtime lifecycle tests cover this.
 
-- `code/modules/clothing/accessories/hands.dm`: material bracelet Initialize,
-  `name = "[material.display_name] bracelet"`.
-- `code/modules/clothing/accessories/rings.dm`: material ring Initialize,
-  `name = "[material.display_name] ring"`.
-- `code/modules/clothing/gloves/miscellaneous.dm`: ranger gloves Initialize,
-  `name = "[glovecolor] ranger gloves"`.
-- `code/modules/clothing/shoes/miscellaneous.dm`: ranger boots Initialize,
-  `name = "[bootcolor] ranger boots"`.
+The user's four reserved constructor assignments remain untouched: material
+bracelet, material ring, ranger gloves and ranger boots. Current master's own-
+constructor tracking exemption means these do not introduce new tracked-write
+sites. No init baseline or ALLOW was added.
 
-Those assignments must use their real name setter once the garment tracking
-declarations land. They have not been changed here, exempted, annotated, or
-added to a baseline. Until that dependency closes, this preparation cannot be
-landed with clean tracked-write ratchets.
+The protected analyzer read-walk and tracked-lint files match master. Only the
+unowned declaration generator was extended for declared relation storage.
 
-Native request outcome constants such as `REQ_CANCELLED` remain request
-protocol values. They are not renamed to obtain a lexical `REQ_` count of zero.
-The retirement targets are the legacy requirement macros and predicate compiler.
+Native request outcome constants such as REQ_CANCELLED remain request protocol
+values. They are not renamed to obtain a lexical REQ_ count of zero. The retired
+forms are legacy requirement macros and the predicate compiler.
