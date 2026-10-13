@@ -146,13 +146,13 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /// Stage hooks retain their boolean shape; check() is the null-or-reason view.
 /datum/entry/part/req/require(datum/act/op/A)
-	return holds(A)
+	return isnull(check(A))
 
 /datum/entry/part/req/proc/check(datum/act/op/A)
 	return holds(A) ? null : refusal(A)
 
 /datum/entry/part/req/reason(datum/act/op/A)
-	return refusal(A)
+	return check(A)
 
 /// A declared override wins, including empty text, which means a silent refusal.
 /datum/entry/part/req/proc/refusal(datum/act/op/A)
@@ -490,12 +490,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	if(!(A.origin & origins))
 		return TRUE
 	var/datum/entry/part/req/R = children[1]
-	return R.holds(A)
+	return isnull(R.check(A))
 
 /datum/entry/part/req/on_origin/refusal(datum/act/op/A)
 	if(length(children))
 		var/datum/entry/part/req/R = children[1]
-		return R.refusal(A)
+		return R.check(A)
 	return /datum/msg/op/no_binding
 
 /// req_on_authority(authorities, req = null): the authority of the input.
@@ -512,12 +512,12 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	if(!(A.authority & auth))
 		return TRUE
 	var/datum/entry/part/req/R = children[1]
-	return R.holds(A)
+	return isnull(R.check(A))
 
 /datum/entry/part/req/on_authority/refusal(datum/act/op/A)
 	if(length(children))
 		var/datum/entry/part/req/R = children[1]
-		return R.refusal(A)
+		return R.check(A)
 	return /datum/msg/op/no_binding
 
 /// req_rights(R_X): the actor has the admin right (an admin authority datum satisfies it).
@@ -594,7 +594,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/negation/holds(datum/act/op/A)
 	var/datum/entry/part/req/R = children[1]
-	return !R.holds(A)
+	return !isnull(R.check(A))
 
 /// all_of(r...): every requirement holds; the first failing one's reason is reported. A legacy /datum/requirement list stays the legacy form.
 /proc/all_of(...)
@@ -613,14 +613,15 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/all/holds(datum/act/op/A)
 	for(var/datum/entry/part/req/R as anything in children)
-		if(!R.holds(A))
+		if(!isnull(R.check(A)))
 			return FALSE
 	return TRUE
 
 /datum/entry/part/req/all/refusal(datum/act/op/A)
 	for(var/datum/entry/part/req/R as anything in children)
-		if(!R.holds(A))
-			return R.refusal(A)
+		var/why = R.check(A)
+		if(!isnull(why))
+			return why
 	return default_reason
 
 /// any_of(r...): at least one holds; the reasons are joined ("needs a wrench or a welder").
@@ -640,14 +641,14 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/any/holds(datum/act/op/A)
 	for(var/datum/entry/part/req/R as anything in children)
-		if(R.holds(A))
+		if(isnull(R.check(A)))
 			return TRUE
 	return FALSE
 
 /datum/entry/part/req/any/refusal(datum/act/op/A)
 	var/list/texts = list()
 	for(var/datum/entry/part/req/R as anything in children)
-		var/why = reason_text(R.refusal(A))
+		var/why = reason_text(R.check(A))
 		if(why && !(why in texts))
 			texts += why
 	return length(texts) ? jointext(texts, " or ") : default_reason
@@ -673,7 +674,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /proc/op_req_holds_eval(datum/act/op/A, requirement)
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
-		return R.holds(A)
+		return isnull(R.check(A))
 	if(istype(requirement, /datum/requirement))
 		var/datum/requirement/L = requirement
 		return L.holds(A)
@@ -689,7 +690,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 /proc/op_req_refusal_eval(datum/act/op/A, requirement)
 	if(istype(requirement, /datum/entry/part/req))
 		var/datum/entry/part/req/R = requirement
-		return R.refusal(A)
+		return R.check(A)
 	if(istype(requirement, /datum/requirement))
 		var/datum/requirement/L = requirement
 		return L.refusal(A)

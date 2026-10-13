@@ -1,5 +1,13 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
+/datum/dq_worn_draw_lifetime_probe
+	var/obj/item/item
+	var/mob/living/carbon/human/wearer
+
+CAPABILITIES(/datum/dq_worn_draw_lifetime_probe)
+	ref_one(nameof(item), /obj/item)
+	ref_one(nameof(wearer), /mob/living/carbon/human)
+
 /datum/unit_test/dq_worn_draw_relation
 	abstract_type = /datum/unit_test/dq_worn_draw_relation
 	var/item_type
@@ -67,15 +75,25 @@
 	TEST_ASSERT(second.slot_remove(I, T, second), "The real worn-slot removal drops the item")
 	TEST_ASSERT_EQUAL(I.loc, T, "Removal preserves custody on the floor")
 	TEST_ASSERT_NULL(actual_wearer(I), "Dropping clears the committed worn-slot relation")
-	TEST_ASSERT(move_into(second, worn_slot, I, second), "The dropped item can genuinely be equipped again")
-	TEST_ASSERT_EQUAL(actual_wearer(I), second, "Re-equipping rebinds the live relation")
-	qdel(second)
-	TEST_ASSERT(!QDELETED(I), "The real wearer destroy transaction spills rather than deletes its worn item")
-	TEST_ASSERT_NULL(actual_wearer(I), "Wearer teardown clears the item's relation")
-	TEST_ASSERT_EQUAL(I.loc, T, "The worn item survives at the wearer's real drop location")
 	settle_looks()
 	if(worn_slot == SLOT_ID_BACK)
-		TEST_ASSERT_EQUAL(I.item_state, "saddlebag", "After wearer deletion the surviving bag draws its unworn sprite")
+		TEST_ASSERT_EQUAL(I.item_state, "saddlebag", "A real drop restores the surviving bag's unworn sprite")
+	TEST_ASSERT(move_into(second, worn_slot, I, second), "The dropped item can genuinely be equipped again")
+	TEST_ASSERT_EQUAL(actual_wearer(I), second, "Re-equipping rebinds the live relation")
+	var/datum/dq_worn_draw_lifetime_probe/probe = allocate(/datum/dq_worn_draw_lifetime_probe)
+	rel_set(probe, nameof(probe.item), I)
+	rel_set(probe, nameof(probe.wearer), second)
+	TEST_ASSERT_EQUAL(probe.item, I, "The surviving probe really observes the equipped item before teardown")
+	TEST_ASSERT_EQUAL(probe.wearer, second, "The surviving probe really observes the wearer before teardown")
+	// Body BACK and HEAD slots inherit SLOT_DROP_HOLDER: deleting the mob
+	// deletes its worn contents. A real drop above exercises item survival.
+	qdel(second)
+	TEST_ASSERT(QDELETED(second), "The actual wearer has completed logical teardown")
+	TEST_ASSERT(QDELETED(I), "Wearer teardown deletes its still-worn item under the declared body-slot policy")
+	TEST_ASSERT(!QDELETED(probe), "A non-owning observer survives both endpoint deletions")
+	TEST_ASSERT_NULL(probe.item, "Item teardown clears the surviving observer's native item relation")
+	TEST_ASSERT_NULL(probe.wearer, "Wearer teardown clears the surviving observer's native wearer relation")
+	settle_looks()
 
 /datum/unit_test/dq_worn_draw_relation/proc/actual_wearer(obj/item/I)
 	if(istype(I, /obj/item/storage/backpack/saddlebag_common))

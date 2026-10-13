@@ -4911,3 +4911,5 @@ dependency repairs. They restore the existing stored values and refusal text.
 The pilot-slug helm selector introduced by master d863720479 now ignores helms
 without a turf; valid helm weighting and the no-candidate no-op are preserved.
 Its runtime is fixed rather than recorded as an appearance.
+
+Acceptance verification repair (2026-10-13): native requirement dispatch and composition now evaluate check(), including numeric requirements implemented only in the null-or-reason protocol. Ordered refusal text and because overrides are preserved. Worn-item teardown tests assert the existing SLOT_DROP_HOLDER body-slot policy; nullspace helm tests construct a genuinely locationless helm instead of the fixture allocator's floor fallback. No snapshot rows are re-blessed for these repairs.

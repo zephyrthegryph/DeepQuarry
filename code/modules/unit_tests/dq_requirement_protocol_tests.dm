@@ -109,3 +109,48 @@
 	var/datum/op_result/conditional = test_menu(M, F, "boolean_when")
 	TEST_ASSERT_EQUAL(conditional?.outcome, ACT_COMMITTED, "A TRUE visibility condition works without a refusal declaration")
 	TEST_ASSERT_EQUAL(F.commits, 2, "The conditional op executed its real effect")
+
+/// A final-protocol subtype is not required to reimplement its boolean views.
+/datum/entry/part/req/dq_check_only
+/datum/entry/part/req/dq_check_only/check(datum/act/op/A)
+	var/obj/req_protocol_fixture/F = A.holder
+	return F.check_ready(A)
+
+/datum/unit_test/dq_requirement_check_dispatch/Run()
+	var/obj/req_protocol_fixture/F = allocate(/obj/req_protocol_fixture)
+	var/datum/act/op/A = allocate(/datum/act/op)
+	A.holder = F
+	var/datum/entry/part/req/R = part_make(/datum/entry/part/req/dq_check_only)
+	TEST_ASSERT(op_req_holds(A, R), "A check-only requirement allows through the native boolean view")
+	F.set_mode(1)
+	TEST_ASSERT(!op_req_holds(A, R), "The native boolean view must evaluate the check-only refusal")
+	TEST_ASSERT_EQUAL(op_req_refusal(A, R), "A custom reason.", "The native refusal view preserves the actual check reason")
+	TEST_ASSERT(!R.require(A), "The Require stage follows the check-only refusal")
+	TEST_ASSERT_EQUAL(R.reason(A), "A custom reason.", "The Reason stage preserves the check-only reason")
+	var/datum/entry/part/req/allowed = req_is(nameof(F.mode), 1)
+	var/datum/entry/part/req/refused = req_is(nameof(F.mode), 99, because = "Second refusal.")
+	TEST_ASSERT_EQUAL(op_req_refusal(A, all_of(R, refused)), "A custom reason.", "ALL preserves the first check-only child's ordered refusal")
+	TEST_ASSERT_EQUAL(op_req_refusal(A, all_of(refused, R)), "Second refusal.", "Reordering ALL preserves first-failure semantics")
+	TEST_ASSERT(!op_req_holds(A, any_of(R, refused)), "ANY cannot treat an inherited default holds as a passing child")
+	TEST_ASSERT_EQUAL(op_req_refusal(A, any_of(R, refused)), "A custom reason. or Second refusal.", "ANY keeps both concrete refusal texts")
+	TEST_ASSERT(op_req_holds(A, any_of(R, allowed)), "ANY permits an actually allowing child")
+	TEST_ASSERT(op_req_holds(A, req_not(R)), "Negation permits a refusing check-only child")
+	TEST_ASSERT(!op_cond(A, R), "Conditional selection follows the actual check-only refusal")
+	A.origin = ORIGIN_MENU
+	TEST_ASSERT(!op_req_holds(A, req_on_origin(ORIGIN_MENU, R)), "Matching origin applies the child's final requirement")
+	TEST_ASSERT(op_req_holds(A, req_on_origin(ORIGIN_SYSTEM, R)), "Unmatched origin bypasses its child as before")
+	A.authority = AUTH_ADMIN
+	TEST_ASSERT(!op_req_holds(A, req_on_authority(AUTH_ADMIN, R)), "Matching authority applies the child's final requirement")
+	A.authority = NONE
+	TEST_ASSERT(op_req_holds(A, req_on_authority(AUTH_ADMIN, R)), "Unmatched authority bypasses its child as before")
+	F.set_mode(2)
+	TEST_ASSERT(!op_req_holds(A, R), "A check-only typed message refuses through the actual engine dispatch")
+	TEST_ASSERT_EQUAL(op_req_refusal(A, R), MSG(req_protocol/blocked), "Typed refusal paths are not converted to booleans")
+	F.set_mode(3)
+	TEST_ASSERT_EQUAL(reason_text(op_req_refusal(A, R)), "The protocol fixture is blocked.", "A check-only refusal datum keeps its text")
+	var/datum/entry/part/req/legacy = req(TYPE_PROC_REF(/obj/req_protocol_fixture, check_ready), because = "Override stays authoritative.")
+	TEST_ASSERT(!op_req_holds(A, legacy), "The existing callback requirement still refuses")
+	TEST_ASSERT_EQUAL(op_req_refusal(A, legacy), "Override stays authoritative.", "The existing because override survives final check dispatch")
+	F.set_mode(0)
+	TEST_ASSERT(op_req_holds(A, R), "The same final requirement recovers after the real setter")
+	TEST_ASSERT(op_req_holds(A, legacy), "The existing requirement's override does not refuse an allowed check")
