@@ -2,3 +2,4 @@ author: "zephyrthegryph"
 delete-after: true
 changes:
   - code_imp: "The read lints (untracked_inputs, sem/reads) judge the closed read walk: global procs are walked, global state is classified (constant after boot, a system's tracked var, or an untracked input), and the baselines are re-seeded per site (a change of measurement: 1089 sites under the old walk, 1010 under the new)"
+  - code_imp: "The container hop (loc) publishes from Moved()/doMove(); a draw reading a READS_AS accessor (nutrition_of) redraws on its key; VV edits go through vars_write(), forceMove() and set_dir(); an air watch re-arms when what blocks air beside it changes"

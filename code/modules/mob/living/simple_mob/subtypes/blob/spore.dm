@@ -31,6 +31,7 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	ref_one(nameof(infested), /mob/living/carbon/human)
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "bursts!"))
 	param(nameof(factory), /obj/structure/blob/factory, pos = 1)

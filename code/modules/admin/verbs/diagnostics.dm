@@ -1,7 +1,7 @@
 // rewrote off ZAS zones. SSair.zones / SSair.tiles_to_update /
 // /datum/zone don't exist under LINDA. Report LINDA's real stats instead:
 // active_turfs (turfs SSair is currently sharing), excited_groups (groups of
-// turfs converging on equilibrium), hotspot count from SSair.hotspots, and
+// turfs converging on equilibrium), hotspot count from REGISTRY_HOTSPOTS, and
 // the high-pressure delta queue (spacewind).
 ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos stats.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	if(!SSair.initialized)

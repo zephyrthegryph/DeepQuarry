@@ -68,7 +68,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 		return /datum/msg/charger/wrong_cell
 	if(charging)
 		return /datum/msg/bay/full
-	var/area/a = loc?.loc // ALLOW(reads): the area a machine stands in is legacy map state, read when a cell is offered, never from a cached menu
+	var/area/a = loc?.loc
 	if(isarea(a) && a.power_equip == 0)
 		return /datum/msg/charger/no_area_power
 	return null

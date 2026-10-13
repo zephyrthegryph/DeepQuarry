@@ -116,12 +116,12 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /proc/get_ultimate_mob(atom/source)
 	READS_FROM(source)
 	var/mob/ultimate_mob
-	var/atom/to_check = source.loc // ALLOW(reads): a helper a use condition asks about where the thing is held; the click asks again
+	var/atom/to_check = source.loc
 	var/n = 0
 	while (to_check && !isturf(to_check) && n++ < 16)
 		if (ismob(to_check))
 			ultimate_mob = to_check
-			to_check = to_check.loc // ALLOW(reads): a helper a use condition asks about where the thing is held; the click asks again
+			to_check = to_check.loc
 	return ultimate_mob
 
 // Show a message to all mobs and objects in earshot of this one
@@ -537,7 +537,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
 	targets += observe_list_format(sort_names(REGISTRY_MEMBERS(REGISTRY_MECHAS)))
-	targets += observe_list_format(shuttles_ships())
+	targets += observe_list_format(shuttles_ships().Copy())
 
 	client.perspective = EYE_PERSPECTIVE
 

@@ -59,7 +59,7 @@
 
 /// The held item is in the actor's hands (or a cyborg's module): not something mounted elsewhere.
 /obj/structure/table/proc/held_is_carried(datum/act/op/A)
-	return (A.held.loc == A.actor) ? null : MSG(table/not_in_hand) // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.held.loc == A.actor) ? null : MSG(table/not_in_hand)
 
 /// A held item goes onto the table (a click): a cyborg's gripper sets down what it carries; anything else the actor lets go of, aligned to where they clicked.
 /obj/structure/table/proc/place_held(datum/act/op/A)
@@ -94,7 +94,7 @@
 /// otherwise, with the stack held in hand, the table says why it cannot be reinforced and nothing is put down.
 /obj/structure/table/proc/reinforce_refusal(datum/act/op/A)
 	var/mob/living/user = A.actor
-	if(!(can_reinforce && isliving(user) && istype(A.held, /obj/item/stack/material) && A.held.loc == user)) // ALLOW(reads): where the dragged stack is read when it is dropped on the table; the drop asks again
+	if(!(can_reinforce && isliving(user) && istype(A.held, /obj/item/stack/material) && A.held.loc == user))
 		return null
 	if(reinforced())
 		return /datum/msg/table/already_reinforced

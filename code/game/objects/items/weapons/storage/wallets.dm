@@ -13,6 +13,7 @@
 
 
 CAPABILITIES(/obj/item/storage/wallet)
+	ref_one(nameof(front_id), /obj/item/card/id)
 	configure(item_worn(slots = SLOT_ID))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 	configure(storage(accepts = list(

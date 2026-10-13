@@ -4,7 +4,7 @@
 SYSTEM_DEF(flight)
 	name = "Flight Operations"
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	// The old subsystem depended on SSshuttles (it registers SSshuttles.ships); boot right after it.
+	// The old subsystem depended on SSshuttles (its ships register in REGISTRY_OVERMAP_SHIPS); boot right after it.
 	needs = list(/datum/system/shuttles, /datum/system/expedition)
 	// rebuild_registry() registers any live expedition sites.
 	var/list/destinations = list()

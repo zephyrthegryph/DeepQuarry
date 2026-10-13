@@ -95,7 +95,10 @@
 	if(declared?.args["pinned"])
 		ui.closeable = FALSE
 	host.ui_opening(user, ui)
-	ui.open(declared?.args["preinitialized"])
+	// A window that did not open (no client, a window another UI holds, no free pooled window, a status below update) registered
+	// nowhere: it is spent now, so no one is left holding a window that was never closed (a handle to it would outlive it).
+	if(!ui.open(declared?.args["preinitialized"]) && !QDELETED(ui))
+		spent(ui)
 	if(!QDELETED(ui))
 		host.ui_opened(user, ui)
 	return ui

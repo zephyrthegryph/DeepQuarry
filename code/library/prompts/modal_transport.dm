@@ -70,7 +70,7 @@ CAPABILITIES(/datum/tgui_modal/prompt)
 		return
 	var/datum/host = shown.owning_source()
 	rel_clear(shown, nameof(shown.prompt)) // clearing it does not cancel what ended already
-	if(host && LAZYACCESS(GLOB.tgui_modals, REF(host)) == shown)
+	if(host && tgui_modal_current(host) == shown)
 		tgui_modal_clear(host)
 
 /datum/prompt/presentation_refused(mob/user, reason)

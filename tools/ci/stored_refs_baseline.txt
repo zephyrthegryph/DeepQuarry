@@ -81,7 +81,6 @@ var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/action_group/owner
 var	code/_onclick/hud/hud.dm	GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
-var	code/_onclick/hud/hud.dm	var/mob/mymob
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/lingchemdisplay
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/blobpwrdisplay
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/blobhealthdisplay
@@ -104,7 +103,6 @@ var	code/_onclick/hud/minihud_rigmech.dm	var/atom/movable/screen/mech/airtoggle/
 var	code/_onclick/hud/picture_in_picture.dm	var/atom/center
 var	code/_onclick/hud/radial.dm	var/datum/radial_menu/parent
 var	code/_onclick/hud/radial.dm	var/atom/anchor
-var	code/_onclick/hud/screen_objects.dm	var/datum/master_ref = null
 var	code/_onclick/hud/screen_objects.dm	var/datum/hud/hud // A reference to the owner HUD, if any.
 var	code/_onclick/hud/screen_objects.dm	var/obj/item/owner
 var	code/_onclick/hud/screen_objects.dm	var/atom/movable/screen/parent
@@ -553,7 +551,6 @@ var	code/game/objects/items/weapons/mop_deploy.dm	var/mob/living/creator
 var	code/game/objects/items/weapons/storage/internal.dm	var/obj/item/master_item
 var	code/game/objects/items/weapons/storage/storage.dm	var/obj/item/storage/storage
 var	code/game/objects/items/weapons/storage/storage.dm	var/obj/item/held_item
-var	code/game/objects/items/weapons/storage/wallets.dm	var/obj/item/card/id/front_id
 var	code/game/objects/items/weapons/syndie.dm	var/obj/item/syndie/c4explosive/bomb
 var	code/game/objects/items/weapons/tanks/jetpack.dm	var/obj/item/rig/holder
 var	code/game/objects/items/weapons/tanks/tanks.dm	var/obj/item/tank/tank = null
@@ -1011,7 +1008,6 @@ var	code/modules/mob/living/silicon/robot/drone/drone_items.dm	var/datum/matter_
 var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv1 = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv2 = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv3 = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/mob/living/silicon/ai/connected_ai = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/datum/matter_synth/water_res
 var	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	/obj/item/gripper/var/obj/item/shown_item
@@ -1040,7 +1036,6 @@ var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/liv
 var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/living/simple_mob/animal/space/space_worm/next //head is the nextest segment
 var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/atom/currentlyEating // Worm's current Maw target.
 var	code/modules/mob/living/simple_mob/subtypes/blob/blob.dm	var/datum/blob_type/blob_type = null // Used for the blob core items, as they have no overmind mob.
-var	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	var/mob/living/carbon/human/infested = null // The human this thing is totally not making into a zombie.
 var	code/modules/mob/living/simple_mob/subtypes/bullet_heck/bullet_patterns.dm	/mob/living/simple_mob/mechanical/mecha/eclipse/var/atom/volley_target
 var	code/modules/mob/living/simple_mob/subtypes/glamour/homunculus.dm	var/obj/item/glamour_face/owner // relation: the face that made us (its homunculus view clears when we go)
 var	code/modules/mob/living/simple_mob/subtypes/glamour/ysbryd.dm	var/mob/living/chosen_target
@@ -1170,7 +1165,6 @@ var	code/modules/power/lighting.dm	/obj/item/light/var/tmp/obj/machinery/light/f
 var	code/modules/power/lighting.dm	/obj/machinery/light/var/tmp/obj/machinery/light_construct/construct_at_make
 var	code/modules/power/solar_service.dm	GLOBAL_DATUM_INIT(sun, /datum/sun, new)
 var	code/modules/projectiles/ammunition/smartmag.dm	var/tmp/obj/item/gun/holding_gun // What gun are we in, if any?
-var	code/modules/projectiles/ammunition/smartmag.dm	var/tmp/obj/item/cell/device/attached_cell // What cell are we using, if any?
 var	code/modules/projectiles/autofire.dm	var/tmp/obj/item/gun/autofire_gun
 var	code/modules/projectiles/autofire.dm	var/tmp/atom/autofire_target
 var	code/modules/projectiles/gun.dm	var/tmp/datum/auto_target
@@ -1374,7 +1368,6 @@ var	code/modules/xenoarcheaology/tools/artifact_harvester.dm	var/tmp/obj/item/an
 var	code/modules/xenoarcheaology/tools/geosample_scanner.dm	var/tmp/obj/item/scanned_item
 var	code/modules/xenoarcheaology/tools/suspension_generator.dm	var/tmp/obj/item/card/id/auth_card
 var	code/modules/xenoarcheaology/tools/tools.dm	var/tmp/datum/depth_scan/current
-list	code/ATMOSPHERICS/SSair.dm	var/list/hotspots = list()
 list	code/ATMOSPHERICS/SSair.dm	var/list/planetary = list() //Lets cache static planetary mixes
 list	code/ATMOSPHERICS/SSair.dm	var/list/strings_to_mix = list()
 list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/immutable_air = list()
@@ -1430,7 +1423,6 @@ list	code/controllers/subsystems/contracts.dm	var/list/definitions
 list	code/controllers/subsystems/contracts.dm	var/list/subject_identities
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_rules
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_windows
-list	code/controllers/subsystems/holomaps.dm	var/static/list/station_holomaps = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/pages = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/ores = list()
 list	code/controllers/subsystems/internal_wiki.dm	VAR_PRIVATE/list/materials = list()
@@ -1451,10 +1443,8 @@ list	code/controllers/subsystems/lighting.dm	var/static/list/sunlight_queue = li
 list	code/controllers/subsystems/lighting.dm	var/list/planet_shandlers = list() // Precomputed lighting values for tiles only affected by the sun
 list	code/controllers/subsystems/lighting.dm	var/list/z_to_pshandler = list()
 list	code/controllers/subsystems/persistence.dm	var/list/persistence_datums = list()
-list	code/controllers/subsystems/persistence.dm	var/list/obj/structure/sign/painting/painting_frames = list()
 list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/cells = list()
 list	code/controllers/subsystems/proximity.dm	VAR_PRIVATE/list/eyes = list()
-list	code/controllers/subsystems/shuttles.dm	var/list/ships = list() // List of all ships.
 list	code/controllers/subsystems/shuttles.dm	var/list/shuttles = list() // Maps shuttle tags to shuttle datums, so that they can be looked up.
 list	code/controllers/subsystems/shuttles.dm	var/list/sectors_to_initialize // Used to find all sector objects at the appropriate time.
 list	code/controllers/subsystems/tgui.dm	var/list/asset_generations = list()
@@ -1618,7 +1608,6 @@ list	code/modules/heat/heat_bind_batch.dm	GLOBAL_LIST_EMPTY(dq_heat_bind_pending
 list	code/modules/lighting/lighting_corner.dm	var/list/datum/light_source/affecting // Light sources affecting us.
 list	code/modules/lighting/lighting_fake_sun.dm	var/static/world_suns = list() //List of all the fake_suns in the world, used for checking for family members
 list	code/modules/lighting/lighting_source.dm	var/list/datum/lighting_corner/effect_str
-list	code/modules/maps/map_load.dm	GLOBAL_LIST_EMPTY(map_load_queue)
 list	code/modules/maps/reader.dm	GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special eviction
 list	code/modules/materials/engineering/material_templates.dm	var/static/list/interned
 list	code/modules/materials/engineering/material_templates.dm	GLOBAL_REAL_VAR(list/GLOB_material_mix_registry)
@@ -1641,6 +1630,4 @@ list	code/modules/shuttles/emergency_shuttle_service.dm	var/list/escape_pods = l
 list	code/modules/surgery/surgery_ops.dm	GLOBAL_LIST_EMPTY(surgery_op_steps)
 list	code/modules/tgs_commands/vorestation.dm	GLOBAL_LIST_EMPTY(tgs_flow_senders)
 list	code/modules/tgui/external.dm	/client/var/list/tgui_windows = list()
-list	code/modules/tgui/modal.dm	GLOBAL_LIST(tgui_modals)
-list	code/modules/tgui/ui_push.dm	var/list/pending
 list	code/modules/vore/eating/bellymodes_datum.dm	GLOBAL_LIST_INIT(digest_modes, list())
