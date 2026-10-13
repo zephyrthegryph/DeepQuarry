@@ -71,3 +71,40 @@
 		clashing += length(naive)
 		tables++
 	log_world("DQ_TABLE_CACHE: clash candidates equal the naive walk over [tables] tables ([clashing] clashing pairs, [pairs_skipped] pairs not compared)")
+
+/// A table with ops that really clash (the world has none): the narrowed walk must still find every clash the all-pairs walk finds.
+/datum/unit_test/dq_op_clash_candidates_find_synthetic_clashes
+
+/datum/unit_test/dq_op_clash_candidates_find_synthetic_clashes/Run()
+	GLOB.declare_report_capture = list()
+	var/datum/type_table/T = table_compile(/obj/e2_box, null, list( \
+		op("hand_a", hand(), then("note_pry")), \
+		op("quiet", ui_act("quiet"), then("note_peek")), \
+		op("hand_b", hand(), then("note_key")), \
+		op("crow_a", tool(TOOL_CROWBAR), then("note_slide")), \
+		op("ui_a", ui_act("shared"), then("note_peek")), \
+		op("crow_b", tool(TOOL_CROWBAR), then("note_slide")), \
+		op("ui_b", ui_act("shared"), then("note_peek")), \
+		op("hand_c", hand(), priority(OP_PRIORITY_PART), then("note_key"))), "test:clash")
+	var/list/reports = GLOB.declare_report_capture
+	GLOB.declare_report_capture = null
+	var/list/plans = op_index_of_table(T).ordered
+	var/list/naive = list()
+	for(var/i in 1 to length(plans))
+		for(var/j in i + 1 to length(plans))
+			if(op_plans_clash(plans[i], plans[j]))
+				naive += "[i],[j]"
+	TEST_ASSERT(length(naive) >= 3, "the fixture has clashing pairs under the all-pairs walk ([length(naive)])")
+	var/list/bucketed = list()
+	var/list/candidates = op_clash_candidates(plans)
+	for(var/pair in candidates)
+		if(op_plans_clash(plans[pair[1]], plans[pair[2]]))
+			bucketed += "[pair[1]],[pair[2]]"
+	TEST_ASSERT_EQUAL(jointext(bucketed, ";"), jointext(naive, ";"), "the narrowed walk finds the same clashes, in the same order")
+	TEST_ASSERT(length(candidates) < length(plans) * (length(plans) - 1) / 2, "and compares fewer pairs than all of them")
+	var/reported = 0
+	for(var/report in reports)
+		if(findtext(report, "[RULE_OP_CLASH]"))
+			reported++
+	TEST_ASSERT_EQUAL(reported, length(naive), "table_compile reported exactly the all-pairs clashes")
+	log_world("DQ_TABLE_CACHE: synthetic clash fixture: [length(naive)] clashing pairs, [length(candidates)] of [length(plans) * (length(plans) - 1) / 2] pairs compared")
