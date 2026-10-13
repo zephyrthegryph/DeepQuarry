@@ -1264,7 +1264,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	args_saved = null
 	ordered_args_saved = null
 	log_saved = null
-	rel_clear(src, nameof(answered_steps)) // owned: the answered prompts are deleted with the op
 	captured_saved = null
 	..()
 
