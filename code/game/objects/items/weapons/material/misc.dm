@@ -247,12 +247,12 @@ CAPABILITIES(/obj/item/material/butterfly/saw)
 		set_can_cleave(1)
 		force_divisor = 0.4 //24 when wielded, Gains cleave and is better than a machete
 		icon_state = "sawcleaver_open"
-		item_state = "cleaving_saw_open"
+		set_item_state("cleaving_saw_open")
 		..()
 	else
 		set_w_class(initial(w_class))
 		set_can_cleave(combat_of_type(type).can_cleave)
 		force_divisor = initial(force_divisor)
 		icon_state = initial(icon_state)
-		item_state = initial(item_state)
+		set_item_state(initial(item_state))
 		..()

@@ -718,10 +718,18 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	germ_level = 0
 	dq_set_fluorescent(src, 0)
 
-/// Its icon state (after() target for a state that reverts, like a flash of a sprite).
+/// Its icon state, the one writer of a state a look follows (an atom a draw reads or that someone wears or holds): a change publishes, so what
+/// draws the atom's look, and the mob wearing or holding it, draws again. Also the after() target for a state that reverts, like a flash of a sprite.
 /atom/proc/set_icon_state(new_state)
+	if(icon_state == new_state)
+		return
 	icon_state = new_state
+	tracked_changed(src, "icon_state")
 
-/// Its base colour, under any colour layers (a debug or effect tint that reverts later).
+/// Its base colour, under any colour layers (a recolour, or a debug or effect tint that reverts later). The one writer of a colour a look follows: a change
+/// publishes, so what draws the atom, and the mob wearing or holding it, draws again.
 /atom/proc/set_base_color(new_color)
+	if(color == new_color)
+		return
 	color = new_color
+	tracked_changed(src, "color")

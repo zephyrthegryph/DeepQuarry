@@ -523,7 +523,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	B.author = row[2]
 	B.dat = row[4]
 	B.icon_state = "book[rand(1,16)]"
-	B.item_state = B.icon_state
+	B.set_item_state(B.icon_state)
 	visible_message("[src]'s printer hums as it produces a completely bound book. How did it do that?")
 
 // admin ghost view routes to LibraryComp.tsx with is_admin_view

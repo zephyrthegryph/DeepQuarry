@@ -1,3 +1,7 @@
+TRACKED(/obj/item, icon_override)
+TRACKED(/obj/item, item_icons)
+TRACKED(/obj/item, item_state_slots)
+TRACKED(/obj/item, item_state)
 TRACKED(/obj/item, canremove)
 
 
@@ -228,9 +232,10 @@ TRACKED(/obj/item, gurgled_color)
 
 	return FALSE
 
-/// The item's held sprite changed (state nothing publishes): the holder, which watches what it holds, draws it again.
+/// The holder's hands changed (the item was taken, dropped or put in two hands): a type whose held look depends on how it is held overrides this to
+/// recompute it. What it writes publishes through its setters, so the holder, which watches what it holds, draws it again.
 /obj/item/proc/update_held_icon()
-	changed(src)
+	return
 
 /obj/item/proc/move_to_top_effect(datum/act/op/A)
 	var/mob/user = A.actor

@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/storage/bible)
 	deity_name = user.mind.my_religion.deity
 	name = user.mind.my_religion.bible_name
 	icon_state = user.mind.my_religion.bible_icon_state
-	item_state = user.mind.my_religion.bible_item_state
+	set_item_state(user.mind.my_religion.bible_item_state)
 	to_chat(user, span_notice("You invoke [user.mind.my_religion.deity] and prepare a copy of [src]."))
 
 /obj/item/storage/bible/booze

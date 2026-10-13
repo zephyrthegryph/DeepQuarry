@@ -290,7 +290,6 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 				H.dna.SetSEState(gene.block,0)
 			domutcheck(H,null,MUTCHK_FORCED)
 			H.UpdateAppearance()
-			changed(src)
 	if(H.species.name == SPECIES_VOX || H.species.name == SPECIES_ZADDAT)	//Species that 'actually' require survival gear to live. The rest don't.
 		H.species.equip_survival_gear(H)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/chameleon(H), SLOT_ID_UNIFORM)

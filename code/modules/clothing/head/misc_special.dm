@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
 			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = base_state
+			set_icon_state(base_state)
 			flash_protection = FLASH_PROTECTION_MAJOR
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect your eyes.")
@@ -64,14 +64,10 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
 			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = "[base_state]up"
+			set_icon_state("[base_state]up")
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face.")
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = src.loc
-			changed(src)
 		user.update_mob_action_buttons()
 
 /obj/item/clothing/head/welding/demon

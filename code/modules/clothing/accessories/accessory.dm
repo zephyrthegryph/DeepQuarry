@@ -472,12 +472,6 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	actions_types = list(/datum/action/item_action/pull_on_gaiter)
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/gaiter/update_clothing_icon()
-	. = ..()
-	if(ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
-
 /// Old attackby: tuck a breath mask behind the gaiter. Always falls through, as the old ..() did.
 /obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -510,19 +504,18 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	var/mob/user = A.actor
 	var/gaiterstring = "You pull [src] "
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]_up"
+		src.set_icon_state("[icon_state]_up")
 		gaiterstring += "up over your nose[breath_masked ? " and secure the mask tucked underneath." : "."]"
 		if(breath_masked)
 			set_item_flags(worn_of(src).flags | (AIRTIGHT))
 	else
-		src.icon_state = initial(icon_state)
+		src.set_icon_state(initial(icon_state))
 		gaiterstring += "down around your neck[breath_masked ? " and dislodge the mask tucked underneath." : "."]"
 		set_body_parts_covered(worn_of(src).covers & (~FACE))
 		if(breath_masked)
 			set_item_flags(worn_of(src).flags & (~AIRTIGHT))
 	to_chat(user, span_notice(gaiterstring))
 	spent(mob_overlay, user) // we're gonna need to refresh these
-	update_clothing_icon()	//so our mob-overlays update
 
 /obj/item/clothing/accessory/gaiter/half //functions like a gaiter
 	name = "black half-mask"
@@ -624,8 +617,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
 		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
-		icon_override = sprite_sheets[H.species.get_bodytype(H)]
-		update_clothing_icon()
+		set_icon_override(sprite_sheets[H.species.get_bodytype(H)])
 
 /obj/item/clothing/accessory/choker/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
@@ -636,7 +628,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 
 /obj/item/clothing/accessory/choker/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = icon_previous_override
+	set_icon_override(icon_previous_override)
 
 /obj/item/clothing/accessory/collar
 	icon_state = "collar_blk"
@@ -660,8 +652,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
 		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
-		icon_override = sprite_sheets[H.species.get_bodytype(H)]
-		update_clothing_icon()
+		set_icon_override(sprite_sheets[H.species.get_bodytype(H)])
 
 /obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
@@ -672,7 +663,7 @@ CAPABILITIES(/obj/item/clothing/accessory/choker)
 
 /obj/item/clothing/accessory/collar/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = icon_previous_override
+	set_icon_override(icon_previous_override)
 
 /obj/item/clothing/accessory/collar/silver
 	name = "Silver tag collar"
@@ -1444,12 +1435,6 @@ CAPABILITIES(/obj/item/clothing/accessory/antediluvian/loincloth)
 	actions_types = list(/datum/action/item_action/adjust_cloak)
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/poncho/roles/cloak/half/update_clothing_icon()
-	. = ..()
-	if(ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
-
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	op("half_cloak_flip_self", in_hand(), label("Flip cloak"), then(PROC_REF(half_cloak_flip_self)))
 
@@ -1457,16 +1442,15 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 /obj/item/clothing/accessory/poncho/roles/cloak/half/proc/half_cloak_flip_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]_open"
-		src.item_state = "[item_state]_open"
+		src.set_icon_state("[icon_state]_open")
+		src.set_item_state("[item_state]_open")
 		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You flip the cloak over your shoulder.")
 	else
-		src.icon_state = initial(icon_state)
-		src.item_state = initial(item_state)
+		src.set_icon_state(initial(icon_state))
+		src.set_item_state(initial(item_state))
 		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You pull the cloak over your shoulder.")
-	update_clothing_icon()
 
 /obj/item/clothing/accessory/poncho/roles/cloak/shoulder
 	name = "shoulder cloak"
@@ -1531,12 +1515,6 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	actions_types = list(/datum/action/item_action/adjust_poncho)
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/poncho/roles/neo_ranger/update_clothing_icon()
-	. = ..()
-	if(ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
-
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	op("neo_ranger_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(neo_ranger_adjust_self)))
 
@@ -1544,16 +1522,15 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 /obj/item/clothing/accessory/poncho/roles/neo_ranger/proc/neo_ranger_adjust_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]_open"
-		src.item_state = "[item_state]_open"
+		src.set_icon_state("[icon_state]_open")
+		src.set_item_state("[item_state]_open")
 		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You adjust your poncho.")
 	else
-		src.icon_state = initial(icon_state)
-		src.item_state = initial(item_state)
+		src.set_icon_state(initial(icon_state))
+		src.set_item_state(initial(item_state))
 		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You adjust your poncho.")
-	update_clothing_icon()
 
 /obj/item/clothing/accessory/belt
 	name = "Thin Belt"
@@ -1628,7 +1605,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bunny_tail)
 
 /obj/item/clothing/accessory/poncho/roles/cloak/blueshield/dropped(mob/user, equipping, slot) //makes the blueshield suit not kek when used by a teshari
 	..()
-	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
+	set_icon_override('icons/mob/ties_yw.dmi') //Moved to archive
 
 /// The suit the tie may be attached to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/proc/has_suit() as /obj/item/clothing

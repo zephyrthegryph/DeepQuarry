@@ -115,7 +115,6 @@ MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to pain
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
 	rel_set(src, nameof(nail_polish), polish)
-	changed(src)
 
 /obj/item/nailpolish_remover
 	name = "nail polish remover"

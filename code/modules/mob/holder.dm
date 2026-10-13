@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/holder/diona)
 /obj/item/holder/pai/take_held(mob/held)
 	..()
 	if(held)
-		item_state = held.icon_state
+		set_item_state(held.icon_state)
 
 /obj/item/holder/mouse
 	name = "mouse"
@@ -408,7 +408,7 @@ CAPABILITIES(/obj/item/holder/fish)
 	dir = 2
 	overlays.Cut()
 	if(M.item_state)
-		item_state = M.item_state
+		set_item_state(M.item_state)
 	color = M.color
 	name = M.name
 	desc = M.desc

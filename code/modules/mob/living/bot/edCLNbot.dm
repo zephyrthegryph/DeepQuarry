@@ -161,7 +161,7 @@ CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 
 /obj/item/secbot_assembly/edCLN_assembly/proc/bucket_added(datum/act/op/A)
 	name = "bucket/legs/frame assembly"
-	item_state = "edCLN_bucket"
+	set_item_state("edCLN_bucket")
 	icon_state = "edCLN_bucket"
 	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
 	return OP_OK
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 
 /obj/item/secbot_assembly/edCLN_assembly/sensor_added(datum/act/op/A)
 	name = "proximity bucket ED assembly"
-	item_state = "edCLN_prox"
+	set_item_state("edCLN_prox")
 	icon_state = "edCLN_prox"
 	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
 	return OP_OK
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
 
 /obj/item/secbot_assembly/edCLN_assembly/proc/mop_added(datum/act/op/A)
 	name = "mop ED-CLN assembly"
-	item_state = "edCLN_mop"
+	set_item_state("edCLN_mop")
 	icon_state = "edCLN_mop"
 	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
 	return OP_OK

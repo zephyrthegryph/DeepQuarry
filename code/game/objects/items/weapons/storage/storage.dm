@@ -315,10 +315,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	PUBLISH_CHANGE(src, STORAGE_CONTENTS_KEY)
 	if(hud)
 		refresh_hud()
-	// A worn storage shows what is in it on the wearer's sprite.
-	if(ismob(loc))
-		var/mob/wearer = loc
-		changed(src)
+	// A worn storage shows what is in it on the wearer's sprite (a belt draws its contents): the wearer, who composes its look, draws again.
+	look_published(src)
 
 // ---- Gather and empty ----
 

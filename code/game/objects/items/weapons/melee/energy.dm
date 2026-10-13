@@ -52,9 +52,9 @@
 		return
 	set_active(1)
 	if(rainbow)
-		item_state = "[icon_state]_blade_rainbow"
+		set_item_state("[icon_state]_blade_rainbow")
 	else
-		item_state = "[icon_state]_blade"
+		set_item_state("[icon_state]_blade")
 	embed_chance = active_embed_chance
 	set_force(active_force)
 	set_throwforce(active_throwforce)
@@ -71,7 +71,7 @@
 	if(!active)
 		return
 	play_sfx(src, SFX_WEAPONS_SABEROFF)
-	item_state = "[icon_state]"
+	set_item_state("[icon_state]")
 	set_active(0)
 	embed_chance = initial(embed_chance)
 	set_force(combat_of_type(type).force)
@@ -137,9 +137,6 @@ CAPABILITIES(/obj/item/melee/energy)
 	else
 		activate(user)
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	add_fingerprint(user)
 	return OP_OK

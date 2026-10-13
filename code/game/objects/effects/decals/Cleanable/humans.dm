@@ -119,14 +119,12 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 				S.blood_overlay.color = basecolor
 				S.add_overlay(S.blood_overlay)
 			transfer_blooddna_to(S)
-			changed(src)
 
 	else if (hasfeet)//Or feet
 		perp.set_feet_blood_color(basecolor)
 		perp.track_blood = max(amount,perp.track_blood)
 		LAZYINITLIST(perp.feet_blood_DNA)
 		perp.set_feet_blood_DNA(perp.feet_blood_DNA | (init_forensic_data().get_blooddna().Copy()))
-		changed(src)
 	else if (perp?.buckled_to() && istype(perp?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/obj/structure/bed/chair/wheelchair/W = perp?.buckled_to()
 		W.bloodiness = 4
@@ -166,7 +164,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 		transfer_blooddna_to(user)
 		user.bloody_hands += taken
 		user.set_hand_blood_color(basecolor)
-		changed(src)
 		grant(user, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), user)
 
 	if(viruses)

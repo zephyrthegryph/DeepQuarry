@@ -25,12 +25,11 @@ CAPABILITIES(/obj/item/clothing/head/soft)
 	var/mob/user = A.actor
 	set_flipped(!flipped)
 	if(flipped)
-		icon_state = "[icon_state]_flipped"
+		set_icon_state("[icon_state]_flipped")
 		to_chat(user, "You flip the hat backwards.")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		to_chat(user, "You flip the hat back in normal position.")
-	update_clothing_icon()	//so our mob-overlays update
 	return OP_OK
 
 

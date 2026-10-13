@@ -33,15 +33,14 @@ CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
 	var/base_icon = copytext(icon_state,1,(length(icon_state) - 3 + headphones_on))
 
 	if(headphones_on)
-		icon_state = "[base_icon]_off"
+		set_icon_state("[base_icon]_off")
 		headphones_on = 0
 		to_chat(user, span_notice("You turn the music off."))
 	else
-		icon_state = "[base_icon]_on"
+		set_icon_state("[base_icon]_on")
 		headphones_on = 1
 		to_chat(user, span_notice("You turn the music on."))
 
-	update_clothing_icon()
 
 /*
 	Skrell tentacle wear

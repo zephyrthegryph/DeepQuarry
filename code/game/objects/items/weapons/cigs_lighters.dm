@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/flame/match)
 	burnt = 1
 	injury_kind = INJURY_BLUNT
 	icon_state = "match_burnt"
-	item_state = "cigoff"
+	set_item_state("cigoff")
 	name = "burnt match"
 	desc = "A match. This one has seen better days."
 
@@ -157,10 +157,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	var/wanted = "[initial(item_state)][state_suffix()]"
 	if(item_state == wanted)
 		return
-	item_state = wanted
-	if(ismob(loc))
-		var/mob/living/M = loc
-		changed(src)
+	set_item_state(wanted)
 
 /// What it starts smoking down from (derives(), at init): a type that sets none starts full.
 /obj/item/clothing/mask/smokable/proc/full_smoketime()
@@ -261,7 +258,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 			if (!nomessage)
 				to_chat(M, span_notice("Your [name] goes out."))
 			M.remove_from_mob(src) //un-equip it so the overlays can update
-			changed(src)
 		// Turn mind bound cigs into butts
 		if(src.possessed_voice && src.possessed_voice.len)
 			var/mob/living/voice/V = src.possessed_voice[1]
@@ -276,7 +272,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 				to_chat(M, span_notice("Your [name] goes out, and you empty the ash."))
 				play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			set_lit(0)
-			changed(src)
 			set_smoketime(0)
 			reagents.clear_reagents()
 			name = "empty [initial(name)]"
@@ -472,13 +467,6 @@ CAPABILITIES(/obj/item/trash/cigbutt)
 	desc = "A manky old cigar butt."
 	icon_state = "cigarbutt"
 
-/// A cigar redraws the user's mask and hands after the cigarette handling.
-/obj/item/clothing/mask/smokable/cigarette/cigar/item_applied(datum/act/op/A)
-	..()
-	var/mob/user = A.actor
-	changed(src)
-	return OP_OK
-
 /////////////////
 //SMOKING PIPES//
 /////////////////
@@ -559,7 +547,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 	else if(istype(W, /obj/item/assembly/igniter))
 		light(span_notice("[user] fiddles with [W], and manages to light their [name] with the power of science."))
 
-	changed(src)
 	return OP_OK
 
 /obj/item/clothing/mask/smokable/pipe/cobpipe
@@ -796,7 +783,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if(!lit)
 		set_lit(TRUE)
 		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("Without even breaking stride, %U% flips open and lights %T% in one smooth movement.")))
 
@@ -804,7 +791,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	else
 		set_lit(FALSE)
 		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing.")))
 
@@ -917,7 +904,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if(!lit)
 		set_lit(1)
 		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		if(prob(50))
 			act_message(user, src, others = span_notice(span_rose("%U% safely activates %T% with a push of a button!")))
@@ -944,7 +931,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	else
 		set_lit(0)
 		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		if(istype(src, /obj/item/flame/lighter/supermatter) )
 			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts %T% without even looking at what they're doing.")))
@@ -983,7 +970,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if(!lit)
 		set_lit(1)
 		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		if(prob(50))
 			act_message(user, src, others = span_notice(span_rose("%U% safely activates %T% with a push of a button!")))
@@ -1008,7 +995,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	else
 		set_lit(0)
 		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		if(istype(src, /obj/item/flame/lighter/supermatter/syndismzippo) )
 			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts %T% without even looking at what they're doing.")))
@@ -1054,7 +1041,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	if (!lit)
 		set_lit(1)
 		icon_state = "[base_state]on"
-		item_state = "[base_state]on"
+		set_item_state("[base_state]on")
 		playsound(src, activation_sound, 75, 1)
 		var/i = rand(1, 100)
 		switch(i)
@@ -1173,7 +1160,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	else
 		set_lit(0)
 		icon_state = "[base_state]"
-		item_state = "[base_state]"
+		set_item_state("[base_state]")
 		playsound(src, deactivation_sound, 75, 1)
 		if (istype(src, /obj/item/flame/lighter/supermatter/expsmzippo))
 			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% closes %T%.")))

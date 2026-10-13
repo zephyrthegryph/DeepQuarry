@@ -383,16 +383,15 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 		return FALSE
 
 	if(unbuttoned)
-		icon_state = "[initial(icon_state)]"
-		item_state = "[initial(item_state)]"
+		set_icon_state("[initial(icon_state)]")
+		set_item_state("[initial(item_state)]")
 		unbuttoned = FALSE
 		to_chat(user, "You button up the coat.")
 	else
-		icon_state = "[initial(icon_state)]_open"
-		item_state = "[initial(item_state)]_open"
+		set_icon_state("[initial(icon_state)]_open")
+		set_item_state("[initial(item_state)]_open")
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	changed(src)
 
 	//Variants
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedblue
@@ -788,9 +787,9 @@ TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), l
 /obj/item/clothing/head/fluff/avida/proc/match_ears(mob/living/carbon/human/H)
 	var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
 	if(istype(H) && ((H.ear_style?.name in allowed_ear_names) || (H.ear_secondary_style?.name in allowed_ear_names)))
-		item_state = initial(src.item_state)
+		set_item_state(initial(src.item_state))
 	else //if not, just use a generic icon
-		item_state = "avidahatnoears"
+		set_item_state("avidahatnoears")
 	return TRUE
 
 //natje:Pumila
@@ -1227,19 +1226,15 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 			up = !up
 			set_body_parts_covered(worn_of(src).covers | ((EYES)))
 			set_flags_inv(worn_of(src).hides | ((HIDEEYES)))
-			icon_state = "vinjjdana"
+			set_icon_state("vinjjdana")
 			to_chat(user, "You flip the goggles down to protect your eyes.")
 		else
 			up = !up
 			set_body_parts_covered(worn_of(src).covers & (~(EYES)))
 			set_flags_inv(worn_of(src).hides & (~(HIDEEYES)))
-			icon_state = "vinjjdanaup"
+			set_icon_state("vinjjdanaup")
 
 			to_chat(user, "You push the goggles up out of your face.")
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = loc
-			changed(src)
 		user.update_mob_action_buttons()
 
 //Vorrarkul: Theodora Lindt
@@ -1535,14 +1530,13 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 		return FALSE
 
 	if(unbuttoned)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 		unbuttoned = FALSE
 		to_chat(user, "You button up the coat.")
 	else
-		icon_state = "[initial(icon_state)]_open"
+		set_icon_state("[initial(icon_state)]_open")
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	changed(src)
 
 /obj/item/clothing/suit/storage/fluff/jacket/field //Just here so it can be seen and easily recognized under /spawn.
 	name = "Field Jacket"
@@ -2040,12 +2034,11 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip)
 	..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
-		icon_override = 'icons/vore/custom_clothes_mob.dmi'
-	update_clothing_icon()
+		set_icon_override('icons/vore/custom_clothes_mob.dmi')
 
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = 'icons/vore/custom_clothes_mob.dmi'
+	set_icon_override('icons/vore/custom_clothes_mob.dmi')
 
 //CappyCat:Cappy Fuzzlyfeathers
 /obj/item/clothing/accessory/watch/custom
@@ -2480,11 +2473,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 		if(reactive_icon)
 			spent(reactive_icon, user)
 		toggled = FALSE
-		icon_state = initial(icon_state)
-		item_state = initial(item_state)
+		set_icon_state(initial(icon_state))
+		set_item_state(initial(item_state))
 		to_chat(user, span_info("The coat's eyes close."))
 	COOLDOWN_START(src, toggle_cooldown, 6 SECONDS)
-	changed(src)
 
 /obj/item/clothing/head/hood/purple_robes
 	name = "purple hood"

@@ -877,13 +877,18 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(left)
 		layers[L_HAND_LAYER] = left.make_worn_icon(body_type = body_type, inhands = TRUE, slot_name = slot_l_hand_str, default_icon = INV_L_HAND_DEF_ICON, default_layer = L_HAND_LAYER)
 
-/// The item in `slot`, watched by the draw: its own changes (a visor flipped, a light on, an accessory clipped on) and its look redraw the wearer.
+/// The item in `slot`, watched by the draw: its own changes (a visor flipped, a light on, an accessory clipped on) and its look redraw the wearer, and so do
+/// the changes of the accessories on it (their sprites are drawn on the wearer with it).
 /// An item whose own draw composes the wearer's look (the voodoo doll in a hand) is not followed through its look: each would redraw the other for good.
 /mob/living/carbon/human/proc/worn_item(datum/look/look, slot)
 	var/obj/item/I = get_equipped_item(slot)
 	if(I && look)
 		look.watch(I)
 		look.watch_look_unless_composing(I, src)
+		if(istype(I, /obj/item/clothing))
+			var/obj/item/clothing/worn = I
+			for(var/obj/item/clothing/accessory/A as anything in worn.accessories)
+				look.watch(A)
 	return I
 
 /// Both ears' items, unless the head or mask blocks the ears or headsets are hidden.

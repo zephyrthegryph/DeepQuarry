@@ -182,7 +182,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	. = ..()
 
 	suit_state = icon_state
-	item_state = icon_state
+	set_item_state(icon_state)
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0
@@ -458,20 +458,16 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	seal_finish(M, seal_target, booting_L, booting_R, FALSE)
 
 /obj/item/rig/proc/seal_one_piece(mob/living/carbon/human/M, obj/item/piece, msg_type, seal_target)
-	piece.icon_state = "[suit_state][!seal_target ? "_sealed" : ""]"
+	piece.set_icon_state("[suit_state][!seal_target ? "_sealed" : ""]")
 	switch(msg_type)
 		if("boots")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
-			changed(src)
 		if("gloves")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "tighten around your fingers and wrists" : "become loose around your fingers"]."))
-			changed(src)
 		if("chest")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
-			changed(src)
 		if("helmet")
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-			changed(src)
 			if(helmet?.light_system == STATIC_LIGHT)
 				helmet.update_light(wearer())
 
@@ -678,7 +674,6 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	var/mob/living/carbon/human/H = wearer()
 	if(!H)
 		return
-	changed(src)
 
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
 

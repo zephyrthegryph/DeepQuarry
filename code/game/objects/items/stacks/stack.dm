@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/stack)
 	if(!stacktype)
 		stacktype = type
 	if(!no_variants)
-		item_state = initial(icon_state) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
+		set_item_state(initial(icon_state)) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
 	var/starting_amount = amount_at_make
 	if(!isnull(starting_amount)) // Could be 0
 		// Negative numbers are 'give full stack', like -1

@@ -172,12 +172,11 @@ CAPABILITIES(/obj/item/clothing/head/pilot/alt)
 /obj/item/clothing/head/pilot/alt/proc/pilot_alt_visor_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		src.set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the visor on the pilot helmet.")
 	else
-		src.icon_state = initial(icon_state)
+		src.set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the pilot helmet.")
-	update_clothing_icon() //so our mob-overlays update
 
 //Pilot helmets
 /obj/item/clothing/head/pilot_vr
@@ -199,12 +198,11 @@ CAPABILITIES(/obj/item/clothing/head/pilot_vr)
 /obj/item/clothing/head/pilot_vr/proc/pilot_vr_visor_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		src.set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the visor on the pilot helmet.")
 	else
-		src.icon_state = initial(icon_state)
+		src.set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the pilot helmet.")
-	update_clothing_icon() //so our mob-overlays update
 
 /obj/item/clothing/head/pilot_vr/alt
 	name = "colored pilot helmet"

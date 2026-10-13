@@ -1300,6 +1300,7 @@
 #include "gameplay\arrival.dm"
 #include "gameplay\lungs.dm"
 #include "gameplay\clothing.dm"
+#include "gameplay\worn_look.dm"
 #include "gameplay\doors_power.dm"
 #include "gameplay\hands_and_menus.dm"
 #include "gameplay\machines.dm"

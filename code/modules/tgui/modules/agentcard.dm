@@ -84,7 +84,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/datum/card_state/choice = A.answer.value
 	if(choice)
 		S.icon_state = choice.icon_state
-		S.item_state = choice.item_state
+		S.set_item_state(choice.item_state)
 		S.set_sprite_stack(choice.sprite_stack)
 		to_chat(user, span_notice("Appearance changed to [choice]."))
 		. = TRUE
@@ -236,7 +236,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.electronic_warfare = initial(S.electronic_warfare)
 		S.fingerprint_hash = initial(S.fingerprint_hash)
 		S.icon_state = initial(S.icon_state)
-		S.item_state = initial(S.item_state)
+		S.set_item_state(initial(S.item_state))
 		S.set_sprite_stack(S.initial_sprite_stack)
 		S.front = null
 		S.name = initial(S.name)

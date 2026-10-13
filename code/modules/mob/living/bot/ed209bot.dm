@@ -126,7 +126,7 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /obj/item/secbot_assembly/ed209_assembly/proc/vest_added(datum/act/op/A)
 	name = "vest/legs/frame assembly"
-	item_state = "ed209_shell"
+	set_item_state("ed209_shell")
 	icon_state = "ed209_shell"
 	to_chat(A.actor, span_notice("You add the armor to [src]."))
 	return OP_OK
@@ -138,14 +138,14 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /obj/item/secbot_assembly/ed209_assembly/proc/helmet_added(datum/act/op/A)
 	name = "covered and shielded frame assembly"
-	item_state = "ed209_hat"
+	set_item_state("ed209_hat")
 	icon_state = "ed209_hat"
 	to_chat(A.actor, span_notice("You add the helmet to [src]."))
 	return OP_OK
 
 /obj/item/secbot_assembly/ed209_assembly/sensor_added(datum/act/op/A)
 	name = "covered, shielded and sensored frame assembly"
-	item_state = "ed209_prox"
+	set_item_state("ed209_prox")
 	icon_state = "ed209_prox"
 	to_chat(A.actor, span_notice("You add the prox sensor to [src]."))
 	return OP_OK
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 
 /obj/item/secbot_assembly/ed209_assembly/proc/taser_added(datum/act/op/A)
 	name = "taser ED-209 assembly"
-	item_state = "ed209_taser"
+	set_item_state("ed209_taser")
 	icon_state = "ed209_taser"
 	to_chat(A.actor, span_notice("You add [A.held] to [src]."))
 	return OP_OK
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 	var/turf/where = get_turf(src)
 	var/obj/item/secbot_assembly/ed209_assembly/slime/slime_assembly = new(where)
 	slime_assembly.name = "xenotaser SL-ED-209 assembly"
-	slime_assembly.item_state = "sled209_taser"
+	slime_assembly.set_item_state("sled209_taser")
 	slime_assembly.icon_state = "sled209_taser"
 	graph_place(slime_assembly, STAGE_ED209_TASERED)
 	slime_assembly.created_name = created_name

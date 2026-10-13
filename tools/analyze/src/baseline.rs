@@ -21,23 +21,50 @@ pub enum Mode {
 pub type Counter = HashMap<(String, String), i64>;
 
 /// The fingerprint text a ratchet compares for `rule`. An `init_lines` site is the job a line does in an `Initialize()` body, not
-/// its spelling: a write `x = v` and the call of its setter `set_x(v)` (`src.set_x(v)`) are the same site, so converting a write to
-/// its setter (which the `tracked` lint requires) neither adds a site nor hides one. Every other rule compares the text as written.
+/// its spelling: a write `x = v` and the call of its setter `set_x(v)` (`src.set_x(v)`) are the same site, and so are a list edit
+/// `LAZYSET(x, k, v)` and `set_x_at(k, v)`, the first line of a multi-line write and of its setter call, the closing line of either,
+/// and a line with or without its trailing comment. Converting a write to its setter (which the `tracked` lint requires) neither adds a
+/// site nor hides one. Every other rule compares the text as written.
 pub fn canon_text(rule: &str, text: &str) -> String {
     if rule != "init_lines" {
         return text.to_string();
     }
     let t = text.trim();
+    let t = match t.find(" //") {
+        Some(at) => t[..at].trim_end(),
+        None => t,
+    };
     let t = t.strip_prefix("src.").unwrap_or(t);
+    let opens = t.matches('(').count();
+    let closes = t.matches(')').count();
     if let Some(rest) = t.strip_prefix("set_") {
         if let Some(open) = rest.find('(') {
             let name = &rest[..open];
-            if !name.is_empty() && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_') && rest.ends_with(')') {
-                return format!("{} = {}", name, &rest[open + 1..rest.len() - 1]);
+            if !name.is_empty() && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_') {
+                if opens == closes && rest.ends_with(')') {
+                    let inner = &rest[open + 1..rest.len() - 1];
+                    if let Some(var) = name.strip_suffix("_at") {
+                        if !var.is_empty() && inner.contains(',') {
+                            return format!("LAZYSET({}, {})", var, inner);
+                        }
+                    }
+                    return format!("{} = {}", name, inner);
+                }
+                if opens > closes {
+                    return format!("{} = {}", name, &rest[open + 1..]);
+                }
             }
         }
     }
-    text.to_string()
+    if closes > opens {
+        // The closing line of a multi-line expression: what closes it is not the job.
+        let mut keep = t;
+        for _ in 0..(closes - opens) {
+            keep = keep.strip_suffix(')').unwrap_or(keep);
+        }
+        return keep.to_string();
+    }
+    t.to_string()
 }
 
 /// `read_sites`: `{rule: Counter((file, text))}`.
@@ -273,6 +300,12 @@ mod tests {
         assert_eq!(canon_text("init_lines", "src.set_power(a, b)"), "power = a, b");
         assert_eq!(canon_text("init_lines", "power = 5"), "power = 5");
         assert_eq!(canon_text("init_lines", "set_(1)"), "set_(1)");
+        assert_eq!(canon_text("init_lines", "set_item_state(initial(icon_state)) // the plain one"), "item_state = initial(icon_state)");
+        assert_eq!(canon_text("init_lines", "item_state = initial(icon_state) // the plain one"), "item_state = initial(icon_state)");
+        assert_eq!(canon_text("init_lines", "set_slots_at(k, v)"), "LAZYSET(slots, k, v)");
+        assert_eq!(canon_text("init_lines", "set_item_icons(list("), "item_icons = list(");
+        assert_eq!(canon_text("init_lines", "))"), canon_text("init_lines", ")"));
+        assert_eq!(canon_text("init_lines", "slot_head_str = 'x.dmi'))"), canon_text("init_lines", "slot_head_str = 'x.dmi')"));
         assert_eq!(canon_text("init_lines", "set_a b(1)"), "set_a b(1)");
         assert_eq!(canon_text("spawn", "set_power(5)"), "set_power(5)");
         let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "	set_power(5)

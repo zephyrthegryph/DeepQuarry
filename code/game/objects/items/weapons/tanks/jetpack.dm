@@ -47,15 +47,14 @@ CAPABILITIES(/obj/item/tank/jetpack)
 
 	on = !on
 	if(on)
-		icon_state = "[icon_state]-on"
+		set_icon_state("[icon_state]-on")
 		ion_trail.start()
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		ion_trail.stop()
 
 	if (ismob(user))
 		var/mob/M = user
-		changed(src)
 		M.update_mob_action_buttons()
 
 	to_chat(user, "You toggle the thrusters [on? "on":"off"].")

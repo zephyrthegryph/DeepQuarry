@@ -202,14 +202,13 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho)
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
 		if(H.species.name == SPECIES_TESHARI)
-			icon_override = 'icons/inventory/suit/mob_teshari.dmi'
+			set_icon_override('icons/inventory/suit/mob_teshari.dmi')
 		else
-			icon_override = 'icons/inventory/accessory/mob.dmi'
-		update_clothing_icon()
+			set_icon_override('icons/inventory/accessory/mob.dmi')
 
 /obj/item/clothing/accessory/poncho/dropped(mob/user, equipping, slot) //Resets the override to prevent the wrong .dmi from being used because equipped only triggers when wearing ponchos as suits.
 	..()
-	icon_override = null
+	set_icon_override(null)
 
 /obj/item/clothing/accessory/poncho/green
 	name = "green poncho"

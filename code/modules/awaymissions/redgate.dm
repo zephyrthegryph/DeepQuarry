@@ -404,11 +404,11 @@ CAPABILITIES(/obj/item/laserdome_hyperball)
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
 		icon_state = "[initial(icon_state)]_red"
-		item_state = "[initial(icon_state)]_red"
+		set_item_state("[initial(icon_state)]_red")
 	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
 		icon_state = "[initial(icon_state)]_blue"
-		item_state = "[initial(icon_state)]_blue"
+		set_item_state("[initial(icon_state)]_blue")
 	else
 		return	//if they're not on a team, stop!
 
@@ -495,7 +495,7 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 		user.drop_from_inventory(ball)
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
-		ball.item_state = "[initial(ball.item_state)]"
+		ball.set_item_state("[initial(ball.item_state)]")
 	return OP_PASS
 
 /obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
@@ -527,7 +527,7 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
-		ball.item_state = "[initial(ball.item_state)]"
+		ball.set_item_state("[initial(ball.item_state)]")
 	else
 		//todo; throw the ball in a random direction
 		src.visible_message("\The [ball] bounces off \the [src]'s rim!")

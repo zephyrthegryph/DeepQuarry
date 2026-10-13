@@ -188,7 +188,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	H.item_state = style_id
 	if(istype(H.loc, /obj/item/holder/protoblob))
 		var/obj/item/holder/protoblob/PB = H.loc
-		PB.item_state = style_id
+		PB.set_item_state(style_id)
 	return TRUE
 
 /// This character's layer states for a layered style, seeded from its defaults.

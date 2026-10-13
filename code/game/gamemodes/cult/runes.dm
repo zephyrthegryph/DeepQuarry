@@ -511,7 +511,6 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	D.universal_speak = 1
 	D.disable_godmode()
 	D.looks.set_eyes_color(rgb(200, 200, 200))
-	changed(src)
 	D.clear_all_underwear()
 	D.underwear_edited()
 	D.key = ghost.key

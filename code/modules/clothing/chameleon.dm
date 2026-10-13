@@ -8,13 +8,13 @@
 
 	desc = copy.desc
 	name = copy.name
-	icon_state = copy.icon_state
-	item_state = copy.item_state
+	set_icon_state(copy.icon_state)
+	set_item_state(copy.item_state)
 	set_body_parts_covered(worn_of(copy).covers)
 	set_flags_inv(worn_of(copy).hides)
 
-	item_icons = copy.item_icons?.Copy()
-	item_state_slots = copy.item_state_slots?.Copy()
+	set_item_icons(copy.item_icons?.Copy())
+	set_item_state_slots(copy.item_state_slots?.Copy())
 	set_sprite_sheets(copy.sprite_sheets?.Copy())
 	//copying sprite_sheets_obj should be unnecessary as chameleon items are not refittable.
 
@@ -51,9 +51,8 @@
 /obj/item/clothing/under/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "psychedelic"
 	desc = "Groovy!"
-	icon_state = "psyche"
-	LAZYSET(item_state_slots, slot_w_uniform_str, "psyche")
-	update_clothing_icon()
+	set_icon_state("psyche")
+	set_item_state_slots_at(slot_w_uniform_str, "psyche")
 
 CAPABILITIES(/obj/item/clothing/under/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -72,7 +71,6 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 		return
 
 	disguise(GLOB.chamelion_jumpsuit_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //*****************
 //**Chameleon Hat**
@@ -93,8 +91,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 /obj/item/clothing/head/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "grey cap"
 	desc = "It's a baseball hat in a tasteful grey colour."
-	icon_state = "greysoft"
-	update_clothing_icon()
+	set_icon_state("greysoft")
 
 CAPABILITIES(/obj/item/clothing/head/chameleon)
 	configure(item_worn(covers = 0))
@@ -114,7 +111,6 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 		return
 
 	disguise(GLOB.chamelion_head_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //******************
 //**Chameleon Suit**
@@ -135,8 +131,7 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 /obj/item/clothing/suit/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "armor"
 	desc = "An armored vest that protects against some damage."
-	icon_state = "armor"
-	update_clothing_icon()
+	set_icon_state("armor")
 
 CAPABILITIES(/obj/item/clothing/suit/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -155,7 +150,6 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 		return
 
 	disguise(GLOB.chamelion_suit_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //*******************
 //**Chameleon Shoes**
@@ -175,8 +169,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 /obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black shoes"
 	desc = "A pair of black shoes."
-	icon_state = "black"
-	update_clothing_icon()
+	set_icon_state("black")
 
 CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -195,7 +188,6 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 		return
 
 	disguise(GLOB.chamelion_shoe_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //**********************
 //**Chameleon Backpack**
@@ -215,10 +207,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 /obj/item/storage/backpack/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "backpack"
 	desc = "You wear this on your back and put items into it."
-	icon_state = "backpack"
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
+	set_icon_state("backpack")
 
 CAPABILITIES(/obj/item/storage/backpack/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -239,9 +228,6 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 	disguise(GLOB.chamelion_back_choices[picked])
 
 	//so our overlays update.
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 /obj/item/storage/backpack/chameleon/full
 	starts_with = list(
@@ -273,8 +259,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 /obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black gloves"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
-	icon_state = "black"
-	update_clothing_icon()
+	set_icon_state("black")
 
 CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -293,7 +278,6 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 		return
 
 	disguise(GLOB.chamelion_glove_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //******************
 //**Chameleon Mask**
@@ -313,8 +297,7 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 /obj/item/clothing/mask/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "gas mask"
 	desc = "It's a gas mask."
-	icon_state = "gas_alt" // file change
-	update_clothing_icon()
+	set_icon_state("gas_alt") // file change
 
 CAPABILITIES(/obj/item/clothing/mask/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -333,7 +316,6 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon)
 		return
 
 	disguise(GLOB.chamelion_mask_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //*********************
 //**Chameleon Glasses**
@@ -355,8 +337,7 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon)
 /obj/item/clothing/glasses/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "Optical Meson Scanner"
 	desc = "It's a set of mesons."
-	icon_state = "meson"
-	update_clothing_icon()
+	set_icon_state("meson")
 
 CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -372,7 +353,6 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 		return
 
 	disguise(clothing_choices[picked])
-	update_clothing_icon()	//so our overlays update.
 
 //******************
 //**Chameleon Belt**
@@ -392,10 +372,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 /obj/item/storage/belt/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "belt"
 	desc = "Can hold various things."
-	icon_state = "utilitybelt"
-	if(ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
+	set_icon_state("utilitybelt")
 
 CAPABILITIES(/obj/item/storage/belt/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -415,9 +392,6 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 
 	disguise(GLOB.chamelion_belt_choices[picked])
 
-	if(ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 //******************
 //**Chameleon Tie**
@@ -439,8 +413,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 /obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black tie"
 	desc = "Looks like a black tie, but his one also has a dial inside."
-	icon_state = "blacktie"
-	update_clothing_icon()
+	set_icon_state("blacktie")
 
 CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -514,9 +487,6 @@ TRACKED(/obj/item/gun/energy/chameleon, disguise_state)
 	name = "desert eagle"
 	desc = "It's a desert eagle."
 	set_disguise_state("deagle")
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)
 
 /obj/item/gun/energy/chameleon/disguise(newtype)
 	var/obj/item/gun/copy = ..()
@@ -555,6 +525,3 @@ CAPABILITIES(/obj/item/gun/energy/chameleon)
 	disguise(GLOB.gun_choices[picked])
 
 	//so our overlays update.
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		changed(src)

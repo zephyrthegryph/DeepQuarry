@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		magpulse = FALSE
 		set_slowdown()
 		set_force(3)
-		if(icon_base) icon_state = "[icon_base]0"
+		if(icon_base) set_icon_state("[icon_base]0")
 		to_chat(user, mag_disable)
 		if(unremovable_when_enabled)
 			set_canremove(TRUE)
@@ -63,10 +63,9 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		magpulse = TRUE
 		set_slowdown()
 		set_force(5)
-		if(icon_base) icon_state = "[icon_base]1"
+		if(icon_base) set_icon_state("[icon_base]1")
 		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)
-	changed(src)
 	user.update_mob_action_buttons()
 
 

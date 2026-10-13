@@ -479,10 +479,7 @@ draw_untracked	code/game/objects/effects/decals/crayon.dm	var/list/art = CACHED_
 draw_untracked	code/game/objects/effects/simple_portals.dm	return linked_portal
 draw_untracked	code/game/objects/items.dm	standing.alpha = alpha
 draw_untracked	code/game/objects/items.dm	standing.color = color
-draw_untracked	code/game/objects/items.dm	if(icon_override)
 draw_untracked	code/game/objects/items.dm	if(icon_exists(species_sheet, icon_state)) //Checks to make sure our custom sheet actually HAS the icon_state
-draw_untracked	code/game/objects/items.dm	if(LAZYLEN(item_icons))
-draw_untracked	code/game/objects/items.dm	if(LAZYLEN(item_state_slots))
 draw_untracked	code/game/objects/items.dm	if(item_state)
 draw_untracked	code/game/objects/items/bodybag.dm	look.overlay(look_overlay_image(icon, "indicator[opened]", color = COLOR_LIME, appearance_flags = RESET_COLOR))
 draw_untracked	code/game/objects/items/devices/aicard.dm	return carded_ai
@@ -698,12 +695,10 @@ draw_untracked	code/modules/clothing/clothing.dm	look.overlay(look_cached_image(
 draw_untracked	code/modules/clothing/clothing.dm	return master_rig
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(!istype(acc.loc, /obj/item/clothing))
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"
-draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(H && istype(acc.loc, /obj/item/clothing/under))
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	var/obj/item/clothing/under/C = acc.loc
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
-draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.icon_override)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.color)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	result.appearance_flags = acc.appearance_flags
 draw_untracked	code/modules/clothing/clothing_icons.dm	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))

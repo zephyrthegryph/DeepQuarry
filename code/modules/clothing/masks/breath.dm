@@ -17,15 +17,14 @@
 			set_gas_transfer_coefficient(1)
 			set_body_parts_covered(worn_of(src).covers & ~FACE)
 			set_item_flags(worn_of(src).flags & ~AIRTIGHT)
-			icon_state = "breathdown"
+			set_icon_state("breathdown")
 			to_chat(user, "Your mask is now hanging on your neck.")
 		else
 			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
 			set_body_parts_covered(worn_of_type(type).covers)
 			set_item_flags(worn_of_type(type).flags)
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 			to_chat(user, "You pull the mask up to cover your face.")
-		update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
 	configure(item_worn(flags = AIRTIGHT|FLEXIBLEMATERIAL, covers = FACE))

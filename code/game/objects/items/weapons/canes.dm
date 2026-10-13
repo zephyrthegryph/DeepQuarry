@@ -37,7 +37,6 @@ CAPABILITIES(/obj/item/cane/concealed)
 		user.drop_from_inventory(src)
 		user.put_in_hands(concealed_blade)
 		user.put_in_hands(src)
-		changed(src)
 		rel_take(src, nameof(concealed_blade))
 	return OP_OK
 
@@ -103,8 +102,8 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		act_message(user, null, MSG_SELF(span_warning("You extend the white cane.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends the white cane.")), \
 			MSG_BLIND("You hear an ominous click."))
-		icon_state = "whitecane1out"
-		item_state_slots = list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane")
+		set_icon_state("whitecane1out")
+		set_item_state_slots(list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane"))
 		set_w_class(ITEMSIZE_NORMAL)
 		set_force(5)
 		set_attack_verb(list("smacked", "struck", "cracked", "beaten"))
@@ -112,15 +111,12 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		act_message(user, null, MSG_SELF(span_notice("You collapse the white cane.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses the white cane.")), \
 			MSG_BLIND("You hear a click."))
-		icon_state = "whitecane1in"
-		item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
+		set_icon_state("whitecane1in")
+		set_item_state_slots(list(slot_r_hand_str = null, slot_l_hand_str = null))
 		set_w_class(ITEMSIZE_SMALL)
 		set_force(3)
 		set_attack_verb(list("hit", "poked", "prodded"))
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)

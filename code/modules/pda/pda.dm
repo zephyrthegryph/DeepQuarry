@@ -193,12 +193,12 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			model_name = "LunaCorp Holo-PDAssistant"
 		if(6)
 			icon = 'icons/obj/pda_wrist.dmi'
-			item_state = icon_state
-			item_icons = list(
+			set_item_state(icon_state)
+			set_item_icons(list(
 				slot_belt_str = 'icons/mob/pda_wrist.dmi',
 				slot_wear_id_str = 'icons/mob/pda_wrist.dmi',
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
-			)
+			))
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
 		if(7)
 			icon = 'icons/obj/pda_slider.dmi'

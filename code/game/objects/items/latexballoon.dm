@@ -27,14 +27,14 @@ CAPABILITIES(/obj/item/latexballon)
 		return
 	rel_set(src, nameof(air_contents), tank.remove_air_volume(3))
 	icon_state = "latexballon_blow"
-	item_state = "latexballon"
+	set_item_state("latexballon")
 
 /obj/item/latexballon/proc/burst()
 	if (!air_contents)
 		return
 	play_sfx(src, SFX_WEAPONS_GUNSHOT_OLD)
 	icon_state = "latexballon_bursted"
-	item_state = "lgloves"
+	set_item_state("lgloves")
 	loc.assume_air(air_contents)
 
 /// A blast bursts the balloon and still lands.

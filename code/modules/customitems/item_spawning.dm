@@ -55,13 +55,13 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 			if(inherit_inhands)
 				apply_inherit_inhands(item)
 			else
-				item.item_state_slots = null
-				item.item_icons = null
+				item.set_item_state_slots(null)
+				item.set_item_icons(null)
 
 			item.icon = CUSTOM_ITEM_OBJ
 			item.icon_state = item_icon
-			item.item_state = null
-			item.icon_override = CUSTOM_ITEM_MOB
+			item.set_item_state(null)
+			item.set_icon_override(CUSTOM_ITEM_MOB)
 
 		var/obj/item/clothing/under/U = item
 		if(istype(U))
@@ -90,8 +90,8 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 		new_item_state_slots[slot_r_hand_str] = get_state(item, slot_r_hand_str, "_r")
 		new_item_icons[slot_r_hand_str] = get_icon(item, slot_r_hand_str, 'icons/mob/items/righthand.dmi')
 
-	item.item_state_slots = new_item_state_slots
-	item.item_icons = new_item_icons
+	item.set_item_state_slots(new_item_state_slots)
+	item.set_item_icons(new_item_icons)
 
 //this has to mirror the way update_inv_*_hand() selects the state
 /datum/custom_item/proc/get_state(obj/item/item, slot_str, hand_str)

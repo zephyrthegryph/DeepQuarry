@@ -44,15 +44,14 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 			set_gas_transfer_coefficient(1)
 			set_body_parts_covered(worn_of(src).covers & ~FACE)
 			set_armor(dq_armor_none())
-			icon_state = "steriledown"
+			set_icon_state("steriledown")
 			to_chat(user, "You pull the mask below your chin.")
 		else
 			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
 			set_body_parts_covered(worn_of_type(type).covers)
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 			set_armor(null)
 			to_chat(user, "You pull the mask up to cover your face.")
-		update_clothing_icon()
 		worn_protection_changed()
 
 CAPABILITIES(/obj/item/clothing/mask/surgical)
@@ -400,8 +399,7 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 							)
 	if(!istype(user) || !choice || !options[choice] || user.incapacitated() || !in_range(user, src))
 		return
-	icon_state = options[choice]
-	changed(src)
+	set_icon_state(options[choice])
 	user.update_mob_action_buttons()
 	to_chat(user, span_notice("Your paper mask now is now [choice]."))
 
@@ -444,8 +442,7 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	var/choice = A.answer.value
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
-		icon_state = options[choice]
-		changed(src)
+		set_icon_state(options[choice])
 		user.update_mob_action_buttons()
 		to_chat(user, span_notice("Your [src] now displays a [choice] emotion."))
 

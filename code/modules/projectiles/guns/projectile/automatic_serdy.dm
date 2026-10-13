@@ -1533,7 +1533,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	if(sawn_off)
 		return
 	icon_state = "sawnshotgun"
-	item_state = "sawnshotgun"
+	set_item_state("sawnshotgun")
 	desc = "Omar's coming!"
 	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
 

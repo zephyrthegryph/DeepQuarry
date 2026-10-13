@@ -74,12 +74,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 /obj/item/clothing/head/helmet/riot/proc/riot_visor_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		src.set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the visor on the [name_descriptor].") // Visor toggle messages
 	else
-		src.icon_state = initial(icon_state)
+		src.set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the [name_descriptor].") // Visor toggle messages
-	update_clothing_icon()	//so our mob-overlays update
 
 /obj/item/clothing/head/helmet/laserproof
 	name = "ablative helmet"
@@ -313,7 +312,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
 			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = base_state
+			set_icon_state(base_state)
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
@@ -321,14 +320,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
 			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = "[base_state]_up"
+			set_icon_state("[base_state]_up")
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = src.loc
-			changed(src)
 		user.update_mob_action_buttons()
 
 // Costume Versions Here
@@ -377,7 +372,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
 			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = base_state
+			set_icon_state(base_state)
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
@@ -385,12 +380,8 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 			src.up = !src.up
 			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
 			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
-			icon_state = "[base_state]_up"
+			set_icon_state("[base_state]_up")
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = src.loc
-			changed(src)
 		user.update_mob_action_buttons()

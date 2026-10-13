@@ -51,12 +51,9 @@ CAPABILITIES(/obj/item/melee/umbrella)
 
 /obj/item/melee/umbrella/proc/toggle_umbrella()
 	set_open(!open)
-	icon_state = "umbrella_[open ? "open" : "closed"]"
+	set_icon_state("umbrella_[open ? "open" : "closed"]")
 	set_addblends(icon_state + "_a")
-	item_state = icon_state
-	if(ishuman(src.loc))
-		var/mob/living/carbon/human/H = src.loc
-		changed(src)
+	set_item_state(icon_state)
 
 CAPABILITIES(/obj/item/melee/umbrella/random)
 	rolls(nameof(color), PROC_REF(roll_color))

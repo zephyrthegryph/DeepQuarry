@@ -402,8 +402,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	var/choice = A.step_value("a1")
 	if(!choice)
 		return
-	icon_state = "moebiushelm_[choice]"
-	update_clothing_icon()
+	set_icon_state("moebiushelm_[choice]")
 	to_chat(user, span_notice("[src] color changed to: [choice]"))
 
 // Excelsior suit

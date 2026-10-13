@@ -33,11 +33,11 @@
 		var/mob/living/M = loc
 		if(istype(M))
 			if(M.can_wield_item(src) && src.is_held_twohanded(M))
-				LAZYSET(item_state_slots, slot_l_hand_str, wielded_item_state)
-				LAZYSET(item_state_slots, slot_r_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_l_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_r_hand_str, wielded_item_state)
 			else
-				LAZYSET(item_state_slots, slot_l_hand_str, initial(item_state))
-				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_l_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_r_hand_str, initial(item_state))
 		..()
 
 // Draws a box showing the limits of movement while scanning something.

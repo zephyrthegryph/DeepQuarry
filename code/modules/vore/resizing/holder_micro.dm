@@ -13,16 +13,16 @@
 	. = ..()
 	var/mob/living/carbon/human/H = held_mob
 	if(istype(H) && H.species.is_micro_carry(H))
-		item_icons = list(
+		set_item_icons(list(
 					slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 					slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 					slot_back_str = 'icons/mob/toy_worn.dmi',
-					slot_head_str = 'icons/mob/toy_worn.dmi')
+					slot_head_str = 'icons/mob/toy_worn.dmi'))
 
 		// Leaving the following two set makes the sprite not visible
-		icon_override = null
+		set_icon_override(null)
 		icon_state = "teshariplushie_white"
-		item_state = "teshariplushie_white"
+		set_item_state("teshariplushie_white")
 
 /obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	var/mob/living/carbon/human/H = held_mob
