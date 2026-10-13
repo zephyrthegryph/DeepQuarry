@@ -92,9 +92,7 @@ human|/obj/item/book menu: Use
 human|/obj/item/book click: Click: Insert book
 human|/obj/item/camera_bug menu: Attack
 human|/obj/item/camera_bug menu: Bug camera
-human|/obj/item/camera_bug menu: Move To Top
 human|/obj/item/camera_bug menu: Slash (refused: not possible right now)
-human|/obj/item/camera_bug menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/camera_bug menu: Use
 human|/obj/item/camera_bug click: Click: Use
 human|/obj/item/canvas menu: Climb
@@ -176,12 +174,10 @@ human|/obj/item/clothing/head/helmet click: nothing
 human|/obj/item/clothing/head/helmet/space/void menu: Eject Cycler
 human|/obj/item/clothing/head/helmet/space/void menu: Fit helmet (refused: the suit cycler is locked)
 human|/obj/item/clothing/head/helmet/space/void menu: Fit voidsuit (refused: needs a voidsuit)
-human|/obj/item/clothing/head/helmet/space/void menu: Move To Top
+human|/obj/item/clothing/head/helmet/space/void menu: Open controls
 human|/obj/item/clothing/head/helmet/space/void menu: Put in cycler (refused: needs a grab)
-human|/obj/item/clothing/head/helmet/space/void menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/clothing/head/helmet/space/void menu: Ui open
 human|/obj/item/clothing/head/helmet/space/void menu: Use
-human|/obj/item/clothing/head/helmet/space/void click: Click: Ui open
+human|/obj/item/clothing/head/helmet/space/void click: Click: Open controls
 human|/obj/item/clothing/head/pilot menu: Alter HUD color (refused: You can't do that.)
 human|/obj/item/clothing/head/pilot menu: Climb
 human|/obj/item/clothing/head/pilot menu: Move To Top
@@ -189,16 +185,12 @@ human|/obj/item/clothing/head/pilot menu: Toggle Digestable (refused: You can't 
 human|/obj/item/clothing/head/pilot menu: Use item
 human|/obj/item/clothing/head/pilot click: Click: Use item
 human|/obj/item/clothing/suit/space/void menu: Eject Cycler
-human|/obj/item/clothing/suit/space/void menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/clothing/suit/space/void menu: Fit helmet (refused: needs a void helmet)
 human|/obj/item/clothing/suit/space/void menu: Fit voidsuit (refused: the suit cycler is locked)
-human|/obj/item/clothing/suit/space/void menu: Move To Top
+human|/obj/item/clothing/suit/space/void menu: Open controls
 human|/obj/item/clothing/suit/space/void menu: Put in cycler (refused: needs a grab)
-human|/obj/item/clothing/suit/space/void menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/clothing/suit/space/void menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/clothing/suit/space/void menu: Ui open
 human|/obj/item/clothing/suit/space/void menu: Use
-human|/obj/item/clothing/suit/space/void click: Click: Ui open
+human|/obj/item/clothing/suit/space/void click: Click: Open controls
 human|/obj/item/clothing/suit/storage/vest menu: Move To Top
 human|/obj/item/clothing/suit/storage/vest menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/clothing/suit/storage/vest click: nothing
@@ -362,12 +354,8 @@ human|/obj/item/pai_cable menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pai_cable click: Click: Pai cable
 human|/obj/item/paper menu: Attack
 human|/obj/item/paper menu: Bug camera (refused: needs a camera bug)
-human|/obj/item/paper menu: Create Area (refused: You can't do that.)
-human|/obj/item/paper menu: Move To Top
-human|/obj/item/paper menu: Rename paper (refused: You can't do that.)
 human|/obj/item/paper menu: Show to camera
 human|/obj/item/paper menu: Slash (refused: not possible right now)
-human|/obj/item/paper menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper menu: Use
 human|/obj/item/paper click: Click: Use
 human|/obj/item/paper_bundle menu: Bind
@@ -479,10 +467,7 @@ human|/obj/item/reagent_containers/chem_disp_cartridge menu: Turn Around (refuse
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Ui open
 human|/obj/item/reagent_containers/chem_disp_cartridge click: Click: Insert cartridge
 human|/obj/item/reagent_containers/food menu: Eject Beaker
-human|/obj/item/reagent_containers/food menu: Move To Top
-human|/obj/item/reagent_containers/food menu: Rename food
 human|/obj/item/reagent_containers/food menu: Scan food
-human|/obj/item/reagent_containers/food menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food menu: Use
 human|/obj/item/reagent_containers/food click: Click: Scan food
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Climb
@@ -507,14 +492,13 @@ human|/obj/item/reagent_containers/food/snacks/grown menu: Move To Top
 human|/obj/item/reagent_containers/food/snacks/grown menu: Rename food
 human|/obj/item/reagent_containers/food/snacks/grown menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food/snacks/grown click: Click: Extract seeds
-human|/obj/item/reagent_containers/glass menu: Eject Beaker
-human|/obj/item/reagent_containers/glass menu: Insert container
-human|/obj/item/reagent_containers/glass menu: Move To Top
-human|/obj/item/reagent_containers/glass menu: Open or close the lid
-human|/obj/item/reagent_containers/glass menu: Set transfer amount
-human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/reagent_containers/glass menu: Use
-human|/obj/item/reagent_containers/glass click: Click: Insert container
+human|/obj/item/reagent_containers/glass menu: Clonepod interaction hand
+human|/obj/item/reagent_containers/glass menu: Eject Beakers
+human|/obj/item/reagent_containers/glass menu: Eject Cloner
+human|/obj/item/reagent_containers/glass menu: Load container
+human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass menu: Use  
+human|/obj/item/reagent_containers/glass click: Click: Load container
 human|/obj/item/reagent_containers/glass/beaker menu: Attach container
 human|/obj/item/reagent_containers/glass/beaker menu: Eject Particle Focus Contents
 human|/obj/item/reagent_containers/glass/beaker menu: Splash (refused: There is nothing in it to pour.)

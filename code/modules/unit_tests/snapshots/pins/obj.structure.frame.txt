@@ -72,8 +72,6 @@
 +4 menu: Turn Around
 @obj human|/obj/item/circuitboard
 @obj.structure human|/obj/item/stack/material
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 +0 menu: Climb
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise
