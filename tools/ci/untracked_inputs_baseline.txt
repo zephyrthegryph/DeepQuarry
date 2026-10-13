@@ -100,7 +100,6 @@ stat_input_untracked	code/game/objects/items/bodybag.dm	var/reason = A.held.loc?
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-stat_input_untracked	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 stat_input_untracked	code/game/objects/items/devices/modkit.dm	if(!isturf(I.loc)) // ALLOW(reads): native target location is rechecked immediately before this instant refit with no wait or prompt
 stat_input_untracked	code/game/objects/items/devices/radio/radio.dm	if(!on)
 stat_input_untracked	code/game/objects/items/devices/uplink.dm	return loc
@@ -213,7 +212,6 @@ stat_input_untracked	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/paperwork/filingcabinet.dm	return (length(contents) > 0) ? null : MSG(filingcabinet/empty) // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
-stat_input_untracked	code/modules/pda/contracts.dm	var/datum/contract/faction_agent/agent_contract = service.contracts_by_id[A.args["id"]]
 stat_input_untracked	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
 stat_input_untracked	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
 stat_input_untracked	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1

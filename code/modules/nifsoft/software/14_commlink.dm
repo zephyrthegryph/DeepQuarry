@@ -105,7 +105,7 @@ CAPABILITIES(/obj/item/communicator/commlink)
 	if(!who)
 		return
 
-	LAZYOR(voice_requests, candidate)
+	rel_add(src, nameof(voice_requests), candidate)
 
 	if(ringer && nif.human)
 		nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>)")

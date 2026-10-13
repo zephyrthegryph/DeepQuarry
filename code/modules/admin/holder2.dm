@@ -57,6 +57,7 @@ GLOBAL_PROTECT(href_token)
 
 
 CAPABILITIES(/datum/admins)
+	ref_many(nameof(tagged_datums), /datum)
 	extend(TAG_TOPIC, needs(req_topic_ok(), req_topic_token()))
 	op("empty_ai_core_latejoin", ai(), needs(req(PROC_REF(empty_ai_core_latejoin_valid), because = "administrator rights required")), asks(/datum/prompt/choice, fields = list("title" = "Toggle AI Core Latejoin", "question" = "Which core?", "choices" = computed(PROC_REF(empty_ai_core_options)), "timeout" = 0), step = "core"), then(PROC_REF(empty_ai_core_latejoin_chosen)))
 	owns_one(nameof(access_view_menu), /datum/access_viewer)

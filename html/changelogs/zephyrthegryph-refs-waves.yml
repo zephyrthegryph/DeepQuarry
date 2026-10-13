@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Stored references in caches, pools and queues are declared relations or handles, so deleted objects are collected instead of hard-deleted"
+  - bugfix: "Supply orders an event queues on the shopping list (shipping errors) are now bought with the next shuttle load"

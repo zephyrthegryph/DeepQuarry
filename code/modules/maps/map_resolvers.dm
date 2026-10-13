@@ -89,7 +89,7 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	if(SSatoms.atom_initialized == INITIALIZATION_INNEW_REGULAR && !SSatoms.initialize_depth)
 		call(proc_path)(loc, path, varedits)
 		return
-	LAZYADD(SSatoms.deferred_resolvers, list(list(proc_path, loc, path, varedits)))
+	LAZYADD(SSatoms.deferred_resolvers, list(list(proc_path, entity_handle(loc), path, varedits)))
 
 /// Runs the deferred resolvers and clears the load's scratch (the outermost InitializeAtoms(), once
 /// its atoms are created).
@@ -98,5 +98,8 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 		var/list/rows = SSatoms.deferred_resolvers
 		SSatoms.deferred_resolvers = null
 		for(var/list/row as anything in rows)
-			call(row[1])(row[2], row[3], row[4])
+			var/atom/where = resolve_handle(row[2]) // a turf: null only when its z-level was recycled since
+			if(!where)
+				continue
+			call(row[1])(where, row[3], row[4])
 	GLOB.map_resolve_scratch.Cut()

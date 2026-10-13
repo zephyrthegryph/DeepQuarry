@@ -123,7 +123,7 @@ MSG_DEF_SELF(digitalwarrant/no_id, "Authentication error: Unable to locate ID wi
 		to_chat(user, "Authentication error: Unable to locate ID with appropriate access to allow this operation.")
 		return
 	. = TRUE
-	LAZYOR(GLOB.data_core.warrants, activewarrant())
+	rel_add(GLOB.data_core, nameof(/datum/datacore::warrants), activewarrant())
 	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_deletewarrant(datum/act/op/A)
@@ -133,7 +133,7 @@ MSG_DEF_SELF(digitalwarrant/no_id, "Authentication error: Unable to locate ID wi
 		to_chat(user, "Authentication error: Unable to locate ID with appropriate access to allow this operation.")
 		return
 	. = TRUE
-	LAZYREMOVE(GLOB.data_core.warrants, activewarrant())
+	rel_remove(GLOB.data_core, nameof(/datum/datacore::warrants), activewarrant())
 	rel_clear(src, nameof(/datum/computer_file/program/digitalwarrant::activewarrant_ref))
 
 /datum/computer_file/program/digitalwarrant/proc/ui_act_editwarrantname(datum/act/op/A)

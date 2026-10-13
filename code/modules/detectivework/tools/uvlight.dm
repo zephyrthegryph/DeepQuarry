@@ -8,7 +8,9 @@
 	actions_types = list(/datum/action/item_action/toggle_uv_light)
 	MATERIAL_BULK(MAT_STEEL, 150)
 
+	/// Scanned atom handle (entity_handle) -> the invisibility it had before the scan.
 	var/list/scanned
+	/// Scanned atom handle (entity_handle) -> the alpha it had before the scan.
 	var/list/stored_alpha
 	var/list/reset_objects
 
@@ -38,13 +40,19 @@ CAPABILITIES(/obj/item/uv_light)
 
 /obj/item/uv_light/proc/clear_last_scan()
 	if(length(scanned))
-		for(var/atom/O in scanned)
-			O.invisibility = LAZYACCESS(scanned, O)
+		for(var/object_handle in scanned)
+			var/atom/O = resolve_handle(object_handle) // a deleted atom stops resolving
+			if(!O)
+				continue
+			O.invisibility = LAZYACCESS(scanned, object_handle)
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
 		LAZYCLEARLIST(scanned)
 	if(length(stored_alpha))
-		for(var/atom/O in stored_alpha)
-			O.alpha = LAZYACCESS(stored_alpha, O)
+		for(var/object_handle in stored_alpha)
+			var/atom/O = resolve_handle(object_handle)
+			if(!O)
+				continue
+			O.alpha = LAZYACCESS(stored_alpha, object_handle)
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
 		LAZYCLEARLIST(stored_alpha)
 	if(length(reset_objects))
@@ -66,9 +74,9 @@ CAPABILITIES(/obj/item/uv_light)
 				if(dq_get_fluorescent(A) == 1)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)
-						LAZYSET(scanned, A, A.invisibility)
+						LAZYSET(scanned, entity_handle(A), A.invisibility)
 						A.invisibility = INVISIBILITY_NONE
-						LAZYSET(stored_alpha, A, A.alpha)
+						LAZYSET(stored_alpha, entity_handle(A), A.alpha)
 						A.alpha = use_alpha
 					if(istype(A, /obj/item))
 						var/obj/item/O = A

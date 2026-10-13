@@ -183,7 +183,7 @@ CAPABILITIES(/datum/radial_menu/prompt)
 
 /// Takes the ring off screen and deletes it.
 /datum/radial_menu/prompt/proc/dismiss()
-	if(menu_id && GLOB.radial_menus[menu_id] == src)
+	if(menu_id && entity_handle_is(GLOB.radial_menus[menu_id], src))
 		GLOB.radial_menus -= menu_id
 	hide()
 	qdel(src) // ALLOW(lifecycle): the ring is deleted when it is dismissed, nothing else owns it

@@ -175,7 +175,7 @@
 				Machine.pass_editor()
 			else
 				if(mob in Machine.viewingcode)
-					LAZYREMOVE(Machine.viewingcode, mob)
+					rel_remove(Machine, nameof(Machine.viewingcode), mob)
 
 /client/verb/tcsrevert()
 	set hidden = 1

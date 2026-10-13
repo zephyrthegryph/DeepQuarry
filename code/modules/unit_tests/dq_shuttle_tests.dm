@@ -27,7 +27,7 @@
 	// hand, as the processing-set line below already does.
 	shuttle.registered = TRUE
 	shuttle.set_shuttle_flags(shuttle.shuttle_flags | SHUTTLE_FLAGS_PROCESS)
-	SSshuttles.process_shuttles |= shuttle
+	rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), shuttle)
 	shuttle.set_process_state(IDLE_STATE)
 	TEST_ASSERT(!shuttle.shuttle_working(), "idle shuttle declared as working")
 	TEST_ASSERT(!shuttle.working, "idle shuttle held its step open")

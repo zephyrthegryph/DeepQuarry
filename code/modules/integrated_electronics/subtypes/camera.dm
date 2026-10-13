@@ -175,6 +175,7 @@ CAPABILITIES(/obj/machinery/camera/intcircuit)
 	var/datum/tgui_module/camera/intcircuit/camera_module
 
 CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input)
+	ref_many(nameof(paired_cameras), /obj/item/integrated_circuit/output/video_camera)
 	owns_one(nameof(camera_module), /datum/tgui_module/camera/intcircuit, starts = /datum/tgui_module/camera/intcircuit)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

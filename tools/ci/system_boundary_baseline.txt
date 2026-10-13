@@ -30,7 +30,7 @@ B1:code/game/machinery/computer/skills.dm:SSsupply 3
 B1:code/game/machinery/computer/supply.dm:SSsupply 15
 B1:code/game/machinery/computer/timeclock.dm:SSjob 4
 B1:code/game/machinery/doors/airlock.dm:SSplanets 2
-B1:code/game/machinery/embedded_controller/docking_program.dm:SSshuttles 3
+B1:code/game/machinery/embedded_controller/docking_program.dm:SSshuttles 2
 B1:code/game/machinery/jukebox.dm:SSmedia_tracks 3
 B1:code/game/machinery/seed_extractor.dm:SSplants 2
 B1:code/game/machinery/status_display.dm:SSemergency_shuttle 1

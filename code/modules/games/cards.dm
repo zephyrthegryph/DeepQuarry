@@ -3,6 +3,8 @@
 	var/card_icon = "card_back"
 	var/back_icon = "card_back"
 
+TRACKED(/obj/item/hand, cards)
+
 /obj/item/deck
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/playing_cards.dmi'

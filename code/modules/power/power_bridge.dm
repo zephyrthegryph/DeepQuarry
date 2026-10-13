@@ -34,7 +34,7 @@
 	/// Areas whose static or one-off loads changed since the last step.
 	var/list/power_dirty_areas = list() // SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
-	var/list/power_material_cables = list() // SSmachines singleton (M3 power); one instance
+	var/list/power_material_cables = list() // a relation list: a deleted cable leaves it
 	/// The APCs and SMES the current power step still has to poll, while a budgeted step is yielded between
 	/// ticks; null when no poll is in progress (poll_power_storage()).
 	var/list/power_poll_queue
@@ -42,6 +42,7 @@
 
 CAPABILITIES(/datum/system/machines)
 	owns_one(nameof(power_grids), /datum/power_grid_registry, starts = /datum/power_grid_registry)
+	ref_many(nameof(power_material_cables), /obj/structure/cable)
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
@@ -84,7 +85,7 @@ CAPABILITIES(/datum/system/machines)
 /datum/system/machines/proc/process_power_finish()
 	for(var/obj/structure/cable/cable as anything in power_material_cables)
 		if(QDELETED(cable))
-			power_material_cables -= cable
+			rel_remove(src, nameof(power_material_cables), cable)
 			continue
 		var/id = cable.get_power_region()
 		if(id && !power_material_overlays[id])
