@@ -322,4 +322,4 @@ CAPABILITIES(/obj/machinery/lapvend)
 		return customer_account.debit(total_price, "Computer Manufacturer", "Purchase of [(devtype == 1) ? "laptop computer" : "tablet microcomputer"]", name)
 
 
-TRACKED_BRIDGED(/obj/machinery/lapvend, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/lapvend, state)

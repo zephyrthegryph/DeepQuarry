@@ -24,10 +24,6 @@
 
 /// The internal buffer cell (the station steps only while it has one).
 /obj/machinery/recharge_station/var/obj/item/cell/cell
-/datum/scheduler_field_definition/obj/machinery/recharge_station/cell
-	of = /obj/machinery/recharge_station
-	field = "cell"
-	channel = CHANGE_MACHINE_SETTINGS
 
 /// Not BROKEN (an unpowered station still runs off its cell, so operable() is too strict).
 /obj/machinery/recharge_station/proc/unbroken()

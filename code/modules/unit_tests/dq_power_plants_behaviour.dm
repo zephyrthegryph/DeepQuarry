@@ -572,7 +572,7 @@
 	var/obj/machinery/field_generator/G = allocate(/obj/machinery/field_generator, T)
 	G.set_state(2)
 	G.set_anchored(TRUE)
-	G.power = power
+	G.set_power(power)
 	return G
 
 /// Power draw: a running generator pays half of 5500 W, plus 5500 per linked generator and 2000 per field, every step; its store is capped at
@@ -586,7 +586,7 @@
 	pp_step(G, PP_FG_STEP)
 	TEST_ASSERT_EQUAL(G.power, 100000 - 2750, "a lone generator pays 2750 a step")
 	TEST_ASSERT_EQUAL(G.active, 2, "and stays up")
-	G.power = 300000
+	G.set_power(300000)
 	pp_step(G, PP_FG_STEP)
 	TEST_ASSERT_EQUAL(G.power, 250000 - 2750, "its store is capped at 250000 before it pays")
 	G.set_active(0)
@@ -622,7 +622,7 @@
 		TEST_ASSERT_NOTNULL(locate_on(run[i], /obj/machinery/containment_field), "a field stands on tile [i]")
 	TEST_ASSERT_EQUAL(length(A.fields), 3, "A powers 3 fields")
 	TEST_ASSERT(B in A.connected_gens, "and is linked to B")
-	A.power = 100000
+	A.set_power(100000)
 	pp_step(A, PP_FG_STEP)
 	var/draw = round((5500 * 2 + 2000 * 3) / 2)
 	TEST_ASSERT_EQUAL(A.power, 100000 - draw, "a linked generator with 3 fields pays [draw] a step: [A.power]")

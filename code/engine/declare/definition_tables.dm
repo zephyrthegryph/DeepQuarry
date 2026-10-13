@@ -67,14 +67,6 @@
 	var/list/services
 	/// Parallel to services: the channels each service observes on this type (per-(service, type) mask).
 	var/list/service_masks
-	/// Declared caches (declared_cache_vars(), read from the first instance by
-	/// entity_cache_scan()): the change bits that clear one, and stride-2 rules
-	/// (bits, var) / (event path, var) / (relation id, var).
-	var/cache_scanned = FALSE
-	var/cache_mask = 0
-	var/list/cache_change
-	var/list/cache_events
-	var/list/cache_relations
 
 // ---- Combinators (plain lists; used by checks and derived rows). ----
 

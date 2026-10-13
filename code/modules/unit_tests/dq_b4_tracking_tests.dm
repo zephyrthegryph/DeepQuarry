@@ -33,23 +33,6 @@
 		TEST_ASSERT_EQUAL(P.hits, 2, "an admin edit of [name] goes through its setter and publishes")
 		TEST_ASSERT(!O.vars[name], "the edit wrote [name]")
 
-/// The bridge: a machine's anchored and density setters still raise their declared field channel (no istype() in the
-/// setter), and a plain object raises none.
-/datum/unit_test/dq_b4_base_vars_bridge
-
-/datum/unit_test/dq_b4_base_vars_bridge/Run()
-	var/obj/machinery/M = allocate(/obj/machinery)
-	var/datum/scheduler_record/rec = scheduler_record_of(M)
-	var/datum/time_scheduler/sched = rec.sched
-	M.om_listen |= CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
-	M.set_anchored(FALSE)
-	sched.test_raises = list()
-	M.set_anchored(TRUE)
-	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_ANCHORED), 1, "a machine's set_anchored raises CHANGE_MACHINE_ANCHORED")
-	sched.test_raises = null
-	var/list/plain = definition_registry().fields_of(/obj/structure)
-	TEST_ASSERT(!plain["anchored"] && !plain["density"], "a plain object's anchored and density raise no channel")
-
 /// NOPOWER is the power capability's state (set_powered(), published as MACHINE_KEY_POWERED), BROKEN the integrity
 /// state (atom_break() / atom_fix(), INTEGRITY_KEY_BROKEN), and use_power the tracked draw mode.
 /datum/unit_test/dq_b4_machine_state_publishes

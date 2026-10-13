@@ -16,9 +16,9 @@
 	var/should_run_calls = 0
 	var/draw_calls = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_laser, energy)
+TRACKED(/obj/cap_fixture/dx_deps_laser, pointing)
+TRACKED(/obj/cap_fixture/dx_deps_laser, spare)
 
 /obj/cap_fixture/dx_deps_laser/derived()
 	. = ..()
@@ -41,7 +41,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_DATUM_A)
 	var/tier = 0
 	var/draw_calls = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_legacy, tier)
 
 /obj/cap_fixture/dx_deps_legacy/draw(datum/look/look)
 	..()
@@ -53,8 +53,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_DATUM_A)
 	var/glow = FALSE
 	var/other = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, glow, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, other, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_source, glow)
+TRACKED(/obj/cap_fixture/dx_deps_source, other)
 
 /// draw() reads the source's glow through the declared REL view `source`.
 /obj/cap_fixture/dx_deps_watcher
@@ -107,8 +107,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, other, CHANGE_DATUM_A)
 /obj/cap_fixture/dx_deps_derive/relations()
 	. = ..()
 	. += rel_one(nameof(feed))
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_derive, a)
+TRACKED(/obj/cap_fixture/dx_deps_derive, b)
 
 /obj/cap_fixture/dx_deps_derive/derived()
 	. = ..()
@@ -157,8 +157,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_DATUM_A)
 	var/tier = 0
 	var/lie = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, tier, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_writer, tier)
+TRACKED(/obj/cap_fixture/dx_deps_writer, lie)
 
 /obj/cap_fixture/dx_deps_writer/derived()
 	. = ..()
@@ -167,7 +167,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_DATUM_A)
 /obj/cap_fixture/dx_deps_writer/draw(datum/look/look)
 	..()
 	look.state("written")
-	set_lie(lie + 1)
+	set_lie(vars[nameof(lie)] + 1) // read by name: the generated draw reads must not see it, so the write is a plain output write
 
 /// draw() reads `shade`, which derived() forgot.
 /obj/cap_fixture/dx_deps_sloppy
@@ -175,8 +175,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_DATUM_A)
 	var/shade = 0
 	var/other = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, shade, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_sloppy, shade)
+TRACKED(/obj/cap_fixture/dx_deps_sloppy, other)
 
 /obj/cap_fixture/dx_deps_sloppy/derived()
 	. = ..()
@@ -184,7 +184,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_sloppy/draw(datum/look/look)
 	..()
-	look.state(shade ? "shaded" : "plain")
+	look.state(vars[nameof(shade)] ? "shaded" : "plain") // read by name: the generated draw reads must not see it (the undeclared read this fixture is for)
 
 /// push_to_rust() reads target and mode.
 /obj/cap_fixture/dx_deps_pusher
@@ -193,9 +193,9 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_DATUM_A)
 	var/noise = 0
 	var/pushes = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, target, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, mode, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_pusher, target)
+TRACKED(/obj/cap_fixture/dx_deps_pusher, mode)
+TRACKED(/obj/cap_fixture/dx_deps_pusher, noise)
 
 /obj/cap_fixture/dx_deps_pusher/derived()
 	. = ..()
@@ -218,8 +218,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_DATUM_A)
 	var/gadget = FALSE
 	var/spare = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_DATUM_A)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_deps_cap, gadget)
+TRACKED(/obj/cap_fixture/dx_deps_cap, spare)
 
 /obj/cap_fixture/dx_deps_cap/declared_capabilities(list/into)
 	..()
@@ -269,7 +269,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_DATUM_A)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "no draw")
 	TEST_ASSERT_EQUAL(F.should_run_calls, checks, "no should_run()")
-	changed(F)
+	state_changed(F)
 	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_ALL, "a plain changed() still re-derives everything")
 	refresh_flush()
 	var/legacy_draws = L.draw_calls

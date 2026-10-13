@@ -89,8 +89,6 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset
 	var/_abstract = /datum/asset
-	var/cached_serialized_url_mappings
-	var/cached_serialized_url_mappings_transport_type
 
 	/// Whether or not this asset should be loaded in the "early assets" SS
 	var/early = FALSE
@@ -117,23 +115,15 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/get_url_mappings()
 	return list()
 
+/// The serialized URL mappings of an asset type for one transport type (a tgui message): regenerating an asset drops them all.
+DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mappings), SC_EXPLICIT)
+
+/proc/build_asset_url_mappings(datum/asset/asset)
+	return TGUI_CREATE_MESSAGE("asset/mappings", asset.get_url_mappings())
+
 /// Returns a cached tgui message of URL mappings
 /datum/asset/proc/get_serialized_url_mappings()
-	if (isnull(cached_serialized_url_mappings) || cached_serialized_url_mappings_transport_type != SSassets.transport.type)
-		cached_serialized_url_mappings = TGUI_CREATE_MESSAGE("asset/mappings", get_url_mappings())
-		cached_serialized_url_mappings_transport_type = SSassets.transport.type
-		scheduler_record_of(src) // join the object model so the declared caches are cleared on CHANGE_EXPLICIT
-
-	return cached_serialized_url_mappings
-
-/// The serialized URL mappings (and the transport they were built for) are declared
-/// caches: regenerating the asset raises CHANGE_EXPLICIT and the object-model core nulls them.
-/datum/asset/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["cached_serialized_url_mappings"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["cached_serialized_url_mappings_transport_type"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
+	return CACHED_KEY(asset_url_mappings, "[type]|[SSassets.transport.type]", src)
 
 /datum/asset/proc/register()
 	return
@@ -149,7 +139,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/regenerate()
 	SHOULD_CALL_PARENT(FALSE)
 	unregister()
-	changed(src, CHANGE_EXPLICIT)
+	INVALIDATE_SHARED_CACHE(asset_url_mappings)
 	register()
 
 /// Unregisters any assets from the transport.
@@ -298,7 +288,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		fdel("[SPRITESHEET_DIR][name]_[size_id].png")
 	sizes = list()
 	to_generate = list()
-	changed(src, CHANGE_EXPLICIT)
+	INVALIDATE_SHARED_CACHE(asset_url_mappings)
 	fully_generated = FALSE
 	var/old_load = load_immediately
 	load_immediately = TRUE

@@ -26,7 +26,7 @@
 /datum/dx_core_child
 	var/level = 0
 
-TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_DATUM_A)
+TRACKED(/datum/dx_core_child, level)
 
 /obj/cap_fixture
 	name = "capability fixture"
@@ -44,7 +44,7 @@ TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_DATUM_A)
 	. = ..()
 	. += owns(nameof(child), policy = OWN_DELETE)
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_core, power_level)
 
 /obj/cap_fixture/dx_core/declared_capabilities(list/into)
 	..()
@@ -121,7 +121,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_DATUM_A)
 	periodic_cadence = PERIODIC_SLOW
 	var/gating = FALSE
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
+TRACKED(/obj/cap_fixture/dx_periodic, gating)
 
 /obj/cap_fixture/dx_periodic/should_run()
 	return gating
@@ -176,18 +176,16 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	var/before = F.state_changes
 	TEST_ASSERT(F.set_power_level(3), "set_ returns TRUE on a change")
 	TEST_ASSERT(F.refresh_queued, "a change queues the refresh")
-	TEST_ASSERT(F.refresh_bits & CHANGE_DATUM_A, "refresh_bits carries the channel")
 	TEST_ASSERT(!F.set_power_level(3), "set_ returns FALSE with no change")
 	var/queued = 0
 	for(var/datum/D as anything in GLOB.refresh_queue)
 		if(D == F)
 			queued++
 	TEST_ASSERT_EQUAL(queued, 1, "queued once per frame")
-	changed(F, CHANGE_DATUM_B)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.state_changes - before, 1, "on_state_changed ran once for the frame")
-	TEST_ASSERT(F.last_bits & CHANGE_DATUM_A, "on_state_changed got the TRACKED channel")
-	TEST_ASSERT(F.last_bits & CHANGE_DATUM_B, "on_state_changed got the explicit channel")
+	TEST_ASSERT(F.last_bits & CHANGE_EXPLICIT, "on_state_changed got the explicit channel")
 	TEST_ASSERT_EQUAL(F.refresh_bits, 0, "bits are cleared after the refresh")
 	TEST_ASSERT_EQUAL(F.icon_state, "on", "draw ran")
 
@@ -210,7 +208,6 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	var/before = D.state_changes
 	TEST_ASSERT(DK.set_level(4), "the drawn child's setter changed it")
 	TEST_ASSERT(D.refresh_queued, "an owner whose capability draws the child is queued with it")
-	TEST_ASSERT(D.refresh_bits & CHANGE_DATUM_A, "the owner carries the child's channel")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(D.state_changes - before, 1, "the owner refreshed once")
 
@@ -232,13 +229,13 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	TEST_ASSERT(findtext(F.rx?.look_key, "charge3"), "gauge moved to step 3")
 	var/key = F.rx?.look_key
 	var/list/applied = F.rx?.look_overlays
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.rx?.look_key, key, "an identical look keeps its key")
 	TEST_ASSERT(F.rx?.look_overlays == applied, "an identical look churns no overlays")
 
 	var/obj/cap_fixture/dx_plain/P = allocate(/obj/cap_fixture/dx_plain)
-	changed(P)
+	state_changed(P)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(P.icon_state, "keepme", "a type that draws nothing keeps its icon_state")
 	TEST_ASSERT_NULL(P.rx?.look_key, "and has no look key")
@@ -421,26 +418,26 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	var/key = F.rx?.look_key
 	TEST_ASSERT(findtext(key, "mark_a"), "an image overlay keys by its icon_state: [key]")
 	F.mark_state = "mark_b"
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_key != key, "a different image changes the key")
 	TEST_ASSERT(findtext(F.rx?.look_key, "mark_b"), "the new image is applied: [F.rx?.look_key]")
 	var/list/applied = F.rx?.look_overlays
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(F.rx?.look_overlays == applied, "an equal image (a fresh mutable_appearance) churns no overlays")
 
 	F.tinted = TRUE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.color, "#ff0000", "set_color applied")
 	F.tinted = FALSE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.color, initial(F.color), "a colour the look stopped setting goes back to the default")
 	TEST_ASSERT_EQUAL(F.icon_state, "look_on", "state still applied")
 	F.stated = FALSE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "look_default", "a state the look stopped setting goes back to the default")
 
@@ -458,7 +455,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	TEST_ASSERT(caught, "the draw failure propagated")
 	TEST_ASSERT(GLOB.refresh_running != F, "refresh_running was restored after the failure")
 	F.explode = FALSE
-	changed(F) // would stack_trace REFRESH SELF-MARK with a stale refresh_running
+	state_changed(F) // would stack_trace REFRESH SELF-MARK with a stale refresh_running
 	refresh_flush()
 	TEST_ASSERT(!F.refresh_queued, "the next refresh ran")
 

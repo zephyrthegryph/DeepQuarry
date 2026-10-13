@@ -16,9 +16,6 @@
 	var/skybox_pixel_x
 	/// Shift from lower left corner of skybox
 	var/skybox_pixel_y
-	/// Cachey
-	var/image/cached_skybox_image
-
 	/// For showing to the pilot of the ship, so they see the 'real' appearance, despite others seeing the unknown ones
 	var/image/real_appearance
 
@@ -69,21 +66,20 @@ CAPABILITIES(/obj/effect/overmap)
 	image_anchor(real_appearance, null)
 	return ..()
 
+/// The most skybox images kept at once (an approximate LRU: a world has a few dozen overmap objects).
+#define OVERMAP_SKYBOX_CACHE_MAX 128
+
+/// The skybox image of each overmap object (its icon at its own offset): built on first use, dropped when any object's representation expires.
+DECLARE_SHARED_CACHE_EX(overmap_skybox_images, GLOBAL_PROC_REF(build_overmap_skybox_image), SC_EXPLICIT, OVERMAP_SKYBOX_CACHE_MAX, 0)
+
+/proc/build_overmap_skybox_image(obj/effect/overmap/object)
+	return object.build_skybox_representation()
+
 //Overlay of how this object should look on other skyboxes
 /obj/effect/overmap/proc/get_skybox_representation(zlevel)
-	if(!cached_skybox_image)
-		build_skybox_representation(zlevel)
-	return cached_skybox_image
+	return CACHED_KEY(overmap_skybox_images, SHARED_CACHE_UID(src), src)
 
-/// cached_skybox_image is a declared cache: expire_skybox_representation() raises
-/// CHANGE_EXPLICIT and the object-model core nulls it.
-/obj/effect/overmap/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["cached_skybox_image"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
-
-/obj/effect/overmap/proc/build_skybox_representation(zlevel)
+/obj/effect/overmap/proc/build_skybox_representation()
 	if(!skybox_icon)
 		return
 	var/image/I = image(icon = skybox_icon, icon_state = skybox_icon_state)
@@ -93,15 +89,13 @@ CAPABILITIES(/obj/effect/overmap)
 		skybox_pixel_y = rand(200,600)
 	I.pixel_x = skybox_pixel_x
 	I.pixel_y = skybox_pixel_y
-	scheduler_record_of(src) // join the object model so the declared cache is cleared on CHANGE_EXPLICIT
-	cached_skybox_image = I
+	return I
 
 /obj/effect/overmap/proc/expire_skybox_representation()
-	changed(src, CHANGE_EXPLICIT)
+	INVALIDATE_SHARED_CACHE(overmap_skybox_images)
 
 /obj/effect/overmap/proc/update_skybox_representation()
 	expire_skybox_representation()
-	build_skybox_representation()
 	for(var/obj/effect/overmap/visitable/O in contents_of(loc))
 		SSskybox.ready().rebuild_skyboxes(O.map_z)
 
