@@ -23,8 +23,8 @@ human|none click: Click: Wash hands
 +2 menu: Wash hands
 @obj.structure human|/obj/item
 +2 menu: Wash hands
-@obj.structure human|/obj/item/reagent_containers
--menu: Empty into sink
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers menu: Hit
+human|/obj/item/reagent_containers menu: Use
+human|/obj/item/reagent_containers menu: Wash hands
+human|/obj/item/reagent_containers click: Click: Use
 keys: drag_buckle, empty, item, melee_hit, sink_wash_gurgled_item, wash
