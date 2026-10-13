@@ -64,13 +64,7 @@ human|/obj/item menu: Eject Beakers
 human|/obj/item menu: Eject Cloner
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Clonepod interaction item
-human|/obj/item/reagent_containers/glass menu: Clonepod interaction hand
-human|/obj/item/reagent_containers/glass menu: Eject Beakers
-human|/obj/item/reagent_containers/glass menu: Eject Cloner
-human|/obj/item/reagent_containers/glass menu: Load container
-human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
-human|/obj/item/reagent_containers/glass menu: Use  
-human|/obj/item/reagent_containers/glass click: Click: Load container
+@obj human|/obj/item/reagent_containers/glass
 @obj.machinery human|/obj/item/card/emag
 -menu: Climb
 +0 menu: Clonepod interaction hand

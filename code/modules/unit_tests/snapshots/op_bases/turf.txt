@@ -40,10 +40,8 @@ human|/obj/item/weldingtool menu: Dig
 human|/obj/item/weldingtool menu: Touch
 human|/obj/item/weldingtool menu: Use welding tool
 human|/obj/item/weldingtool click: Click: Dig
-human|none menu: Graffiti
 human|none menu: Touch
 human|none click: Click: Touch
-robot|none menu: Graffiti
 robot|none menu: Touch
 robot|none menu: Use
 robot|none click: Click: Touch
