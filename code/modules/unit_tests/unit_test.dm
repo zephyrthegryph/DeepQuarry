@@ -332,6 +332,10 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 /proc/unit_test_is_focused_run()
 	return !!length(GLOB.focused_tests)
 
+/// TRUE when the only focused test is the boot gate (`dq_focused_test.sh --boot`).
+/proc/unit_test_is_boot_only_run()
+	return length(GLOB.focused_tests) == 1 && (/datum/unit_test/dq_boot_gate in GLOB.focused_tests)
+
 // ---- Sharded sweeps (doc/testing.md "Sharded sweeps") ----
 
 /// This world's 0-based shard index and shard count for a sharded dm-test

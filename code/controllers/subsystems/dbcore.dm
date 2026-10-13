@@ -72,6 +72,13 @@ SYSTEM_DEF(dbcore)
 	if(!CONFIG_GET(flag/sql_enabled))
 		return FALSE
 
+#ifdef UNIT_TESTS
+	// A test world has no database: the attempt only costs a failed connect (about 1.5 s of boot) and a log line.
+	if(!last_error)
+		last_error = "skipped: unit-test world"
+		log_sql("Connect() skipped: unit-test world, no database is used.")
+	return FALSE
+#endif
 
 	var/user = CONFIG_GET(string/feedback_login)
 	var/pass = CONFIG_GET(string/feedback_password)
