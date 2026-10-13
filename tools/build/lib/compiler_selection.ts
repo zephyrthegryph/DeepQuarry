@@ -97,12 +97,10 @@ export function compilerCacheIdentity(): string {
   return hash.digest('hex');
 }
 function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: string, invocation?: CompilerInvocation): [string, string[]] {
-  // The native CLI currently has no equivalent version selector or warning
-  // policy. Never turn a successful native process into silent policy loss.
+  // The native CLI has no equivalent version selector. Never turn a successful
+  // native process into silent policy loss. Warning policy maps to dmbc flags.
   const unsupported = [
     options.namedDmVersion != null ? 'namedDmVersion' : null,
-    options.warningsAsErrors ? 'warningsAsErrors' : null,
-    options.ignoreWarningCodes?.length ? 'ignoreWarningCodes' : null,
   ].filter((value): value is string => value !== null);
   if (unsupported.length) {
     throw new Error(`Native compiler does not support requested DreamMaker options: ${unsupported.join(', ')}.`);
@@ -125,6 +123,8 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--progress', '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
   if (nativeNoDaemon()) args.push('--no-daemon');
   for (const define of options.defines ?? []) args.push(`-D${define}`);
+  if (options.warningsAsErrors) args.push('--warnings-as-errors');
+  for (const code of options.ignoreWarningCodes ?? []) args.push('--ignore-warning', code);
   if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--record-inputs', path.join(artifacts, 'inputs'), '--exact-inputs', '--no-cache');
   return [executable, args];
 }

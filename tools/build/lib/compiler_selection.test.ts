@@ -101,14 +101,12 @@ test('successful native status without machine pair result never falls back', as
   expect(fallback).toBe(0);
 });
 
-test('native cannot silently discard requested compiler version or warning policy', async () => {
+test('native cannot silently discard a requested compiler version', async () => {
   process.env.DQ_COMPILER = 'native';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   for (const options of [
     { namedDmVersion: 'pinned-reference' },
-    { warningsAsErrors: true },
-    { ignoreWarningCodes: ['unused_var'] },
   ]) {
     let nativeCalls = 0;
     let byondCalls = 0;
@@ -121,6 +119,22 @@ test('native cannot silently discard requested compiler version or warning polic
   }
 });
 
+test('native receives the requested warning policy as dmbc flags', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  let recorded: string[] = [];
+  const execute = async (_executable: string, args: string[]) => {
+    recorded = args;
+    const receipt = args[args.indexOf('--compile-result-file') + 1];
+    fs.writeFileSync(receipt, JSON.stringify({ schema_version: 1, kind: 'native_pair', store: path.resolve('E:/dq-cache/fixture-store'), pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32), dmb_bytes: 1, rsc_bytes: 2, output_project: path.resolve('project.dme') }));
+    return { code: 0, combined: '', stdout: '', stderr: '', signal: null };
+  };
+  await selectedCompiler('project.dme', { warningsAsErrors: true, ignoreWarningCodes: ['unused_var', 'no_parent'] }, async () => {}, execute);
+  expect(recorded).toContain('--warnings-as-errors');
+  expect(recorded.filter((_, index) => recorded[index - 1] === '--ignore-warning')).toEqual(['unused_var', 'no_parent']);
+});
+
 test('shadow rejects unsupported configuration before either compiler executes', async () => {
   process.env.DQ_COMPILER = 'shadow';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
@@ -131,12 +145,12 @@ test('shadow rejects unsupported configuration before either compiler executes',
   let nativeCalls = 0;
   let byondCalls = 0;
   try {
-    await expect(selectedCompiler('project.dme', { warningsAsErrors: true }, async () => {
+    await expect(selectedCompiler('project.dme', { namedDmVersion: 'pinned-reference' }, async () => {
       byondCalls++;
     }, async () => {
       nativeCalls++;
       return { code: 0, combined: '' };
-    })).rejects.toThrow('Native compiler does not support requested DreamMaker options: warningsAsErrors');
+    })).rejects.toThrow('Native compiler does not support requested DreamMaker options: namedDmVersion');
     expect(nativeCalls).toBe(0);
     expect(byondCalls).toBe(0);
   } finally {
@@ -467,7 +481,7 @@ test('shadow unsupported policy rejects before prepared DreamMaker callback', as
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   let prepared = 0;
   let executed = 0;
-  await expect(selectedCompiler('project.dme', { warningsAsErrors: true }, async () => {
+  await expect(selectedCompiler('project.dme', { namedDmVersion: 'pinned-reference' }, async () => {
     throw new Error('must not compile BYOND');
   }, async () => { executed++; return { code: 0, combined: '' }; }, async () => {
     prepared++;
