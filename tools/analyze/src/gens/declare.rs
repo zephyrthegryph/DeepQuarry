@@ -535,9 +535,6 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
     }
 }
 
-/// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
-/// sides carry. A type is a keyed target whichever side builds its table first, so the table of a target built before any holder's (a door
-/// placed before its button) must already know its key: the engine reads this list once, ahead of the first table.
 /// Preserve a declared alist's shape when its first keyed write allocates the container.
 /// Only explicit alists (and subtype overrides of them) get metadata: legacy list maps
 /// retain their existing allocation and ordering rules.
@@ -587,6 +584,9 @@ fn relation_storage(cx: &GenCx, out: &mut GenOut) {
     }
 }
 
+/// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
+/// sides carry. A type is a keyed target whichever side builds its table first, so the table of a target built before any holder's (a door
+/// placed before its button) must already know its key: the engine reads this list once, ahead of the first table.
 fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
     use std::cell::RefCell;
     let rows: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
