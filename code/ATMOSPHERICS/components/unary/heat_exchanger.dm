@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 /// Whether this one is the first of its pair (by map position), which declares the pair's heat link.
 /// Its floor does not cover it: a pipe-level exchanger under intact tiles cannot be reached.
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/floor_clear(datum/act/A)
-	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; it stays where it was built
+	var/turf/T = loc
 	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating)
 
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/heat_exchanger_leads()

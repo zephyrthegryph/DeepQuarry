@@ -126,13 +126,13 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 /// Connected, or a port stands under it.
 /obj/machinery/portable_atmospherics/proc/port_reachable(datum/act/op/A)
-	return (connected_port() || locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : MSG(portable/no_port) // ALLOW(reads): asked when the wrench is used, never from a cached menu
+	return (connected_port() || locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : MSG(portable/no_port)
 
 /// Connected, or the port under it has no device yet.
 /obj/machinery/portable_atmospherics/proc/port_free(datum/act/op/A)
 	if(connected_port())
 		return null
-	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): asked when the wrench is used, never from a cached menu
+	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector)
 	return (port && !port.connected_device) ? null : MSG(portable/port_taken)
 
 /obj/machinery/portable_atmospherics/proc/port_message(datum/act/A)

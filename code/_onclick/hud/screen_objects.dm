@@ -251,6 +251,7 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	look.overlay(look_overlay_image('icons/mob/zone_sel.dmi', "[selecting]"))
 
 CAPABILITIES(/atom/movable/screen)
+	ref_one(nameof(master_ref), /datum)
 	click_on(PROC_REF(screen_click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The click goes to the clicker's

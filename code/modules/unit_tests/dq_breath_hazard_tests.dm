@@ -442,6 +442,31 @@
 	heat_set(around, 500, HEAT_SOURCE_OTHER)
 	assert_acts(PROC_REF(body_coupled), "the environment exchange didn't follow a neighbouring tile heating to 500 K")
 
+/// A door opening beside a sleeping human re-arms its air watch. The door is a change of what blocks the air, which no band crossing reports: the
+/// watch has to be moved by the change itself (turf/air_structure_changed()), with no Life step run between the door and the check.
+/datum/unit_test/life_om/breath_hazard/door_beside_sleeper
+	sleepers = list("life_breathing", "life_environment")
+
+/datum/unit_test/life_om/breath_hazard/door_beside_sleeper/run_life()
+	if(!setup_breather(pair = TRUE))
+		return
+	var/obj/machinery/door/firedoor/F = allocate(/obj/machinery/door/firedoor, N)
+	F.set_density(TRUE)
+	F.update_nearby_tiles()
+	var/datum/gas_mixture/beside = N.return_air()
+	var/closed_key = H.body?.air_watch_key
+	TEST_ASSERT(closed_key, "the human has an air watch")
+	TEST_ASSERT(!findtext(closed_key, "|[beside.arena_id()]"), "with the door closed the neighbour's air is not in the watch ([closed_key])")
+	var/steps_before = life_test_frames(H)
+	F.set_density(FALSE)
+	F.update_nearby_tiles()
+	TEST_ASSERT_EQUAL(life_test_frames(H), steps_before, "no Life frame ran for the door")
+	TEST_ASSERT(findtext(H.body?.air_watch_key, "|[beside.arena_id()]"), "the open door put the neighbour's air in the watch ([H.body?.air_watch_key])")
+	TEST_ASSERT(!life_test_asleep(H, "life_environment"), "and the environment step that averaged the old set is awake")
+	F.set_density(TRUE)
+	F.update_nearby_tiles()
+	TEST_ASSERT(!findtext(H.body?.air_watch_key, "|[beside.arena_id()]"), "the closed door takes it out again ([H.body?.air_watch_key])")
+
 #undef LIFE_HAZARD_LIMIT
 
 #endif

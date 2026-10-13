@@ -202,7 +202,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 
 /// Where a loaf may be cut: it lies on a table, an operating table or a tray.
 /obj/item/reagent_containers/food/snacks/proc/on_cutting_surface()
-	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray))) // ALLOW(reads): where the loaf lies is read when it is cut; the click asks again
+	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray)))
 
 /// An edged thing is held to a loaf on a cutting surface.
 /obj/item/reagent_containers/food/snacks/proc/is_cut_by_held(datum/act/op/A)

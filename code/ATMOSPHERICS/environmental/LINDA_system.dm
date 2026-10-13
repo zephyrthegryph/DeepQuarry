@@ -121,6 +121,8 @@
 	if(!SSair.initialized) // I'm sorry for polutting user code, I'll do 10 hail giacom's
 		return
 	update_air_ref(0, update ? air_block_mask() : AIR_BLOCK_KEEP)
+	if(update)
+		air_structure_changed() // what blocks the air here changed: Rust rebuilt the adjacency, and the air watches beside it are stale
 
 /atom/movable/proc/move_update_air(turf/target_turf)
 	if(isturf(target_turf))

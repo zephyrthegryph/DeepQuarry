@@ -22,7 +22,7 @@ MSG_DEF_SELF(petrifier/beeps, "The device beeps but does nothing.")
 /// Requirement: the device does nothing from inside something unless the one it aims at is the one holding it.
 /obj/item/petrifier/proc/can_fire(datum/act/op/A)
 	var/mob/user = A.actor
-	// ALLOW(reads): where the user stands is read when the device is used, never from a cached menu
+
 	return (isturf(user.loc) || get_ultimate_mob(user) == target_ref()) ? null : MSG(petrifier/beeps)
 
 /// The use in the hand.

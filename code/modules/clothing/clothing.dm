@@ -1198,9 +1198,9 @@ CAPABILITIES(/obj/item/clothing/under)
 	// The _s is because the icon update procs append it.
 	if((under_icon == rolled_down_icon && (icon_exists(under_icon, worn_state))) || (icon_exists(under_icon, "[worn_state]_d")))
 		if(rolled_down != 1)
-			rolled_down = 0
+			set_rolled_down(0)
 	else
-		rolled_down = -1
+		set_rolled_down(-1)
 	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/proc/update_rollsleeves_status()
@@ -1223,9 +1223,9 @@ CAPABILITIES(/obj/item/clothing/under)
 	// The _s is because the icon update procs append it.
 	if((under_icon == rolled_down_sleeves_icon && (icon_exists(under_icon, worn_state))) || (icon_exists(under_icon, "[worn_state]_r")))
 		if(rolled_sleeves != 1)
-			rolled_sleeves = 0
+			set_rolled_sleeves(0)
 	else
-		rolled_sleeves = -1
+		set_rolled_sleeves(-1)
 	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/update_clothing_icon()
@@ -1335,9 +1335,9 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You cannot roll down [src]!"))
 		return
 	if((rolled_sleeves == 1) && !(rolled_down))
-		rolled_sleeves = 0
+		set_rolled_sleeves(0)
 
-	rolled_down = !rolled_down
+	set_rolled_down(!rolled_down)
 	if(rolled_down)
 		set_body_parts_covered(worn_of_type(type).covers)
 		set_body_parts_covered(worn_of(src).covers & (~(UPPER_TORSO|ARMS)))
@@ -1375,7 +1375,7 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You must roll up your [src] first!"))
 		return
 
-	rolled_sleeves = !rolled_sleeves
+	set_rolled_sleeves(!rolled_sleeves)
 	if(rolled_sleeves)
 		set_body_parts_covered(worn_of(src).covers & (~(ARMS)))
 		protection_of(src).heat_parts &= ~(ARMS)

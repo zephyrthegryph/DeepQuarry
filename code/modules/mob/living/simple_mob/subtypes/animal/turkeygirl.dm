@@ -72,16 +72,6 @@
 		state = "[state]-resting"
 	look.state(state)
 
-/// draw() reads nutrition_of(), a published fact (MOB_KEY_NUTRITION) and not a var, so the generated reads do not see it: the fullest states follow it here.
-/mob/living/simple_mob/vore/turkeygirl/reactions()
-	. = ..()
-	. += on_change(list(MOB_KEY_NUTRITION), PROC_REF(turkeygirl_nutrition_changed))
-
-/mob/living/simple_mob/vore/turkeygirl/proc/turkeygirl_nutrition_changed(list/keys)
-	if(QDELETED(src))
-		return
-	refresh_mark(src, DEP_DRAW)
-
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 

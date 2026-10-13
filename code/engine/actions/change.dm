@@ -88,7 +88,7 @@ PROC_SUMMARY(/proc/change_condition) // vars[] / call() dispatcher: the walk can
 		return change_walk(E, cond)
 	return condition_holds(E, cond)
 
-/// "terminal.charge": the value at the end of a path of relation vars.
+/// "terminal.charge": the value at the end of a path of relation vars (or of `loc`, the container hop: null where the container lacks the var).
 PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/change_walk(datum/E, path)
 	var/list/segments = splittext(path, ".")
@@ -97,6 +97,8 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 		if(!isdatum(walk))
 			return null
 		var/datum/D = walk
+		if(!(segment in D.vars))
+			return null // the container hop reaches whatever the thing lies in, which may not have the var
 		walk = D.vars[segment]
 	return walk
 
@@ -181,6 +183,11 @@ PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot e
 			var/segment = path[i]
 			var/list/next_frontier = list()
 			for(var/datum/at as anything in frontier)
+				// The container hop: what reads `loc.x` is what is inside the one whose x changed.
+				if(segment == "loc" && isatom(at))
+					for(var/atom/movable/inside as anything in contents_of(at))
+						if(!QDELETED(inside))
+							next_frontier |= list(inside)
 				for(var/list/pair as anything in rel_sources(at))
 					var/datum/source = pair[1]
 					if(pair[2] == segment && !QDELETED(source))
