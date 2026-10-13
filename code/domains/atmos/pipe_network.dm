@@ -8,7 +8,7 @@
 	var/list/datum/pipeline/line_members
 
 	var/list/leaks = list() // ALLOW(instance_list): the network's leaking nodes: filled and cleared in place while the network runs
-	/// Runtime reservoirs connected through portable connectors: owner -> volume.
+	/// Runtime reservoirs connected through portable connectors: entity_handle(owner) -> volume. A handle, not the reservoir: a deleted reservoir stops resolving.
 	var/list/external_air_volumes
 
 	/// TRUE while this network needs one reconciliation pass.
@@ -35,8 +35,10 @@ CAPABILITIES(/datum/pipe_network)
 	STOP_PROCESSING_PIPENET(src)
 	// External reservoirs are real containers and must take their volume share
 	// with them before the fixed topology is split into independent port mixes.
-	for(var/atom/movable/owner as anything in external_air_volumes?.Copy())
-		detach_external_air(owner, FALSE)
+	for(var/owner_handle in external_air_volumes?.Copy())
+		var/atom/movable/owner = resolve_handle(owner_handle)
+		if(owner)
+			detach_external_air(owner, FALSE)
 	// Sever ownership before calling into members.  Atmos topology destruction can
 	// re-enter network teardown (especially during explosions); retaining these
 	// lists until after the callbacks made the entire graph one GC cycle.
@@ -156,8 +158,11 @@ CAPABILITIES(/datum/pipe_network)
 	if(length(giver_external))
 		if(!external_air_volumes)
 			external_air_volumes = list()
-		for(var/atom/movable/owner as anything in giver_external)
-			external_air_volumes[owner] = giver_external[owner] // ALLOW(ownership): reservoir -> volume numbers, drained by detach_external_air() in lifecycle_unbind(); the reservoir owns its own air
+		for(var/owner_handle in giver_external)
+			var/atom/movable/owner = resolve_handle(owner_handle)
+			if(!owner)
+				continue
+			external_air_volumes[owner_handle] = giver_external[owner_handle]
 			owner.set_port_network_air(air)
 
 	// The receiving network now owns every transferred member.  Leaving the
@@ -212,7 +217,7 @@ CAPABILITIES(/datum/pipe_network)
 	mark_topology_dirty()
 
 /datum/pipe_network/proc/attach_external_air(atom/movable/owner, datum/gas_mixture/external_air)
-	if(!owner || !external_air || external_air == air || external_air_volumes?[owner])
+	if(!owner || !external_air || external_air == air || external_air_volumes?[entity_handle_of(owner)])
 		return FALSE
 	var/base_volume = volume()
 	if(!air)
@@ -222,7 +227,7 @@ CAPABILITIES(/datum/pipe_network)
 	air.set_volume(max(base_volume + external_volume, 1))
 	if(!external_air_volumes)
 		external_air_volumes = list()
-	external_air_volumes[owner] = external_volume // ALLOW(ownership): reservoir -> volume numbers, drained by detach_external_air() in lifecycle_unbind(); the reservoir owns its own air
+	external_air_volumes[entity_handle(owner)] = external_volume
 	owner.set_port_network_air(air)
 	if(!QDELETED(external_air) && !owner_of(external_air))
 		consumed(external_air, src)
@@ -230,14 +235,15 @@ CAPABILITIES(/datum/pipe_network)
 	return TRUE
 
 /datum/pipe_network/proc/detach_external_air(atom/movable/owner, mark_after = TRUE)
-	if(!owner || !external_air_volumes?[owner] || !air)
+	var/owner_handle = entity_handle_of(owner)
+	if(!owner || !owner_handle || !external_air_volumes?[owner_handle] || !air)
 		return FALSE
-	var/external_volume = external_air_volumes[owner]
+	var/external_volume = external_air_volumes[owner_handle]
 	var/current_volume = volume()
 	var/datum/gas_mixture/detached = air.remove_ratio(min(external_volume / max(current_volume, 1), 1))
 	detached.set_volume(max(external_volume, 1))
 	air.set_volume(max(current_volume - external_volume, 1))
-	external_air_volumes.Remove(owner)
+	external_air_volumes.Remove(owner_handle)
 	if(!length(external_air_volumes))
 		external_air_volumes = null
 	owner.set_port_network_air(detached)

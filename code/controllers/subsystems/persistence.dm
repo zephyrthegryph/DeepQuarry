@@ -65,3 +65,6 @@ SYSTEM_DEF(persistence)
 	dat += "</table>"
 	// structured TGUI AdminReport with topic forwarding.
 	dq_admin_report_html(user, "Persistence Data", jointext(dat, null), src)
+
+CAPABILITIES(/datum/system/persistence)
+	ref_many(nameof(painting_frames), /obj/structure/sign/painting)

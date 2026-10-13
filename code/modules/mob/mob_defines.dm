@@ -232,6 +232,8 @@ CAPABILITIES(/mob)
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
 	ref_many(nameof(pinned), /obj/item) // Borrowed objects pinning the mob to a wall.
+	owns_many(nameof(mapobjs), /atom/movable/screen) // the camera-overview map screens this mob is shown: disposed of when cleared
+	ref_many(nameof(embedded), /obj/item) // Items embedded in a mob with no organs to hold them: a deleted item leaves the list.
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
 	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))

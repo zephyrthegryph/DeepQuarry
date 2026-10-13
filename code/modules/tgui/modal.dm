@@ -4,7 +4,7 @@
  * Allows creation of modals within tgui.
  */
 
-GLOBAL_LIST(tgui_modals)
+/// The current modal of each host is SStgui.modals, keyed by REF(host) (owned: a deleted modal leaves it).
 
 /**
  * Modal actions: act_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host's modal opens through its op
@@ -25,7 +25,7 @@ GLOBAL_LIST(tgui_modals)
 	// A current modal whose delegate handled the answer needs nothing more.
 	var/delegated = tgui_modal_answer(src, id, answer)
 	// A question of an op (asks(..., inline)) that refused the answer stays open for another try: answered, it is gone already.
-	if(istype(LAZYACCESS(GLOB.tgui_modals, REF(src)), /datum/tgui_modal/prompt))
+	if(istype(LAZYACCESS(SStgui.modals, REF(src)), /datum/tgui_modal/prompt))
 		return TRUE
 	tgui_modal_clear(src)
 	if(delegated)
@@ -45,7 +45,7 @@ GLOBAL_LIST(tgui_modals)
 /proc/tgui_modal_data(datum/source)
 	ASSERT(istype(source))
 
-	var/datum/tgui_modal/current = LAZYACCESS(GLOB.tgui_modals, REF(source))
+	var/datum/tgui_modal/current = LAZYACCESS(SStgui.modals, REF(source))
 	if(!current)
 		return null
 
@@ -60,16 +60,11 @@ GLOBAL_LIST(tgui_modals)
 /proc/tgui_modal_clear(datum/source)
 	ASSERT(istype(source))
 
-	LAZYINITLIST(GLOB.tgui_modals)
-	var/datum/tgui_modal/previous = GLOB.tgui_modals[REF(source)]
+	var/datum/tgui_modal/previous = LAZYACCESS(SStgui.modals, REF(source))
 	if(!previous)
 		return FALSE
 
-	for(var/i in 1 to length(GLOB.tgui_modals))
-		var/key = GLOB.tgui_modals[i]
-		if(previous == GLOB.tgui_modals[key])
-			GLOB.tgui_modals.Cut(i, i + 1)
-			break
+	rel_take(SStgui, nameof(SStgui.modals), key = REF(source)) // detached, not disposed: closed() still runs on it
 
 	SStgui.update_uis(source)
 	previous.closed()
@@ -142,14 +137,16 @@ GLOBAL_LIST(tgui_modals)
 	ASSERT(istype(source))
 	ASSERT(istype(modal))
 
-	var/datum/tgui_modal/previous = LAZYACCESS(GLOB.tgui_modals, REF(source))
+	var/datum/tgui_modal/previous = LAZYACCESS(SStgui.modals, REF(source))
 	if(previous && !replace_previous)
 		return FALSE
 
 	rel_set(modal, nameof(modal.owning_source), source)
 
 	// Previous one should get GC'd (a question it showed ends cancelled)
-	LAZYSET(GLOB.tgui_modals, REF(source), modal)
+	if(previous && previous != modal)
+		rel_take(SStgui, nameof(SStgui.modals), key = REF(source)) // the replaced modal is detached, not disposed: closed() still runs on it
+	rel_add(SStgui, nameof(SStgui.modals), modal, REF(source))
 	if(previous && previous != modal)
 		previous.closed()
 	if(instant_update)
@@ -167,7 +164,7 @@ GLOBAL_LIST(tgui_modals)
 /proc/tgui_modal_answer(datum/source, id, answer = "")
 	ASSERT(istype(source))
 
-	var/datum/tgui_modal/current = LAZYACCESS(GLOB.tgui_modals, REF(source))
+	var/datum/tgui_modal/current = LAZYACCESS(SStgui.modals, REF(source))
 	if(!current)
 		return FALSE
 
@@ -185,7 +182,7 @@ GLOBAL_LIST(tgui_modals)
 /proc/tgui_modal_preprocess_answer(datum/source, answer = "")
 	ASSERT(istype(source))
 
-	var/datum/tgui_modal/current = LAZYACCESS(GLOB.tgui_modals, REF(source))
+	var/datum/tgui_modal/current = LAZYACCESS(SStgui.modals, REF(source))
 	if(!current)
 		return answer
 

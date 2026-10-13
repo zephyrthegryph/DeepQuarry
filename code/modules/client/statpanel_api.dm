@@ -50,7 +50,7 @@
 	var/description_holders = target.description_holders
 	var/list/examine_update = list()
 
-	var/atom/atom_icon = description_holders["icon"]
+	var/atom/atom_icon = resolve_handle(description_holders["icon"])
 	var/shown_icon = target.examine_icon()
 	if(!shown_icon && atom_icon)
 		if(ismob(atom_icon))

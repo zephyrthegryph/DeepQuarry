@@ -13,7 +13,7 @@
 //   POST     atmos init, power, the shuttle queue, on_map_loaded()
 //
 // Loads run one at a time (they share SSatoms' load state and the world's size): a load submitted while
-// another runs waits in GLOB.map_load_queue and starts when the running one finishes.
+// another runs waits in SSmapping.map_load_queue and starts when the running one finishes.
 //
 // The synchronous drive is the same machine run to completion inline with no budget: map_template.load()
 // and load_new_z() use it for the boot map and templates (the kernel is not ticking jobs yet), for nested
@@ -35,13 +35,13 @@
 /// Models the cache builder handles per job step.
 #define MAP_LOAD_CACHE_MODELS 12
 
-/// Queued async loads, oldest first (the running load is GLOB.map_load_active).
-GLOBAL_LIST_EMPTY(map_load_queue)
+/// Queued async loads, oldest first, are SSmapping.map_load_queue (owned there: the caller of submit() need not keep a waiting load);
+/// the running load is GLOB.map_load_active.
 GLOBAL_VAR(map_load_active)
 
 /// Queues a load behind the running one.
 /proc/map_load_enqueue(datum/map_load/M)
-	GLOB.map_load_queue += M
+	rel_add(SSmapping, nameof(SSmapping.map_load_queue), M)
 
 /datum/map_load
 	// The load's inputs. Plain references: the load is a short-lived job and the template outlives it
@@ -126,9 +126,9 @@ CAPABILITIES(/datum/map_load)
 	rel_clear(src, nameof(then_owner))
 	then_with = null
 	release()
-	if(!GLOB.map_load_active && length(GLOB.map_load_queue))
-		var/datum/map_load/next = GLOB.map_load_queue[1]
-		GLOB.map_load_queue.Cut(1, 2)
+	if(!GLOB.map_load_active && length(SSmapping.map_load_queue))
+		var/datum/map_load/next = SSmapping.map_load_queue[1]
+		rel_take(SSmapping, nameof(SSmapping.map_load_queue), next) // out of the queue, not disposed: start_job() makes it the active load
 		next.start_job()
 
 /// Drops what the finished load held.

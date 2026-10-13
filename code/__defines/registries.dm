@@ -90,6 +90,7 @@
 #define REGISTRY_EXONET_CONNECTIONS "all_exonet_connections"
 #define REGISTRY_EXPERIMENT_HANDLERS "experiment_handlers"
 #define REGISTRY_EXTRACTION_BEACONS "total_extraction_beacons"
+#define REGISTRY_FAKE_SUNS "fake_suns"
 #define REGISTRY_FAXES "allfaxes"
 #define REGISTRY_FORCED_AMBIANCE "forced_ambiance_list"
 #define REGISTRY_FUEL_INJECTORS "fuel_injectors"

@@ -14,11 +14,16 @@
 		M += ucfirst(P)
 	return jointext(M, " ")
 
+/// Borrower -> list of the entity handles of their open borrows (handles: a borrow that goes away stops resolving).
 GLOBAL_LIST_EMPTY(FrozenAccounts)
 
 /proc/list_frozen()
 	for (var/A in GLOB.FrozenAccounts)
-		to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
+		var/live = 0
+		for (var/borrow_handle in GLOB.FrozenAccounts[A])
+			if (resolve_handle(borrow_handle))
+				live++
+		to_chat(usr, "[A]: [live] borrows")
 
 /datum/article
 	var/headline = "Something big is happening"

@@ -466,7 +466,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 						if(O == src)
 							rel_remove(organ, nameof(organ.implants), src)
 			rel_remove(host, nameof(host.pinned), src)
-			LAZYREMOVE(host.embedded, src)
+			rel_remove(host, nameof(host.embedded), src)
 			host.drop_from_inventory(src)
 		expire(1)
 

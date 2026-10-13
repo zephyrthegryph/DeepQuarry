@@ -94,7 +94,7 @@ TRACKED(/obj/structure/cable, d2)
 /obj/structure/cable/proc/power_material_changed()
 	if(!engineered_material_id && !material_assembly_view(src).custom)
 		return
-	SSmachines.power_material_cables[src] = TRUE
+	rel_add(SSmachines, nameof(SSmachines.power_material_cables), src)
 	if(power_entity)
 		var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[get_power_region()]
 		overlay?.invalidate_material_cache()
@@ -222,7 +222,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /// Phase 1 (unbind): the cable leaves its power region and the material power graph.
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
-	SSmachines.power_material_cables -= src
+	rel_remove(SSmachines, nameof(SSmachines.power_material_cables), src)
 	material_overlay?.remove_cable(src) // dirties the overlay's graph; the pair view goes with it
 	power_unregister()
 

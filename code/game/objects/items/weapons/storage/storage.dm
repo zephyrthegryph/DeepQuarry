@@ -66,6 +66,7 @@ CAPABILITIES(/obj/item/storage)
 	op("feed_replacer", item(/obj/item/lightreplacer), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
 		then(PROC_REF(feed_replacer)))
 	owns_one(nameof(hud), /datum/storage_hud)
+	ref_many(nameof(is_seeing), /mob)
 	drag_onto(PROC_REF(mousedrop_input))
 
 /// A held light replacer that has room takes the good bulbs out of a storage.
@@ -536,7 +537,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 	if(!hud)
 		rel_set(src, nameof(hud), new /datum/storage_hud(src))
-	LAZYDISTINCTADD(is_seeing, user)
+	rel_add(src, nameof(is_seeing), user)
 	rel_set(user, nameof(/mob::s_active), src)
 	var/client/C = user.client
 	if(C)
@@ -545,7 +546,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /// Takes the HUD off `user`'s screen. The last viewer out deletes it.
 /obj/item/storage/proc/hide_from(mob/user)
-	LAZYREMOVE(is_seeing, user)
+	rel_remove(src, nameof(is_seeing), user)
 	var/client/C = user.client
 	if(C && hud)
 		C.screen -= hud.screen_atoms()
@@ -596,6 +597,7 @@ CAPABILITIES(/datum/storage_hud)
 	owns_one(nameof(closer), /atom/movable/screen/close)
 	owns_many(nameof(backdrop))
 	owns_many(nameof(catchers))
+	ref_many(nameof(shown), /obj/item)
 
 GLOBAL_VAR_INIT(storage_hud_count, 0)
 

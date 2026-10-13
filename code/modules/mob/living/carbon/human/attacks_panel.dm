@@ -1,6 +1,5 @@
 // Check Attacks — structured TGUI for default unarmed-attack selection.
 
-GLOBAL_LIST_EMPTY(dq_attacks_panels)
 
 /datum/attacks_panel
 	var/mob/living/carbon/human/host
@@ -8,13 +7,13 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 /datum/attacks_panel/New(mob/living/carbon/human/host_mob)
 	rel_set(src, nameof(host), host_mob)
 
-/// Phase 2: leaves the per-host panel index.
-/datum/attacks_panel/lifecycle_dematerialize()
-	. = ..()
-	if(host)
-		GLOB.dq_attacks_panels -= "[REF(host)]"
+/// The host was deleted: the panel goes with it, and leaves SStgui.host_panels with it.
+/datum/attacks_panel/proc/host_gone(old_host)
+	if(!QDELETED(src))
+		qdel(src)
 
 CAPABILITIES(/datum/attacks_panel)
+	ref_one(nameof(host), /mob/living/carbon/human, on_unlink = PROC_REF(host_gone))
 	interface("AttacksPanel", title = "Known Attacks", state = nameof(GLOB.tgui_always_state))
 	op("set_default", ui_act("set_default", arg("ref", schema_ref(/datum/unarmed_attack))), then(PROC_REF(ui_act_set_default)))
 	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))
@@ -75,10 +74,10 @@ CAPABILITIES(/datum/attacks_panel)
 	set name = "Check Attacks"
 	set category = VERB_CAT_IC_GAME
 	set src = usr
-	var/key = "[REF(src)]"
-	var/datum/attacks_panel/panel = LAZYACCESS(GLOB.dq_attacks_panels, key)
+	var/key = "attacks:[REF(src)]"
+	var/datum/attacks_panel/panel = LAZYACCESS(SStgui.host_panels, key)
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_attacks_panels[key] = panel
+		rel_add(SStgui, nameof(SStgui.host_panels), panel, key)
 	panel.tgui_interact(src)
 

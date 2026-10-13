@@ -20,6 +20,7 @@ TRACKED(/datum/lootpanel, imaging)
 
 CAPABILITIES(/datum/lootpanel)
 	owns_many(nameof(searchables), /datum/search_object)
+	ref_many(nameof(to_image), /datum/search_object)
 	every(0.5 SECONDS, then(PROC_REF(image_step)), when = nameof(imaging))
 	interface("LootPanel")
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))

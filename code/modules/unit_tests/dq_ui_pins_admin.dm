@@ -146,10 +146,10 @@
 	first.name = "pin paper one"
 	var/obj/item/paper/second = test.allocate(/obj/item/paper, T)
 	second.name = "pin paper two"
-	LAZYADD(holder.tagged_datums, first) // tagging happens through Topic (rights check), so the list is edited the way it does
+	rel_add(holder, nameof(holder.tagged_datums), first) // tagging happens through Topic (rights check), so the list is edited the way it does
 	snap("one_tagged")
-	LAZYADD(holder.tagged_datums, second)
-	LAZYADD(holder.tagged_datums, user)
+	rel_add(holder, nameof(holder.tagged_datums), second)
+	rel_add(holder, nameof(holder.tagged_datums), user)
 	snap("three_tagged")
 	rel_set(holder, nameof(/datum/admins::marked_datum), second) // mark
 	snap("marked")
@@ -157,10 +157,10 @@
 	var/datum/tag_menu_panel/panel = host
 	panel.ui_act_refresh(A)
 	snap("refreshed")
-	LAZYREMOVE(holder.tagged_datums, first) // untag
+	rel_remove(holder, nameof(holder.tagged_datums), first) // untag
 	snap("untagged")
 	rel_clear(holder, nameof(/datum/admins::marked_datum))
-	holder.tagged_datums = null
+	rel_clear(holder, nameof(holder.tagged_datums))
 	cleanup_admin()
 
 // ---- Unban ----------------------------------------------------------------------------------------------------------------

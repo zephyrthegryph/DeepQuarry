@@ -11,7 +11,10 @@ SYSTEM_DEF(holomaps)
 	var/static/holomaps_initialized = FALSE
 	var/static/list/holoMiniMaps = list()
 	var/static/list/extraMiniMaps = list()
-	var/static/list/station_holomaps = list()
+	var/list/obj/machinery/station_map/station_holomaps = list()
+
+CAPABILITIES(/datum/system/holomaps)
+	ref_many(nameof(station_holomaps), /obj/machinery/station_map)
 
 
 /datum/system/holomaps/initialize()

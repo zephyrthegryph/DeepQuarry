@@ -424,10 +424,10 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 	opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + rule.cooldown
 	opportunities_triggered++
 	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
-	opportunity_history += history_entry // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+	rel_add(src, nameof(opportunity_history), history_entry)
 	if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
 		var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
-		opportunity_history.Cut(1, 2)
+		rel_remove(src, nameof(opportunity_history), expired)
 		lapsed(expired)
 
 /datum/system/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)

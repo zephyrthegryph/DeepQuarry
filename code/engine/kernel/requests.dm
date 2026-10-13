@@ -125,13 +125,16 @@ SYSTEM_DEF(requests)
 	latency_class = LATENCY_L1
 	init_stage = INITSTAGE_FIRST
 	/// Every open request, oldest first.
-	var/list/open = list()
+	var/list/open
 	/// Counters since boot: opened, ended by each outcome.
 	var/opened = 0
 	var/answered = 0
 	var/cancelled = 0
 	var/timed_out = 0
 	var/transport_failed = 0
+
+CAPABILITIES(/datum/system/requests)
+	ref_many(nameof(open), /datum/request)
 
 /datum/system/requests/reactions()
 	. = ..()
@@ -142,9 +145,9 @@ SYSTEM_DEF(requests)
 	return length(open) > 0
 
 /datum/system/requests/proc/sweep(dt)
-	for(var/datum/request/R as anything in open.Copy())
+	for(var/datum/request/R as anything in open?.Copy())
 		if(!R.is_open())
-			open -= R
+			rel_remove(src, nameof(open), R)
 			continue
 		if(QDELETED(R.owner) || (R.answerer_expected && QDELETED(R.answerer)))
 			request_end(R, REQ_CANCELLED, null)
@@ -225,7 +228,7 @@ SYSTEM_DEF(requests)
 		GLOB.test_prompts += R
 #endif
 	var/datum/system/requests/registry = SSrequests
-	registry.open += R
+	rel_add(registry, nameof(open), R)
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
@@ -241,7 +244,7 @@ SYSTEM_DEF(requests)
 		if(why)
 			op_tell(request_payer(R), why)
 			log_game("request: [R.type] not opened: its costs cannot be paid ([reason_text(why)])")
-			registry.open -= R
+			rel_remove(registry, nameof(open), R)
 			cancel_after(R, "request_timeout")
 			unobserve(owner, /datum/notice/qdeleting, R)
 			qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: one that never opened is deleted at once
@@ -352,7 +355,7 @@ SYSTEM_DEF(requests)
 	if(!istype(R) || !R.is_open())
 		return FALSE
 	var/datum/system/requests/registry = SSrequests
-	registry.open -= R
+	rel_remove(registry, nameof(open), R)
 	if(outcome == REQ_ANSWERED && QDELETED(R.owner))
 		log_game("request: [R.type] answer dropped: its owner was deleted")
 		outcome = REQ_CANCELLED

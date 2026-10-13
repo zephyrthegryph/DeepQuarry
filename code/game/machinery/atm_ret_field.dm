@@ -178,13 +178,13 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	var/area/A = get_area(src)
 	ASSERT(istype(A))
 
-	LAZYADD(A.all_arfgs, src)
+	rel_add(A, nameof(A.all_arfgs), src)
 	areas_added = list(A)
 
 	for(var/direction in GLOB.cardinal)
 		A = get_area(get_step(src,direction))
 		if(istype(A) && !(A in areas_added))
-			LAZYADD(A.all_arfgs, src)
+			rel_add(A, nameof(A.all_arfgs), src)
 			areas_added += A
 
 /obj/structure/atmospheric_retention_field

@@ -919,7 +919,7 @@
 	test_contract.deadline = world.time + 20 MINUTES
 	test_contract.configure_custody_operation("research_goods")
 	test_contract.state = CONTRACT_ACTIVE
-	SScontracts.active_contracts += test_contract
+	rel_add(SScontracts, nameof(SScontracts.active_contracts), test_contract)
 	TEST_ASSERT(test_contract.register_contact(null, collaborator, AGENT_CONTACT_CONFIDENTIAL, null), "Cargo contact could not sign a per-contract confidential agreement")
 	TEST_ASSERT(SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "signed per-contract Cargo contact could not see the private feed")
 	TEST_ASSERT(!SSsupply.market_true_identity_visible(syndicate_broker, collaborator), "Cargo contact was shown the covert principal instead of its cover identity")
@@ -943,7 +943,7 @@
 	var/datum/contract_requirement/event_count/funding_purchase = new(CONTRACT_EVENT_CARGO_MARKET_PURCHASE, 1)
 	funding_contract.add_requirement(funding_purchase)
 	funding_contract.state = CONTRACT_ACTIVE
-	SScontracts.active_contracts += funding_contract
+	rel_add(SScontracts, nameof(SScontracts.active_contracts), funding_contract)
 	TEST_ASSERT(funding_contract.register_contact(null, collaborator, AGENT_CONTACT_STANDARD, null), "Cargo contact could not sign the allowance-backed commission")
 	TEST_ASSERT(SSsupply.reserve_agent_contract_market(funding_contract), "preferred-supplier contract could not publish allowance-backed listings")
 	var/datum/cargo_market_listing/funded_listing = SSsupply.market_listing(funding_contract.market_reservation_ids[1])
@@ -971,7 +971,7 @@
 			break
 	own_take_member(SSsupply, nameof(/datum/system/supply::order_history), funded_order)
 	own_take_member(SSsupply, nameof(/datum/system/supply::adm_order_history), funded_admin_order)
-	SScontracts.active_contracts -= funding_contract
+	rel_remove(SScontracts, nameof(SScontracts.active_contracts), funding_contract)
 	qdel(funded_admin_order)
 	qdel(funded_order)
 	qdel(funding_contract)
@@ -1013,7 +1013,7 @@
 		if(offer_candidate.context?["suspect_account"] == owner_account.account_number)
 			SScontracts.withdraw_candidate(offer_candidate, "Covert market test cleanup")
 	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[owner_account.account_number]")
-	SScontracts.active_contracts -= test_contract
+	rel_remove(SScontracts, nameof(SScontracts.active_contracts), test_contract)
 	own_take_member(SSsupply, nameof(/datum/system/supply::market_transactions), transaction)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
@@ -1070,8 +1070,8 @@
 	contract.configure_custody_operation("research_goods")
 	contract.state = CONTRACT_ACTIVE
 	SScontracts.register_contract(contract)
-	SScontracts.offered_contracts -= contract
-	SScontracts.active_contracts += contract
+	rel_remove(SScontracts, nameof(SScontracts.offered_contracts), contract)
+	rel_add(SScontracts, nameof(SScontracts.active_contracts), contract)
 	TEST_ASSERT(SSsupply.reserve_agent_contract_market(contract), "physical agent contract did not reserve a freight route")
 	var/datum/cargo_market_bid/bid = SSsupply.market_bid(contract.market_reservation_ids[1])
 	TEST_ASSERT_NOTNULL(bid, "physical agent contract had no reserved buyer")

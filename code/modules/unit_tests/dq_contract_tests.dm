@@ -102,7 +102,7 @@
 			held_station_offer = existing
 			break
 		TEST_ASSERT(held_station_offer, "a full station board had no fixture offer to hold aside")
-		SScontracts.offered_contracts -= held_station_offer
+		rel_remove(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 		preexisting_station_offers--
 		expected_published = min(4, max(0, CONTRACT_BOARD_DEPARTMENT_LIMIT - preexisting_station_offers))
 	TEST_ASSERT(expected_published > 0, "the lifecycle test could not obtain a station-board fixture slot")
@@ -156,7 +156,7 @@
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
 			SScontracts.withdraw_candidate(candidate, "Lifecycle test cleanup")
 	if(held_station_offer)
-		SScontracts.offered_contracts |= held_station_offer
+		rel_add(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 	for(var/offer_key in test_keys)
 		SScontracts.offer_cooldowns -= offer_key
 

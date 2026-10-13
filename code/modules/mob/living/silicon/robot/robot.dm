@@ -948,7 +948,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /// A yanked object tears the wiring it was in.
 /mob/living/silicon/robot/yank_out_tear(obj/item/selection, mob/U)
-	LAZYREMOVE(embedded, selection)
+	rel_remove(src, nameof(embedded), selection)
 	injure(INJURY_CUT, 5, null, selection)
 	injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
 

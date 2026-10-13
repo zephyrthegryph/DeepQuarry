@@ -170,7 +170,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		return data
 	data += list(
 		"nodes" = list(),
-		"queue_nodes" = (stored_research.research_queue_nodes || list()),
+		"queue_nodes" = stored_research.queue_node_names(),
 		"experiments" = list(),
 		"researched_designs" = (stored_research.researched_designs || list()),
 		"points" = (stored_research.research_points || list()),
@@ -195,7 +195,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		var/datum/techweb_node/n = SSresearch.techweb_node_by_id(v)
 		var/enqueued_by_user = FALSE
 
-		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == user)
+		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == entity_handle(user))
 			enqueued_by_user = TRUE
 
 		// Ensure node is supposed to be visible

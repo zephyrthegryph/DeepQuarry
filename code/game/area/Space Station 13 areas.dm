@@ -1800,9 +1800,13 @@ GLOBAL_LIST_INIT(the_station_areas, list(
 	power_light = 0
 	power_equip = 0
 	power_environ = 0
-	var/asteroid_spawns
-	var/mob_spawns
+	var/list/asteroid_spawns
+	var/list/mob_spawns
 	var/shuttle_area //It would be neat if this were more dynamic, but eh.
+
+CAPABILITIES(/area/asteroid/rogue)
+	ref_many(nameof(asteroid_spawns), /obj/asteroid_spawner)
+	ref_many(nameof(mob_spawns), /obj/rogue_mobspawner)
 
 
 /area/rnd/outpost

@@ -186,6 +186,7 @@ CAPABILITIES(/obj/item/camerabug/spy)
 	radio = new(src)
 */
 CAPABILITIES(/obj/item/bug_monitor)
+	ref_many(nameof(paired), /obj/machinery/camera/bug)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("item", item(/obj/item/camerabug), then(PROC_REF(interaction_item)))
 	op("view", in_hand(), label("View paired cameras"), then(PROC_REF(bug_monitor_controls_opened)))

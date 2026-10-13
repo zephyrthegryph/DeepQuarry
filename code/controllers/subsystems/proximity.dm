@@ -30,10 +30,13 @@ SYSTEM_DEF(proximity)
 	VAR_PRIVATE/list/cells = list()
 	/// The /datum/proximity_eye records counted into a cell.
 	VAR_PRIVATE/list/eyes = list()
-	/// Tracked thing -> the cell id it is filed under, or PROXIMITY_CARRIED while it is not on a turf.
+	/// Tracked thing's entity_handle() -> the cell id it is filed under, or PROXIMITY_CARRIED while it is not on a turf.
 	VAR_PRIVATE/list/filed = list()
 	/// The source a carried tracked thing holds its relevance under.
 	var/datum/proximity_carried/carried
+
+CAPABILITIES(/datum/proximity_cell)
+	ref_many(nameof(members), /atom/movable)
 
 /datum/proximity_carried
 
@@ -152,38 +155,42 @@ SYSTEM_DEF(proximity)
 
 /// A tracked thing is in the world at `M`.loc (Initialize, Moved): files it in its cell and holds or releases relevance to match.
 /datum/system/proximity/proc/member_update(atom/movable/M)
+	var/handle = entity_handle(M)
+	if(!handle) // being deleted: member_leave() took it out
+		return
 	var/on_turf = isturf(M.loc)
 	var/id = on_turf ? id_of(M) : null
-	if(filed[M] == (on_turf ? id : (M.loc ? PROXIMITY_CARRIED : null)))
+	if(filed[handle] == (on_turf ? id : (M.loc ? PROXIMITY_CARRIED : null)))
 		return
 	member_leave(M)
 	if(!on_turf)
 		if(M.loc)
 			hold(M, STAT_RELEVANCE, RELEVANCE_NEAR, carried)
-			filed[M] = PROXIMITY_CARRIED
+			filed[handle] = PROXIMITY_CARRIED
 		return
 	if(isnull(id))
 		return
 	var/turf/T = M.loc
 	var/datum/proximity_cell/P = cell_of(id, T.z, PROXIMITY_CELL_COORD(T.x), PROXIMITY_CELL_COORD(T.y))
-	LAZYADD(P.members, M)
-	filed[M] = id
+	rel_add(P, nameof(P.members), M)
+	filed[handle] = id
 	if(P.near > 0)
 		hold(M, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 
 /// A tracked thing leaves its cell (a move, its deletion).
 /datum/system/proximity/proc/member_leave(atom/movable/M)
-	var/where = filed[M]
+	var/handle = entity_handle_of(M) // still named while M is being deleted
+	var/where = handle ? filed[handle] : null
 	if(isnull(where))
 		return
-	filed -= M
+	filed -= handle
 	if(where == PROXIMITY_CARRIED)
 		release(M, STAT_RELEVANCE, carried)
 		return
 	var/datum/proximity_cell/P = cells["[where]"]
 	if(!P)
 		return
-	LAZYREMOVE(P.members, M)
+	rel_remove(P, nameof(P.members), M)
 	release(M, STAT_RELEVANCE, P)
 	cell_prune(P)
 
