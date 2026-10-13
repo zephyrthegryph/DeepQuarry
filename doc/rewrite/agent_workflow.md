@@ -257,6 +257,10 @@ When a lane finishes, from its worktree:
 bash tools/dq_lane_ready.sh --tests "dq_my_test dq_my_other/*"      # [--covers 'code/game/machinery/**'] [--no-pins] [--no-merge]
 ```
 
+The gates can move `HEAD` while they run (they normalize `look_keys.txt`, amend ratchet-baseline shrinks into the unpushed merge commit and record probed look keys),
+and the proof is named by the `HEAD` they end on. The wrapper follows that move before it looks for `data/merge-gates/<sha12>.ok`; if no proof matches, the error prints
+the expected file and the sha it found. `tools/ci/test_lane_ready_evidence.sh` covers it.
+
 It merges current `origin/master` (`dq_merge_master.sh`), runs `dq_merge_gates.sh` on the merge (gen; one test world with the cross-branch
 smoke set, your tests and the incremental look pins; the production compile and DreamChecker; the ratchets), commits the look keys and snapshots
 the pins re-recorded, and writes the stamp: a git note on `HEAD` in `refs/notes/lane-ready` (JSON: the branch, the commit, the master commit it merged
