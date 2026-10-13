@@ -143,6 +143,8 @@ vars_helpers	code/modules/a/rules.dm	40
 vars_helpers	code/modules/a/rules.dm	40
 vars_helpers	code/modules/a/rules.dm	41
 vars_helpers	code/modules/a/rules.dm	46
+vars_write	code/datums/om/fields.dm	2
+vars_write	code/datums/om/fields.dm	3
 vars_write	code/datums/om/fields_extra.dm	2
 vars_write	code/datums/om/world_watch.dm	4
 vars_write	code/modules/a/rules.dm	49

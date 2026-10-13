@@ -11,6 +11,7 @@
 #        dm         tools/build/build.sh dm                        (production DreamMaker without UNIT_TESTS + DreamChecker)
 #        ratchets   tools/ci/check_ratchets.sh, then build.sh analyze
 #        tgui       tools/build/build.sh tgui-lint                 (only when the batch touches tgui/, or with --tgui)
+#        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/)
 #
 # The test list is the cross-branch smoke set (tools/ci/smoke_tests.txt, which includes the boot gate), plus --tests, plus the
 # tests of every lane in --lanes whose lane-ready stamp (tools/dq_lane_ready.sh, tools/dq_lane_check.sh) is not valid for this
@@ -100,6 +101,9 @@ if [ "$tgui" -eq 0 ] && git rev-parse -q --verify origin/master >/dev/null; then
 	if ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tgui/ ':!tgui/packages/tgui/interfaces/generated'; then tgui=1; fi
 fi
 
+analyze_tests=0
+if git rev-parse -q --verify origin/master >/dev/null && ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tools/analyze/; then analyze_tests=1; fi
+
 # ---- the test list ---------------------------------------------------------------------------------------------------------
 tests=()
 add_test() {
@@ -181,11 +185,15 @@ job_ratchets() {
 	tools/build/build.sh analyze || return 2
 }
 job_tgui() { tools/build/build.sh tgui-lint; }
+job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
+	bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
+}
 
 names=()
 [ "$run_tests" -eq 1 ] && names+=(tests)
 names+=(dm ratchets)
 [ "$tgui" -eq 1 ] && names+=(tgui)
+[ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
 declare -A pid start
 for n in "${names[@]}"; do
