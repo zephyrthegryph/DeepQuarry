@@ -490,9 +490,15 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .compact_disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(Admission::Admitted(
-            input.with_admission(admission.map(promote_admission)),
-        ));
+        // A disk hit is an exact current answer; attach the same current local
+        // certificate a recompute would carry so the next resident request can
+        // admit this body by its unchanged local inputs (warm disk, new daemon).
+        let local = (!capture_references && !selections_only)
+            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+            .flatten();
+        return Ok(Admission::Admitted(input.with_admission(
+            admission.map(|admission| promote_admission(admission.with_local(local))),
+        )));
     }
     if let Some(unit) = disk
         .unit
@@ -529,9 +535,12 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(Admission::Admitted(
-            CompletedInput::lowered(unit).with_admission(admission.map(promote_admission)),
-        ));
+        let local = (!capture_references && !selections_only)
+            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+            .flatten();
+        return Ok(Admission::Admitted(CompletedInput::lowered(unit).with_admission(
+            admission.map(|admission| promote_admission(admission.with_local(local))),
+        )));
     }
     if let Some(reason) = disk.miss {
         miss = reason;

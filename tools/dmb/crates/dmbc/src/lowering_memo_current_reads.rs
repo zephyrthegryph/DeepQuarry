@@ -101,17 +101,27 @@ impl super::ResidentPromotion<'_> {
                     .collect(),
             );
         }
-        (
-            self.queries
-                .iter()
-                .map(|query| ResolverRead {
-                    query: *query,
-                    domain: query.domain(),
-                    answer: host.resolve(*query),
-                })
-                .collect(),
-            self.versions.clone(),
-        )
+        // Answers are re-resolved against the current host, so the receipt must
+        // carry the current host's domain versions too. Versions stored on disk
+        // were issued by another process (or revision) and cannot certify these
+        // answers; pairing current answers with current versions is exactly what
+        // a recompute records, and lets the resident record certify next time.
+        let reads: Vec<ResolverRead> = self
+            .queries
+            .iter()
+            .map(|query| ResolverRead {
+                query: *query,
+                domain: query.domain(),
+                answer: host.resolve(*query),
+            })
+            .collect();
+        let domains: std::collections::BTreeSet<ReadDomain> =
+            reads.iter().map(|read| read.domain).collect();
+        let versions = domains
+            .into_iter()
+            .filter_map(|domain| host.domain_version(domain).map(|version| (domain, version)))
+            .collect();
+        (reads, versions)
     }
 }
 #[cfg(test)]
