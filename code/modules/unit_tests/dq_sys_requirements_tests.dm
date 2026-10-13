@@ -107,9 +107,9 @@ CAPABILITIES(/obj/dq_req_probe)
 	probe.emagged = TRUE
 	TEST_ASSERT_EQUAL(dq_req_reason("not_emagged", req(TYPE_PROC_REF(/obj/dq_req_probe, check_not_emagged)), H, probe), "its controls have been tampered with", "emagged fails")
 
-	TEST_ASSERT_NULL(dq_req_reason("access", req(TYPE_PROC_REF(/obj/dq_req_probe, check_access)), H, probe), "no req_access: anyone passes")
+	TEST_ASSERT_NULL(dq_req_reason("access", req(TYPE_PROC_REF(/obj/dq_req_probe, access_requirement)), H, probe), "no req_access: anyone passes")
 	probe.set_req_access(list(ACCESS_CAPTAIN))
-	TEST_ASSERT_EQUAL(dq_req_reason("access", req(TYPE_PROC_REF(/obj/dq_req_probe, check_access)), H, probe), "access denied", "an ID-less actor lacks the access")
+	TEST_ASSERT_EQUAL(dq_req_reason("access", req(TYPE_PROC_REF(/obj/dq_req_probe, access_requirement)), H, probe), "access denied", "an ID-less actor lacks the access")
 
 /// A lifted guard: the Menu lists the op, and the op refuses with the guard's reason without running the effect.
 /datum/unit_test/dq_sys_requirements_menu
@@ -168,5 +168,5 @@ CAPABILITIES(/obj/dq_req_probe)
 /obj/dq_req_probe/proc/check_not_emagged(datum/act/op/A)
 	return read_once(emagged) ? "its controls have been tampered with" : null
 
-/obj/dq_req_probe/proc/check_access(datum/act/op/A)
+/obj/dq_req_probe/proc/access_requirement(datum/act/op/A)
 	return read_once(allowed(A.actor)) ? null : "access denied"
