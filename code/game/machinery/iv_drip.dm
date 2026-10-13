@@ -15,10 +15,6 @@ DECLARE_SHARED_CACHE(reagent_fill_overlays, GLOBAL_PROC_REF(build_reagent_fill_o
 	density = FALSE
 
 /obj/machinery/iv_drip/var/mob/living/carbon/human/attached
-/datum/scheduler_field_definition/obj/machinery/iv_drip/attached
-	of = /obj/machinery/iv_drip
-	field = "attached"
-	channel = CHANGE_MACHINE_OCCUPANT
 /// Drips (or draws) while hooked up to a patient.
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null

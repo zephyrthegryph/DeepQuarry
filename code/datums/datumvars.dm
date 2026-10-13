@@ -27,7 +27,7 @@
 		call(src, "set_[var_name]")(var_value)
 		return TRUE
 	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
-	changed(src)
+	refresh_dispatched(src) // an admin's edit of a var with no setter publishes nothing: its outputs re-derive
 	return TRUE
 
 /datum/proc/vv_get_var(var_name)

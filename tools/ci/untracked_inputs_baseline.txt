@@ -66,7 +66,6 @@ stat_input_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holde
 stat_input_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
 stat_input_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 stat_input_untracked	code/game/atom/_atom.dm	var/atom/L = loc
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
 stat_input_untracked	code/game/dna/dna_modifier.dm	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
 stat_input_untracked	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
 stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
@@ -377,9 +376,6 @@ draw_untracked	code/ATMOSPHERICS/components/binary_devices/dp_vent_pump.dm	if(!T
 draw_untracked	code/ATMOSPHERICS/components/binary_devices/dp_vent_pump.dm	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipes come or go
 draw_untracked	code/ATMOSPHERICS/components/binary_devices/pump.dm	look.state("[base_icon]-[running_state()]")
 draw_untracked	code/ATMOSPHERICS/components/omni_devices/mixer.dm	total += P.concentration
-draw_untracked	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	shown = overlays_off // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
-draw_untracked	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	shown = overlays_error // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
-draw_untracked	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	shown = use_power ? overlays_on : overlays_off // ALLOW(derived_reads): update_ports() redraws it whenever the port icons change
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	var/prefix = mirrored ? "m" : "" // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
@@ -431,7 +427,6 @@ draw_untracked	code/engine/actions/coalesce.dm	if(GLOB.forms_trace)
 draw_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 draw_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
-draw_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
@@ -445,7 +440,6 @@ draw_untracked	code/game/machinery/cloning.dm	return occupant_mob
 draw_untracked	code/game/machinery/computer/aifixer.dm	return occupier // ALLOW(reads): the loaded AI is asked when it is needed, never cached
 draw_untracked	code/game/machinery/doorbell.dm	look.state("dbchime-[id_tag ? "standby" : "red"]")
 draw_untracked	code/game/machinery/doors/airlock.dm	var/damaged = get_integrity() < max_integrity * 3/4
-draw_untracked	code/game/machinery/doors/airlock_control.dm	return alert ? "alert" : "standby"
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 draw_untracked	code/game/machinery/doors/brigdoors.dm	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
@@ -466,7 +460,6 @@ draw_untracked	code/game/machinery/partslathe.dm	else if(busy)
 draw_untracked	code/game/machinery/pointdefense.dm	return (active && id_tag && operable()) ? 1 : 0
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
-draw_untracked	code/game/machinery/protean_reconstitutor.dm	return (appearance_live() && nanomass_reserve >= nanomass_required) ? 1 : 0
 draw_untracked	code/game/machinery/virtual_reality/vr_console.dm	look.state("[base_state][appearance_occupied()]")
 draw_untracked	code/game/machinery/vitals_monitor.dm	return victim
 draw_untracked	code/game/machinery/vitals_monitor.dm	return victim
@@ -902,7 +895,6 @@ draw_untracked	code/modules/power/port_gen.dm	look.overlay(mutable_appearance(ic
 draw_untracked	code/modules/power/power_grid.dm	var/list/info = id > 0 ? vg_power_region_read(id) : null
 draw_untracked	code/modules/power/singularity/emitter.dm	return powered && power_region && avail(power_of(src).active) && active
 draw_untracked	code/modules/power/singularity/emitter.dm	var/image/emitterbeam = image(icon, "emitter-beam")
-draw_untracked	code/modules/power/singularity/field_generator.dm	var/level = between(0, round(num_power_levels * power / FIELD_GEN_MAX_POWER), num_power_levels)
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	suffix = powered ? "p[strength]" : "c"
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	suffix = powered ? "p[strength]" : "c"
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	look.state("[reference][suffix]")
@@ -997,8 +989,6 @@ draw_untracked	code/modules/resleeving/machines.dm	return broken ? "g" : "0"
 draw_untracked	code/modules/shieldgen/energy_field.dm	look.overlay(look_overlay_image(icon, "shield_edge", dir = direction))
 draw_untracked	code/modules/skybox_service.dm	if(initialized)
 draw_untracked	code/modules/tables/tables.dm	layers += get_table_image(icon, connections?[i] || 0, 1<<(i-1))
-draw_untracked	code/modules/turbolift/turbolift_console.dm	return lift
-draw_untracked	code/modules/turbolift/turbolift_console.dm	return lift
 draw_untracked	code/modules/vehicles/Securitrain.dm	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = layer + 0.2)) // over mobs
 draw_untracked	code/modules/vehicles/bike.dm	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
 draw_untracked	code/modules/vehicles/cargo_train.dm	var/percent = (reagents.total_volume / reagents.maximum_volume) * 100

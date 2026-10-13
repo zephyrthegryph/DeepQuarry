@@ -6,10 +6,6 @@
 	density = FALSE
 
 /obj/machinery/feeder/var/mob/living/carbon/human/attached
-/datum/scheduler_field_definition/obj/machinery/feeder/attached
-	of = /obj/machinery/feeder
-	field = "attached"
-	channel = CHANGE_MACHINE_OCCUPANT
 /obj/machinery/feeder/var/obj/item/reagent_containers/beaker
 /// Feeds while a patient and a container are attached.
 TRACKED(/obj/machinery/feeder, fill_state)

@@ -28,6 +28,9 @@
 	var/list/datum/omni_port/ports
 
 TRACKED(/obj/machinery/atmospherics/omni, configuring)
+TRACKED(/obj/machinery/atmospherics/omni, overlays_on)
+TRACKED(/obj/machinery/atmospherics/omni, overlays_off)
+TRACKED(/obj/machinery/atmospherics/omni, overlays_error)
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)
 	owns_many(nameof(ports), /datum/omni_port)
@@ -60,17 +63,17 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 	look.state("base")
 	var/list/shown
 	if(power_lost())
-		shown = overlays_off // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
+		shown = overlays_off
 	else if(error_check())
-		shown = overlays_error // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
+		shown = overlays_error
 	else
-		shown = use_power ? overlays_on : overlays_off // ALLOW(derived_reads): update_ports() redraws it whenever the port icons change
+		shown = use_power ? overlays_on : overlays_off
 	for(var/image in shown)
 		look.overlay(image)
 
 /obj/machinery/atmospherics/omni/derived()
 	. = ..()
-	. += drawn_from(nameof(use_power))
+	. += drawn_from(nameof(use_power), nameof(overlays_on), nameof(overlays_off), nameof(overlays_error))
 
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
@@ -96,11 +99,11 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 
 	//directional icons are layers 1-4, with the core icon on layer 5
 	if(core_icon)
-		overlays_off[5] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon)
-		overlays_on[5] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon + "_glow")
+		set_overlays_off_at(5, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon))
+		set_overlays_on_at(5, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon + "_glow"))
 
-		overlays_error[1] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon)
-		overlays_error[2] = GLOB.icon_manager.get_atmos_icon("omni", , , "error")
+		set_overlays_error_at(1, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon))
+		set_overlays_error_at(2, GLOB.icon_manager.get_atmos_icon("omni", , , "error"))
 
 /obj/machinery/atmospherics/omni/proc/update_port_icons()
 	for(var/datum/omni_port/P in ports)
@@ -125,15 +128,14 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 					underlays_current[ref_layer] = port_icons["pipe_icon"]
 				else
 					underlays_current[ref_layer] = null
-				overlays_off[ref_layer] = port_icons["off_icon"]
-				overlays_on[ref_layer] = port_icons["on_icon"]
+				set_overlays_off_at(ref_layer, port_icons["off_icon"])
+				set_overlays_on_at(ref_layer, port_icons["on_icon"])
 			else
 				underlays_current[ref_layer] = null
-				overlays_off[ref_layer] = null
-				overlays_on[ref_layer] = null
+				set_overlays_off_at(ref_layer, null)
+				set_overlays_on_at(ref_layer, null)
 
 	underlays = underlays_current // the pipe stubs under its ports (a look has no underlays)
-	changed(src)
 
 /obj/machinery/atmospherics/omni/proc/select_port_icons(datum/omni_port/P)
 	if(!istype(P))

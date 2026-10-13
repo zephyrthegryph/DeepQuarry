@@ -14,7 +14,7 @@
 #define DEP_UI (1<<2)
 /// push_to_rust(): the coalesced Rust sync.
 #define DEP_PUSH (1<<3)
-/// on_state_changed(bits). Only a plain changed(E) (no var named) raises it.
+/// on_state_changed(bits). Only a plain state_changed(E) (no var named) raises it.
 #define DEP_LEGACY (1<<4)
 /// Every output a declaration can name.
 #define DEP_OUTPUTS (DEP_RUN | DEP_DRAW | DEP_UI | DEP_PUSH)
@@ -24,7 +24,7 @@
 #define DEP_VALUE_MAX 12
 /// Every derive() value bit.
 #define DEP_VALUES (((1 << DEP_VALUE_MAX) - 1) << DEP_VALUE_SHIFT)
-/// A plain changed(E): everything is re-derived.
+/// A plain state_changed(E): everything is re-derived.
 #define DEP_ALL (DEP_OUTPUTS | DEP_LEGACY | DEP_VALUES)
 
 // ---- derived() entry kinds ----

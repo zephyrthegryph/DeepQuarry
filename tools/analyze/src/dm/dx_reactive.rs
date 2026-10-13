@@ -457,7 +457,7 @@ struct ReactiveFacts {
 
 fn reactive_facts(tree: &Tree, f: &SourceFile, procs: &[Proc]) -> ReactiveFacts {
     let needs_re = pat!(r"\bneeds\s*=\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\))");
-    let tracked_re = pat_match!(r"\s*(?:TRACKED(?:_BRIDGED)?\(\s*/[\w/]+\s*,\s*(\w+)\s*[,)]|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))");
+    let tracked_re = pat_match!(r"\s*(?:TRACKED\(\s*/[\w/]+\s*,\s*(\w+)\s*[,)]|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))");
     let watch_re = pat!(r"^\s*REL\w*\(\s*/[\w/]+\s*,\s*(\w+)\b[^\n]*\bWATCH\w*|\brel\(\s*nameof\(\s*(?:[\w.]+\.|/[\w/]+::)?(\w+)\s*\)[^\n]*\bwatch\s*=");
     let mut needs: HashSet<String> = HashSet::new();
     let mut tracked: HashSet<String> = HashSet::new();

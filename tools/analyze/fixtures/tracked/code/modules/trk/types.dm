@@ -9,7 +9,7 @@
 TRACKED(/obj/machinery/pump, target_pressure)
 TRACKED(/obj/machinery/pump, open_state, CHANNEL_X)
 	TRACKED(/obj/machinery/pump, open) // an indented declaration with a trailing comment
-TRACKED_BRIDGED(/obj/machinery/pump, bridged_value, KEY)
+TRACKED(/obj/machinery/pump, bridged_value)
 TRACKED(/obj/machinery/pump, counter)
 
 /obj/machinery/pump/bigger

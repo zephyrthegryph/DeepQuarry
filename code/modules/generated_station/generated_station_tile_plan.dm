@@ -348,10 +348,3 @@ CAPABILITIES(/datum/generated_station_tile_plan)
 /datum/generated_station_tile_plan/proc/generation_owner() as /datum/generated_station_materializer
 	return generation_owner
 
-/datum/generated_station_tile_plan/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["hull_coordinates"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["hull_corners"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["seal_open"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L

@@ -92,8 +92,7 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	if(now == power_seen)
 		return FALSE
 	power_seen = now
-	condition_announce(CHANGE_MACHINE_POWER) // the `stat` publish and the power channel: gates that wake on `stat` hear the flip, as they did from the bit's writer
-	changed(src) // a power change is a dispatched call: the powered capability's layer follows
+	condition_announce() // the `stat` publish: gates and layers that read the machine's power hear the flip
 	if(power_lost())
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
 	else
@@ -116,9 +115,8 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
  * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
  * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
  * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
- * The power capability's "powered" state (G8): NOPOWER. A change raises CHANGE_MACHINE_POWER (the
- * stat bit's bridge channel) and publishes MACHINE_KEY_POWERED to its readers. power_lost() and operable() read
- * it. Returns TRUE when the state changed.
+ * The power capability's "powered" state (G8): a change publishes MACHINE_KEY_STAT and MACHINE_KEY_POWERED to its readers.
+ * power_lost() and operable() read it. Returns TRUE when the state changed.
  */
 /obj/machinery/proc/set_powered(powered)
 	if(!set_grid_power(powered))
@@ -213,11 +211,9 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	if(use_power == new_use_power)
 		return
 	use_power = new_use_power
-	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
-	// Raised after the write: watchers (declared periodic work) read the new value. use_power is the power
-	// capability's tracked draw mode (G8): the change publishes nameof(use_power) to its readers, and the area's demand stat
-	// that sums it recomputes before this returns.
-	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
+	// use_power is the power capability's tracked draw mode: the change publishes nameof(use_power) to its readers, and the
+	// area's demand stat that sums it recomputes before this returns.
+	tracked_changed(src, nameof(use_power))
 	return TRUE
 
 /// Sets the channel the machine draws on; the draw moves between the area's channel demands with it.
