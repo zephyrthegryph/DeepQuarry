@@ -89,7 +89,7 @@ your change runs at boot. `doc/rewrite/boot_gate.md`.
 
 **Bounded staleness sweep (focused runs).** The staleness checker's end-of-test sweep (`staleness_test_end`) checks every
 entity the boot created (about 15,700) after the first test, 8-15 s. A focused run passes the world param `staleness=bounded`:
-each test end checks what the test created, 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
+each test end checks what the test created (entities that were queued for a first draw when the first test began count as boot backlog, not the test's), 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
 flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `dm-test` (the full suite,
 sharded), `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
 export `DQ_STALENESS=full`, which `dq_focused_test.sh` honours (`DQ_STALENESS=full bash tools/dq_focused_test.sh ...` forces

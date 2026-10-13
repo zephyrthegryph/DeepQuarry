@@ -77,6 +77,13 @@ GLOBAL_VAR_INIT(staleness_bounded, FALSE)
 GLOBAL_LIST_EMPTY(stale_backlog)
 /// TRUE once the first test has parked the backlog.
 GLOBAL_VAR_INIT(staleness_parked, FALSE)
+/// ref -> TRUE for every entity that was waiting in the refresh queue when the first test began (bounded mode). The sweep first sees most of
+/// them later, when the kernel's drains reach them; staleness_track() sends those to the backlog, so a test's own set is only what it made.
+GLOBAL_LIST_EMPTY(stale_pretest)
+/// Entities sent to the backlog by staleness_track() since the last summary line.
+GLOBAL_VAR_INIT(staleness_late_parked, 0)
+/// All of them this run.
+GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 
 /// Reads the config once it is loaded (world/ConfigLoaded()).
 /proc/staleness_configure()
@@ -103,6 +110,12 @@ GLOBAL_VAR_INIT(staleness_parked, FALSE)
 	if(GLOB.stale_all[ref])
 		return
 	GLOB.stale_all[ref] = TRUE
+	if(GLOB.stale_pretest[ref])
+		// Created before the first test and only now drawn or inited by the kernel's drains: boot work, not the running test's.
+		GLOB.stale_pretest -= ref
+		GLOB.stale_backlog += ref
+		GLOB.staleness_late_parked++
+		return
 	GLOB.stale_new += ref
 
 /// Drops a destroyed entity from the sweep's index. The sweep prunes a dead ref only when it reaches it, so without this a
@@ -113,6 +126,7 @@ GLOBAL_VAR_INIT(staleness_parked, FALSE)
 	var/ref = REF(E)
 	GLOB.stale_all -= ref
 	GLOB.stale_new -= ref
+	GLOB.stale_pretest -= ref
 
 // ---------------------------------------------------------------- reporting
 
@@ -526,7 +540,7 @@ GLOBAL_VAR_INIT(staleness_parked, FALSE)
 	if(length(GLOB.stale_all) && GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1)
 		staleness_check_ref(GLOB.stale_all[rand(1, length(GLOB.stale_all))], "presentation drain (sampled)")
 
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// The suite is about to run its first test: reads the mode from the world params ("staleness=bounded", set by tools/dq_focused_test.sh for an ordinary
 /// focused run; anything else is full) and logs it. Bounded parks the boot backlog (everything that appeared since boot) so the first test's sweep checks
 /// what the test created plus a slice of it, not all of it.
@@ -542,7 +556,12 @@ GLOBAL_VAR_INIT(staleness_parked, FALSE)
 	GLOB.staleness_parked = TRUE
 	GLOB.stale_backlog = GLOB.stale_new
 	GLOB.stale_new = list()
-	log_test("STALENESS: [length(GLOB.stale_backlog)] entities parked as the boot backlog ([length(GLOB.stale_all)] swept in all)")
+	var/unseen = 0
+	for(var/datum/D as anything in GLOB.refresh_queue)
+		if(!GLOB.stale_all[REF(D)])
+			GLOB.stale_pretest[REF(D)] = TRUE
+			unseen++
+	log_test("STALENESS: parked [length(GLOB.stale_backlog)] swept entities as the boot backlog ([length(GLOB.stale_all)] swept in all) at [REALTIMEOFDAY] ds; [unseen] queued entities not swept yet are marked pre-test and join the backlog when first swept")
 
 /// The end of a test: queued work settles, then everything that appeared during the test and a slice of the rest is checked, against the test's own
 /// result (a report fails it). The expectation flag is the test's own and ends with it. Full mode checks all of the first sweep's backlog; bounded mode
@@ -565,7 +584,9 @@ GLOBAL_VAR_INIT(staleness_parked, FALSE)
 	else
 		found = staleness_sweep("end of test", settle = TRUE)
 		visited = GLOB.staleness_last_visited
-	log_test("STALENESS: end of [test] mode=[GLOB.staleness_bounded ? "bounded" : "full"] entities_checked=[visited] stat_draw_checks=[GLOB.staleness_checks - checks_before] backlog_remaining=[GLOB.staleness_bounded ? length(GLOB.stale_backlog) : 0] swept_total=[length(GLOB.stale_all)] refresh_queued_before=[queued][GLOB.staleness_bounded && queued > STALENESS_BOUNDED_FLUSH_MAX ? " (not flushed)" : ""] found=[found] took_ds=[REALTIMEOFDAY - started]")
+	GLOB.staleness_late_parked_total += GLOB.staleness_late_parked
+	log_test("STALENESS: end of [test] late_parked=[GLOB.staleness_late_parked] late_parked_total=[GLOB.staleness_late_parked_total] pretest_unseen=[length(GLOB.stale_pretest)] mode=[GLOB.staleness_bounded ? "bounded" : "full"] entities_checked=[visited] stat_draw_checks=[GLOB.staleness_checks - checks_before] backlog_remaining=[GLOB.staleness_bounded ? length(GLOB.stale_backlog) : 0] swept_total=[length(GLOB.stale_all)] refresh_queued_before=[queued][GLOB.staleness_bounded && queued > STALENESS_BOUNDED_FLUSH_MAX ? " (not flushed)" : ""] found=[found] took_ds=[REALTIMEOFDAY - started]")
+	GLOB.staleness_late_parked = 0
 	if(found)
 		log_world("STALENESS: [found] stale after [test]")
 	GLOB.staleness_expected = FALSE
