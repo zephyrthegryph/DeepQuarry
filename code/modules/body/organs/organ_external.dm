@@ -91,6 +91,12 @@
 
 	// HUD element variable, see organ_icon.dm get_damage_hud_image()
 	var/image/hud_damage_image
+TRACKED(/obj/item/organ/external, transparent)
+TRACKED(/obj/item/organ/external, s_tone)
+TRACKED(/obj/item/organ/external, s_col)
+TRACKED(/obj/item/organ/external, model)
+TRACKED(/obj/item/organ/external, h_col)
+TRACKED(/obj/item/organ/external, open)
 
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
@@ -765,7 +771,7 @@ CAPABILITIES(/obj/item/organ/external)
 This function completely restores a damaged organ to perfect condition.
 */
 /obj/item/organ/external/rejuvenate(ignore_prosthetic_prefs)
-	damage_state = "00"
+	set_damage_state("00")
 	set_status(0)
 	germ_level = 0
 	for(var/datum/affliction/wound/W as anything in get_wounds())
@@ -972,7 +978,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if (!(status & ORGAN_DEAD))
 			set_status(status | ORGAN_DEAD)
 			to_chat(owner, span_notice("You can't feel your [name] anymore..."))
-			owner.update_icons_body()
+			changed(src)
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
@@ -1008,7 +1014,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/update_damage_state()
 	var/n_is = damage_state_text()
 	if (n_is != damage_state)
-		damage_state = n_is
+		set_damage_state(n_is)
 		return 1
 	return 0
 
@@ -1369,7 +1375,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	..()
 
 	if(company)
-		model = company
+		set_model(company)
 		var/datum/robolimb/R = GLOB.all_robolimbs[company]
 		if(!R || (data.get_species_name() in R.species_cannot_use))
 			R = GLOB.basic_robolimb
@@ -1423,11 +1429,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(src.is_robotic())
 		return
 	src.set_status(src.status | ORGAN_MUTATED)
-	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/unmutate()
 	src.set_status(src.status & ~ORGAN_MUTATED)
-	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/get_damage()	//returns total damage
 	return (get_trauma() + get_burn())	//could use max_damage?
@@ -1500,7 +1504,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		expire(0.1 SECONDS)
 
-	victim.update_icons_body()
+	changed(src)
 	return TRUE
 
 /// Drops what `victim` wears on this limb, which is about to be severed.
@@ -1643,15 +1647,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				return 1
 
 /obj/item/organ/external/proc/is_hidden_by_sprite_accessory(clothing_only = FALSE)			// Clothing only will mean the check should only be used in places where we want to hide clothing icon, not organ itself.
-	if(owner && owner.tail_style && owner.tail_style.hide_body_parts && (organ_tag in owner.tail_style.hide_body_parts))
-		return 1
-	if(clothing_only && LAZYLEN(markings))
-		for(var/M in markings)
-			if(!markings[M]["on"]) //If the marking is off, the organ isn't hidden by it.
-				continue
-			var/datum/sprite_accessory/marking/mark = markings[M]["datum"]
-			if(mark.hide_body_parts && (organ_tag in mark.hide_body_parts))
-				return 1
+	return owner?.limb_hidden(src, clothing_only)
 
 #undef DROPLIMB_THRESHOLD_EDGE
 #undef DROPLIMB_THRESHOLD_DESTROY
@@ -1659,13 +1655,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)
 
-/// A tick after a limb comes off, the body's icons catch up.
+/// A tick after a limb comes off, the body's icons catch up (a human's draw follows its parts by itself).
 /proc/droplimb_refresh_icons(mob/living/victim)
-	if(ishuman(victim))
-		var/mob/living/carbon/human/H = victim
-		H.UpdateDamageIcon()
-		H.update_icons_body()
-	else
+	if(!ishuman(victim))
 		victim.update_icons()
 
 #undef LIMB_SPILL_SHARP_BRUTE

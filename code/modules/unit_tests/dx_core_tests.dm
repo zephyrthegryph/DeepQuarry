@@ -20,7 +20,7 @@
 /proc/dx_test_cap(path, label)
 	var/datum/capability/dx_test/C = new path
 	C.label = label
-	C.set_layer_name("[label]_layer")
+	C.layer_name = "[label]_layer"
 	return C
 
 /datum/dx_core_child

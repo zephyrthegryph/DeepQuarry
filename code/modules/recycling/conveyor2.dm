@@ -228,6 +228,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 /// TRUE when just operated: one step pushes the position to the linked conveyors.
 /obj/machinery/conveyor_switch/var/operated = FALSE
 TRACKED_BRIDGED(/obj/machinery/conveyor_switch, operated, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/conveyor_switch, operated)
 CAPABILITIES(/obj/machinery/conveyor_switch)
 	after_init(0, then(PROC_REF(init_update)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))

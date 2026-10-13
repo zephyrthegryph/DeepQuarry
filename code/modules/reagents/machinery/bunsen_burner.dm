@@ -10,6 +10,7 @@
 
 /obj/machinery/bunsen_burner/var/heating = FALSE
 TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/bunsen_burner, heating)
 /// Boils its container while heating (start_boiling() .. end_boil()).
 // The holder resizes to match the boiling container.
 

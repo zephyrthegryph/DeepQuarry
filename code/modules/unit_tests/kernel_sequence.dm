@@ -21,6 +21,7 @@
 	var/list/busy = list()
 
 TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
+TRACKED(/datum/seq_test_entity, heat)
 
 /datum/seq_test_entity/seq_plan_key()
 	return plan_key

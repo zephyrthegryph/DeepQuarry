@@ -1201,7 +1201,7 @@
 	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Switch sharp/fuzzy scaling for current mob."
 	appearance_flags ^= PIXEL_SCALE
-	fuzzy = !fuzzy
+	set_fuzzy(!fuzzy)
 	update_transform()
 
 /mob/living/proc/center_offset()

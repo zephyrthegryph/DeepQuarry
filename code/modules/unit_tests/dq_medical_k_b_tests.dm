@@ -92,7 +92,10 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/stomach/machine/S = allocate(/obj/item/organ/internal/stomach/machine)
 	rel_set(S, nameof(S.owner), H)
-	H.robobody_count = 3
+	for(var/organ_tag in list(BP_HEAD, BP_TORSO, BP_GROIN)) // a full chassis: three prosthetic core parts
+		var/obj/item/organ/external/E = H.organs_by_name[organ_tag]
+		E.set_robotic(ORGAN_ROBOT)
+	TEST_ASSERT_EQUAL(H.robobody_count(), 3, "the core parts count as a chassis")
 	var/before = H.body_temperature()
 	S.handle_organ_proc_special(1)
 	TEST_ASSERT_EQUAL(H.body_temperature(), before, "the machine stomach writes no chassis heat")

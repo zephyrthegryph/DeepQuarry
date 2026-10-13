@@ -1,15 +1,13 @@
-/// Counts observe real human inventory redraws and still chain their real implementations.
+/// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_holo_sword_holder
 	var/left_redraws = 0
 	var/right_redraws = 0
 
-/mob/living/carbon/human/interim_holo_sword_holder/update_inv_l_hand()
-	left_redraws++
-	return ..()
-
-/mob/living/carbon/human/interim_holo_sword_holder/update_inv_r_hand()
-	right_redraws++
-	return ..()
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_holo_sword_holder/draw(datum/look/look)
+	set_left_redraws(left_redraws + 1)
+	set_right_redraws(right_redraws + 1)
+	..()
 
 /// A synthetic native click supplies ambient usr while observing the real appearance output.
 /obj/item/holo/esword/interim_holder_appearance
@@ -34,10 +32,10 @@
 		if(entry && entry.icon_state == "esword_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
-	bystander.left_redraws = 0
-	bystander.right_redraws = 0
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
+	bystander.set_left_redraws(0)
+	bystander.set_right_redraws(0)
 	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(sword.active, "the actual sword interaction extends its blade")
 	TEST_ASSERT_EQUAL(combat_of(sword).force, 30, "actual holo activation applies its configured active force")
@@ -67,8 +65,9 @@
 			retracted_blades++
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
-	holder.left_redraws = 0
-	holder.right_redraws = 0
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
 	sword.observe_look()
 	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld holographic sword does not redraw its former holder")
 	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld holographic sword leaves its former holder's right hand untouched")

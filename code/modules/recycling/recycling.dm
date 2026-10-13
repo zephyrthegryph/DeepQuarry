@@ -159,6 +159,7 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 /// TRUE while it hands out dust piles (after a sort): dispense_if_possible() every 2 seconds.
 /obj/machinery/recycling/sorter/var/dispensing = FALSE
 TRACKED_BRIDGED(/obj/machinery/recycling/sorter, dispensing, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/recycling/sorter, dispensing)
 CAPABILITIES(/obj/machinery/recycling/sorter)
 	every(2 SECONDS, then(PROC_REF(dispense_if_possible)), when = nameof(dispensing))
 

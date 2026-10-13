@@ -67,6 +67,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/var/autoprocess = 0
 TRACKED_BRIDGED(/obj/machinery/computer/cloning, autoprocess, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/cloning, autoprocess)
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
 	releasecloner()

@@ -279,7 +279,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	pixel_x = chassis_data.pixel_x
 	default_pixel_x = pixel_x
 	pixel_y = chassis_data.pixel_y
-	set_default_pixel_y(pixel_y)
+	default_pixel_y = pixel_y
 	vis_height = chassis_data.vis_height
 
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
@@ -433,8 +433,6 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 		return
 
 	H.icon_state = SSpai.chassis_data(chassis_name).sprite_icon_state
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
 	return H
 
 /mob/living/silicon/pai/Moved(atom/oldloc, direct, forced, movetime)

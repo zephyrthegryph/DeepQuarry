@@ -20,6 +20,7 @@ TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
 	of = /obj/machinery/computer/pod
 	field = "timing"
 	channel = CHANGE_MACHINE_SETTINGS
+TRACKED(/obj/machinery/computer/pod, timing)
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()

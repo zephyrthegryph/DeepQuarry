@@ -212,6 +212,7 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
+TRACKED(/mob, incorporeal_move)
 
 CAPABILITIES(/mob)
 	// Who the character says they are (profile_records.dm).

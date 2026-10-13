@@ -27,6 +27,7 @@ CAPABILITIES(/obj/machinery/smart_centrifuge)
 	op("centrifuge_drain_tank", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), then(PROC_REF(interaction_drain_tank)))
 /obj/machinery/smart_centrifuge/var/working = FALSE
 TRACKED_BRIDGED(/obj/machinery/smart_centrifuge, working, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/smart_centrifuge, working)
 
 /// The delay before the next separation step.
 /obj/machinery/smart_centrifuge/proc/separate_delay_of(datum/act/A)

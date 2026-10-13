@@ -28,8 +28,6 @@
 	var/hand_form = "hands"			// Used in IsHumanoidToolUser. 'Your X are not fit-'.
 	var/list/hud_gears				// Slots to show on the hud (typically none)
 	var/ui_icons					// Icon file path to use for the HUD, otherwise generic icons are used
-	var/image/r_hand_sprite				// If they have hands,
-	var/image/l_hand_sprite				// they could use some icons.
 	var/player_msg					// Message to print to players about 'how' to play this mob on login.
 
 	//Mob icon/appearance settings

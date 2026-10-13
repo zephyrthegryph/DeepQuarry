@@ -48,7 +48,6 @@ CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
 			look.state("synth_facemask_dead")
 		else
 			look.state("synth_facemask")
-	look.effect(PROC_REF(look_effect_redraw_worn)) // the wearer's mask slot follows the visor
 
 /obj/item/clothing/mask/synthfacemask/proc/synthfacemask_step(datum/act/timer/A)
 	if(maskmaster() && lstat != maskmaster().stat)

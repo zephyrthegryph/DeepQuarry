@@ -192,44 +192,26 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	SetUIValueRange(DNA_UI_WING_STYLE,            wing_style + 1,              GLOB.wing_styles_list.len + 1,  1)
 	SetUIValueRange(DNA_UI_GRAD_STYLE,            grad_style,			  	   GLOB.hair_gradients.len,  1)
 
-	SetUIValueRange(DNA_UI_TAIL_R,    character.r_tail,    255,    1)
-	SetUIValueRange(DNA_UI_TAIL_G,    character.g_tail,    255,    1)
-	SetUIValueRange(DNA_UI_TAIL_B,    character.b_tail,    255,    1)
+	SetUIColour(DNA_UI_TAIL_R, character.looks.tail_color)
 
-	SetUIValueRange(DNA_UI_TAIL2_R,   character.r_tail2,   255,    1)
-	SetUIValueRange(DNA_UI_TAIL2_G,   character.g_tail2,   255,    1)
-	SetUIValueRange(DNA_UI_TAIL2_B,   character.b_tail2,   255,    1)
+	SetUIColour(DNA_UI_TAIL2_R, character.looks.tail_color2)
 
-	SetUIValueRange(DNA_UI_TAIL3_R,   character.r_tail3,   255,    1)
-	SetUIValueRange(DNA_UI_TAIL3_G,   character.g_tail3,   255,    1)
-	SetUIValueRange(DNA_UI_TAIL3_B,   character.b_tail3,   255,    1)
-	SetUIValueRange(DNA_UI_TAIL_ALPHA,character.a_tail,    255,    1)
+	SetUIColour(DNA_UI_TAIL3_R, character.looks.tail_color3)
+	SetUIValueRange(DNA_UI_TAIL_ALPHA,character.looks.tail_alpha,    255,    1)
 
-	SetUIValueRange(DNA_UI_WING_R,    character.r_wing,    255,    1)
-	SetUIValueRange(DNA_UI_WING_G,    character.g_wing,    255,    1)
-	SetUIValueRange(DNA_UI_WING_B,    character.b_wing,    255,    1)
+	SetUIColour(DNA_UI_WING_R, character.looks.wing_color)
 
-	SetUIValueRange(DNA_UI_WING2_R,    character.r_wing2,  255,    1)
-	SetUIValueRange(DNA_UI_WING2_G,    character.g_wing2,  255,    1)
-	SetUIValueRange(DNA_UI_WING2_B,    character.b_wing2,  255,    1)
+	SetUIColour(DNA_UI_WING2_R, character.looks.wing_color2)
 
-	SetUIValueRange(DNA_UI_WING3_R,    character.r_wing3,  255,    1)
-	SetUIValueRange(DNA_UI_WING3_G,    character.g_wing3,  255,    1)
-	SetUIValueRange(DNA_UI_WING3_B,    character.b_wing3,  255,    1)
-	SetUIValueRange(DNA_UI_WING_ALPHA, character.a_wing,   255,    1)
+	SetUIColour(DNA_UI_WING3_R, character.looks.wing_color3)
+	SetUIValueRange(DNA_UI_WING_ALPHA, character.looks.wing_alpha,   255,    1)
 
-	SetUIValueRange(DNA_UI_EARS_R,    character.r_ears,    255,    1)
-	SetUIValueRange(DNA_UI_EARS_G,    character.g_ears,    255,    1)
-	SetUIValueRange(DNA_UI_EARS_B,    character.b_ears,    255,    1)
+	SetUIColour(DNA_UI_EARS_R, character.looks.ears_color)
 
-	SetUIValueRange(DNA_UI_EARS2_R,   character.r_ears2,   255,    1)
-	SetUIValueRange(DNA_UI_EARS2_G,   character.g_ears2,   255,    1)
-	SetUIValueRange(DNA_UI_EARS2_B,   character.b_ears2,   255,    1)
+	SetUIColour(DNA_UI_EARS2_R, character.looks.ears_color2)
 
-	SetUIValueRange(DNA_UI_EARS3_R,   character.r_ears3,   255,    1)
-	SetUIValueRange(DNA_UI_EARS3_G,   character.g_ears3,   255,    1)
-	SetUIValueRange(DNA_UI_EARS3_B,   character.b_ears3,   255,    1)
-	SetUIValueRange(DNA_UI_EARS_ALPHA,character.a_ears,    255,    1)
+	SetUIColour(DNA_UI_EARS3_R, character.looks.ears_color3)
+	SetUIValueRange(DNA_UI_EARS_ALPHA,character.looks.ears_alpha,    255,    1)
 
 	SetUIColour(DNA_UI_GRAD_R, character.looks.grad_color)
 
@@ -242,7 +224,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 		SetUIValueRange(offset, red, 255, 1)
 		SetUIValueRange(offset + 1, green, 255, 1)
 		SetUIValueRange(offset + 2, blue, 255, 1)
-	SetUIValueRange(DNA_UI_EARS_SECONDARY_ALPHA, character.a_ears2, 255, 1)
+	SetUIValueRange(DNA_UI_EARS_SECONDARY_ALPHA, character.looks.ears_alpha2, 255, 1)
 
 	SetUIColour(DNA_UI_HAIR_R, character.looks.hair_color)
 
@@ -283,7 +265,6 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	//Eye color
 	H.looks.set_eyes_color(GetUIColour(DNA_UI_EYES_R))
-	H.update_eyes()
 
 	//Hair gradient color
 	H.looks.set_grad_color(GetUIColour(DNA_UI_GRAD_R))
@@ -300,7 +281,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 		var/obj/item/organ/external/E = H.organs_by_name[tag]
 		if(E)
 			var/list/marklist = LAZYACCESS(body_markings, tag)
-			E.markings = marklist.Copy()
+			E.set_markings(marklist.Copy())
 
 	//Hair style
 	var/hair = GetUIValueRange(DNA_UI_HAIR_STYLE,GLOB.hair_styles_list.len)
@@ -315,27 +296,21 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	// Ears
 	var/ears = GetUIValueRange(DNA_UI_EAR_STYLE, GLOB.ear_styles_list.len + 1) - 1
 	if(ears < 1)
-		H.set_ear_style(null)
+		rel_set(H, nameof(H.ear_style), null)
 	else if((0 < ears) && (ears <= GLOB.ear_styles_list.len))
-		H.set_ear_style(GLOB.ear_styles_list[GLOB.ear_styles_list[ears]])
+		rel_set(H, nameof(H.ear_style), GLOB.ear_styles_list[GLOB.ear_styles_list[ears]])
 	var/ears_secondary = GetUIValueRange(DNA_UI_EAR_SECONDARY_STYLE, GLOB.ear_styles_list.len + 1) - 1
 	if(ears_secondary < 1)
-		H.set_ear_secondary_style(null)
+		rel_set(H, nameof(H.ear_secondary_style), null)
 	else if((0 < ears_secondary) && (ears_secondary <= GLOB.ear_styles_list.len))
-		H.set_ear_secondary_style(GLOB.ear_styles_list[GLOB.ear_styles_list[ears_secondary]])
+		rel_set(H, nameof(H.ear_secondary_style), GLOB.ear_styles_list[GLOB.ear_styles_list[ears_secondary]])
 
 	// Ear Color
-	H.set_r_ears(GetUIValueRange(DNA_UI_EARS_R,    255))
-	H.set_g_ears(GetUIValueRange(DNA_UI_EARS_G,    255))
-	H.set_b_ears(GetUIValueRange(DNA_UI_EARS_B, 	  255))
-	H.set_r_ears2(GetUIValueRange(DNA_UI_EARS2_R,   255))
-	H.set_g_ears2(GetUIValueRange(DNA_UI_EARS2_G,   255))
-	H.set_b_ears2(GetUIValueRange(DNA_UI_EARS2_B,	  255))
-	H.set_r_ears3(GetUIValueRange(DNA_UI_EARS3_R,   255))
-	H.set_g_ears3(GetUIValueRange(DNA_UI_EARS3_G,   255))
-	H.set_b_ears3(GetUIValueRange(DNA_UI_EARS3_B,	  255))
-	H.set_a_ears(GetUIValueRange(DNA_UI_EARS_ALPHA, 255))
-	H.set_a_ears2(GetUIValueRange(DNA_UI_EARS_SECONDARY_ALPHA, 255))
+	H.looks.set_ears_color(rgb(GetUIValueRange(DNA_UI_EARS_R,    255), GetUIValueRange(DNA_UI_EARS_G,    255), GetUIValueRange(DNA_UI_EARS_B, 	  255)))
+	H.looks.set_ears_color2(rgb(GetUIValueRange(DNA_UI_EARS2_R,   255), GetUIValueRange(DNA_UI_EARS2_G,   255), GetUIValueRange(DNA_UI_EARS2_B,	  255)))
+	H.looks.set_ears_color3(rgb(GetUIValueRange(DNA_UI_EARS3_R,   255), GetUIValueRange(DNA_UI_EARS3_G,   255), GetUIValueRange(DNA_UI_EARS3_B,	  255)))
+	H.looks.set_ears_alpha(GetUIValueRange(DNA_UI_EARS_ALPHA, 255))
+	H.looks.set_ears_alpha2(GetUIValueRange(DNA_UI_EARS_SECONDARY_ALPHA, 255))
 
 	LAZYINITLIST(H.ear_secondary_colors)
 	H.ear_secondary_colors.len = max(length(H.ear_secondary_colors), DNA_UI_EARS_SECONDARY_COLOR_CHANNEL_COUNT)
@@ -350,28 +325,22 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	//Tail
 	var/tail = GetUIValueRange(DNA_UI_TAIL_STYLE, GLOB.tail_styles_list.len + 1) - 1
 	if(tail < 1)
-		H.set_tail_style(null)
+		rel_set(H, nameof(H.tail_style), null)
 	else if((0 < tail) && (tail <= GLOB.tail_styles_list.len))
-		H.set_tail_style(GLOB.tail_styles_list[GLOB.tail_styles_list[tail]])
+		rel_set(H, nameof(H.tail_style), GLOB.tail_styles_list[GLOB.tail_styles_list[tail]])
 
 	//Wing
 	var/wing = GetUIValueRange(DNA_UI_WING_STYLE, GLOB.wing_styles_list.len + 1) - 1
 	if(wing < 1)
-		H.set_wing_style(null)
+		rel_set(H, nameof(H.wing_style), null)
 	else if((0 < wing) && (wing <= GLOB.wing_styles_list.len))
-		H.set_wing_style(GLOB.wing_styles_list[GLOB.wing_styles_list[wing]])
+		rel_set(H, nameof(H.wing_style), GLOB.wing_styles_list[GLOB.wing_styles_list[wing]])
 
 	//Wing Color
-	H.set_r_wing(GetUIValueRange(DNA_UI_WING_R,     255))
-	H.set_g_wing(GetUIValueRange(DNA_UI_WING_G,     255))
-	H.set_b_wing(GetUIValueRange(DNA_UI_WING_B,     255))
-	H.set_r_wing2(GetUIValueRange(DNA_UI_WING2_R,    255))
-	H.set_g_wing2(GetUIValueRange(DNA_UI_WING2_G,    255))
-	H.set_b_wing2(GetUIValueRange(DNA_UI_WING2_B,    255))
-	H.set_r_wing3(GetUIValueRange(DNA_UI_WING3_R,    255))
-	H.set_g_wing3(GetUIValueRange(DNA_UI_WING3_G,    255))
-	H.set_b_wing3(GetUIValueRange(DNA_UI_WING3_B,    255))
-	H.set_a_wing(GetUIValueRange(DNA_UI_WING_ALPHA,	255))
+	H.looks.set_wing_color(rgb(GetUIValueRange(DNA_UI_WING_R,     255), GetUIValueRange(DNA_UI_WING_G,     255), GetUIValueRange(DNA_UI_WING_B,     255)))
+	H.looks.set_wing_color2(rgb(GetUIValueRange(DNA_UI_WING2_R,    255), GetUIValueRange(DNA_UI_WING2_G,    255), GetUIValueRange(DNA_UI_WING2_B,    255)))
+	H.looks.set_wing_color3(rgb(GetUIValueRange(DNA_UI_WING3_R,    255), GetUIValueRange(DNA_UI_WING3_G,    255), GetUIValueRange(DNA_UI_WING3_B,    255)))
+	H.looks.set_wing_alpha(GetUIValueRange(DNA_UI_WING_ALPHA,	255))
 
 	// Playerscale
 	var/size = GetUIValueRange(DNA_UI_PLAYERSCALE, GLOB.player_sizes_list.len)
@@ -379,16 +348,10 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 		H.resize(GLOB.player_sizes_list[GLOB.player_sizes_list[size]], TRUE, ignore_prefs = TRUE)
 
 	// Tail/Taur Color
-	H.set_r_tail(GetUIValueRange(DNA_UI_TAIL_R,    255))
-	H.set_g_tail(GetUIValueRange(DNA_UI_TAIL_G,    255))
-	H.set_b_tail(GetUIValueRange(DNA_UI_TAIL_B,    255))
-	H.set_r_tail2(GetUIValueRange(DNA_UI_TAIL2_R,   255))
-	H.set_g_tail2(GetUIValueRange(DNA_UI_TAIL2_G,   255))
-	H.set_b_tail2(GetUIValueRange(DNA_UI_TAIL2_B,   255))
-	H.set_r_tail3(GetUIValueRange(DNA_UI_TAIL3_R,   255))
-	H.set_g_tail3(GetUIValueRange(DNA_UI_TAIL3_G,   255))
-	H.set_b_tail3(GetUIValueRange(DNA_UI_TAIL3_B,   255))
-	H.set_a_tail(GetUIValueRange(DNA_UI_TAIL_ALPHA,  255))
+	H.looks.set_tail_color(rgb(GetUIValueRange(DNA_UI_TAIL_R,    255), GetUIValueRange(DNA_UI_TAIL_G,    255), GetUIValueRange(DNA_UI_TAIL_B,    255)))
+	H.looks.set_tail_color2(rgb(GetUIValueRange(DNA_UI_TAIL2_R,   255), GetUIValueRange(DNA_UI_TAIL2_G,   255), GetUIValueRange(DNA_UI_TAIL2_B,   255)))
+	H.looks.set_tail_color3(rgb(GetUIValueRange(DNA_UI_TAIL3_R,   255), GetUIValueRange(DNA_UI_TAIL3_G,   255), GetUIValueRange(DNA_UI_TAIL3_B,   255)))
+	H.looks.set_tail_alpha(GetUIValueRange(DNA_UI_TAIL_ALPHA,  255))
 
 	// Hair gradiant
 	var/grad = GetUIValueRange(DNA_UI_GRAD_STYLE,GLOB.hair_gradients.len)
@@ -412,7 +375,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	H.looks.set_synth_markings(synth_markings)
 
 	// Scaling style
-	H.fuzzy = scale_appearance
+	H.set_fuzzy(scale_appearance)
 	H.offset_override = offset_override
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -424,7 +387,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	// copy; proto_private() returns it (and never lets these writes reach a registered species).
 	var/datum/species/own_species = rel_private(H, nameof(H.species))
 	own_species.blood_reagents = blood_reagents
-	own_species.blood_color = blood_color
+	own_species.set_blood_color(blood_color)
 	own_species.species_sounds = species_sounds
 	own_species.gender_specific_species_sounds = gender_specific_species_sounds
 	own_species.species_sounds_male = species_sounds_male

@@ -42,15 +42,12 @@
 			return N
 
 /**
- * Scale up the size of a mob's icon by the size_multiplier.
- * NOTE: mob/living/carbon/human/update_icons() has a more complicated system and
- * 	is already applying this transform.   BUT, it does not call ..()
- *	as long as that is true, we should be fine.  If that changes we need to
- *	re-evaluate.
+ * Scale up the size of a mob's icon by the size_multiplier. A human scales through update_transform() instead.
  */
 /mob/living/update_icons()
 	. = ..()
-	ASSERT(!ishuman(src))
+	if(ishuman(src))
+		return // a human's transform is update_transform(), its look is its draw
 	var/cent_offset = center_offset
 	if(fuzzy || offset_override || dir == EAST || dir == WEST)
 		cent_offset = 0

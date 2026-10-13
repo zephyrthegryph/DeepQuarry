@@ -449,30 +449,14 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
 	if(ishuman(AM))
-		var/mob/living/carbon/human/L = AM
-		L.fur_submerge()
+		var/mob/living/carbon/human/sunk = AM
+		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
 /turf/simulated/floor/outdoors/fur/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(ishuman(AM))
-		var/mob/living/carbon/human/L = AM
-		L.fur_submerge()
-
-/mob/living/carbon/human/proc/fur_submerge()
-	if(QDESTROYING(src))
-		return
-
-	remove_layer(MOB_WATER_LAYER)
-
-	if(!istype(loc,/turf/simulated/floor/outdoors/fur) || lying)
-		return
-
-	var/atom/A = loc
-	var/image/I = image(icon = 'icons/turf/fur.dmi', icon_state = "submerged", layer = BODY_LAYER+MOB_WATER_LAYER)
-	I.color = A.color
-	overlays_standing[MOB_WATER_LAYER] = I
-
-	apply_layer(MOB_WATER_LAYER)
+		var/mob/living/carbon/human/sunk = AM
+		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
 // ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)

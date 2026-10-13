@@ -183,6 +183,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 /// TRUE while the magnets are walked along the path.
 /obj/machinery/magnetic_controller/var/path_moving = FALSE
 TRACKED_BRIDGED(/obj/machinery/magnetic_controller, path_moving, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/magnetic_controller, path_moving)
 /obj/machinery/magnetic_controller/var/path_stopped = FALSE
 TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 /// Walks the magnets one path step every magnet_delay() while moving.

@@ -213,7 +213,6 @@ CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
 	play_sfx(src, SFX_WEAPONS_KENETIC_RELOAD)
 	set_overheat(FALSE)
 
-TRACKED(/obj/item/gun/energy/kinetic_accelerator, overheat)
 
 /// The look: the empty lamp while it cools down or has no charge.
 /obj/item/gun/energy/kinetic_accelerator/draw_charge_state(datum/look/look)

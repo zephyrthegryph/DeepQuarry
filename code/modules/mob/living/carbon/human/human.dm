@@ -65,7 +65,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 		sync_organ_dna()
 	initialize_vessel()
-	regenerate_icons()
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
@@ -1018,7 +1017,6 @@ CAPABILITIES(/datum/morph_review)
 		looks.set_hair_color(new_hair)
 	if(new_eyes)
 		looks.set_eyes_color(new_eyes)
-		update_eyes()
 	if(new_h_style)
 		looks.set_hair_style(new_h_style)
 	if(new_f_style)
@@ -1030,7 +1028,6 @@ CAPABILITIES(/datum/morph_review)
 			gender = FEMALE
 		if("Neutral")
 			gender = NEUTER
-	regenerate_icons()
 	check_dna()
 	act_message(src, null, MSG_SELF(span_notice("You change your appearance!")), \
 		MSG_OTHERS(span_notice("%U% morphs and changes %THEIR% appearance!")), \
@@ -1284,8 +1281,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	//if this blood isn't already in the list, add it
 	if(istype(M))
 		add_blooddna(M.dna,M)
-	hand_blood_color = dq_get_blood_color(src)
-	update_bloodied()
+	set_hand_blood_color(dq_get_blood_color(src))
 	grant(src, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), src)
 	return 1 //we applied blood to the item
 
@@ -1302,7 +1298,6 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
-		update_inv_gloves()
 		get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 	else
 		bloody_hands = 0
@@ -1310,14 +1305,12 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 	if(get_equipped_item(SLOT_ID_SHOES))
 		get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
-		update_inv_shoes()
 		get_equipped_item(SLOT_ID_SHOES).germ_level = 0
 	else if(feet_blood_color || LAZYLEN(feet_blood_DNA))
-		LAZYCLEARLIST(feet_blood_DNA)
-		feet_blood_DNA = null
-		feet_blood_color = null
+		clear_feet_blood_DNA()
+		set_feet_blood_DNA(null)
+		set_feet_blood_color(null)
 
-	update_bloodied()
 
 /mob/living/carbon/human/get_visible_implants(class = 0)
 
@@ -1481,7 +1474,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set_hunger_rate(src, species.hunger_factor)
 
 	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
-	set_default_pixel_y(initial(pixel_y) + species.pixel_offset_y)
+	default_pixel_y = initial(pixel_y) + species.pixel_offset_y
 	pixel_x = default_pixel_x
 	pixel_y = default_pixel_y
 	center_offset = species.center_offset
@@ -1495,7 +1488,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	update_hud()
 
 	//A slew of bits that may be affected by our species change
-	regenerate_icons()
 
 	if(species)
 		return 1
@@ -1860,12 +1852,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	if(is_in_hands(W))
 		return 1
 	if(put_in_active_hand(W))
-		update_inv_l_hand()
-		update_inv_r_hand()
 		return 1
 	else if(put_in_inactive_hand(W))
-		update_inv_l_hand()
-		update_inv_r_hand()
 		return 1
 	else
 		return ..()
@@ -1896,8 +1884,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
-	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
-	update_underwear(1)
+	set_hide_underwear_at(UWC.name, !hide_underwear[UWC.name])
+	underwear_edited()
 	to_chat(src, span_notice("You [hide_underwear[UWC.name] ? "take off" : "put on"] your [UWC.display_name]."))
 
 /mob/living/carbon/human/verb/pull_punches()
@@ -1919,9 +1907,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 	var/obj/item/organ/external/affecting
 	if(organ_check in list(O_HEART, O_LUNGS))
-		affecting = organs_by_name[BP_TORSO]
+		affecting = limb_tagged(BP_TORSO)
 	else if(organ_check in list(O_LIVER, O_KIDNEYS))
-		affecting = organs_by_name[BP_GROIN]
+		affecting = limb_tagged(BP_GROIN)
 
 	if(affecting && (affecting.is_robotic()))
 		return 0
@@ -2136,15 +2124,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set name = "Show/Hide Headset"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle headset worn icon visibility."
-	hide_headset = !hide_headset
-	update_inv_ears()
+	set_hide_headset(!hide_headset)
 
 /mob/living/carbon/human/verb/hide_glasses()
 	set name = "Show/Hide Glasses"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle glasses worn icon visibility."
-	hide_glasses = !hide_glasses
-	update_inv_glasses()
+	set_hide_glasses(!hide_glasses)
 
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()
@@ -2256,3 +2242,4 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 /// The status step reads it (embedded objects roll damage on movement).
 TRACKED(/mob/living/carbon/human, embedded_flag)
+

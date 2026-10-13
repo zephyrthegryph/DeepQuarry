@@ -1,4 +1,3 @@
-TRACKED(/obj/item, canremove)
 
 
 /obj/item
@@ -128,8 +127,6 @@ TRACKED(/obj/item, canremove)
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)
-		m.update_inv_r_hand()
-		m.update_inv_l_hand()
 		// Through doMove(), so the mob's containment ledger sees the exit and its slot
 		// hooks run (a raw loc write left body parts stuck in their slots).
 		moveToNullspace()
@@ -227,14 +224,9 @@ TRACKED(/obj/item, canremove)
 
 	return FALSE
 
-//Checks if the item is being held by a mob, and if so, updates the held icons
+/// The item's held sprite changed (state nothing publishes): the holder, which watches what it holds, draws it again.
 /obj/item/proc/update_held_icon()
-	if(isliving(src.loc))
-		var/mob/living/M = src.loc
-		if(M.get_equipped_item(SLOT_ID_HAND_L) == src)
-			M.update_inv_l_hand()
-		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
-			M.update_inv_r_hand()
+	changed(src)
 
 /obj/item/proc/move_to_top_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -728,6 +720,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	//Get the required information about the base icon
 	var/icon/icon2use = get_worn_icon_file(body_type = body_type, slot_name = slot_name, default_icon = default_icon, inhands = inhands)
+	if(istext(icon2use)) // a sheet named by its path: an image takes a file, not the text of one
+		icon2use = file(icon2use)
 	var/state2use = get_worn_icon_state(slot_name = slot_name)
 	var/layer2use = get_worn_layer(default_layer = default_layer)
 
@@ -747,14 +741,12 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		PUBLISH_LEGACY(H, /datum/notice/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
 	#endif
 
-	//Generate the base onmob icon
-	var/icon/standing_icon = icon(icon = icon2use, icon_state = state2use)
-
-	if(!inhands)
-		apply_custom(standing_icon)		//Pre-image overridable proc to customize the thing
-		apply_addblends(icon2use,standing_icon)		//Some items have ICON_ADD blend shaders
-
-	var/image/standing = image(standing_icon)
+	//Generate the base onmob icon: the sheet's own state, or a copy when an ICON_ADD shader blends into it (one copy per sheet, state and shader)
+	var/image/standing
+	if(!inhands && addblends && icon2use)
+		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
+	else
+		standing = image(icon = icon2use, icon_state = state2use)
 	standing.alpha = alpha
 	standing.color = color
 	standing.layer = layer2use
@@ -771,6 +763,31 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	apply_overlays(standing)
 
 	//Return our icon
+	return standing
+
+/// The sprite the item shows in a simple mob's hand: its in-hand sheet and state, tinted like the item.
+/obj/item/proc/held_look_image(right_hand)
+	RETURN_TYPE(/image)
+	var/slot_str = right_hand ? slot_r_hand_str : slot_l_hand_str
+	//determine icon state to use
+	var/t_state
+	if(LAZYACCESS(item_state_slots, slot_str))
+		t_state = item_state_slots[slot_str]
+	else if(item_state)
+		t_state = item_state
+	else
+		t_state = icon_state
+	//determine icon to use
+	var/t_icon
+	if(LAZYACCESS(item_icons, slot_str))
+		t_icon = item_icons[slot_str]
+	else if(icon_override)
+		t_state += right_hand ? "_r" : "_l"
+		t_icon = icon_override
+	else
+		t_icon = right_hand ? INV_R_HAND_DEF_ICON : INV_L_HAND_DEF_ICON
+	var/image/standing = image(icon = t_icon, icon_state = t_state)
+	standing.color = color
 	return standing
 
 //Returns the icon object that should be used for the worn icon
@@ -846,16 +863,20 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	//2: your default
 	return BODY_LAYER+default_layer
 
-//Apply the addblend blends onto the icon
-/obj/item/proc/apply_addblends(source_icon, icon/standing_icon)
+/// A worn sprite with an ICON_ADD shader blended in, built once per sheet, state and shader.
+DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_icon), SC_NEVER)
 
-	//If we have addblends, blend them onto the provided icon
-	if(addblends && standing_icon && source_icon)
-		var/addblend_icon = icon("icon" = source_icon, "icon_state" = addblends)
-		standing_icon.Blend(addblend_icon, ICON_ADD)
+/proc/worn_addblend_icon(source_icon, state, addblends)
+	READS_FROM()
+	// A sheet is a file; an icon made at runtime has no key of its own and is blended each time.
+	if(!isfile(source_icon) && !istext(source_icon))
+		return build_worn_addblend_icon(source_icon, state, addblends)
+	return CACHED_KEY(worn_addblend_icons, "[source_icon]|[state]|[addblends]", source_icon, state, addblends)
 
-//STUB
-/obj/item/proc/apply_custom(icon/standing_icon)
+/proc/build_worn_addblend_icon(source_icon, state, addblends)
+	READS_FROM()
+	var/icon/standing_icon = icon(icon = source_icon, icon_state = state)
+	standing_icon.Blend(icon("icon" = source_icon, "icon_state" = addblends), ICON_ADD)
 	return standing_icon
 
 //STUB

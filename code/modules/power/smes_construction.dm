@@ -113,7 +113,6 @@
 	var/RCon_tag = "NO_TAG"
 	initial_charge = 0
 
-TRACKED(/obj/machinery/power/smes/buildable, failing)
 TRACKED(/obj/machinery/power/smes/buildable, grounding)
 TRACKED(/obj/machinery/power/smes/buildable, RCon)
 TRACKED(/obj/machinery/power/smes/buildable, RCon_tag)

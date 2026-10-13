@@ -27,7 +27,7 @@ if [ -z "$ref" ]; then
 fi
 
 merge_rc=0
-# --no-commit: a real merge is committed below, with the regenerated look keys in it (no separate "Regenerate" commit).
+# --no-commit: a real merge is committed below, with the normalized look keys in it (no separate commit).
 git merge --no-edit --no-commit "$ref" || merge_rc=$?
 
 if [ "$merge_rc" -ne 0 ]; then
@@ -38,8 +38,8 @@ if [ "$merge_rc" -ne 0 ]; then
 	fi
 	if printf '%s
 ' "${conflicted[@]}" | grep -qxF "$LOOK_KEYS"; then
-		echo "dq_merge_master: $LOOK_KEYS conflicted; taking our side for now, regenerating it after the merge"
-		git show ":2:$LOOK_KEYS" >"$LOOK_KEYS" && git add -- "$LOOK_KEYS"
+		echo "dq_merge_master: $LOOK_KEYS conflicted; keeping both sides' rows (a union), normalized after the merge"
+		{ git show ":2:$LOOK_KEYS"; git show ":3:$LOOK_KEYS" 2>/dev/null || true; } >"$LOOK_KEYS" && git add -- "$LOOK_KEYS"
 		mapfile -t conflicted < <(printf '%s
 ' "${conflicted[@]}" | grep -vxF "$LOOK_KEYS")
 	fi
@@ -72,8 +72,9 @@ fi
 if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
 	echo "dq_merge_master: merged $ref; regenerating"
 	tools/build/build.sh gen || exit 1
-	# look_keys.txt is a pure function of the tree: never hand-merged, regenerated into the merge commit itself.
-	bash tools/ci/check_look_keys_format.sh --regen || exit 1
+	# look_keys.txt records VERIFIED keys: the union merge keeps both sides' rows, --normalize drops the ones the merged tree makes
+	# ambiguous or dead and never writes a key. A type whose look changed in the merge stays unverified until a pin run probes it.
+	bash tools/ci/check_look_keys_format.sh --normalize || exit 1
 	git add -- "$LOOK_KEYS"
 	git commit -q --no-edit || { echo "dq_merge_master: commit failed" >&2; exit 1; }
 	exit 0
@@ -84,5 +85,5 @@ fi
 
 echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
-# No merge commit to carry them: a tree whose keys are stale still gets one commit (rare: only a branch that committed stale keys).
+# No merge commit to carry them: a file a union left non-canonical still gets one commit (rare).
 bash tools/ci/check_look_keys_format.sh --commit

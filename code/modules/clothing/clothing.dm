@@ -69,10 +69,6 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	blood.color = colour
 	return blood
 
-/// An effect of a clothing look: whoever holds or wears it redraws that slot (the worn overlay stays the mob's own path).
-/obj/item/clothing/proc/look_effect_redraw_worn()
-	look_redraw_worn(src)
-
 /// add_blood() and the gurgle code leave the stains to the look.
 /obj/item/clothing/stains_in_look()
 	return TRUE
@@ -275,7 +271,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 /obj/item/clothing/ears/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_ears()
+		changed(src)
 
 /obj/item/clothing/ears/drop_with_actor(mob/user, obj/over_object)
 	if(ishuman(user))
@@ -367,7 +363,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 /obj/item/clothing/gloves/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_gloves()
+		changed(src)
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
 /obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT, mob/user)
@@ -542,13 +538,12 @@ CAPABILITIES(/obj/item/clothing/head)
 	..()
 	if(light_on)
 		look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
-	look.effect(PROC_REF(look_effect_redraw_worn))
 
 
 /obj/item/clothing/head/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_head()
+		changed(src)
 
 ///////////////////////////////////////////////////////////////////////
 //Mask
@@ -591,7 +586,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 /obj/item/clothing/mask/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_mask()
+		changed(src)
 
 /obj/item/clothing/mask/proc/filter_air(datum/gas_mixture/air)
 	return
@@ -630,7 +625,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 		SPECIES_WEREBEAST = 'icons/inventory/feet/mob_werebeast.dmi'
 		)
 
-	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/feet/mob_digi.dmi'
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
 
@@ -718,7 +713,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	var/drawn_state = look.state_so_far(src)
 	if(holding)
 		look.overlay("[drawn_state]_knife")
-	look.effect(PROC_REF(look_effect_redraw_worn))
 
 /obj/item/clothing/shoes/wash()
 	. = ..()
@@ -834,7 +828,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 /obj/item/clothing/shoes/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_shoes()
+		changed(src)
 
 /// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
 /obj/item/clothing/shoes/proc/shoes_shake_out_self(datum/act/op/A)
@@ -933,7 +927,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
-	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/suit/mob_digi.dmi'
 
 
 CAPABILITIES(/obj/item/clothing/suit)
@@ -985,7 +979,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 		if(ishuman(hood.loc))
 			var/mob/living/carbon/H = hood.loc
 			H.unEquip(hood, 1)
-			H.update_inv_wear_suit()
+			changed(src)
 		hood.forceMove(src)
 
 /obj/item/clothing/suit/proc/ToggleHood()
@@ -1008,13 +1002,13 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
 			set_hood_up(TRUE)
 			hood.set_canremove(FALSE)
-			H.update_inv_wear_suit()
+			changed(src)
 ///Hood stuff end.
 
 /obj/item/clothing/suit/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 /obj/item/clothing/suit/proc/taurize(mob/living/carbon/human/taur, has_taur_tail = FALSE)
 	if(has_taur_tail)
@@ -1110,7 +1104,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // an icon file resource ('*.dmi'), not an object reference
 	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // an icon file resource ('*.dmi'), not an object reference
 
-	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/uniform/mob_digi.dmi'
 
 MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
@@ -1236,7 +1230,7 @@ CAPABILITIES(/obj/item/clothing/under)
 /obj/item/clothing/under/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_w_uniform()
+		changed(src)
 
 	set_clothing_index()
 

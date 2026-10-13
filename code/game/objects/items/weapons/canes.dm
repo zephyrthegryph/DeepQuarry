@@ -37,8 +37,7 @@ CAPABILITIES(/obj/item/cane/concealed)
 		user.drop_from_inventory(src)
 		user.put_in_hands(concealed_blade)
 		user.put_in_hands(src)
-		user.update_inv_l_hand(0)
-		user.update_inv_r_hand()
+		changed(src)
 		rel_take(src, nameof(concealed_blade))
 	return OP_OK
 
@@ -121,8 +120,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)

@@ -13,18 +13,18 @@
 		set_req_one_access(initial(req_one_access))
 
 /obj/item/rig/proc/security_wire_pulsed(datum/act/A)
-	security_check_enabled = !security_check_enabled
+	set_security_check_enabled(!security_check_enabled)
 	visible_message("\The [src] twitches as several suit locks [security_check_enabled?"close":"open"].")
 
 /obj/item/rig/proc/ai_override_wire_pulsed(datum/act/A)
-	ai_override_enabled = !ai_override_enabled
+	set_ai_override_enabled(!ai_override_enabled)
 	visible_message("A small red light on [src] [ai_override_enabled?"goes dead":"flickers on"].")
 
 /obj/item/rig/proc/system_wire_pulsed(datum/act/A)
 	var/datum/notice/wire_pulsed/N = A
 	malfunctioning += 10
 	if(malfunction_delay <= 0)
-		malfunction_delay = 20
+		set_malfunction_delay(20)
 	shock(N.user, 100)
 
 /obj/item/rig/proc/interface_lock_wire_pulsed(datum/act/A)

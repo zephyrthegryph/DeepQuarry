@@ -193,6 +193,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /// 0 stopped, 1 idle drain, 2 active drain.
 /obj/machinery/abstract_grub_machine/var/draining = 1
 TRACKED_BRIDGED(/obj/machinery/abstract_grub_machine, draining, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/abstract_grub_machine, draining)
 /// It names the grub that made it (its owner's owns_one(starts =)).
 /obj/machinery/abstract_grub_machine/default_child_backref()
 	return nameof(grub)

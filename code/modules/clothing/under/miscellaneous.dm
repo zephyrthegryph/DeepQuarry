@@ -1883,7 +1883,6 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	if (isnull(H.size_multiplier)) // Why would this ever be the case?
 		to_chat(H,span_warning("The uniform panics and corrects your apparently microscopic size."))
 		H.resize(RESIZE_NORMAL, ignore_prefs = TRUE)
-		H.update_icons() //Just want the matrix transform
 		return
 
 	if (!H.size_range_check(new_size))
@@ -1892,7 +1891,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 
 	if(new_size != H.size_multiplier)
 		if(!original_size)
-			original_size = H.size_multiplier
+			set_original_size(H.size_multiplier)
 		H.resize(new_size/100, uncapped = H.has_large_resize_bounds(), ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
@@ -1902,7 +1901,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	if(. && ishuman(M) && original_size && !disable_warning)
 		var/mob/living/carbon/human/H = M
 		H.resize(original_size, ignore_prefs = TRUE)
-		original_size = null
+		set_original_size(null)
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 
@@ -1932,7 +1931,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
-			original_size = H.size_multiplier
+			set_original_size(H.size_multiplier)
 			H.resize(target_size, ignore_prefs = FALSE) // In case someone else tries to put it on you. // no uncapped
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
@@ -1946,7 +1945,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 			return
 		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 		H.resize(original_size, ignore_prefs = FALSE) // no uncapped
-		original_size = null
+		set_original_size(null)
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 		log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
@@ -2038,12 +2037,11 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 	if (isnull(H.size_multiplier)) // Why would this ever be the case?
 		to_chat(H, span_warning("The gloves panics and corrects your apparently microscopic size."))
 		H.resize(RESIZE_NORMAL, ignore_prefs = TRUE)
-		H.update_icons() //Just want the matrix transform
 		return
 
 	if(new_size != H.size_multiplier)
 		if(!original_size)
-			original_size = H.size_multiplier
+			set_original_size(H.size_multiplier)
 		H.resize(new_size/100, ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 			MSG_OTHERS(span_notice("The space around %U% distorts as they change size!")))

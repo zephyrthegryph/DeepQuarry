@@ -172,6 +172,9 @@ pub fn decide(sem: &crate::sem::Sem, candidates: &BTreeSet<(String, String)>, ex
             if sig.file == AUTO_REL {
                 return why("declared in the generated file");
             }
+            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) {
+                return why("engine-internal state: the framework's own bookkeeping publishes itself");
+            }
             if sig.file.contains("benchmarks/") {
                 return why("declared in a benchmark file, which only the bench build compiles");
             }
@@ -234,7 +237,7 @@ pub fn inferred(tree: &Tree) -> Arc<Option<AutoSet>> {
         let sem = crate::sem::sem_for(tree)?;
         let scopes = crate::scopes::Scopes::load(&tree.root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
         let scope = scopes.for_lint("auto_tracked", "");
-        let exclude: Vec<String> = scope.list("exclude").iter().chain(scope.list("exclude_fixtures")).cloned().collect();
+        let exclude: Vec<String> = scope.list("exclude").iter().chain(scope.list("exclude_fixtures")).chain(scope.list("exclude_heat")).cloned().collect();
         Some(decide(&sem, &an.candidates, &exclude))
     })
 }

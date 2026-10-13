@@ -20,6 +20,8 @@
 /// Used for controller processing: lift_step() drives the lift while set (every()).
 /datum/turbolift/var/tmp/busy_state
 TRACKED(/datum/turbolift, busy_state)
+TRACKED(/datum/turbolift, priority_mode)
+TRACKED(/datum/turbolift, fire_mode)
 
 CAPABILITIES(/datum/turbolift)
 	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)
@@ -34,7 +36,7 @@ CAPABILITIES(/datum/turbolift)
 
 // Enter priority mode, blocking all calls for awhile
 /datum/turbolift/proc/priority_mode(time = 30 SECONDS)
-	priority_mode = TRUE
+	set_priority_mode(TRUE)
 	cancel_pending_floors()
 	update_ext_panel_icons()
 	control_panel_interior.audible_message(span_info("This turbolift is responding to a priority call.  Please exit the lift when it stops and make way."), runemessage = "BUZZ")
@@ -43,7 +45,7 @@ CAPABILITIES(/datum/turbolift)
 /datum/turbolift/proc/update_fire_mode(new_fire_mode)
 	if(fire_mode == new_fire_mode)
 		return
-	fire_mode = new_fire_mode
+	set_fire_mode(new_fire_mode)
 	if(new_fire_mode)
 		cancel_pending_floors()
 
@@ -233,7 +235,7 @@ CAPABILITIES(/datum/turbolift)
 
 
 /datum/turbolift/proc/end_priority_mode()
-	priority_mode = FALSE
+	set_priority_mode(FALSE)
 	update_ext_panel_icons()
 
 

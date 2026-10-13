@@ -147,7 +147,6 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 	set_real_name("[initial(name)] ([serial_number])")
 	name = real_name
 
-TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 
 /// A drone's look is its shell accessories and its hat; the sprite datum sheet is not used.
 /mob/living/silicon/robot/drone/look_parts(datum/look/look)

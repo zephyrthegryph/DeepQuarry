@@ -731,9 +731,7 @@ CAPABILITIES(/atom/movable/screen/inventory)
 		if("hand")
 			user.swap_hand()
 		else
-			if(user.attack_ui(slot_id))
-				user.update_inv_l_hand(0)
-				user.update_inv_r_hand(0)
+			user.attack_ui(slot_id)
 	return 1
 
 // Hand slots are special to handle the handcuffs overlay

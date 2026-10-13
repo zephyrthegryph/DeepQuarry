@@ -64,7 +64,7 @@ pub struct Untracked {
 pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> Vec<Untracked> {
     let mut out = Vec::new();
     for r in &set.reads {
-        if r.kind != ReadKind::Var || r.root != "holder" {
+        if r.kind != ReadKind::Var || r.root != "holder" || set.internal.contains(r) {
             continue;
         }
         if !r.hop_ok || eng.classify(&r.owner, &r.var, written) == VarClass::Unknown {
@@ -73,7 +73,10 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> V
         }
     }
     for d in &set.diags {
-        if UNRESOLVED_RULES.contains(&d.rule) {
+        if d.rule == "untracked_global" {
+            // Global state that changes after boot and that nothing publishes: `GLOB.x`, `SSx.y`, a real global.
+            out.push(Untracked { what: d.msg.clone(), rel: d.rel.clone(), line: d.line });
+        } else if UNRESOLVED_RULES.contains(&d.rule) {
             out.push(Untracked { what: format!("?{}", d.rule), rel: d.rel.clone(), line: d.line });
         }
     }
@@ -189,17 +192,22 @@ pub struct DepsAnalysis {
     pub candidates: BTreeSet<(String, String)>,
 }
 
+/// What each consumer's reads leave the graph unable to see change, over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual
+/// calls the union of their overrides, global procs walked like any proc and global state classified (`sem/globals.rs`). The `untracked_inputs`
+/// lint and the generated `deps.dm` read this.
 pub fn analyzed(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAnalysis>> {
-    tree.memo("gen/deps", || compute(tree, false))
+    tree.memo("gen/deps", || compute(tree, true))
 }
 
-/// The same analysis over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual calls the union of their overrides. What it
-/// finds beyond [`analyzed`] is `doc/rewrite/reads_closure_newly_visible.md` (`analyze sem closure`); no lint reads it yet.
-pub fn analyzed_closed(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAnalysis>> {
-    tree.memo("gen/deps-closed", || compute(tree, true))
+/// The same analysis over the walk the lints used before the closed walk replaced it (engine directories opaque, a call followed on the receiver's
+/// static type, a global proc followed only through `READS_FROM`). `analyze sem closure` compares the two; no lint reads it.
+pub fn analyzed_legacy(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAnalysis>> {
+    tree.memo("gen/deps-legacy", || compute(tree, false))
 }
 
 fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
+    let started = std::time::Instant::now();
+    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
     let sem = crate::sem::sem_for(tree)?;
     let decls = Decls::get(tree);
     let ann = Annotations::get(&sem, &decls);
@@ -214,15 +222,16 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             if !a.h.role.reads_covered() || a.h.cap_proc {
                 continue;
             }
-            let Some(status_quo) = &a.set else { continue };
+            let Some(handled) = &a.closed else { continue };
             consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
                 if closed {
+                    // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
+                    note_reads(handled, &mut reads);
+                    untracked_of(handled, &eng, &written)
+                } else {
                     let set = eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path());
                     note_reads(&set, &mut reads);
                     untracked_of(&set, &eng, &written)
-                } else {
-                    note_reads(status_quo, &mut reads);
-                    untracked_of(status_quo, &eng, &written)
                 }
             });
         }
@@ -286,6 +295,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     }
     leaves.sort();
     leaves.dedup();
+    if trace {
+        eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
+    }
     let candidates = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
     Some(DepsAnalysis { consumers, draws, leaves, draw_reads, reads, candidates })
 }

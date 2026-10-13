@@ -2221,7 +2221,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/a = id
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
-		operation_req_access += a
+		add_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_del(datum/act/op/A, id)
@@ -2229,7 +2229,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		return FALSE
 	var/a = id
 	if(a in operation_req_access)
-		operation_req_access -= a
+		remove_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_finish(datum/act/op/A)

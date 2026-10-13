@@ -58,7 +58,7 @@
 
 	if(!mapper_set())
 		for(var/datum/omni_port/P in inputs)
-			P.concentration = 1 / max(1, length(inputs))
+			P.set_concentration(1 / max(1, length(inputs)))
 
 	if(output)
 		output.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * length(inputs))
@@ -288,9 +288,9 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	remain_con = max(0, remain_con - new_con) / max(1, non_locked)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
-			P.concentration = new_con
+			P.set_concentration(new_con)
 		else if(!P.con_lock)
-			P.concentration = remain_con
+			P.set_concentration(remain_con)
 
 /obj/machinery/atmospherics/omni/mixer/proc/con_lock(port = NORTH)
 	for(var/datum/omni_port/P in inputs)

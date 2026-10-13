@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/tank/jetpack)
 
 	if (ismob(user))
 		var/mob/M = user
-		M.update_inv_back()
+		changed(src)
 		M.update_mob_action_buttons()
 
 	to_chat(user, "You toggle the thrusters [on? "on":"off"].")

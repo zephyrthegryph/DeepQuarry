@@ -1,12 +1,15 @@
 //! Port of `tools/ci/tracked_lint.py`: the tracked-var write lint (doc/rewrite/dx_conventions.md sec 1,
 //! final_design.md sec 1).
 //!
-//! `TRACKED(T, var, channel)` (code/__defines/capabilities.dm) declares that `var` on type T (and its
-//! subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls changed().
-//! `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var
-//! tracked the same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the
-//! setter body. Reads are unrestricted. A `derive()` value (`. += derive(nameof(var), ...)` in a
-//! `derived()` proc) is tracked with no setter at all: every write in DM is counted.
+//! `TRACKED(T, var)` (code/__defines/capabilities.dm; two arguments, the channel argument is gone) declares that `var` on type T (and its
+//! subtypes) is written only through its generated setter `T/proc/set_<var>(value)`, which compares with `TRACKED_UNCHANGED` (null differs from 0)
+//! and publishes through `tracked_changed()`. `TRACKED_BRIDGED(T, var, channel)` is the same plus a legacy `CHANGE_*` channel, until the pipeline that
+//! consumes the channel is deleted. `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var tracked the
+//! same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the setter body. Reads are unrestricted. A `derive()` value
+//! (`. += derive(nameof(var), ...)` in a `derived()` proc) is tracked with no setter at all: every write in DM is counted.
+//!
+//! This lint covers declared tracked vars only. The end state (doc/rewrite/final_api.html section 7, "Reactive closure") makes any var that reactive
+//! code reads tracked, with a generated setter and a `raw_write` lint; list mutations of a read list get their own lint (`tracked_list`).
 //!
 //! Counted, for every tracked var V of type T, outside a setter body of V:
 //! * `V = x`, `src.V = x`, `V += x` (and the other compound ops), `V++`, `V--`, `++V`, `--V` inside a
@@ -89,7 +92,7 @@ const TEST_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/modules/bench
 
 /// The procs that construct an instance. A write of the instance's own tracked var there (`v = x`, `src.v = x`, `LAZYADD(v, x)`) is the construction of
 /// the instance, not a change of a live one: nothing reads or watches an object that is still being built, so the write sets the var and publishes
-/// nothing (the same as a type-level default, which is not a write either). A write to ANOTHER object's tracked var (`O.v = x`) is judged as anywhere
+/// nothing (the same as a type-level default, which is not a write either). A write to a part of the instance a loop walks (`for(var/T/P in ports)`, `P.v = x`) is the same construction. A write to ANOTHER object's tracked var (`O.v = x`) is judged as anywhere
 /// else, and so is a write in `on_holder_init()`, `after_init()` and every other proc, which run once the holder is live. The init lint counts each
 /// imperative line of an `Initialize()` body (`init_lines`), so rewriting these lines to setter calls would also change their fingerprints and read as
 /// new init debt: the two lints agree by leaving construction alone.
@@ -611,6 +614,8 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
         }
         let mut locals: HashSet<String> = HashSet::new();
         let mut typed: HashMap<String, String> = HashMap::new();
+        // Locals that walk one of the instance's own parts (`for(var/datum/omni_port/P in ports)`): parts the instance is still building.
+        let mut own_parts: HashSet<String> = HashSet::new();
         let arg_typed = pat!(r"(?:^|[(,])\s*(?:var/)?((?:/?[\w]+/)*[\w]+)/(\w+)\s*(?==|,|\)|$|\bas\b)");
         for m in arg_typed.captures_iter(p.args) {
             typed.insert(m.s(2).to_string(), normalize_type(m.s(1)));
@@ -625,6 +630,11 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
             }
             for m in pat!(r"(?:\bvar)?(/[\w/]+)/(\w+)\b").captures_iter(line) {
                 typed.insert(m.s(2).to_string(), normalize_type(m.s(1)));
+            }
+            if pre_live {
+                for m in pat!(r"\bfor\s*\(\s*var/(?:[\w/]*/)?(\w+)\s+in\s+(?:src\.)?(\w+)\s*\)").captures_iter(line) {
+                    own_parts.insert(m.s(1).to_string());
+                }
             }
             for m in pats.bare.captures_iter(line) {
                 if named_args.contains(&(*number, m.start(0) + 1)) {
@@ -658,6 +668,9 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
                 let var = if m.s(2).is_empty() { m.s(4) } else { m.s(2) };
                 if holder == "src" {
                     continue; // the bare pattern counts src.V
+                }
+                if own_parts.contains(holder) {
+                    continue; // a part the instance is building (see PRE_LIVE)
                 }
                 let base = typed.get(holder).and_then(|t| tracked_type_of(tracked, var, t)).filter(|b| !b.is_empty());
                 if let Some(base) = base {
@@ -1010,7 +1023,7 @@ fn drop_declared(engine: &crate::run::Engine, root: &std::path::Path, apply: boo
     let defs = crate::gens::auto_tracked::setter_defs(&sem);
     let outside = crate::gens::auto_tracked::writes_outside_setters(&sem);
     let scopes = crate::scopes::Scopes::load(&root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
-    let exclude: Vec<String> = scopes.for_lint("auto_tracked", "").list("exclude").iter().chain(scopes.for_lint("auto_tracked", "").list("exclude_fixtures")).cloned().collect();
+    let exclude: Vec<String> = scopes.for_lint("auto_tracked", "").list("exclude").iter().chain(scopes.for_lint("auto_tracked", "").list("exclude_fixtures")).chain(scopes.for_lint("auto_tracked", "").list("exclude_heat")).cloned().collect();
     let line_pat = pat_match!(r"^(\s*)TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)\s*(?://.*)?$");
     let (mut dropped, mut kept) = (0usize, 0usize);
     for f in tree.select(&CODE_DM) {
@@ -1315,5 +1328,8 @@ mod setter_fix_tests {
         // another object's var, and a proc that runs once the holder is live, are judged as anywhere else
         assert!(run("/obj/box/Initialize(mapload, obj/box/B)", "\tB.plain = 5").0.is_some());
         assert!(run("/obj/box/proc/after_setup()", "\tplain = 5").0.is_some());
+        // a part the instance walks while it is built is construction too
+        assert_eq!(run("/obj/box/Initialize(mapload)", "\t. = ..()\n\tfor(var/obj/box/P in parts)\n\t\tP.plain = 5").0, None);
+        assert!(run("/obj/box/Initialize(mapload)", "\t. = ..()\n\tfor(var/obj/box/P in range(1))\n\t\tP.plain = 5").0.is_some());
     }
 }

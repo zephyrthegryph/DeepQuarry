@@ -1056,9 +1056,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
 	op("flannel_button_verb", menu(), label("Toggle Shirt Buttons"), needs(carried()), then(PROC_REF(flannel_button_verb)))
 
 /// Old verb "Roll Sleeves".
-TRACKED(/obj/item/clothing/suit/storage/flannel, rolled)
-TRACKED(/obj/item/clothing/suit/storage/flannel, tucked)
-TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 
 /obj/item/clothing/suit/storage/flannel/proc/flannel_roll_sleeves_verb(datum/act/op/A)
 	var/mob/user = A.actor

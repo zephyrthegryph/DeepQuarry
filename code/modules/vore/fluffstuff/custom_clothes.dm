@@ -392,7 +392,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 		item_state = "[initial(item_state)]_open"
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	user.update_inv_wear_suit()
+	changed(src)
 
 	//Variants
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedblue
@@ -936,10 +936,6 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 	//update_light(user) -- old code
 	update_flashlight(user)
 
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		if(H.get_equipped_item(SLOT_ID_HEAD) == src)
-			H.update_inv_head()
 	return OP_OK
 //Viveret:Keturah
 /obj/item/clothing/under/dress/maid
@@ -1243,7 +1239,7 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()
 
 //Vorrarkul: Theodora Lindt
@@ -1546,7 +1542,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 		icon_state = "[initial(icon_state)]_open"
 		unbuttoned = TRUE
 		to_chat(user, "You unbutton the coat.")
-	user.update_inv_wear_suit()
+	changed(src)
 
 /obj/item/clothing/suit/storage/fluff/jacket/field //Just here so it can be seen and easily recognized under /spawn.
 	name = "Field Jacket"
@@ -2488,7 +2484,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 		item_state = initial(item_state)
 		to_chat(user, span_info("The coat's eyes close."))
 	COOLDOWN_START(src, toggle_cooldown, 6 SECONDS)
-	user.update_inv_wear_suit()
+	changed(src)
 
 /obj/item/clothing/head/hood/purple_robes
 	name = "purple hood"

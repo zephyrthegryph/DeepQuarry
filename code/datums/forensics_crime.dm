@@ -204,6 +204,7 @@
 	LAZYCLEARLIST(suit_fibres)
 
 
+
 //////////////////////////////////////////////////////////////////////////////////////
 // Blood dna
 //////////////////////////////////////////////////////////////////////////////////////
@@ -213,6 +214,7 @@
 /datum/forensics_crime/proc/add_blooddna(datum/dna/dna_data,mob/M)
 	if(!blood_DNA)
 		set_blood_DNA(list())
+	tracked_changed(src, nameof(blood_DNA)) // the keyed list is edited in place below: a bloody look follows it
 	// Special alien handling
 	if(istype(M, /mob/living/carbon/alien))
 		var/fresh = isnull(blood_DNA[XENO_DNA])
@@ -234,6 +236,7 @@
 /datum/forensics_crime/proc/add_blooddna_organ(datum/organ_data/dna_data)
 	if(!blood_DNA)
 		set_blood_DNA(list())
+	tracked_changed(src, nameof(blood_DNA))
 	var/fresh = isnull(blood_DNA[dna_data.unique_enzymes])
 	set_blood_DNA_at(dna_data.unique_enzymes, dna_data.b_type)
 	return fresh
@@ -256,15 +259,18 @@
 	// Copying from a list, blood on a mob's feet is stored as a list outside of forensics data
 	if(raw_list)
 		include_blood_DNA(raw_list)
+		tracked_changed(src, nameof(blood_DNA))
 		return
 	// Copying from another datums
 	if(!islist(origin?.blood_DNA))
 		return
 	include_blood_DNA(origin.blood_DNA)
+	tracked_changed(src, nameof(blood_DNA))
 
 /// Clears data to default state, wiping all evidence
 /datum/forensics_crime/proc/clear_blooddna()
 	clear_blood_DNA()
+	tracked_changed(src, nameof(blood_DNA))
 
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -28,13 +28,6 @@ This saves us from having to call add_fingerprint() any time something is put in
 		if(!moved)
 			to_chat(H, span_warning("You are unable to equip that."))
 
-		// Update hand icons
-		else
-			if(hand)
-				update_inv_l_hand(0)
-			else
-				update_inv_r_hand(0)
-
 /mob/living/carbon/human/equip_to_storage(obj/item/newitem, user_initiated = FALSE)
 	// Try put it in their belt first
 	var/obj/item/storage/wornbelt = get_equipped_item(SLOT_ID_BELT)
@@ -62,17 +55,8 @@ This saves us from having to call add_fingerprint() any time something is put in
 
 /mob/living/carbon/human/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
-	var/obj/item/I = thing
 	switch(slot_id)
-		if(SLOT_ID_HEAD)
-			if(istype(I) && (worn_of(I).hides & (HIDEMASK|BLOCKHAIR|BLOCKHEADHAIR)))
-				update_hair(0)	//rebuild hair
-				update_inv_ears(0)
-				update_inv_wear_mask(0)
 		if(SLOT_ID_MASK)
-			if(istype(I) && (worn_of(I).hides & (BLOCKHAIR|BLOCKHEADHAIR)))
-				update_hair(0)	//rebuild hair
-				update_inv_ears(0)
 			// If this is how the internals are connected, disable them
 			if(!inserted && internal && !(worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 				if(hud_used?.internals)
@@ -108,5 +92,5 @@ This saves us from having to call add_fingerprint() any time something is put in
 		drop_from_inventory(equipped_thing)
 	if(remove_underwear)
 		for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
-			hide_underwear[UWC.name] = TRUE
-		update_underwear(1)
+			set_hide_underwear_at(UWC.name, TRUE)
+		underwear_edited()

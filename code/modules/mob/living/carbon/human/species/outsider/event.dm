@@ -112,7 +112,7 @@ Variables you may want to make use of are:
 /datum/species/event1/proc/set_limbset(setnum = 1) //Will require existing ones to be respawned for changes to take effect.
 	switch(setnum)
 		if(1) //Normal.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =	list("path" = /obj/item/organ/external/chest),
 				BP_GROIN =	list("path" = /obj/item/organ/external/groin),
 				BP_HEAD =	list("path" = /obj/item/organ/external/head),
@@ -124,9 +124,9 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
-				)
+				))
 		if(2) //No broken bones.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =  list("path" = /obj/item/organ/external/chest/unbreakable),
 				BP_GROIN =  list("path" = /obj/item/organ/external/groin/unbreakable),
 				BP_HEAD =   list("path" = /obj/item/organ/external/head/unbreakable),
@@ -138,9 +138,9 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unbreakable),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unbreakable),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unbreakable)
-				)
+				))
 		if(3) //No removing from the body.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =  list("path" = /obj/item/organ/external/chest/unseverable),
 				BP_GROIN =  list("path" = /obj/item/organ/external/groin/unseverable),
 				BP_HEAD =   list("path" = /obj/item/organ/external/head/unseverable),
@@ -152,9 +152,9 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unseverable),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unseverable),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unseverable)
-				)
+				))
 		if(4) //No breaking, OR removing from the body. For things that are more monsterous.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =  list("path" = /obj/item/organ/external/chest/indestructible),
 				BP_GROIN =  list("path" = /obj/item/organ/external/groin/indestructible),
 				BP_HEAD =   list("path" = /obj/item/organ/external/head/indestructible),
@@ -166,7 +166,7 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/indestructible),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/indestructible),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/indestructible)
-				)
+				))
 	return
 
 /datum/species/event1/proc/choose_limbset()
@@ -232,6 +232,5 @@ Variables you may want to make use of are:
 	name = SPECIES_EVENT3
 	name_plural = SPECIES_EVENT3
 
-TRACKED(/datum/species/event1, use_bodyshape)
 /datum/species/event1/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
 	return list(list(src, nameof(use_bodyshape)))

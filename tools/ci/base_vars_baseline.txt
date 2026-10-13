@@ -244,8 +244,6 @@ base_var	code/modules/contracts/medical_trial.dm	var/list/clinical_exposure_hist
 base_var	code/modules/crafting/crafting.dm	/mob/living/carbon/human/var/datum/personal_crafting/crafting
 base_var	code/modules/detectivework/tools/rag.dm	var/bloody_hands = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/track_blood = 0
-base_var	code/modules/detectivework/tools/rag.dm	var/list/feet_blood_DNA
-base_var	code/modules/detectivework/tools/rag.dm	var/feet_blood_color
 base_var	code/modules/economy/price_list.dm	/atom/movable/var/price_tag = null
 base_var	code/modules/economy/service_invoices.dm	/obj/item/var/datum/economic_adoption/economic_adoption
 base_var	code/modules/emotes/emote_mob.dm	var/next_emote
@@ -317,8 +315,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	VAR_PROTECTED/list/add
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	VAR_PROTECTED/list/addiction_counters = null // contains counters by reagent ID
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/last_taste_text = ""
 base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	/mob/living/carbon/human/var/list/datum/medical_effect/side_effects
-base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_stomach = FALSE
-base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_taur = FALSE
 base_var	code/modules/mob/living/carbon/human/human.dm	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spitting = 0 //Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spit_projectile = null //Projectile type.
@@ -331,19 +327,17 @@ base_var	code/modules/mob/living/carbon/human/human.dm	var/rest_dir = 0 //To lay
 base_var	code/modules/mob/living/carbon/human/human.dm	var/list/datum/genetics/side_effect/genetic_side_effects = list() //For any genetic side effects we currently have.
 base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	var/datum/unarmed_attack/default_attack
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/damage_multiplier = 1 //multiplies melee combat damage
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear // Lazy.
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear_metadata = list() // ALLOW(instance_list): d: per-mob all_underwear_metadata, filled at runtime; mobs are few
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/hide_underwear = list() // ALLOW(instance_list): d: per-mob hide_underwear, filled at runtime; mobs are few
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hand_blood_color
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/robolimb/synthetic //If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/identifying_gender // In case the human identifies as another gender than it's biological
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/mob/living/carbon/human/vr_holder = null
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/mob/living/carbon/human/vr_link = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/ears/ear_style = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/ears/ear_secondary_style
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/tail/tail_style = null
+base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/sprite_accessory/wing/wing_style = null
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/custom_species
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/redgate_restricted = FALSE
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hide_headset = FALSE
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hide_glasses = FALSE
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/ability_flags = 0 //Shadekin abilities/potentially other species-based?
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/sensorpref = 5 //Suit sensor loadout pref
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/markings_len = 0 //mostly an arbitrary number
@@ -368,8 +362,6 @@ base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilitie
 base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/tourettes.dm	var/list/disability_motor_tics
 base_var	code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm	/mob/living/var/list/trait_states
 base_var	code/modules/mob/living/carbon/human/species/station/xenochimera_state.dm	/mob/living/carbon/human/var/datum/xenochimera/xenochimera
-base_var	code/modules/mob/living/carbon/human/update_icons.dm	var/list/overlays_standing[TOTAL_LAYERS] // ALLOW(instance_list): d: per-mob overlays_standing, filled at runtime; mobs are few
-base_var	code/modules/mob/living/carbon/human/update_icons.dm	var/previous_damage_appearance // store what the body last looked like, so we only have to update it if something changed
 base_var	code/modules/mob/living/carbon/shock.dm	/mob/living/var/traumatic_shock = 0
 base_var	code/modules/mob/living/carbon/shock.dm	/mob/living/carbon/var/shock_stage = 0
 base_var	code/modules/mob/living/default_language.dm	var/datum/language/default_language
@@ -437,10 +429,8 @@ base_var	code/modules/mob/mob_defines.dm	var/exploit_record = ""
 base_var	code/modules/mob/mob_defines.dm	var/bhunger = 0 //Carbon
 base_var	code/modules/mob/mob_defines.dm	var/ajourn = 0
 base_var	code/modules/mob/mob_defines.dm	var/phoron = null
-base_var	code/modules/mob/mob_defines.dm	var/lying = 0
 base_var	code/modules/mob/mob_defines.dm	var/lying_prev = 0
 base_var	code/modules/mob/mob_defines.dm	var/canmove = 1
-base_var	code/modules/mob/mob_defines.dm	var/incorporeal_move = 0 //0 is off, 1 is normal, 2 is for ninjas.
 base_var	code/modules/mob/mob_defines.dm	var/list/pinned // Lazylist of things pinning this creature to walls (see living_defense.dm). Usually empty.
 base_var	code/modules/mob/mob_defines.dm	var/list/embedded // Lazylist of embedded items, since simple mobs don't have organs. Usually empty.
 base_var	code/modules/mob/mob_defines.dm	var/list/languages = list() // For speaking/listening.
@@ -465,7 +455,6 @@ base_var	code/modules/mob/mob_defines.dm	var/inertia_dir = 0
 base_var	code/modules/mob/mob_defines.dm	var/job = null//Living
 base_var	code/modules/mob/mob_defines.dm	var/datum/dna/dna = null//Carbon
 base_var	code/modules/mob/mob_defines.dm	var/radiation = 0.0//Carbon
-base_var	code/modules/mob/mob_defines.dm	var/list/mutations //Carbon -- Doohl
 base_var	code/modules/mob/mob_defines.dm	var/voice_name = "unidentifiable voice"
 base_var	code/modules/mob/mob_defines.dm	var/list/ventcraw_item_admin_allow = null // If this is a list, it will be appended to the default list of items the mob is allowed to ventcrawl with
 base_var	code/modules/mob/mob_defines.dm	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
@@ -490,6 +479,7 @@ base_var	code/modules/mob/mob_defines.dm	var/get_rig_stats = 0 //Moved from comp
 base_var	code/modules/mob/mob_defines.dm	var/custom_speech_bubble = "default"
 base_var	code/modules/mob/mob_defines.dm	var/low_priority = FALSE //Skip processing life() if there's just no players on this Z-level
 base_var	code/modules/mob/mob_defines.dm	var/default_pixel_x = 0 //For offsetting mobs
+base_var	code/modules/mob/mob_defines.dm	var/default_pixel_y = 0
 base_var	code/modules/mob/mob_defines.dm	var/registered_z
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/progressbars = null //for stacking do_after bars
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/do_afters
@@ -542,7 +532,6 @@ base_var	code/modules/vore/eating/living.dm	var/no_vore = FALSE // If the charac
 base_var	code/modules/vore/eating/living.dm	var/restrict_vore_ventcrawl = FALSE // Self explanatory
 base_var	code/modules/vore/eating/living.dm	var/absorbing_prey = 0 // Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
 base_var	code/modules/vore/eating/living.dm	var/drain_finalized = 0 // Determines if the succubus drain will be KO'd/absorbed. Can be toggled on at any time.
-base_var	code/modules/vore/eating/living.dm	var/fuzzy = 0 // Preference toggle for sharp/fuzzy icon.
 base_var	code/modules/vore/eating/living.dm	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
 base_var	code/modules/vore/eating/living.dm	var/stuffing_feeder = FALSE // Can feed foods to others whole, like trash eater can eat them on their own.
 base_var	code/modules/vore/eating/living.dm	var/adminbus_trash = FALSE // For abusing trash eater for event shenanigans.

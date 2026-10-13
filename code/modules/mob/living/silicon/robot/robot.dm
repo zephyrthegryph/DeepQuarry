@@ -1570,8 +1570,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 	H.desc = "An all-access ID-card, shaped like a robot!"
 	H.icon_state = "[sprite_name]"
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
 	return H
 
 /mob/living/silicon/robot/onTransitZ(old_z, new_z)

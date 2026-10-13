@@ -282,6 +282,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// The `:` operator would dispatch correctly, but AGENTS.md §3b forbids it
 /// for subtype access; this reads the same data through a real instance and
 /// the built-in per-datum `vars` list instead, which is always dynamic.
+PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/dq_type_var(path, var_name)
 	// A caller may already hold a materialized instance (the board, once
 	// materialize_parts() resolved it) rather than a bare path: read it
@@ -423,7 +424,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/mob/user = A.actor
 	if(!operable())
 		return /datum/msg/machine/not_working
-	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
+	if(user?.lying || user?.stat)
 		return /datum/msg/machine/cant_reach
 	if(!user?.IsAdvancedToolUser())
 		return /datum/msg/machine/no_dexterity
