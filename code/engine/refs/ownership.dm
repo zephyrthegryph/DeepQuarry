@@ -61,8 +61,9 @@
 		return locate(key)
 	var/turf_at = findtext(key, "t")
 	if(turf_at)
-		var/list/xyz = splittext(copytext(key, turf_at + 1), ":")
-		return locate(text2num(xyz[1]), text2num(xyz[2]), text2num(xyz[3]))
+		var/x_end = findtext(key, ":", turf_at + 1)
+		var/y_end = findtext(key, ":", x_end + 1)
+		return locate(text2num(copytext(key, turf_at + 1, x_end)), text2num(copytext(key, x_end + 1, y_end)), text2num(copytext(key, y_end + 1)))
 	var/a = findtext(key, ":")
 	var/b = findtext(key, ":", a + 1)
 	if(!a || !b)
@@ -90,12 +91,20 @@
 	var/value = holder.vars[var_name]
 	if(value == D)
 		return TRUE
-	if(!islist(value))
+	if(!REL_LISTLIKE(value))
 		return FALSE
 	var/list/L = value
 	if(D in L)
 		return TRUE
 	if(var_name == "contents") // built in: no assoc values, and a lookup is a "bad index"
+		return FALSE
+	// A keyed member is found through the holder's key index: no scan of the map.
+	var/keys = rel_keys_of(holder, var_name, D)
+	if(!isnull(keys))
+		for(var/key in (islist(keys) ? keys : list(keys)))
+			if(L[key] == D)
+				return TRUE
+	if(istype(L, /alist) || length(L) > REL_LEGACY_SCAN_MAX)
 		return FALSE
 	for(var/key in L)
 		if(!isnum(key) && L[key] == D)
@@ -242,14 +251,25 @@
 		return null
 	if(!own_bring_in(holder, var_name, value, entry, null, into, null, FALSE))
 		return null
+	// Already stamped to this var: it is in the list (every removal unstamps), so a long list is not scanned to say so.
+	var/held = value.own_holder_ref == OWN_KEY(holder) && value.own_slot == var_name
 	if(entry && !own_stamp(value, holder, var_name))
 		return null
 	var/list/L = holder.vars[var_name]
-	if(!islist(L))
+	if(!REL_LISTLIKE(L))
 		L = list()
 		holder.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
-	L |= value
+	if(istype(L, /alist))
+		L[value] = TRUE
+	else if(length(L) <= REL_SCAN_MAX)
+		L |= value
+	else if(!held)
+		L += value
+	#ifdef UNIT_TESTS
+	else if(length(L) <= 256 && !(value in L))
+		OWN_REPORT("[holder.type].[var_name]: [value.type] is stamped as owned by it but is not in the list; something wrote the list outside rel_add()/rel_remove()")
+	#endif
 	own_mark_changed(holder, var_name)
 	return value
 
@@ -257,12 +277,20 @@
 /proc/own_remove(datum/holder, var_name, datum/value)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN)
 	var/list/L = holder.vars[var_name]
-	if(!islist(L) || !(value in L))
+	if(!REL_LISTLIKE(L))
 		return FALSE
-	L -= value
+	if(istype(L, /alist))
+		if(!(value in L) && isnull(rel_keys_of(holder, var_name, value)))
+			return FALSE
+		rel_alist_remove(L, holder, var_name, value)
+	else
+		if(!(value in L))
+			return FALSE
+		L -= value
 	own_mark_changed(holder, var_name)
 	if(!length(L))
-		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
+		if(!istype(L, /alist)) // an alist stays, empty
+			holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	if(entry)
 		own_dispose(holder, var_name, value, entry)
@@ -277,16 +305,17 @@
 	if(!own_type_ok(holder, var_name, entry, value))
 		return null
 	var/list/L = holder.vars[var_name]
-	if(!islist(L) && isnull(value))
+	if(!REL_LISTLIKE(L) && isnull(value))
 		return null
-	if(islist(L) && L[key] == value)
+	if(REL_LISTLIKE(L) && L[key] == value)
 		return value
 	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, null, into, null, FALSE))
 		return null
 	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
 		return null
-	if(!islist(L))
-		L = list()
+	if(!REL_LISTLIKE(L))
+		// A number is an index in a plain list, never a key: a numeric key makes an alist (a sparse table, or a map by id).
+		L = isnum(key) ? alist() : list()
 		holder.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	var/old = L[key]
@@ -294,31 +323,66 @@
 		L -= key
 	else
 		L[key] = value
+	// The holder remembers each member's keys, so a member that leaves takes its keys with it without a scan of the map.
+	if(isdatum(old) && old != value)
+		rel_keys_forget(holder, var_name, old, key)
+	if(isdatum(value))
+		rel_keys_note(holder, var_name, value, key)
 	own_mark_changed(holder, var_name)
-	if(entry && isdatum(old))
+	// A member that still sits under another key of the var stays owned.
+	if(entry && isdatum(old) && old != value && isnull(rel_keys_of(holder, var_name, old)))
 		own_dispose(holder, var_name, old, entry)
 	return value
 
 /// List or values shape: detaches one member (a value, or the value under a key) and returns it unowned.
+PROC_SUMMARY(/proc/own_take_member) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/own_take_member(datum/holder, var_name, value_or_key)
 	var/list/L = holder.vars[var_name]
-	if(!islist(L))
+	if(!REL_LISTLIKE(L))
 		return null
 	var/datum/value = null
-	if(isdatum(value_or_key) && (value_or_key in L) && isnull(L[value_or_key]))
+	if(istype(L, /alist))
+		value = own_take_member_alist(holder, var_name, L, value_or_key)
+	else if(isdatum(value_or_key) && (value_or_key in L) && isnull(L[value_or_key]))
 		value = value_or_key
 		L -= value
 	else if(!isnull(value_or_key) && !isnum(value_or_key) && (value_or_key in L))
 		value = L[value_or_key]
 		L -= value_or_key
+		rel_keys_forget(holder, var_name, value, value_or_key)
 	if(!length(L))
 		own_list_emptied(holder, var_name) // a list declared `= list()` stays an empty list, a lazy one goes back to null
 		own_field_changed(holder, var_name)
 	if(value)
 		own_mark_changed(holder, var_name)
+		if(!isnull(rel_keys_of(holder, var_name, value)))
+			return value // taken from one key; it still sits under another of this var, so it stays owned
 		holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
+
+/// own_take_member() on an alist. A datum is a member (a set's key, or a map's value, taken from every key it sits under) unless it is a key
+/// that maps to a datum; anything else is a key.
+/proc/own_take_member_alist(datum/holder, var_name, alist/L, value_or_key)
+	if(isnull(value_or_key))
+		return null
+	if(isdatum(value_or_key))
+		var/mapped = (value_or_key in L) ? L[value_or_key] : null
+		if(isdatum(mapped))
+			L -= value_or_key
+			return mapped
+		if(!(value_or_key in L) && isnull(rel_keys_of(holder, var_name, value_or_key)))
+			return null
+		rel_alist_remove(L, holder, var_name, value_or_key)
+		return value_or_key
+	if(!(value_or_key in L))
+		return null
+	var/taken = L[value_or_key]
+	L -= value_or_key
+	if(!isdatum(taken))
+		return null
+	rel_keys_forget(holder, var_name, taken, value_or_key)
+	return taken
 
 /// Moves an owned value from from.from_var to dest.dest_var: never destroyed or orphaned on the
 /// way, and never moved (a re-own in place; _own_set() with a place to take it from is the
@@ -339,7 +403,7 @@
 	var/adopted
 	if(!isnull(dest_key))
 		adopted = _own_put(dest, dest_var, dest_key, value, into = FALSE)
-	else if(islist(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
+	else if(REL_LISTLIKE(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
 		adopted = _own_add(dest, dest_var, value, into = FALSE)
 	else
 		adopted = _own_set(dest, dest_var, value, into = FALSE)
@@ -361,10 +425,10 @@
 		if(current == dest && value.own_slot == dest_var)
 			return value
 		var/list/cur = current.vars[value.own_slot]
-		return own_transfer(current, value.own_slot, dest, dest_var, islist(cur) ? value : null, dest_key)
+		return own_transfer(current, value.own_slot, dest, dest_var, REL_LISTLIKE(cur) ? value : null, dest_key)
 	if(!isnull(dest_key))
 		return _own_put(dest, dest_var, dest_key, value, into = FALSE)
-	if(islist(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
+	if(REL_LISTLIKE(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
 		return _own_add(dest, dest_var, value, into = FALSE)
 	return _own_set(dest, dest_var, value, into = FALSE)
 
@@ -380,9 +444,10 @@
 		return list()
 	// A list declared `= list()` is emptied in place, not nulled: code that reads `L.len` on it
 	// keeps working after the take. A lazy list (declared null) goes back to null (own_list_emptied).
-	if(islist(value))
+	if(REL_LISTLIKE(value))
 		var/list/L = value
 		L.Cut()
+		rel_keys_clear(holder, var_name)
 		own_list_emptied(holder, var_name)
 	else
 		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
@@ -395,7 +460,10 @@
 /// null, as the LAZY* macros leave it: an empty list is truthy, so `if(component_parts)`-style
 /// "not built yet" checks and "dropped everything" checks (isnull) read it wrong. A list declared
 /// `= list()` stays an empty list for code that reads its length.
+PROC_SUMMARY(/proc/own_list_emptied) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/own_list_emptied(datum/holder, var_name)
+	if(istype(holder.vars[var_name], /alist))
+		return // an alist stays, empty: a keyed table or a set is declared with its container
 	if(isnull(initial(holder.vars[var_name])))
 		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 
@@ -405,16 +473,17 @@
 	var/value = holder.vars[var_name]
 	if(isnull(value))
 		return
-	if(!islist(value))
+	if(!REL_LISTLIKE(value))
 		holder.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 		if(entry)
 			own_dispose(holder, var_name, value, entry, policy)
 		return
 	var/list/L = value
-	var/list/copy = var_name == "contents" ? own_contents_members(holder) : L.Copy()
+	var/list/copy = var_name == "contents" ? own_contents_members(holder) : (istype(L, /alist) ? rel_list_members(L) : L.Copy())
 	if(var_name != "contents") // built in: its members leave by moving, never by a cut
 		L.Cut() // emptied in place (see own_take_all); own_teardown() nulls a lazy one afterwards
+		rel_keys_clear(holder, var_name)
 		own_field_changed(holder, var_name)
 	if(!entry)
 		return
@@ -433,6 +502,8 @@
 	var/value = holder.vars[var_name]
 	if(isdatum(value))
 		. += value
+	else if(istype(value, /alist))
+		return rel_list_members(value)
 	else if(islist(value))
 		var/list/L = value
 		if(var_name == "contents") // built in, never assoc: indexing it by a thing is a bad index
@@ -479,12 +550,8 @@
 	if(value == D)
 		H.vars[var_name] = null // ALLOW(api): the ownership accessor clears the var as part of releasing the owned value
 		own_field_changed(H, var_name)
-	else if(var_name != "contents" && islist(value)) // contents: the dying thing leaves by moving, never by a cut or an index
-		var/list/L = value
-		L -= D
-		for(var/key in L.Copy())
-			if(!isnum(key) && L[key] == D)
-				L -= key
+	else if(var_name != "contents" && REL_LISTLIKE(value)) // contents: the dying thing leaves by moving, never by a cut or an index
+		own_list_drop(H, var_name, value, D)
 	own_lost(H, var_name, D)
 
 /// A contained or spilled owned movable left its owner's contents (the ledger's note_exit()): the
@@ -540,11 +607,26 @@
 		own_field_changed(holder, var_name)
 	else if(var_name == "contents")
 		return // built in: a member leaves by moving (the caller moves it), never by a cut
-	else if(islist(current))
-		var/list/L = current
-		L -= value
+	else if(REL_LISTLIKE(current))
+		own_list_drop(holder, var_name, current, value)
+
+/// Takes `D` out of holder.var_name's container `L` wherever it sits: as a member, and under each key it was put under (the holder's key
+/// index names them). A short plain list that may hold a keyed member nothing recorded is scanned too; a long one is trusted to the index.
+/proc/own_list_drop(datum/holder, var_name, list/L, datum/D)
+	if(istype(L, /alist))
+		rel_alist_remove(L, holder, var_name, D)
+		return
+	L -= D
+	var/keys = rel_keys_of(holder, var_name, D)
+	if(!isnull(keys))
+		var/list/to_remove = rel_keys_list(holder, var_name, D)
+		for(var/key in to_remove)
+			if(L[key] == D)
+				L -= key
+		rel_keys_forget_all(holder, var_name, D)
+	else if(length(L) <= REL_LEGACY_SCAN_MAX)
 		for(var/key in L.Copy())
-			if(!isnum(key) && L[key] == value)
+			if(!isnum(key) && L[key] == D)
 				L -= key
 
 /// Phase 4: every owned var disposed of by policy.
@@ -568,7 +650,7 @@
 	var/datum/own_table/T = own_table_of(D)
 	for(var/var_name in T.own_vars)
 		var/value = D.vars[var_name]
-		if(isnull(value) || (islist(value) && !length(value)))
+		if(isnull(value) || (REL_LISTLIKE(value) && !length(value)))
 			continue
 		OWN_REPORT("[D.type].[var_name] re-set during teardown; deleting what it holds")
 		own_clear(D, var_name, OWN_DELETE)

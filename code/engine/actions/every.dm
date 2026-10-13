@@ -58,6 +58,7 @@
 /// The deciseconds to the next run of an every() on `holder`: its interval, or what the holder proc the interval names answers now (never below one
 /// decisecond). The proc gets a real timer context (A is the activation, null for a type-level every()), like a handler. A runtime in it is logged and
 /// the every() keeps running on a one second fallback: one fault must not end the every() for the instance's life.
+PROC_SUMMARY(/proc/every_interval) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/every_interval(datum/holder, datum/entry/E, datum/activation/A = null)
 	var/interval = E.args["interval"]
 	if(!istext(interval))
