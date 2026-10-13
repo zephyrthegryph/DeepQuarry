@@ -825,6 +825,7 @@ fn run_build_attempt(
                 })();
                 match attempt {
                     Ok(patched) => {
+                        dmbc::body_patch::note_applied(&project);
                         dmbc::daemon_eprintln!(
                             "native body patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
                             patched.changed_bodies,

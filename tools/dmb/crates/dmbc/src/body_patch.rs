@@ -639,3 +639,23 @@ mod tests {
         assert!(!declares_static(b"var/globalish = 1; staticky()"));
     }
 }
+
+/// Applied patches per project (test and diagnostic observation only).
+static APPLIED: std::sync::Mutex<BTreeMap<std::path::PathBuf, u64>> =
+    std::sync::Mutex::new(BTreeMap::new());
+pub(crate) fn note_applied(project: &std::path::Path) {
+    *APPLIED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .entry(project.to_path_buf())
+        .or_default() += 1;
+}
+#[cfg(test)]
+pub(crate) fn applied(project: &std::path::Path) -> u64 {
+    APPLIED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(project)
+        .copied()
+        .unwrap_or(0)
+}

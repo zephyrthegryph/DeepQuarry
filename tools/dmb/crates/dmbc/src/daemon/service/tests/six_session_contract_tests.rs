@@ -465,3 +465,55 @@ fn source_rejection_preserves_prior_pair_and_recovery_matches_fresh_current_incl
     assert_eq!(recovered, published(fresh.unwrap(), &fresh_destination));
     assert_ne!(recovered.0, initial.0);
 }
+
+#[test]
+fn body_patch_edits_match_fresh_bytes_through_line_shifts_chains_and_revert() {
+    // Body-only edits take the retained patch path (no whole-program
+    // compilation). Adding or removing lines shifts the later procedure and
+    // the list initializer below them; both are patched. Every step must equal
+    // a fresh compile, and the revert must return to the initial bytes.
+    // The first root procedure registers strings early and never patches.
+    let tree = "/proc/anchor()
+    return 0
+/proc/first(a)\n    return a + 1\n/proc/second(b)\n    if(b)\n        return b * 2\n    return 0\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    for index in 0..6 {
+        roots.edit(index, tree);
+    }
+    let initial = compare_revision(&shared, &roots);
+    let patched = |roots: &Roots| -> Vec<u64> {
+        (0..6)
+            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .collect()
+    };
+    let same_line = tree.replace("return a + 1", "return a + 2");
+    let added = same_line.replace("return a + 2", "if(a > 3)\n        return 3\n    return a + 2");
+    let chained = added.replace("return 3", "return 4");
+    let removed = chained.replace("if(a > 3)\n        return 4\n    return a + 2", "return a + 5");
+    let mut before = patched(&roots);
+    for (label, source) in [
+        ("same-line body edit", same_line.as_str()),
+        ("body edit adding lines", added.as_str()),
+        ("chained body edit", chained.as_str()),
+        ("body edit removing lines", removed.as_str()),
+        ("revert", tree),
+    ] {
+        for index in 0..6 {
+            roots.edit(index, source);
+        }
+        let pairs = compare_revision(&shared, &roots);
+        let after = patched(&roots);
+        // A revert may instead hit the initial session record.
+        for index in 0..6 {
+            if label != "revert" {
+                assert_eq!(after[index], before[index] + 1, "root {index}: {label} did not patch");
+            }
+        }
+        before = after;
+        if label == "revert" {
+            assert_eq!(pairs, initial, "the revert must reproduce the initial bytes");
+        }
+    }
+}
