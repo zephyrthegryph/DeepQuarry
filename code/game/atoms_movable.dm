@@ -548,7 +548,7 @@
 /// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
 /// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
 /atom/movable/proc/loc_changed()
-	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || READERS(src, nameof(loc)))
+	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))
 
 /atom/movable/proc/onTransitZ(old_z,new_z)
