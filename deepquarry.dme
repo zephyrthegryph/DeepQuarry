@@ -685,6 +685,7 @@
 #include "code\library\present\appearance_adapters.dm"
 #include "code\engine\change\refresh.dm"
 #include "code\library\present\ui_transport.dm"
+#include "code\datums\capabilities\refresh.dm"
 #include "code\datums\capabilities\timed.dm"
 #include "code\engine\present\type_verbs.dm"
 #include "code\datums\capabilities\condition.dm"

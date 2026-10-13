@@ -1,7 +1,8 @@
 # Change sweep 2 (rewrite/change-sweep2)
 
 Takes over the files the first change sweep skipped because Codex lanes touched them, and deletes what that leaves unused: the machine
-and grid change channels, `changed()`, `TRACKED_BRIDGED`, the declared caches and the channel wakes of kernel sequences.
+and grid change channels, `TRACKED_BRIDGED`, the declared caches and the channel wakes of kernel sequences. `changed()` itself is blocked by the
+human-draw marks (below).
 
 ## What a reader of the old code needs to know
 
@@ -9,7 +10,7 @@ and grid change channels, `changed()`, `TRACKED_BRIDGED`, the declared caches an
 |---|---|
 | `TRACKED_BRIDGED(T, v, CHANGE_MACHINE_*)` (95 sites) | `TRACKED(T, v)`. Nothing waits on a machine channel: the machine pipeline (`machine_step()`, `MACHINE_WAKE()`) was deleted in F7, and no type declares a `scheduled_behaviour`, `work_stage` or `work_pipeline`. |
 | `/datum/scheduler_field_definition/...` rows with a channel (machinery_fields.dm and six machines) | deleted. `OM_DERIVE_FIELD` (derived fields) is the only form left of that table. |
-| `changed(E)`, `changed(E, CHANNEL, var)` | deleted. A write publishes through its setter; a key that is not one var is `PUBLISH_CHANGE(E, key)`. The engine's own mark is `state_changed(E)` and is banned outside the engine, the capability framework, `machinery_fields.dm`, tests and benchmarks (`banned_outside` in `lint_scopes.toml`). |
+| `changed(E, CHANNEL, var)` and every `changed(E)` of the machinery, power, reagent, recycling, atmos and framework files | gone: a write publishes through its setter; a key that is not one var is `PUBLISH_CHANGE(E, key)`. `changed(E)` itself stays as a four-line proc (`code/datums/capabilities/refresh.dm`, no channel, no var name) for the 52 files the human-draw conversion (fd8cda188e) left a worn-or-held-look mark in; the hard ban `hand_changed_marks_banned_outside_the_pending_files` (`changed_mark_pending` in `lint_scopes.toml`) lets no other file add one. The engine's own mark `state_changed(E)` is banned outside the engine, the capability framework, `machinery_fields.dm`, tests and benchmarks (`banned_outside`). |
 | `condition_announce(channel)` | `condition_announce()`: publishes `MACHINE_KEY_STAT` and re-derives every output of the machine. A draw reads a condition through an accessor (`power_lost()`, `operable()`, `broken_now()`) that no derived read binds to the key yet, so the full mark stays (it was `changed(src, channel)`). |
 | the dispatcher's `changed(target)` after every handler | `refresh_dispatched(target)`: the same re-derive, without the `CHANGE_EXPLICIT` wake of every sequence on the target. |
 | VV edit of a var with no setter | `refresh_dispatched(src)`. |
