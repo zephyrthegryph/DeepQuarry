@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Pipes, cables, terminals, beacons and other under-floor things hide through a hold on the invisibility stat; door swings hold density and opacity; blindness not from a dose is a hold on the blinded stat"
+  - bugfix: "A blindfold or rig visor no longer leaves a human blind after it comes off, and an open door's density and opacity match what the stat layer composes"

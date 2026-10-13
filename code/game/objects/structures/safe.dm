@@ -188,7 +188,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 		hide(1)
 
 /obj/structure/safe/floor/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+	hide_under_floor(src, intact)
 
 /obj/structure/safe/floor/hides_under_flooring()
 	return 1

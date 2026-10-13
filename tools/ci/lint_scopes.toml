@@ -1344,3 +1344,14 @@ exempt_prefixes = ["code/engine/_generated/"]
 [lint.requirement_bool]
 # The retired constructor is banned everywhere; generated copies are derived output.
 exempt_prefixes = ["code/engine/_generated/"]
+
+# stored_refs (tools/analyze/src/lints/stored_refs.rs; doc/rewrite/proposals/reference_storage.md): every stored atom/datum reference
+# is a declared relation or a weak ref. The reference machinery itself (relation tables, handles, timers' capture, the lifecycle
+# transaction, the garbage collector) stores raw references by design and is exempt by path, with tests, benchmarks and TGS.
+# exempt_types: types an instance never qdel()s, so a reference to one cannot pin a deleted object: the kernel's systems and
+# controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
+[lint.stored_refs]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.stored_refs.lists]
+exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def"]

@@ -301,4 +301,4 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 
 /obj/machinery/atmospherics/pipe/hide(i)
 	if(istype(loc, /turf/simulated))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+		hide_under_floor(src, i)

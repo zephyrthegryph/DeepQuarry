@@ -8,21 +8,19 @@
 # the body reads, so a token is reported separately and never counted as a missing read.
 # The APC pins (ui, draw, push) were replaced: the APC is converted to the new design and no longer has
 # hand-written read lists. No other type still has a hand-written ui or draw list (every other
-# ui_from/drawn_from is a pinned one), so those two pins are dropped and the spike covers 18 handlers (13 now: see below); the
+# ui_from/drawn_from is a pinned one), so those two pins are dropped and the spike covers 18 handlers (10 now: see below); the
 # APC push pin became the binary pump push.
 [tokens]
 "rust_device_rev"    # /obj/machinery/atmospherics: bumped by set_use_power(), power_change(), port binds
 
 # <type> <kind> [var]      kind = condition | draw | ui | push | derive (derive takes the var)
 [handlers]
-# 3 UI data procs (tgui_data): real windows, hand lists from reads.dm
-"/datum/round_status_panel ui"
-"/obj/machinery/computer/supplycomp ui"
+# The round status panel and supply console ui pins and the airlock draw pin were dropped when those types were converted to
+# declared reads: no hand-written ui or draw list remains for them (the test names a pin whose list is gone).
 # 1 condition proc (should_run()). The area and light derive_*() pins (lights_nightshift, lights_emergency_off, nightshift_enabled,
 # area_emergency_off) were dropped when those types were converted to declared reads: no hand-written derive list remains for them.
 "/obj/cap_fixture/dx_deps_laser condition"
-# 4 draw procs
-"/obj/machinery/door/airlock draw"
+# 3 draw procs
 "/obj/cap_fixture/dx_deps_laser draw"
 "/obj/cap_fixture/dx_deps_watcher draw"
 "/obj/cap_fixture/dx_deps_derive draw"
