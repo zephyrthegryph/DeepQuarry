@@ -527,6 +527,7 @@
 #include "dq_e1_declare_tests.dm"
 #include "dq_e3_stats_tests.dm"
 #include "dq_hop_tests.dm"
+#include "dq_life_wake_tests.dm"
 #include "dq_e4_actions_tests.dm"
 #include "dq_lane_a_tests.dm"
 #include "dq_notice_late_deleted_tests.dm"

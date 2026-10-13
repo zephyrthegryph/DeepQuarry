@@ -81,6 +81,9 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 		stat_inputs_changed(E, key)
 	if(READERS(E, key))
 		publish_change(E, key)
+	// A draw that reads the key through a READS_AS accessor redraws (code/engine/_generated/deps.dm, generated_draw_keys).
+	if(isatom(E) && draw_reads_key(E, key))
+		refresh_mark(E, DEP_DRAW)
 
 /// Writes a stat's settled value where it lives.
 PROC_SUMMARY(/proc/stat_store) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches

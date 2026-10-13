@@ -175,6 +175,9 @@ pub struct DepsAnalysis {
     pub leaves: Vec<Leaf>,
     /// "<type>" -> the holder vars its own draw() reads.
     pub draw_reads: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the published keys its own draw() reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the
+    /// DM text of the key (a define is written `[MOB_KEY_NUTRITION]` so the compile resolves it): a PUBLISH_CHANGE of one redraws the thing.
+    pub draw_keys: BTreeMap<String, BTreeSet<String>>,
 }
 
 /// What each consumer's reads leave the graph unable to see change, over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual
@@ -243,6 +246,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     }
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
+    let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
     for d in crate::sem::procs::proc_defs(&sem, &["draw"]) {
         if d.owner == "/" || handlers::OPAQUE_DIRS.iter().any(|p| d.rel.starts_with(p)) {
             continue;
@@ -253,9 +259,15 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
         let set = eng.analyze(&d.owner, "draw");
         let keys = draw_reads.entry(d.owner.clone()).or_default();
+        let published = draw_keys.entry(d.owner.clone()).or_default();
         for r in &set.reads {
             if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Var {
                 keys.insert(r.var.clone());
+            }
+            // A capability's state key redraws its holder already (capability_key_changed -> look_key_changed); any other accessor key is a
+            // producer's PUBLISH_CHANGE, which reaches the draw through this table.
+            if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Accessor && !capability_keys.contains(&r.var) {
+                published.insert(crate::gens::reads::canonical_read_key(&r.kind, &r.var, &capability_keys, &defines));
             }
         }
         consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
@@ -274,7 +286,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     if trace {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
     }
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys })
 }
 
 struct Deps;
@@ -300,6 +312,11 @@ fn emit_table(out: &mut GenOut, name: &str, rows: &[String]) {
         out.line(format!("		.[k] = c{}[k]", n));
     }
     out.line(format!("GLOBAL_LIST_INIT({}, {}_build())", name, name));
+}
+
+/// A published key as DM text: quotes and backslashes escaped, `[` left alone (a define is written `[MOB_KEY_X]` and the compile interpolates it).
+fn quote_key(s: &str) -> String {
+    format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
 fn quote(s: &str) -> String {
@@ -359,6 +376,16 @@ impl Generator for Deps {
             .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
             .collect();
         emit_table(out, "generated_draw_reads", &rows);
+        out.blank();
+        out.doc("\"<type>\" -> the published keys its own draw() (and the parent draws it calls) reads through a READS_AS accessor: a PUBLISH_CHANGE of one");
+        out.doc("redraws the thing (publish_key_changed(), code/engine/stats/recompute.dm), so a draw needs no hand-written on_change() for a key it reads.");
+        let rows: Vec<String> = an
+            .draw_keys
+            .iter()
+            .filter(|(_, ks)| !ks.is_empty())
+            .map(|(t, ks)| format!("	{} = list({})", quote(t), ks.iter().map(|k| quote_key(k)).collect::<Vec<_>>().join(", ")))
+            .collect();
+        emit_table(out, "generated_draw_keys", &rows);
     }
 }
 

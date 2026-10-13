@@ -419,6 +419,37 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		path = initial(typed.parent_type)
 	return null
 
+GLOBAL_LIST_EMPTY(draw_key_names) // key -> TRUE: some type's draw reads it (built from generated_draw_keys on the first publication)
+GLOBAL_VAR_INIT(draw_key_names_built, FALSE)
+
+/// The published keys the draw() D's type runs reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the build
+/// generated them: the nearest type (D's own or an ancestor) that defines a draw. A PUBLISH_CHANGE of one redraws D (draw_reads_key()).
+/proc/derived_generated_draw_keys(datum/D)
+	var/list/table = GLOB.generated_draw_keys
+	if(!length(table))
+		return null
+	var/path = D.type
+	while(path)
+		var/list/keys = table["[path]"]
+		if(keys)
+			return keys
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return null
+
+/// TRUE when the draw of A reads the published key `key`. Asked on every PUBLISH_CHANGE of an atom, so the set of keys any draw reads is
+/// built once and a key nobody's draw reads costs one list lookup.
+/proc/draw_reads_key(atom/A, key)
+	if(!GLOB.draw_key_names_built)
+		GLOB.draw_key_names_built = TRUE
+		for(var/type in GLOB.generated_draw_keys)
+			for(var/read in GLOB.generated_draw_keys[type])
+				GLOB.draw_key_names[read] = TRUE
+	if(!GLOB.draw_key_names[key])
+		return FALSE
+	var/list/keys = derived_generated_draw_keys(A)
+	return !isnull(keys) && (key in keys)
+
 // ---- attach: the first instance's catch-up ----
 
 /**
