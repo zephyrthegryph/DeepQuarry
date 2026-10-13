@@ -378,6 +378,11 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 			if(read in D.vars)
 				T.by_var[read] = (T.by_var[read] || 0) | DEP_DRAW
 				GLOB.derived_read_vars[read] = TRUE
+		// The keys the draw reads through READS_AS accessors (operable() stands for MACHINE_KEY_STAT): not vars of the type, published with
+		// state_changed(E, key), and the draw follows them as it follows a var.
+		for(var/key in derived_generated_draw_keys(D))
+			T.by_var[key] = (T.by_var[key] || 0) | DEP_DRAW
+			GLOB.derived_read_vars[key] = TRUE
 	// Values that read other values run after them.
 	var/list/todo = list()
 	for(var/name in dvars)
@@ -415,6 +420,20 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		var/list/reads = table["[path]"]
 		if(reads)
 			return reads
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return null
+
+/// The keys the draw() D's type runs reads through READS_AS accessors, as the build generated them (derived_generated_draw_reads()'s twin).
+/proc/derived_generated_draw_keys(datum/D)
+	var/list/table = GLOB.generated_draw_keys
+	if(!length(table))
+		return null
+	var/path = D.type
+	while(path)
+		var/list/keys = table["[path]"]
+		if(keys)
+			return keys
 		var/datum/typed = path
 		path = initial(typed.parent_type)
 	return null

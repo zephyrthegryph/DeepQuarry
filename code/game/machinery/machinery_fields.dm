@@ -212,11 +212,11 @@ READS_AS(/obj/machinery/proc/has_condition, MACHINE_KEY_STAT)
 	condition_announce()
 	return TRUE
 
-/// Tells the watchers a condition changed: the publish of the stat key, and the stat layer's recompute of what reads it. A draw or a window reads a
-/// condition through an accessor (power_lost(), operable(), broken_now()) that no derived read binds to the key, so every output of the machine re-derives.
+/// Tells the watchers a condition changed: the publish of the stat key, the stat layer's recompute of what reads it, and the draws that read a condition
+/// through an accessor (power_lost(), operable(), broken_now(): each READS_AS the key, which the generated draw keys list) redraw. An exact type is
+/// marked for those draws only; a type that declares no dependencies re-derives everything, as it does for any write.
 /obj/machinery/proc/condition_announce()
-	PUBLISH_CHANGE(src, MACHINE_KEY_STAT)
-	state_changed(src)
+	state_changed(src, 0, MACHINE_KEY_STAT)
 
 /// COMPATIBILITY SHIM (tests, the benchmark's old path): forces a machine's power by hand. The grid does not write has_power: it is the area's channel
 /// read (area_gives_power(), machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark sets `power_forced`.
