@@ -9,7 +9,7 @@ B1:code/_helpers/roundend.dm:SSemergency_shuttle 1
 B1:code/_helpers/roundstats.dm:SSnerdle 1
 B1:code/controllers/configuration/entries/dbconfig.dm:SSdbcore 1
 B1:code/controllers/subsystems/lighting.dm:SSplanets 2
-B1:code/controllers/subsystems/profiler.dm:SSair 5
+B1:code/controllers/subsystems/profiler.dm:SSair 4
 B1:code/controllers/subsystems/ticker.dm:SSemergency_shuttle 1
 B1:code/datums/datum.dm:SSgarbage 1
 B1:code/datums/lifecycle/batch.dm:SSair 2
@@ -38,7 +38,7 @@ B1:code/game/machinery/status_display.dm:SSsupply 1
 B1:code/game/machinery/supply_display.dm:SSsupply 1
 B1:code/game/objects/effects/zone_divider.dm:SSair 1
 B1:code/game/objects/items/devices/communicator/helper.dm:SSsupply 1
-B1:code/game/objects/structures/artstuff.dm:SSpersistence 9
+B1:code/game/objects/structures/artstuff.dm:SSpersistence 7
 B1:code/game/sound.dm:SSmedia_tracks 1
 B1:code/game/turfs/turf_changing.dm:SSlighting 2
 B1:code/game/turfs/turf_changing.dm:SSplanets 3
@@ -84,7 +84,6 @@ B1:code/modules/gamemaster/event2/event.dm:SSplanets 1
 B1:code/modules/gamemaster/event2/events/cargo/shipping_error.dm:SSsupply 1
 B1:code/modules/gamemaster/event2/events/command/raise_funds.dm:SSjob 1
 B1:code/modules/gamemaster/event2/events/everyone/sudden_weather_shift.dm:SSplanets 1
-B1:code/modules/holomap/station_holomap.dm:SSholomaps 2
 B1:code/modules/lighting/lighting_corner.dm:SSlighting 10
 B1:code/modules/lighting/lighting_corner.dm:SSplanets 3
 B1:code/modules/lighting/lighting_fake_sun.dm:SSlighting 3
@@ -95,7 +94,7 @@ B1:code/modules/lighting/lighting_turf.dm:SSplanets 3
 B1:code/modules/lighting/planet_sunlight.dm:SSlighting 1
 B1:code/modules/lighting/sunlight_handler.dm:SSlighting 5
 B1:code/modules/lighting/sunlight_handler.dm:SSplanets 5
-B1:code/modules/logging/time_track_service.dm:SSair 17
+B1:code/modules/logging/time_track_service.dm:SSair 16
 B1:code/modules/logging/time_track_service.dm:SSbehaviours 3
 B1:code/modules/logging/time_track_service.dm:SSmachines 2
 B1:code/modules/maps/map_resolvers.dm:SSatoms 8
@@ -113,7 +112,6 @@ B1:code/modules/modular_computers/NTNet/NTNet.dm:SSatoms 1
 B1:code/modules/overmap/champagne.dm:SSshuttles 1
 B1:code/modules/overmap/sectors.dm:SSshuttles 1
 B1:code/modules/overmap/ships/ship.dm:SSflight 1
-B1:code/modules/overmap/ships/ship.dm:SSshuttles 2
 B1:code/modules/pda/cart_apps.dm:SSsupply 1
 B1:code/modules/pda/core_apps.dm:SSjob 1
 B1:code/modules/persistence/paintings.dm:SSpersistence 6

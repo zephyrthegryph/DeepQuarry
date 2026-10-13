@@ -17,9 +17,14 @@ SYSTEM_DEF(mapping)
 	var/list/map_templates = list()
 	var/obj/effect/landmark/engine_loader/engine_loader
 	var/list/shelter_templates = list()
+	/// Async map loads waiting behind the running one, oldest first (code/modules/maps/map_load.dm): owned here, so a queued load lives until it starts.
+	var/list/map_load_queue
 
 	// TODO: Implement Later
 	var/datum/map/current_map
+
+CAPABILITIES(/datum/system/mapping)
+	owns_many(nameof(map_load_queue), /datum/map_load)
 
 
 /datum/system/mapping/initialize()
@@ -209,3 +214,21 @@ SYSTEM_DEF(mapping)
 	if (!GLOB.Debug2)
 		return // Only show up in stat panel if debugging is enabled.
 	. = ..()
+
+// ---- The async map-load queue (code/modules/maps/map_load.dm): the one place that touches `map_load_queue` ----
+
+/// Queues a load behind the running one.
+/proc/map_load_queue_add(datum/map_load/M)
+	return rel_add(SSmapping, nameof(SSmapping.map_load_queue), M)
+
+/// How many loads wait.
+/proc/map_load_queue_length()
+	return length(SSmapping.map_load_queue)
+
+/// Takes the oldest waiting load out of the queue (not disposed: it is about to run) and returns it, or null.
+/proc/map_load_queue_next()
+	if(!length(SSmapping.map_load_queue))
+		return null
+	var/datum/map_load/next = SSmapping.map_load_queue[1]
+	rel_take(SSmapping, nameof(SSmapping.map_load_queue), next)
+	return next
