@@ -43,6 +43,6 @@
 		modifiers += "right=1;"
 
 
-	user.ClickOn(thing, modifiers)
+	input_submit(new /datum/input_event/click(user, thing, null, null, modifiers))
 
 	return TRUE

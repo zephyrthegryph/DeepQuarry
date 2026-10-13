@@ -511,8 +511,9 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	D.universal_speak = 1
 	D.disable_godmode()
 	D.looks.set_eyes_color(rgb(200, 200, 200))
-	D.update_eyes()
-	LAZYCLEARLIST(D.all_underwear)
+	changed(src)
+	D.clear_all_underwear()
+	D.underwear_edited()
 	D.key = ghost.key
 	GLOB.cult.add_antagonist(D.mind)
 
@@ -1000,8 +1001,7 @@ TRACKED(/obj/effect/rune, manifesting)
 		to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
 		return fizzle(user)
 	cultist.forceMove(src.loc)
-	cultist.lying = 1
-	cultist.regenerate_icons()
+	cultist.set_lying(1)
 
 	var/dam = round(25 / (users.len/2))	//More people around the rune less damage everyone takes. Minimum is 3 cultists
 

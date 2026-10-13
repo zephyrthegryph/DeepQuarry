@@ -10,6 +10,12 @@ SOURCE_DEF(ai_control)
 SOURCE_DEF(busy_work)
 SOURCE_DEF(held_item)
 SOURCE_DEF(all)
+/// A thing hidden under an intact floor (hide_under_floor() in code/_helpers/concealment.dm).
+SOURCE_DEF(under_floor)
+/// A thing its owner keeps out of sight (conceal()).
+SOURCE_DEF(concealed)
+/// A door's swing: open or shut is a hold on its density and opacity (set_density() and set_opacity() on /obj/machinery/door).
+SOURCE_DEF(door_state)
 /// A round event that holds a machine's state for good (an AI locked out of a door by a runtime): released by no one but an admin.
 SOURCE_DEF(round_event)
 /// The power grid's reading of a machine's area channel (set_powered()).

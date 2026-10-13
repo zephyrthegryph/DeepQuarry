@@ -245,19 +245,19 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, get_turf(apc))
 	var/was_light = A.power_light
 	var/was_equip = A.power_equip
-	A.power_light = TRUE
-	A.power_equip = TRUE
+	A.set_power_light(TRUE)
+	A.set_power_equip(TRUE)
 	A.lightswitch = TRUE
 	A.power_change()
 	TEST_ASSERT(L.has_power(), "a fixture in a powered area has power")
-	A.power_equip = FALSE
+	A.set_power_equip(FALSE)
 	A.power_change()
 	TEST_ASSERT(L.has_power(), "losing the equipment channel does not darken a fixture")
-	A.power_light = FALSE
+	A.set_power_light(FALSE)
 	A.power_change()
 	TEST_ASSERT(!L.has_power(), "losing the light channel darkens it")
-	A.power_light = was_light
-	A.power_equip = was_equip
+	A.set_power_light(was_light)
+	A.set_power_equip(was_equip)
 	A.power_change()
 
 /// Several producers on one net add up, a pulse lasts one step, and a draw never takes more than is there.

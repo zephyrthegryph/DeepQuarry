@@ -145,10 +145,10 @@
 	p2l_area_light = p2l_area.power_light
 	p2l_area_switch = p2l_area.lightswitch
 	p2l_area_equip = p2l_area.power_equip
-	p2l_area.power_equip = TRUE
+	p2l_area.set_power_equip(TRUE)
 	p2l_area.set_requires_power(TRUE)
 	p2l_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2l_area.power_light = TRUE
+	p2l_area.set_power_light(TRUE)
 	p2l_area.lightswitch = 1
 	run_gate()
 	for(var/mob/M as anything in p2l_people)
@@ -161,9 +161,9 @@
 	own_turf_contents(run_loc_floor_top_right)
 	p2l_area.set_requires_power(p2l_area_requires)
 	p2l_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2l_area.power_light = p2l_area_light
+	p2l_area.set_power_light(p2l_area_light)
 	p2l_area.lightswitch = p2l_area_switch
-	p2l_area.power_equip = p2l_area_equip
+	p2l_area.set_power_equip(p2l_area_equip)
 	if(!live)
 		test_driver_end()
 
@@ -235,12 +235,12 @@
 	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc, run_loc_floor_bottom_left)
 	LAZYADD(p2l_apcs, A)
 	settle()
-	p2l_area.power_light = TRUE
+	p2l_area.set_power_light(TRUE)
 	return A
 
 /// The area loses (or regains) its light channel and tells the machines in it.
 /datum/unit_test/dq_p2_lights/proc/set_area_power(powered)
-	p2l_area.power_light = powered
+	p2l_area.set_power_light(powered)
 	p2l_area_power_change(p2l_area)
 	settle()
 
@@ -307,7 +307,7 @@
 /datum/unit_test/dq_p2_lights/fixture_placed_without_area_power_starts_dark
 
 /datum/unit_test/dq_p2_lights/fixture_placed_without_area_power_starts_dark/run_gate()
-	p2l_area.power_light = FALSE
+	p2l_area.set_power_light(FALSE)
 	var/obj/machinery/light/poi/P = light(/obj/machinery/light/poi, tile(3, 3))
 	TEST_ASSERT(!P.on, "no light power, no light")
 	TEST_ASSERT_EQUAL(glow_of(P).range, 0, "the light is out")
@@ -1221,7 +1221,6 @@
 
 /// The picture of a light shows its state.
 /proc/p2l_item_icon(obj/item/light/B)
-	B.update_icon()
 	refresh_flush()
 	return B.icon_state
 
@@ -1530,7 +1529,7 @@
 
 /datum/unit_test/dq_p2_lights/emp_makes_a_switch_read_its_power/run_gate()
 	var/obj/machinery/light_switch/S = light_switch()
-	p2l_area.power_light = FALSE // the area's channel went down without the switch being told
+	p2l_area.set_power_light(FALSE) // the area's channel went down without the switch being told
 	S.emp_act(1)
 	settle()
 	TEST_ASSERT(p2l_switch_unpowered(S), "it read the channel")

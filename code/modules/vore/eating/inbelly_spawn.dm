@@ -157,7 +157,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	to_chat(actor, span_notice("Waiting for prey's confirmation..."))
 	stage = "prey"
 	var/client/prey = prey_client()
-	// Old om_ask normalized the client to its current mob, and ended with no question if absent.
+	// The old prompt normalized the client to its current mob, and ended with no question if absent.
 	if(!prey.mob)
 		retire()
 		return
@@ -254,7 +254,6 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 
 	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 

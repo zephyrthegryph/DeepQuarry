@@ -7,6 +7,14 @@
 CAPABILITIES(/mob/living/carbon/human)
 	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
 	profile(nameof(looks), /datum/record/appearance)
+	// The chosen sprite accessories and the prosthetic model: shared definitions the look reads through (written with rel_set(), so a change
+	// redraws the human).
+	ref_one(nameof(tail_style), /datum/sprite_accessory/tail)
+	ref_one(nameof(wing_style), /datum/sprite_accessory/wing)
+	ref_one(nameof(ear_style), /datum/sprite_accessory/ears)
+	ref_one(nameof(ear_secondary_style), /datum/sprite_accessory/ears)
+	ref_one(nameof(hair_accessory_style_static), /datum/sprite_accessory/hair_accessory)
+	ref_one(nameof(synthetic), /datum/robolimb)
 	wrapped_species_form()
 	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human))
 	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))

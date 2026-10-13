@@ -2,16 +2,17 @@
 /mob/living/carbon/human/interim_shoe_appearance_holder
 	var/shoe_redraws = 0
 
-/mob/living/carbon/human/interim_shoe_appearance_holder/update_inv_shoes()
+/// The wearer's look is one draw: a redraw of it is a redraw of its shoes.
+/mob/living/carbon/human/interim_shoe_appearance_holder/draw(datum/look/look)
 	shoe_redraws++
-	return ..()
+	..()
 
 /obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance
 	var/list/observed_overlays
 
 /// Runs the queued draws (the presentation lane) and records the icon states of the overlays the boots show now.
 /obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance/proc/observe_look()
-	appearance_flush()
+	refresh_flush()
 	observed_overlays = list()
 	for(var/mutable_appearance/entry as anything in overlays)
 		observed_overlays += entry.icon_state
@@ -25,6 +26,7 @@
 	TEST_ASSERT(move_into(wearer, SLOT_ID_SHOES, boots), "the actual wearer equips its real jackboots")
 	var/obj/item/material/knife/tacknife/knife = allocate(/obj/item/material/knife/tacknife, T)
 	TEST_ASSERT(wearer.put_in_active_hand(knife), "the actual wearer holds a compatible boot knife")
+	refresh_flush() // the humans' own first draws run before the counters start
 	wearer.shoe_redraws = 0
 	bystander.shoe_redraws = 0
 	test_op_handler(boots, "shoes_stuff_item", wearer, knife)
@@ -42,6 +44,7 @@
 	boots.observe_look()
 	TEST_ASSERT(!("jackboots_knife" in boots.observed_overlays), "actual knife removal clears the appearance overlay")
 	TEST_ASSERT(wearer.unEquip(boots), "the actual wearer releases the boots to the floor")
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
 	wearer.shoe_redraws = 0
 	boots.observe_look()
 	TEST_ASSERT_EQUAL(wearer.shoe_redraws, 0, "floor boot appearance does not redraw the former wearer")

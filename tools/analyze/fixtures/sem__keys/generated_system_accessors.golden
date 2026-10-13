@@ -3,9 +3,9 @@
 
 /// SYSTEM_ACCESSOR(lamps, lamps_on, nameof(on)) at code/modules/keys/systems.dm:9: the lamps system's `on`, read as a plain var.
 /proc/lamps_on()
-	return GLOB.lamps_service.on
+	return GLOB.lamps_service?.on
 
 /// SYSTEM_ACCESSOR(pumps, pumps_running, nameof(running)) at code/modules/keys/systems.dm:11: the pumps system's `running`, read as a plain var.
 /proc/pumps_running()
-	return GLOB.pumps_service.running
+	return GLOB.pumps_service?.running
 

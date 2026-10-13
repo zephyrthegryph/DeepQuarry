@@ -1,23 +1,23 @@
 // The human's worn look, tail layering and HUD meters (playtest regressions of 3bd7a6f329).
 
-/// Putting a uniform on draws it on the mob; taking it off removes it. The slot's redraw must reach the human's own
-/// update_inv_w_uniform(), not the empty /mob one a proc path bound through call() would run.
+/// Putting a uniform on draws it on the mob; taking it off removes it: the human's draw reads the uniform slot, so the slot's
+/// change redraws it with no call.
 /datum/unit_test/dq_mob_visuals_equip_redraws_the_human
 
 /datum/unit_test/dq_mob_visuals_equip_redraws_the_human/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	refresh_flush()
-	TEST_ASSERT_NULL(H.overlays_standing[UNIFORM_LAYER], "a bare human draws no uniform")
+	TEST_ASSERT_NULL(H.look_layers()[UNIFORM_LAYER], "a bare human draws no uniform")
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey, H.loc)
 	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform goes on")
 	refresh_flush()
-	var/image/worn = H.overlays_standing[UNIFORM_LAYER]
+	var/image/worn = H.look_layers()[UNIFORM_LAYER]
 	TEST_ASSERT(worn, "the worn uniform is drawn on its layer")
 	var/worn_icon = worn.icon
 	TEST_ASSERT(dq_mob_visuals_shows(H, worn_icon), "and shows on the mob ([worn_icon])")
 	TEST_ASSERT(H.unEquip(uniform, target = H.loc), "the uniform comes off")
 	refresh_flush()
-	TEST_ASSERT_NULL(H.overlays_standing[UNIFORM_LAYER], "the removed uniform leaves its layer")
+	TEST_ASSERT_NULL(H.look_layers()[UNIFORM_LAYER], "the removed uniform leaves its layer")
 	TEST_ASSERT(!dq_mob_visuals_shows(H, worn_icon), "and no longer shows on the mob")
 
 /// TRUE when one of `A`'s overlays draws `drawn` (worn sprites are built icons with no state to tell them apart).

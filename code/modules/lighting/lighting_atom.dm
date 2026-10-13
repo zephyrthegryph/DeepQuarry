@@ -86,7 +86,11 @@ SETTER(/atom, opacity)
 
 /atom/movable/set_opacity(new_opacity)
 	. = ..()
-	if(isnull(.) || !isturf(loc))
+	opacity_light_update(.)
+
+/// The light a movable blocks follows its opacity; `old` is what set_opacity() returned (null: nothing changed).
+/atom/movable/proc/opacity_light_update(old)
+	if(isnull(old) || !isturf(loc))
 		return
 
 	if(opacity)

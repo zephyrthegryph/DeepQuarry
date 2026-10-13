@@ -1169,9 +1169,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	claim_ref = "[REF(claimed)]"
 	rx_of(claimed).claimed_by = src
 	op_changed(claimed)
-	var/atom/A = claimed
-	if(istype(A))
-		A.op_claim_changed()
 
 /// The claim ends with the wait.
 /datum/pending_op/proc/release_claim()
@@ -1183,9 +1180,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	claim_ref = null
 	if(claimed)
 		op_changed(claimed)
-		var/atom/A = claimed
-		if(istype(A) && !QDELETED(A))
-			A.op_claim_changed()
 
 /// The pending record is done: it leaves the actor's slot, its timers go, the request is closed.
 /datum/pending_op/proc/end_pending()
@@ -1688,8 +1682,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	return
 /datum/proc/op_window_interactive()
 	return FALSE
-/atom/proc/op_claim_changed()
-	return
 /mob/proc/op_notify(text)
 	return
 /// A refusal shown as a balloon over the actor (MSG_BALLOON).

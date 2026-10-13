@@ -260,16 +260,18 @@
 		// the error message properly.
 		window().release_lock()
 		window().close(can_be_suspended, logout)
-		// Either side may already be gone (deleted src_object, deleted mob);
-		// SStgui.on_close must still run so the UI leaves all_uis.
 		if(!QDELETED(src_object()))
 			src_object().tgui_close(user)
-		SStgui.on_close(src)
-		status_unwatch()
-		cancel_after(src, "ping")
-
 		if(user?.client)
 			terminate_byondui_elements()
+	// Whatever happened to the window (a deleted tgui_window clears this UI's
+	// relation to it, so window() is null here), the UI must leave every list
+	// that registered it: all_uis, autoupdating, the user's tgui_open_uis and
+	// the src_object's open_tguis. Skipping this with the window gone left the
+	// spent UI in those lists and it hard-deleted (ref count 3).
+	SStgui.on_close(src)
+	status_unwatch()
+	cancel_after(src, "ping")
 
 	// Unset machine just to be sure.
 	if(!QDELETED(user))

@@ -240,7 +240,6 @@ CAPABILITIES(/datum/preferences)
 	for(var/dir_key in dirs)
 		var/dir = dirs[dir_key]
 		mannequin.set_dir(dir)
-		mannequin.update_tail_showing()
 		mannequin.ImmediateOverlayUpdate()
 		if(!force_sync)
 			var/list/flat_result = flattener.flatten(mannequin, dir)
@@ -298,12 +297,6 @@ CAPABILITIES(/datum/preferences)
 	// already handled by /datum/preference_apply_hook/finalize; we still need the body /
 	// mutation / underwear / hair passes that aren't part of the hook.
 	character.force_update_organs()
-
-	if(icon_updates)
-		character.update_icons_body()
-		character.update_mutations()
-		character.update_underwear()
-		character.update_hair()
 
 /datum/preferences/proc/open_load_dialog(mob/user)
 	return slot_dialog_stage(user, FALSE)
@@ -512,7 +505,6 @@ CAPABILITIES(/datum/preferences)
 	if(character.dna)
 		character.dna.ResetUIFrom(character)
 	character.force_update_limbs()
-	character.regenerate_icons()
 
 	PREF_TRANSACTION_END(src)
 

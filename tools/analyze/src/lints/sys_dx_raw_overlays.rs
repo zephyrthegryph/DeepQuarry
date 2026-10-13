@@ -1,6 +1,6 @@
 //! Port of `tools/ci/sys_rules/dx_raw_overlays.py`: raw overlay writes outside the look builder
 //! (design review M9). `add_overlay(` / `cut_overlay(` / `cut_overlays(` / `overlays +=` /
-//! `overlays -=` outside the look builder and the legacy appearance runtime.
+//! `overlays -=` outside the look builder.
 
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
@@ -15,8 +15,6 @@ const RULES: &[RuleMeta] = &[RuleMeta {
 const EXEMPT: &[&str] = &[
     "code/engine/present/appearance_builder.dm",
     "code/controllers/subsystems/overlays.dm",
-    "code/datums/sys/appearance.dm",
-    "code/__defines/sys_appearance.dm",
 ];
 
 /// `scan_file` of the Python: one site per sanitized line with a raw overlay write.

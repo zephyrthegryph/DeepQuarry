@@ -256,7 +256,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
-	changed(src)
 	if(flags & ATOM_INITIALIZED)
 		power_register()
 
@@ -272,7 +271,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //If underfloor, hide the cable
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+		hide_under_floor(src, i)
 	changed(src)
 
 /obj/structure/cable/hides_under_flooring()
@@ -686,7 +685,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	C.set_d1(d1)
 	C.set_d2(d2)
 	C.add_fingerprint(user)
-	changed(C)
 	C.power_register()
 
 	use(1)
@@ -764,7 +762,6 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 		C.set_d2(nd2)
 
 		C.add_fingerprint()
-		changed(C)
 		C.power_register()
 
 		use(1)

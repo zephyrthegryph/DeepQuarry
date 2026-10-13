@@ -291,7 +291,6 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 		id.assignment = JOB_SITE_MANAGER
 		id.name = "[id.registered_name]'s ID Card ([id.assignment])"
 		H.equip_to_slot_or_del(id, SLOT_ID_ID)
-		H.update_inv_wear_id()
 	feedback_add_details("admin_verb","GFA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(user)] has granted [H.key] full access.")
 	message_admins(span_blue("[key_name_admin(user)] has granted [H.key] full access."))

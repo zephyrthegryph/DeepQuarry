@@ -39,7 +39,7 @@
 
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+	hide_under_floor(src, intact)
 	changed(src)
 
 // update the icon_state

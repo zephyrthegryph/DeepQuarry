@@ -40,8 +40,24 @@ STAT(/mob, godmode, ANY, virtual = TRUE)
 SOURCE_DEF(godmode)
 SOURCE_DEF(voluntary_sleep)
 SOURCE_DEF(disability_blind)
+/// A sight that is down for a reason that is not a timed dose: dead senses, no seeing eyes, a sleeping body (set_blinded()).
+SOURCE_DEF(sight_state)
+/// A rig helmet whose visor restriction blinds the wearer.
+SOURCE_DEF(rig_visor)
+/// A blindfold over the eyes.
+SOURCE_DEF(blindfold)
 SOURCE_DEF(disability_deaf)
 SOURCE_DEF(mutation_hulk)
+
+/// Blindness that is not a timed dose: a hold on STAT_BLINDED sourced SRC_SIGHT_STATE while `blind`, released otherwise. `blinded` is the status
+/// stat's own var, so it is never written directly (the served value would stop following the holds); a hold already in the wanted state raises no change.
+/mob/proc/set_blinded(blind)
+	if(!!held_by_source(src, STAT_BLINDED, SRC_SIGHT_STATE) == !!blind)
+		return
+	if(blind)
+		hold(src, STAT_BLINDED, 1, SRC_SIGHT_STATE)
+	else
+		release(src, STAT_BLINDED, SRC_SIGHT_STATE)
 
 /// Godmode's incapacitation immunities, for /mob's CAPABILITIES block (mob_defines.dm).
 /proc/godmode_immunities()

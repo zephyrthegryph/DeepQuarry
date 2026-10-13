@@ -126,6 +126,9 @@
 	data["processing"] = processing
 	return data
 
+TRACKED(/obj/machinery/biogenerator, processing)
+TRACKED(/obj/machinery/biogenerator, points)
+
 CAPABILITIES(/obj/machinery/biogenerator)
 	reagents(1000)
 	default_parts()
@@ -179,7 +182,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		if(amt_to_actually_dispense <= 0)
 			to_chat(user, span_danger("The loaded beaker is full!"))
 			return FALSE
-		points -= cost * amt_to_actually_dispense
+		set_points(points - cost * amt_to_actually_dispense)
 		beaker.reagents.add_reagent(br.reagent_id, amt_to_actually_dispense)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		return FALSE
@@ -192,7 +195,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		to_chat(user, span_danger("Insufficient biomass."))
 		return FALSE
 
-	points -= cost * amount
+	set_points(points - cost * amount)
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, amount)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
@@ -202,9 +205,6 @@ CAPABILITIES(/obj/machinery/biogenerator)
 		new bi.equipment_path(loc)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 	return TRUE
-
-/obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
-	changed(src)
 
 /obj/machinery/biogenerator/proc/appearance_state()
 	if(!beaker)
@@ -258,7 +258,6 @@ CAPABILITIES(/obj/machinery/biogenerator)
 			if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
 				return TRUE
 			to_chat(user, span_notice("You put \the [O] in \the [src]"))
-	changed(src)
 	return TRUE
 
 /obj/machinery/biogenerator/proc/interaction_use(datum/act/op/A)
@@ -281,24 +280,22 @@ CAPABILITIES(/obj/machinery/biogenerator)
 	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		S += 5
 		if(I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) < 0.1)
-			points += 1
-		else points += I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 10 * eat_eff
+			set_points(points + 1)
+		else
+			set_points(points + I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 10 * eat_eff)
 		consume(I)
 	if(!S)
 		to_chat(user, span_warning("Error: No growns inside. Please insert growns."))
 		return
 
-	processing = 1
-	changed(src)
+	set_processing(1)
 	play_sfx(src, SFX_MACHINES_BLENDER, 0.8)
 	use_power(S * 30)
 	after(src, (S * (0.1 SECONDS) + 1.5 SECONDS) / eat_eff, PROC_REF(finish_processing))
 
 /obj/machinery/biogenerator/proc/finish_processing()
-	processing = 0
-	SStgui.update_uis(src)
+	set_processing(0)
 	play_sfx(src, SFX_MACHINES_BIOGENERATOR_END)
-	changed(src)
 
 /obj/machinery/biogenerator/RefreshParts()
 	..()

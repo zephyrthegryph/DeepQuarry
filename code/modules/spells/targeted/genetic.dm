@@ -20,7 +20,6 @@ code\game\dna\genes\goon_powers.dm
 		for(var/x in mutations)
 			target.add_mutation(x)
 		target.disabilities |= disabilities
-		target.update_mutations()	//update target's mutation overlays
 		after(target, duration, TYPE_PROC_REF(/mob/living, genetic_spell_wears_off), with = list(mutations, disabilities))
 	return
 
@@ -69,4 +68,3 @@ code\game\dna\genes\goon_powers.dm
 	for(var/x in mutations)
 		remove_mutation(x)
 	src.disabilities &= ~disabilities
-	update_mutations()

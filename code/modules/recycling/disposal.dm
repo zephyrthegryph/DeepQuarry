@@ -60,7 +60,7 @@
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
 /obj/structure/disposalpipe/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE	// hide if floor is intact
+	hide_under_floor(src, intact)	// hide if floor is intact
 
 // update actual icon_state depending on visibility
 // if invisible, append "f" to icon_state to show faded version
@@ -141,7 +141,7 @@
 				var/obj/structure/disposalpipe/broken/P = new(get_turf(src))
 				P.set_dir(D)
 
-	invisibility = INVISIBILITY_ABSTRACT	// make invisible (since we won't delete the pipe immediately)
+	conceal(src, INVISIBILITY_ABSTRACT)	// make invisible (since we won't delete the pipe immediately)
 	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present

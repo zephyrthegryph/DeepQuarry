@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 // called when turf state changes
 // hide the object if turf is intact
 /obj/machinery/navbeacon/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+	hide_under_floor(src, intact)
 	changed(src)
 
 // update the icon_state
@@ -56,7 +56,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	var/turf/floor = loc
 	if(!floor.is_plating())
 		return OP_OK
-	open = !open
+	set_open(!open)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	act_message(user, null, MSG_SELF(span_infoplain("You [open ? "open" : "close"] the beacon's cover.")), \
 		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
@@ -74,6 +74,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 
 	to_chat(user, span_warning("Access denied."))
 	return FALSE
+
+TRACKED(/obj/machinery/navbeacon, open)
 
 CAPABILITIES(/obj/machinery/navbeacon)
 	silicon_ui()

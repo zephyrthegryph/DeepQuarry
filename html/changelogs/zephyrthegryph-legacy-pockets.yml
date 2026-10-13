@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Removed update_icon() and the declared-appearance system (DECLARE_APPEARANCE, APPEARANCE_*); the jukebox draws through draw(look) and a pressed remote button draws pressed from tracked state"

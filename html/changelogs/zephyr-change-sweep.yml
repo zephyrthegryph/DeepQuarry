@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Hand changed() marks are gone from the beacons, floodlight, biogenerator, suit storage, fire doors, cables, fusion rods and other machines; the state they drew is tracked"
