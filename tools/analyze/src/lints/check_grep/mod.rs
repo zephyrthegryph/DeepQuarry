@@ -675,10 +675,16 @@ TRACKED(/obj/item/flagged, slot_flags)
     fn rule_names_follow_the_part_titles() {
         let parts = all_parts();
         let mut seen = std::collections::HashSet::new();
+        let mut bad = Vec::new();
         for p in &parts {
             assert!(seen.insert(p.rule), "duplicate rule {}", p.rule);
-            assert_eq!(base_rule(p.rule), slug(p.title), "rule {} vs title {:?}", p.rule, p.title);
+            if base_rule(p.rule) != slug(p.title) {
+                bad.push(format!("rule {} vs title {:?} (slug {})", p.rule, p.title, slug(p.title)));
+            }
         }
+        assert!(bad.is_empty(), "every rule is the slug of its title (rules are named in lint_scopes.toml and the baselines, so fix the title):
+{}", bad.join("
+"));
     }
 
     #[test]
