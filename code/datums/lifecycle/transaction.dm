@@ -15,9 +15,11 @@
 /// (or, for a plain /datum with no override, the base no-op) returned.
 /// Test/debug tracing: while GLOB.dq_lifecycle_trace_depth > 0, every phase of
 /// every destroy transaction is logged, so a transaction that never returns
-/// (a sleep or a runaway loop in a phase) shows the last phase it finished.
+/// (a sleep or a runaway loop in a phase) shows the last phase it finished. Each line
+/// also carries the datum's reference count, so a step that leaves a reference behind
+/// (one that something outside the DM walk holds) shows as the step where the count rises.
 GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
-#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what]") }
+#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what] refs=[refcount(D)]") }
 
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
 	var/hint = QDEL_HINT_QUEUE
