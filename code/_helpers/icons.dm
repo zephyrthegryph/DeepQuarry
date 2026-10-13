@@ -887,6 +887,7 @@ DECLARE_SHARED_CACHE(icon_size_pure, GLOBAL_PROC_REF(build_icon_size_pure), SC_N
 
 /// Cached, rustg-based alternative to icon_states(). The list is shared: copy it before changing it.
 /proc/icon_states_fast(file)
+	RETURN_TYPE(/list)
 	if(isnull(file))
 		return null
 	if(!istext(file) && !isfile(file))
