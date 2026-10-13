@@ -42,6 +42,7 @@ stat_input_untracked	code/controllers/subsystems/job.dm	return department_datums
 stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
 stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
 stat_input_untracked	code/controllers/subsystems/tgui.dm	if(ui.user == user)
+stat_input_untracked	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 stat_input_untracked	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
 stat_input_untracked	code/datums/operations/req.dm	var/datum/req/known = GLOB.reqs_interned[signature]
 stat_input_untracked	code/datums/operations/req.dm	GLOB.reqs_interned[signature] = R
@@ -53,6 +54,7 @@ stat_input_untracked	code/engine/refs/containment/api.dm	var/atom/source = thing
 stat_input_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 stat_input_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 stat_input_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
+stat_input_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 stat_input_untracked	code/game/atom/_atom.dm	var/atom/L = loc
 stat_input_untracked	code/game/dna/dna_modifier.dm	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
 stat_input_untracked	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
@@ -300,6 +302,7 @@ draw_untracked	code/controllers/kernel/system.dm	var/started = REALTIMEOFDAY
 draw_untracked	code/controllers/kernel/system.dm	var/started = REALTIMEOFDAY
 draw_untracked	code/controllers/kernel/system.dm	log_world("System [name] initialized lazily in [(REALTIMEOFDAY - started) / 10]s.")
 draw_untracked	code/controllers/kernel/system.dm	log_world("System [name] initialized lazily in [(REALTIMEOFDAY - started) / 10]s.")
+draw_untracked	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 draw_untracked	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
 draw_untracked	code/datums/forensics_crime.dm	if(!blood_DNA || !blood_DNA.len)
 draw_untracked	code/datums/forensics_crime.dm	if(!blood_DNA || !blood_DNA.len)
@@ -312,6 +315,7 @@ draw_untracked	code/datums/repositories/decls.dm	fetched_decl_subtypes[decl_prot
 draw_untracked	code/engine/actions/coalesce.dm	if(GLOB.forms_trace)
 draw_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 draw_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
+draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(layer = layer + 0.1, plane = plane, dir = SOUTH, transform = turn(matrix(), dir == EAST ? 90 : -90), of = occupant, filters = list(
@@ -636,6 +640,7 @@ draw_untracked	code/modules/paperwork/clipboard.dm	return toppaper
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.state(top.icon_state)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	for(var/list/mark in top.stamp_marks)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.overlay(Ph.tiny)
+draw_untracked	code/modules/power/cable.dm	if(!(flags & ATOM_INITIALIZED))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
 draw_untracked	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))

@@ -43,6 +43,9 @@ unknown_read	code/controllers/subsystems/overlays.dm	if(!overlays)
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/datums/chat_message.dm	return maptext_height
+unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
+unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
+unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/engine/refs/containment/ledger.dm	return rx?.containment_ledger
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 unknown_read	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)

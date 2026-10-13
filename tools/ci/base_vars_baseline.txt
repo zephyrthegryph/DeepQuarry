@@ -66,6 +66,7 @@ base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/datum/alternate_
 base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_touched_at)
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_refused_until)
+base_var	code/game/atom/_atom.dm	var/flags = NONE
 base_var	code/game/atom/_atom.dm	var/pass_flags = 0
 base_var	code/game/atom/_atom.dm	var/throwpass = 0
 base_var	code/game/atom/_atom.dm	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.

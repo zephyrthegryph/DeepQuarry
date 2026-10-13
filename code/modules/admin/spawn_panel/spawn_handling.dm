@@ -108,7 +108,7 @@
 		if(QDELETED(created_atom))
 			return
 
-		created_atom.set_flags(created_atom.flags | ADMIN_SPAWNED)
+		created_atom.flags |= ADMIN_SPAWNED
 
 		if(spawn_params["apply_icon_override"])
 			if(spawn_params["selected_atom_icon"])

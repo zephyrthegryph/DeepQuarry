@@ -130,7 +130,8 @@ exclude = ["gc_destroyed", "vg_entity"]
 # `temperature` would be a violation by name; a generator's own temperature belongs in the heat domain.
 # A lazily refreshed accumulator: check_charge() (reached from conditions and draws) tops it up from the clock, so the write happens inside an output
 # (PURITY). It is a memo of time, not state anything publishes.
-exclude_memo = ["/obj/item/cell::material_discharge_credit"]
+exclude_memo = ["/obj/item/cell::material_discharge_credit", "/atom::flags"]
+# (atom flags: lifecycle bits (ATOM_INITIALIZED, ATOM_MATERIALIZED) set while an atom is materialized, which can happen inside a draw.)
 exclude_heat = ["/obj/machinery/power/port_gen/pacman::temperature"]
 # Test fixtures that count their own draws from inside draw(): an output must not write tracked state (PURITY), and the counter is the test's probe.
 exclude_fixtures = ["/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]
