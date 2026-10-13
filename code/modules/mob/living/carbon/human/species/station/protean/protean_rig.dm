@@ -157,6 +157,7 @@ CAPABILITIES(/obj/item/rig/protean)
 	without("ui_open")
 	ui_shape(cooling = num(), sealing = any, emagged = num(), coverlock = num(), interfacelock = num(), aicontrol = num(), aioverride = num(), securitycheck = num(), malf = num(), primarysystem = schema_text(), ai = bool(), sealed = bool(), helmet = schema_text(), gauntlets = schema_text(), boots = schema_text(), chest = schema_text(), helmetDeployed = bool(), gauntletsDeployed = bool(), bootsDeployed = bool(), chestDeployed = bool(), charge = num(), maxcharge = num(), chargestatus = num(), modules = list_of())
 	drag_onto(PROC_REF(mousedrop_input))
+	ref_one(nameof(myprotean), /mob/living/carbon/human)
 	param(nameof(myprotean), pos = 1, apply = PROC_REF(bind_protean))
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch

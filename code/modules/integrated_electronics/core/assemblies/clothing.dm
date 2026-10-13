@@ -12,6 +12,9 @@
 	max_complexity = IC_COMPLEXITY_BASE
 	var/tmp/obj/item/clothing/clothing
 
+CAPABILITIES(/obj/item/electronic_assembly/clothing)
+	ref_one(nameof(clothing), /obj/item/clothing)
+
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
