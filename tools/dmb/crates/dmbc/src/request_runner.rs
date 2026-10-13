@@ -802,11 +802,9 @@ fn run_build_attempt(
             {
                 let patch_started = Instant::now();
                 let attempt = (|| {
-                    let inputs = runner_freshness::admit_captured(
+                    let inputs = runner_freshness::snapshot_captured(
                         &inputs_capture,
                         nontext.retained_resource_inputs(),
-                        &input_provider,
-                        generated_paths,
                     )
                     .map_err(|error| format!("input admission: {error}"))?;
                     dmbc::body_patch::try_patch(dmbc::body_patch::PatchRequest {

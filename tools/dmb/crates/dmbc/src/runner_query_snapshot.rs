@@ -157,9 +157,13 @@ impl SourceSnapshot {
         std::ptr::eq(self.tree.as_ref(), tree)
     }
     fn capture(frontend: &ColdFrontend) -> Self {
+        let revision_timer = dm_profile::detail_timer("query_capture.source_revision");
+        let source_revision = dm_analysis::tree_export::source_revision(frontend);
+        drop(revision_timer);
+        let _timer = dm_profile::detail_timer("query_capture.rest");
         Self {
             tree: Arc::clone(&frontend.snapshot.tree),
-            source_revision: dm_analysis::tree_export::source_revision(frontend),
+            source_revision,
             outcome: "frontend_analyzed",
             source_mapping: frontend.source_export_mapping().cloned(),
             selected: Default::default(),
@@ -291,6 +295,7 @@ impl QueryAttempt {
             return;
         }
         let snapshot = SourceSnapshot::capture(frontend);
+        let _timer = dm_profile::detail_timer("query_capture.replace");
         self.state
             .lock()
             .unwrap_or_else(|error| error.into_inner())

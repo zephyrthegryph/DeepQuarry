@@ -327,7 +327,37 @@ impl SessionRecords {
     /// these structural checks; it still checks all current file/folder facts.
     /// This does NOT authorize output or memo reuse by itself.
     pub fn prior(&self, id: u128) -> io::Result<Option<Record>> {
+        // Records are immutable and named by their content hash: a decoded
+        // record stays valid while its file exists, so the daemon decodes each
+        // recent record once instead of on every request.
+        type Decoded = std::sync::Mutex<Vec<(u128, Vec<u8>, Record)>>;
+        static DECODED: std::sync::OnceLock<Decoded> = std::sync::OnceLock::new();
+        let decoded = DECODED.get_or_init(Default::default);
         let path = self.directory.join(format!("{id:032x}.bin"));
+        let configuration = dm_wire::encode(SCHEMA, &self.configuration).unwrap_or_default();
+        if path.is_file() {
+            if let Some(record) = decoded
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .iter()
+                .find(|(cached, config, _)| *cached == id && *config == configuration)
+                .map(|(_, _, record)| record.clone())
+            {
+                return Ok(Some(record));
+            }
+        }
+        let record = self.prior_uncached(&path, id)?;
+        if let Some(record) = &record {
+            let mut decoded = decoded.lock().unwrap_or_else(|e| e.into_inner());
+            if decoded.len() >= 8 {
+                decoded.remove(0);
+            }
+            decoded.push((id, configuration, record.clone()));
+        }
+        Ok(record)
+    }
+    fn prior_uncached(&self, path: &std::path::Path, id: u128) -> io::Result<Option<Record>> {
+        let path = path.to_path_buf();
         let bytes = match self.read_bytes(&path) {
             Ok(bytes) => bytes,
             Err(error)

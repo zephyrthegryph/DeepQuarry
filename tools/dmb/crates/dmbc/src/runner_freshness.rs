@@ -95,6 +95,19 @@ pub(super) fn admit_live(
     admit(inputs, &current)
 }
 
+/// The captured inputs without a live freshness sweep: the body-patch gate
+/// only compares them with its base; publication still admits them live.
+pub(super) fn snapshot_captured<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+) -> Result<InputSnapshot, Box<dyn Error>> {
+    let mut inputs = capture.snapshot()?;
+    if let Some(retained) = retained {
+        inputs.merge(retained)?;
+    }
+    Ok(inputs)
+}
+
 pub(super) fn admit_captured<P: SnapshotProvider>(
     capture: &crate::input_snapshot::RecordingInputs<P>,
     retained: Option<&InputSnapshot>,
