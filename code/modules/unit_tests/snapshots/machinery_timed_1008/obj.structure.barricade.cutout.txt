@@ -5,78 +5,42 @@ robot|none click: Click: Stand up
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item/tool/crowbar
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item/tool/wrench
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item/tool/wirecutters
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item/multitool
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item/weldingtool
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item/stack/cable_coil
 -click: Click: Use
-+1 menu: Make Cable Restraints (refused: You can't do that.)
-+2 menu: Move To Top
-+3 menu: Repair (refused: )
-+4 menu: Stand up
-+5 menu: Toggle Digestable (refused: You can't do that.)
-+7 click: Click: Repair
++1 menu: Stand up
++3 click: Click: Repair
 @obj.structure human|/obj/item/stack/material/steel
 -click: Click: Use
-+1 menu: Move To Top
-+2 menu: Repair (refused: )
-+3 menu: Stand up
-+4 menu: Toggle Digestable (refused: You can't do that.)
-+6 click: Click: Repair
++1 menu: Stand up
++3 click: Click: Repair
 @obj.structure human|/obj/item/card/id
-+1 menu: Move To Top
-+2 menu: Read ID Card (refused: You can't do that.)
-+3 menu: Stand up
-+4 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 @obj.structure human|/obj/item
-+1 menu: Move To Top
-+2 menu: Stand up
-+3 menu: Toggle Digestable (refused: You can't do that.)
++1 menu: Stand up
 human|/obj/item/stack menu: Hit
-human|/obj/item/stack menu: Move To Top
-human|/obj/item/stack menu: Repair (refused: )
 human|/obj/item/stack menu: Stand up
-human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack menu: Use
 human|/obj/item/stack click: Click: Repair
 human|/obj/item/reagent_containers/glass/paint menu: Hit
-human|/obj/item/reagent_containers/glass/paint menu: Move To Top
-human|/obj/item/reagent_containers/glass/paint menu: Open or close the lid
 human|/obj/item/reagent_containers/glass/paint menu: Paint
-human|/obj/item/reagent_containers/glass/paint menu: Set transfer amount
 human|/obj/item/reagent_containers/glass/paint menu: Splash
 human|/obj/item/reagent_containers/glass/paint menu: Stand up
-human|/obj/item/reagent_containers/glass/paint menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass/paint menu: Use
 human|/obj/item/reagent_containers/glass/paint click: Click: Paint
-human|/obj/item/floor_painter menu: Choose Colour (refused: You can't do that.)
-human|/obj/item/floor_painter menu: Choose Decal (refused: You can't do that.)
-human|/obj/item/floor_painter menu: Choose Direction (refused: You can't do that.)
 human|/obj/item/floor_painter menu: Hit
-human|/obj/item/floor_painter menu: Move To Top
 human|/obj/item/floor_painter menu: Paint
 human|/obj/item/floor_painter menu: Stand up
-human|/obj/item/floor_painter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/floor_painter menu: Use
 human|/obj/item/floor_painter click: Click: Paint
 keys: cutout_interaction_hand, cutout_interaction_item, cutout_paint_painter, drag_buckle, melee_hit, repair, repair_or_hit

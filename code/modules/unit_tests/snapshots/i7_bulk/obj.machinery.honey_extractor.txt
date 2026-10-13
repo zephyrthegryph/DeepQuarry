@@ -44,12 +44,11 @@ human|/obj/item/tool/wrench click: Click: Use wrench
 -menu: Harvest honeycombs
 -menu: Load frame
 +0 menu: Load frame (refused: The beehive frame is empty, put it into a beehive)
-@obj human|/obj/item/reagent_containers/glass
--menu: Eject Beaker
--menu: Insert container
--menu: Use
--click: Click: Insert container
-+0 menu: Collect honey (refused: there is no honey in it)
-+4 menu: Splash (refused: There is nothing in it to pour.)
-+6 click: Click: Collect honey
+human|/obj/item/reagent_containers/glass menu: Collect honey (refused: there is no honey in it)
+human|/obj/item/reagent_containers/glass menu: Move To Top
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/glass click: Click: Collect honey
 keys: drag_buckle, honey_extractor_collect, honey_extractor_load_frame, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_crowbar, use_screwdriver, use_wrench

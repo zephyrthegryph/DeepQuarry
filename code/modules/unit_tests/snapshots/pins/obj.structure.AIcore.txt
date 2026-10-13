@@ -19,6 +19,4 @@
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
 @obj.structure human|/obj/item/stack/material
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: add_cables, add_panel, ai_core_install, anchor, connect_monitor, dismantle, drag_buckle, melee_hit, remove_board, remove_brain, state_1_2, state_2_1, state_3_2, state_4_3, unanchor

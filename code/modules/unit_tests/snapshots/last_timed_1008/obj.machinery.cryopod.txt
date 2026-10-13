@@ -1,76 +1,40 @@
 @obj.machinery human|none
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Put grabbed victim in (refused: )
 @obj.machinery robot|none
 +1 menu: Eject Pod
-+2 menu: Enter Pod (refused: )
-+3 menu: Put grabbed victim in (refused: )
 @obj.machinery ai|none
 @obj ghost|none
 +0 menu: Eject Pod (refused: You can't reach that.)
 +1 menu: Enter Pod (refused: You can't reach that.)
-+2 menu: Put grabbed victim in (refused: )
 @obj.machinery human|/obj/item/tool/screwdriver
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/tool/crowbar
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/tool/wrench
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/multitool
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/weldingtool
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/stack/cable_coil
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Make Cable Restraints (refused: You can't do that.)
-+3 menu: Move To Top
-+4 menu: Put grabbed victim in (refused: )
-+5 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/stack/material/steel
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/card/id
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Read ID Card (refused: You can't do that.)
-+5 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item
 +0 menu: Eject Pod
 +1 menu: Enter Pod
-+2 menu: Move To Top
-+3 menu: Put grabbed victim in (refused: )
-+4 menu: Toggle Digestable (refused: You can't do that.)
 keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand
