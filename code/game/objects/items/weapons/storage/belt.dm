@@ -13,7 +13,6 @@
 	var/show_above_suit = 0
 
 
-TRACKED(/obj/item/storage/belt, show_above_suit)
 
 MSG_DEF_SELF(belt/under_suit, "It cannot be worn above your suit.")
 

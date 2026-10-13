@@ -18,7 +18,6 @@
 
 TRACKED(/obj/structure/fireaxecabinet, open)
 TRACKED(/obj/structure/fireaxecabinet, hitstaken)
-TRACKED(/obj/structure/fireaxecabinet, smashed)
 
 MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 

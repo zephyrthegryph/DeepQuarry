@@ -31,7 +31,7 @@
 /// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 /// It bleeds it off (work_step(null)) while it has any.
 /obj/machinery/particle_smasher/var/energy = 0
-TRACKED_BRIDGED(/obj/machinery/particle_smasher, energy, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/particle_smasher, energy)
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -89,7 +89,7 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 /// The item can leave the hand (a cyborg's gripper lets go of what it holds; a module item stays) and there is room.
 /obj/machinery/particle_smasher/proc/can_store_item(datum/act/op/A)
 	var/obj/item/held = A.held
-	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage // ALLOW(reads): the hand and the storage are read when the item is used, never from a cached menu
+	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage
 
 /obj/machinery/particle_smasher/proc/interaction_store(datum/act/op/A)
 	move_into(src, nameof(src.storage), A.held, A.actor)
@@ -111,7 +111,6 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
 
-TRACKED(/obj/machinery/particle_smasher, successful_craft)
 
 /// What the focus shows: open and filled with its target's colour once secured (glowing when a craft is waiting), its beaker, and a light
 /// in the target's colour that grows with the stored energy.

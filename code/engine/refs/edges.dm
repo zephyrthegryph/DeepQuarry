@@ -269,8 +269,6 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /// behaviours that asked for RELATION_ADDED/REMOVED on it, and rebuild every
 /// forwarding path that runs through this entity.
 /proc/relation_edge_structure_changed(datum/scheduler_record/rec, rel_id, bit)
-	if(rec.table.cache_relations)
-		entity_cache_clear(rec.owner, rec.table.cache_relations, rel_id)
 	for(var/i in 1 to length(rec.att))
 		var/datum/scheduled_behaviour/B = rec.att[i]
 		if(!(B.related_added_mask & bit))

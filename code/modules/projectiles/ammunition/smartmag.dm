@@ -29,6 +29,7 @@
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
 CAPABILITIES(/obj/item/ammo_magazine/smart)
+	ref_one(nameof(attached_cell), /obj/item/cell/device)
 	every(2 SECONDS, then(PROC_REF(smart_step)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("smart_item", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(smart_interaction_item)))
@@ -204,7 +205,7 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 
 	if(change)
 		to_chat(user, span_notice("[msg]"))
-		caliber = new_caliber
+		set_caliber(new_caliber)
 		ammo_type = new_ammo_type
 		set_production_cost(ammo_type)	// Update our cost
 
@@ -234,7 +235,7 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 
 	to_chat(H, span_notice("You clear \the [src]'s data buffers."))
 
-	caliber = null
+	set_caliber(null)
 	ammo_type = null
 	production_cost = null
 

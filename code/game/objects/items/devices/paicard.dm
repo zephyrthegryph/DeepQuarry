@@ -41,12 +41,6 @@
 
 TRACKED(/obj/item/paicard, panel_open)
 TRACKED(/obj/item/paicard, cell)
-TRACKED(/obj/item/paicard, processor)
-TRACKED(/obj/item/paicard, board)
-TRACKED(/obj/item/paicard, capacitor)
-TRACKED(/obj/item/paicard, projector)
-TRACKED(/obj/item/paicard, emitter)
-TRACKED(/obj/item/paicard, speech_synthesizer)
 
 CAPABILITIES(/obj/item/paicard)
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))

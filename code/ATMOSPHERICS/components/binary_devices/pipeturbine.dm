@@ -30,8 +30,6 @@
 	var/list/datum/native_watch/gas/side_watches
 
 TRACKED(/obj/machinery/atmospherics/pipeturbine, spinning)
-TRACKED(/obj/machinery/atmospherics/pipeturbine, driven)
-TRACKED(/obj/machinery/atmospherics/pipeturbine, speed_band)
 
 MSG_DEF_SELF(turbine/secured, "You secure the bolts holding it to the floor.")
 MSG_DEF_SELF(turbine/unsecured, "You unsecure the bolts holding it to the floor.")

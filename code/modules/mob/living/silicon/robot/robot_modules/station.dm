@@ -617,7 +617,7 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
 	G.name = "glass recycler"
 	G.desc = "A device that refines recycled glass into sheets."
-	G.material = get_material_by_name("placeholder") //Hacky shit but we want sheets, not windows.
+	G.set_material(get_material_by_name("placeholder")) //Hacky shit but we want sheets, not windows.
 	G.add_synth(glass)
 	G.recipes = glass_recycler_recipes
 	rel_add(src, nameof(modules), G)

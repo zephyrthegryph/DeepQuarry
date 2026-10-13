@@ -68,8 +68,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
-TRACKED(/obj/structure/cable, d1)
-TRACKED(/obj/structure/cable, d2)
 
 /obj/structure/cable/proc/engineered_material() as /datum/material
 	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
@@ -94,7 +92,7 @@ TRACKED(/obj/structure/cable, d2)
 /obj/structure/cable/proc/power_material_changed()
 	if(!engineered_material_id && !material_assembly_view(src).custom)
 		return
-	SSmachines.power_material_cables[src] = TRUE
+	rel_add(SSmachines, nameof(SSmachines.power_material_cables), src)
 	if(power_entity)
 		var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[get_power_region()]
 		overlay?.invalidate_material_cache()
@@ -222,7 +220,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /// Phase 1 (unbind): the cable leaves its power region and the material power graph.
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
-	SSmachines.power_material_cables -= src
+	rel_remove(SSmachines, nameof(SSmachines.power_material_cables), src)
 	material_overlay?.remove_cable(src) // dirties the overlay's graph; the pair view goes with it
 	power_unregister()
 
@@ -272,7 +270,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
 		hide_under_floor(src, i)
-	changed(src)
 
 /obj/structure/cable/hides_under_flooring()
 	return 1

@@ -61,7 +61,6 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_necklace)
 	primary =/obj/item/remote_scene_tool/voodoo_doll
 	secondary =/obj/item/remote_scene_tool/voodoo_necklace
 
-TRACKED(/obj/item/remote_scene_tool/voodoo_doll, no_fun_mode)
 
 CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 	op("voodoo_doll_verb_toggle_fun", menu(), label("Disable Special Rendering"), needs(carried()), then(PROC_REF(voodoo_doll_verb_toggle_fun)))

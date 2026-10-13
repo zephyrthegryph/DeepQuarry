@@ -57,7 +57,6 @@
 	var/firing = FALSE
 	var/datum/gas_mixture/chamber_air
 
-TRACKED(/obj/machinery/material_furnace, firing)
 
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
 /obj/machinery/material_furnace/ownership()

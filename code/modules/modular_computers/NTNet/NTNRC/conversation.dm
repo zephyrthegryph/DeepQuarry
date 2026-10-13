@@ -8,11 +8,14 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	var/list/clients
 	var/password
 
+CAPABILITIES(/datum/ntnet_conversation)
+	ref_many(nameof(clients), /datum/computer_file/program/chatclient) // a deleted client program leaves the channel
+
 /datum/ntnet_conversation/New()
 	id = GLOB.ntnrc_uid
 	GLOB.ntnrc_uid++
 	if(GLOB.ntnet_global)
-		LAZYADD(GLOB.ntnet_global.chat_channels, src)
+		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::chat_channels), src)
 	..()
 
 /datum/ntnet_conversation/proc/add_message(message, username)
@@ -32,7 +35,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/proc/add_client(datum/computer_file/program/chatclient/C)
 	if(!istype(C))
 		return
-	LAZYADD(clients, C)
+	rel_add(src, nameof(clients), C)
 	add_status_message("[C.username] has joined the channel.")
 	// No operator, so we assume the channel was empty. Assign this user as operator.
 	if(!channel_operator())
@@ -41,7 +44,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/proc/remove_client(datum/computer_file/program/chatclient/C)
 	if(!istype(C) || !(C in clients))
 		return
-	LAZYREMOVE(clients, C)
+	rel_remove(src, nameof(clients), C)
 	add_status_message("[C.username] has left the channel.")
 
 	// Channel operator left, pick new operator

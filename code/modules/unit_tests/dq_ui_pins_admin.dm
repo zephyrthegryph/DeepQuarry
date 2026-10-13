@@ -146,10 +146,10 @@
 	first.name = "pin paper one"
 	var/obj/item/paper/second = test.allocate(/obj/item/paper, T)
 	second.name = "pin paper two"
-	LAZYADD(holder.tagged_datums, first) // tagging happens through Topic (rights check), so the list is edited the way it does
+	rel_add(holder, nameof(holder.tagged_datums), first) // tagging happens through Topic (rights check), so the list is edited the way it does
 	snap("one_tagged")
-	LAZYADD(holder.tagged_datums, second)
-	LAZYADD(holder.tagged_datums, user)
+	rel_add(holder, nameof(holder.tagged_datums), second)
+	rel_add(holder, nameof(holder.tagged_datums), user)
 	snap("three_tagged")
 	rel_set(holder, nameof(/datum/admins::marked_datum), second) // mark
 	snap("marked")
@@ -157,10 +157,10 @@
 	var/datum/tag_menu_panel/panel = host
 	panel.ui_act_refresh(A)
 	snap("refreshed")
-	LAZYREMOVE(holder.tagged_datums, first) // untag
+	rel_remove(holder, nameof(holder.tagged_datums), first) // untag
 	snap("untagged")
 	rel_clear(holder, nameof(/datum/admins::marked_datum))
-	holder.tagged_datums = null
+	rel_clear(holder, nameof(holder.tagged_datums))
 	cleanup_admin()
 
 // ---- Unban ----------------------------------------------------------------------------------------------------------------
@@ -181,13 +181,13 @@
 	// The ban savefile is a shared cursor the test must not write, so the snapshot a savefile read leaves is set the way it would be.
 	var/list/ban_one = list("key_id" = "pinkeyone1", "key" = "pinkeyone", "id" = "1", "ip" = "10.0.0.1", "reason" = "Pin reason one", "by" = "PinAdmin", "expiry" = "Permaban")
 	var/list/ban_two = list("key_id" = "pinkeytwo2", "key" = "pinkeytwo", "id" = "2", "ip" = "10.0.0.2", "reason" = "Pin reason two", "by" = "PinAdmin", "expiry" = "2.0 Hours")
-	panel.shown_rows = list(ban_one)
+	panel.set_shown_rows(list(ban_one))
 	snap("one_ban")
-	panel.shown_rows = list(ban_one, ban_two)
+	panel.set_shown_rows(list(ban_one, ban_two))
 	snap("two_bans")
-	panel.shown_rows = list(ban_two) // unban
+	panel.set_shown_rows(list(ban_two)) // unban
 	snap("one_unbanned")
-	panel.shown_rows = null
+	panel.set_shown_rows(null)
 	cleanup_admin()
 
 // ---- Job-ban panel --------------------------------------------------------------------------------------------------------
@@ -237,14 +237,14 @@
 	// The sort / order / delete buttons call the library computer's tgui_act with the open window, which needs a client; they change these.
 	comp.sortby = "title" // sort
 	snap("sorted_by_title")
-	panel.books = list(book_two, book_one) // order_by_id
+	panel.set_books(list(book_two, book_one)) // order_by_id
 	snap("ordered_by_id")
-	panel.books = list(book_two) // delete
+	panel.set_books(list(book_two)) // delete
 	snap("book_deleted")
-	panel.error_msg = "Pin query failed"
+	panel.set_error_msg("Pin query failed")
 	snap("error_shown")
-	panel.error_msg = ""
-	panel.books = list()
+	panel.set_error_msg("")
+	panel.set_books(list())
 	snap("empty")
 
 // ---- Syndicate beacon (the other window host in misc_admin_panels.dm) -----------------------------------------------------
@@ -313,7 +313,7 @@
 /datum/ui_pin/admin_host/telecomms_traffic/script(turf/T)
 	make_user(T)
 	var/obj/machinery/computer/telecomms/traffic/console = test.allocate(/obj/machinery/computer/telecomms/traffic, T)
-	console.req_access = null // the access gate is not what is pinned
+	console.set_req_access(null) // the access gate is not what is pinned
 	console.network = "dqpin_net"
 	var/turf/beside = locate(T.x + 1, T.y, T.z)
 	var/obj/machinery/telecomms/server/box = test.allocate(/obj/machinery/telecomms/server, beside)

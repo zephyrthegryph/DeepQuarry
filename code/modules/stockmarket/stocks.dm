@@ -195,7 +195,7 @@ CAPABILITIES(/datum/stock)
 		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
 			if (borrow.borrower in GLOB.FrozenAccounts)
-				GLOB.FrozenAccounts[borrow.borrower] -= borrow
+				GLOB.FrozenAccounts[borrow.borrower] -= entity_handle_of(borrow)
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 					GLOB.FrozenAccounts -= borrow.borrower
 			rel_remove(src, nameof(borrows), borrow)
@@ -205,7 +205,7 @@ CAPABILITIES(/datum/stock)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
 					if (borrow.borrower in GLOB.FrozenAccounts)
-						GLOB.FrozenAccounts[borrow.borrower] -= borrow
+						GLOB.FrozenAccounts[borrow.borrower] -= entity_handle_of(borrow)
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 						GLOB.FrozenAccounts -= borrow.borrower
 					rel_remove(src, nameof(borrows), borrow)
@@ -273,9 +273,9 @@ CAPABILITIES(/datum/stock)
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))
-		GLOB.FrozenAccounts[who] = list(B)
+		GLOB.FrozenAccounts[who] = list(entity_handle(B))
 	else
-		GLOB.FrozenAccounts[who] += B
+		GLOB.FrozenAccounts[who] += entity_handle(B)
 	return 1
 
 /datum/stock/proc/buyShares(who, howmany)

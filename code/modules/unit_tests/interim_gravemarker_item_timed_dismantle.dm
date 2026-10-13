@@ -33,8 +33,8 @@
 	var/obj/item/material/gravemarker/marker = allocate(/obj/item/material/gravemarker, T, MAT_WOOD)
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
 	made += list(user, marker, wrench)
-	marker.grave_name = "Remembered"
-	marker.epitaph = "Preserved through refusal"
+	marker.set_grave_name("Remembered")
+	marker.set_epitaph("Preserved through refusal")
 	TEST_ASSERT(user.put_in_active_hand(wrench), "the actual refusal actor holds the real wrench")
 	TEST_ASSERT(user.put_in_inactive_hand(marker), "the actual refusal actor holds the marker in the other hand")
 	add_trait(marker, TRAIT_NODROP, "interim_gravemarker_item_sticky_refusal")

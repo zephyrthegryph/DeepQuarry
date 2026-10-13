@@ -97,7 +97,7 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 		return failed ? FALSE : result
 	// Every dispatched call marks its target (it may have written plain vars); only a success
 	// (truthy, not refused: a cancelled prompt returns null) is fingerprinted and logged.
-	changed(target)
+	refresh_dispatched(target)
 	if(dispatch_succeeded(result))
 		dispatch_record(ctx.user, target, action_name, log, null)
 	return result

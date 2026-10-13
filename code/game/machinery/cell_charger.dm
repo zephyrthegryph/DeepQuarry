@@ -28,7 +28,6 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 	circuit = /obj/item/circuitboard/cell_charger
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
-TRACKED(/obj/machinery/cell_charger, chargelevel)
 
 CAPABILITIES(/obj/machinery/cell_charger)
 	configure(uses_power(idle = 5, active = 60000, channel = EQUIP))
@@ -69,7 +68,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 		return /datum/msg/charger/wrong_cell
 	if(charging)
 		return /datum/msg/bay/full
-	var/area/a = loc?.loc // ALLOW(reads): the area a machine stands in is legacy map state, read when a cell is offered, never from a cached menu
+	var/area/a = loc?.loc
 	if(isarea(a) && a.power_equip == 0)
 		return /datum/msg/charger/no_area_power
 	return null

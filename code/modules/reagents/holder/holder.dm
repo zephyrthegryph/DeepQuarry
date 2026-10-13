@@ -25,9 +25,6 @@
 CAPABILITIES(/datum/reagents)
 	owns_many(nameof(reagent_list), on_lost = PROC_REF(reagent_lost))
 
-TRACKED(/datum/reagents, total_volume)
-TRACKED(/datum/reagents, tint)
-TRACKED(/datum/reagents, master_id)
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
@@ -44,7 +41,7 @@ TRACKED(/datum/reagents, master_id)
 // reagents keep each other alive (every reagent of a spent holder hard-deleted; REF SEARCH found
 // them only in reagent_by_id). Point it at the shared empty sentinel so late lookups still work.
 /datum/reagents/on_destroy(force)
-	reagent_by_id = GLOB.reagents_empty_list
+	set_reagent_by_id(GLOB.reagents_empty_list)
 	..()
 
 /// owns_many(on_lost =): a reagent left reagent_list by a route other than del_reagent() (deleted
@@ -54,9 +51,9 @@ TRACKED(/datum/reagents, master_id)
 		return
 	for(var/datum/reagent/other as anything in reagent_list)
 		if(other != R && other.id == R.id)
-			reagent_by_id[R.id] = other
+			set_reagent_by_id_at(R.id, other)
 			return
-	reagent_by_id -= R.id
+	remove_reagent_by_id(R.id)
 
 /* Internal procs */
 
@@ -195,7 +192,7 @@ TRACKED(/datum/reagents, master_id)
 		if(was_from_belly)
 			current.from_belly = was_from_belly
 		current.dialysis_returnable = can_dialysis
-		current.volume += amount
+		current.set_volume(current.volume + amount)
 		if(!isnull(data)) // For all we know, it could be zero or empty string and meaningful
 			current.mix_data(data, amount)
 		update_total()
@@ -214,9 +211,9 @@ TRACKED(/datum/reagents, master_id)
 		// Blood incompatibility may create multiple datums with the same id; the first one
 		// keeps the O(1) slot and the extras remain accessible only via reagent_list iteration.
 		if(!reagent_by_id[id])
-			reagent_by_id[id] = R
+			set_reagent_by_id_at(id, R)
 		rel_set(R, nameof(R.holder), src)
-		R.volume = amount
+		R.set_volume(amount)
 		R.initialize_data(data)
 		SetViruses(R,data)
 		if(was_from_belly)
@@ -260,7 +257,7 @@ TRACKED(/datum/reagents, master_id)
 		return 0
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		current.volume -= amount // It can go negative, but it doesn't matter
+		current.set_volume(current.volume - amount) // It can go negative, but it doesn't matter
 		update_total() // Because this proc will delete it then
 		if(batch_depth)
 			batch_changed = TRUE
@@ -284,12 +281,12 @@ TRACKED(/datum/reagents, master_id)
 				replacement = R
 				break
 		if(replacement)
-			reagent_by_id[id] = replacement
+			set_reagent_by_id_at(id, replacement)
 		else
-			reagent_by_id -= id
+			remove_reagent_by_id(id)
 		if(!length(reagent_list))
 			reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
-			reagent_by_id = reagent_list
+			set_reagent_by_id(reagent_list)
 		spent(current)
 		update_total()
 		if(my_atom)
@@ -570,7 +567,7 @@ TRACKED(/datum/reagents, master_id)
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID
-	return reagent_by_id[id] // ALLOW(reads): the reagent lookup is read when a click asks (the blood test, a hot thing held to a container); the click asks again
+	return reagent_by_id[id]
 
 //Spreads the contents of this reagent holder all over the vicinity of the target turf.
 /datum/reagents/proc/splash_area(turf/epicentre, range = 3, portion = 1.0, multiplier = 1, copy = 0)
@@ -648,7 +645,7 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 	if(reagent_list == empty || !reagent_list)
 		reagent_list = list() // ALLOW(ownership): a private empty list before rel_add() (never the shared sentinel)
 	if(reagent_by_id == empty || !reagent_by_id)
-		reagent_by_id = list()
+		set_reagent_by_id(list())
 
 /// Puts an already-created reagent datum (drawn blood, for instance) into this holder.
 /// The caller still calls update_total() and friends.
@@ -656,4 +653,4 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 	own_reagent_lists()
 	own_move(R, src, nameof(reagent_list))
 	if(!reagent_by_id[R.id])
-		reagent_by_id[R.id] = R
+		set_reagent_by_id_at(R.id, R)

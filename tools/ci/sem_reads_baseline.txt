@@ -42,7 +42,6 @@ unknown_read	code/controllers/subsystems/overlays.dm	build_overlays[index] = ico
 unknown_read	code/controllers/subsystems/overlays.dm	if(!overlays)
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
-unknown_read	code/controllers/subsystems/tgui.dm	if(!LAZYLEN(src_object?.open_tguis))
 unknown_read	code/datums/chat_message.dm	return maptext_height
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
@@ -58,46 +57,19 @@ unknown_read	code/engine/stats/recompute.dm	var/list/direct = E.rx?.stats?.hop_i
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	var/list/icon_dimensions = get_icon_dimensions(icon)
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/mecha/mecha.dm	if(access_list==src.operation_req_access)
 unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
-unknown_read	code/game/objects/items/devices/uplink.dm	if(!active)
-unknown_read	code/game/objects/items/weapons/RCD.dm	if(isrobot(loc)) // In a borg.
-unknown_read	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
 unknown_read	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
-unknown_read	code/modules/assembly/assembly.dm	if(istype(loc, /obj/item/assembly_holder))
 unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
 unknown_read	code/modules/body/body.dm	if(gained && owner)
 unknown_read	code/modules/body/plans/humanoid.dm	var/obj/item/organ/torso = H.organs_by_name?[BP_TORSO]
-unknown_read	code/modules/clothing/spacesuits/rig/rig.dm	if(!security_check_enabled)
-unknown_read	code/modules/clothing/spacesuits/rig/rig.dm	else if(!ai_override_enabled)
-unknown_read	code/modules/clothing/spacesuits/rig/rig.dm	if(malfunction_delay)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
 unknown_read	code/modules/clothing/under/miscellaneous.dm	if(!H.vore_prefs.resizable)
-unknown_read	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
-unknown_read	code/modules/integrated_electronics/subtypes/camera.dm	var/obj/item/integrated_circuit/output/video_camera/parent = loc
-unknown_read	code/modules/mob/inventory.dm	if(!I || I.loc != src)
-unknown_read	code/modules/mob/inventory.dm	if(!I || I.loc != src)
 unknown_read	code/modules/mob/inventory.dm	if (src.client)
-unknown_read	code/modules/mob/living/carbon/human/human.dm	if(isnull(target) && isdisposalpacket(src.loc))
 unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identifying_gender ? identifying_gender : gender
 unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	return identifying_gender ? identifying_gender : gender
 unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	appearance_flags |= PIXEL_SCALE
 unknown_read	code/modules/mob/living/carbon/human/update_icons.dm	if(isnull(rest_dir))
 unknown_read	code/modules/mob/living/silicon/ai/life.dm	if(APU_power)
-unknown_read	code/modules/mob/living/silicon/pai/pai.dm	if(istype(src.loc,/obj/item/paicard))
 unknown_read	code/modules/mob/living/silicon/robot/robot.dm	if(bolt && !bolt.malfunction)
-unknown_read	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
 unknown_read	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
 unknown_read	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
 unknown_read	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
@@ -156,7 +128,6 @@ untracked_global	code/game/machinery/computer/skills.dm	if(!using_map || (read_o
 untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 untracked_global	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-untracked_global	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 untracked_global	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
 untracked_global	code/library/mob/statuses.dm	if(!GLOB.status_policies)
 untracked_global	code/library/mob/statuses.dm	return GLOB.status_policies
@@ -182,7 +153,6 @@ untracked_global	code/modules/modular_computers/file_system/programs/research/nt
 untracked_global	code/modules/overmap/helpers.dm	if(using_map.use_overmap)
 untracked_global	code/modules/overmap/helpers.dm	return GLOB.map_sectors["[z]"]
 untracked_global	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
-untracked_global	code/modules/pda/contracts.dm	var/datum/contract/faction_agent/agent_contract = service.contracts_by_id[A.args["id"]]
 untracked_global	code/modules/research/tg/machinery/mech_prosfab.dm	return (istype(D) && D.species && (D.species in GLOB.all_species)) ? null : MSG(prosfab/corrupted)
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
@@ -198,49 +168,27 @@ untracked_global	maps/~map_system/maps.dm	else if (srcz in station_levels)
 untracked_global	maps/~map_system/maps.dm	return station_levels.Copy()
 dynamic_read	code/engine/lifeforms/forms.dm	if(!(E.args["var"] in D.vars))
 dynamic_read	code/engine/lifeforms/forms.dm	if(!(var_name in D.vars))
-hop_not_relation	code/_onclick/adjacent.dm	if(neighbor == loc) return 1
-hop_not_relation	code/_onclick/adjacent.dm	if(!isturf(loc)) return 0
-hop_not_relation	code/_onclick/hud/alert.dm	var/obj/master = alert.master_ref
-hop_not_relation	code/_onclick/hud/hud.dm	return mymob
-hop_not_relation	code/engine/refs/containment/api.dm	var/atom/source = thing.loc
-hop_not_relation	code/game/atom/_atom.dm	var/atom/L = loc
-hop_not_relation	code/game/objects/items/devices/uplink.dm	return loc
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(isrobot(loc)) // In a borg.
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	var/mob/living/silicon/robot/R = loc
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(istype(loc, /obj/item/rig_module)) // In a RIG.
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	var/obj/item/rig_module/module = loc
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(istype(loc, /obj/item/mecha_parts/mecha_equipment)) // In a mech.
-hop_not_relation	code/game/objects/items/weapons/RCD.dm	var/obj/item/mecha_parts/mecha_equipment/ME = loc
-hop_not_relation	code/game/objects/items/weapons/storage/wallets.dm	return front_id
+hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
+hop_not_relation	code/game/atom/_atom.dm	return L.AllowDrop() ? L : L.drop_location()
+hop_not_relation	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
+hop_not_relation	code/game/objects/items/weapons/RCD.dm	return module.holder.cell
+hop_not_relation	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.is_plating)
 hop_not_relation	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.can_engrave)
 hop_not_relation	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
-hop_not_relation	code/library/mob/silicon.dm	return connected_ai
 hop_not_relation	code/library/mob/statuses.dm	var/datum/stat_record/rec = rx?.stats
-hop_not_relation	code/modules/assembly/assembly.dm	if(istype(loc, /obj/item/assembly_holder))
 hop_not_relation	code/modules/assembly/assembly.dm	return loc.tgui_host()
 hop_not_relation	code/modules/body/body.dm	if(gained && owner)
 hop_not_relation	code/modules/body/body.dm	PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
 hop_not_relation	code/modules/body/limb_state.dm	var/mob/living/carbon/human/H = owner
 hop_not_relation	code/modules/body/plans/humanoid.dm	var/mob/living/carbon/human/H = owner
+hop_not_relation	code/modules/integrated_electronics/_defines.dm	return assembly
 hop_not_relation	code/modules/integrated_electronics/core/assemblies.dm	return access_card
 hop_not_relation	code/modules/integrated_electronics/core/assemblies/clothing.dm	return clothing
 hop_not_relation	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
-hop_not_relation	code/modules/integrated_electronics/core/integrated_circuit.dm	if(istype(loc, /obj/item/electronic_assembly))
 hop_not_relation	code/modules/integrated_electronics/core/integrated_circuit.dm	return loc.tgui_host()
-hop_not_relation	code/modules/integrated_electronics/subtypes/camera.dm	var/obj/item/integrated_circuit/output/video_camera/parent = loc
 hop_not_relation	code/modules/mob/holder.dm	return held_mob?.GetIdCard()
-hop_not_relation	code/modules/mob/inventory.dm	if(!I || I.loc != src)
-hop_not_relation	code/modules/mob/inventory.dm	if(isnull(target) && isdisposalpacket(src.loc))
-hop_not_relation	code/modules/mob/inventory.dm	return remove_from_mob(W, src.loc)
-hop_not_relation	code/modules/mob/living/carbon/human/human.dm	if(isnull(target) && isdisposalpacket(src.loc))
-hop_not_relation	code/modules/mob/living/carbon/human/human.dm	return remove_from_mob(W, src.loc)
 hop_not_relation	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if(user == myprotean)
-hop_not_relation	code/modules/mob/living/silicon/ai/life.dm	return ((!A.power_equip) && A.requires_power == 1 || istype(T, /turf/space)) && !istype(src.loc,/obj/item)
-hop_not_relation	code/modules/mob/living/silicon/pai/pai.dm	if(istype(src.loc,/obj/item/paicard))
-hop_not_relation	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	if(infested) // If we've infested someone, use their ID.
-hop_not_relation	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	return infested.GetIdCard()
 hop_not_relation	code/modules/power/port_gen.dm	var/datum/gas_mixture/environment = loc?.return_air()
-hop_not_relation	code/modules/projectiles/ammunition/smartmag.dm	return attached_cell
 hop_not_relation	code/modules/tgui/modules/law_manager.dm	if(user.mind && user.mind.special_role)
 unknown_field	code/_onclick/hud/alert.dm	WARNING("[src] threw alert [category] with new_master [new_master] while already having that alert with master [master]")
 unknown_field	code/game/objects/structures/low_wall.dm	switch(G.material.name)

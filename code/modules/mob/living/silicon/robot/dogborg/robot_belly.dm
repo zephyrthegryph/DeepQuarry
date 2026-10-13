@@ -12,8 +12,11 @@
 	var/mob/living/silicon/robot/owner
 	/// SLEEPER_STATE_*: drives the red/green belly light.
 	var/sleeper_state = SLEEPER_STATE_EMPTY
-	/// Ore bags currently autoloading (their sleeper is equipped). Lazy.
+	/// Ore bags currently autoloading (their sleeper is equipped): a relation list, a deleted bag leaves it.
 	var/list/active_ore_bags
+
+CAPABILITIES(/datum/robot_belly)
+	ref_many(nameof(active_ore_bags), /obj/item/ore_bag)
 
 /mob/living/silicon/robot/var/datum/robot_belly/robot_belly
 
@@ -52,7 +55,6 @@
 	return robot_belly
 
 /// The sleeper sets this; the robot's look watches it, so the sprite redraws when it changes.
-TRACKED(/datum/robot_belly, sleeper_state)
 
 /datum/robot_belly/proc/get_sleepers()
 	var/mob/living/silicon/robot/R = owner
@@ -80,10 +82,10 @@ TRACKED(/datum/robot_belly, sleeper_state)
 			continue
 		var/active = (S in held)
 		if(active && !(S.ore_bag in active_ore_bags))
-			LAZYADD(active_ore_bags, S.ore_bag)
+			rel_add(src, nameof(active_ore_bags), S.ore_bag)
 			S.ore_bag.equipped(R)
 		else if(!active && (S.ore_bag in active_ore_bags))
-			LAZYREMOVE(active_ore_bags, S.ore_bag)
+			rel_remove(src, nameof(active_ore_bags), S.ore_bag)
 			S.ore_bag.dropped(R)
 	var/obj/item/dogborg/pounce/pounce = R.has_upgrade_module(/obj/item/dogborg/pounce)
 	if(!pounce)

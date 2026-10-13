@@ -318,7 +318,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The door can move now: it is not mid-swing, and the closet lets it (an open one can be shut, a shut one opened).
 /obj/structure/closet/proc/door_ready(datum/act/A)
-	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge // ALLOW(reads): what a door lets through is asked of the closet's own procs at the click; the menu entry is advisory
+	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge
 
 
 /// An empty hand works the door (a held thing has its own ops), and so does the menu's pick whatever is held.
@@ -359,7 +359,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The held item is in the actor's own hands (not a module mounted on a cyborg), and the actor is no cyborg: only those let go of things at a closet.
 /obj/structure/closet/proc/can_set_down(datum/act/op/A)
-	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down
 
 
 /// A held thing is let go of onto the tile of an open closet.
@@ -481,7 +481,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The actor is shut inside, and the closet holds them (still shut, and sealed or locked).
 /obj/structure/closet/proc/can_break_out(datum/act/op/A)
-	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out // ALLOW(reads): where the pusher is, and whether the closet still holds them, read again when the wait ends
+	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out
 
 
 /// The shove goes through: the closet is broken open.
@@ -529,7 +529,7 @@ CAPABILITIES(/obj/structure/closet)
 	vis_contents |= door_obj
 	door_obj.icon = decor.icon
 	door_obj.icon_state = "door_front"
-	is_animating_door = TRUE
+	set_is_animating_door(TRUE)
 	var/num_steps = decor.door_anim_time / world.tick_lag
 	for(var/I in 0 to num_steps)
 		var/angle = decor.door_anim_angle * (closing ? 1 - (I/num_steps) : (I/num_steps))
@@ -548,7 +548,7 @@ CAPABILITIES(/obj/structure/closet)
 	after(src, decor.door_anim_time, PROC_REF(end_door_animation), key = "door_animation", with = list(closing))
 
 /obj/structure/closet/proc/end_door_animation(closing = FALSE)
-	is_animating_door = FALSE
+	set_is_animating_door(FALSE)
 	if(closing)
 		// There's not really harm in leaving it on, but, one less atom to send to clients to render when lockers are closed
 		vis_contents -= door_obj
@@ -570,7 +570,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The actor is a living thing shut in this closet.
 /obj/structure/closet/proc/actor_shut_in(datum/act/op/A)
-	return isliving(A.actor) && A.actor.loc == src // ALLOW(reads): who is shut in is read when the entry is offered and when it is picked
+	return isliving(A.actor) && A.actor.loc == src
 
 /// Each devourable one shut in with `user`, other than `user`, by the name the choice shows (two with one name are told apart with a number). Names to mobs.
 /obj/structure/closet/proc/prey_by_name(mob/living/user)

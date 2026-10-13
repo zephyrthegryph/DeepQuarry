@@ -144,7 +144,7 @@
 	return color
 
 /datum/reagent/paint/initialize_data(newdata)
-	color = newdata
+	set_color(newdata)
 	return
 
 /datum/reagent/paint/mix_data(newdata, newamount)
@@ -170,7 +170,7 @@
 	colors[4] += hex2num(copytext(hex2, 8, 10)) * newamount
 	tot_w += newamount
 
-	color = rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w)
+	set_color(rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w))
 	return
 
 /* Things that didn't fit anywhere else */

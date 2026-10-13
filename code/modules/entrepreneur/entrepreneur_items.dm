@@ -297,7 +297,6 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 
 	///How often we can use the EMF actively.
 	COOLDOWN_DECLARE(scan_cooldown)
-TRACKED(/obj/item/entrepreneur/emf, emf)
 
 /// TRUE while it is carried by a mob: the slow reading step runs only then.
 /obj/item/entrepreneur/emf/var/tmp/reading = FALSE

@@ -23,7 +23,6 @@
 	var/power_cost = 950                                       // Cost per fire, should consume almost an entire basic cell.
 	var/power_per_tick                                         // Capacitor charge per process(). Updated based on capacitor rating.
 
-TRACKED(/obj/item/gun/magnetic, removable_components)
 
 /// Currently installed powercell.
 /obj/item/gun/magnetic/var/obj/item/cell/cell

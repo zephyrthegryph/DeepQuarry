@@ -60,6 +60,7 @@ CAPABILITIES(/datum/system/supply)
 	owns_many(nameof(exported_crates))
 	owns_many(nameof(market_transactions))
 	owns_many(nameof(order_history))
+	owns_many(nameof(shoppinglist), /datum/supply_order)
 	owns_many(nameof(service_invoices))
 	owns_many(nameof(market_bids))
 	owns_many(nameof(market_counterparties))
@@ -624,12 +625,15 @@ CAPABILITIES(/datum/system/supply)
 
 //Buying
 /datum/system/supply/proc/buy()
-	var/list/shoppinglist = list()
+	// Approved console orders (order_history) and orders an event queued straight onto the system's shoppinglist (shipping errors).
+	var/list/to_buy = list()
 	for(var/datum/supply_order/SO in order_history)
 		if(SO.status == SUP_ORDER_APPROVED)
-			shoppinglist += SO
+			to_buy += SO
+	for(var/datum/supply_order/SO in shoppinglist)
+		to_buy |= SO
 
-	var/orderedamount = length(shoppinglist)
+	var/orderedamount = length(to_buy)
 
 	if(!orderedamount)
 		return
@@ -638,7 +642,8 @@ CAPABILITIES(/datum/system/supply)
 
 	var/shopping_log = "SUPPLY_BUY: "
 
-	for(var/datum/supply_order/SO in shoppinglist)
+	var/list/delivered_queued = list()
+	for(var/datum/supply_order/SO in to_buy)
 		if(!length(clear_turfs))
 			break
 
@@ -647,6 +652,8 @@ CAPABILITIES(/datum/system/supply)
 		clear_turfs.Cut(i,i+1)
 
 		SO.status = SUP_ORDER_SHIPPED
+		if(SO in shoppinglist)
+			delivered_queued += SO // an event-queued order leaves the shopping list once it ships (after this pass: the list owns it)
 		var/datum/supply_pack/SP = SO.supply_pack_of()
 		emit_contract_event(CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, list(
 			"actor_account" = SO.funding_account_number,
@@ -676,15 +683,15 @@ CAPABILITIES(/datum/system/supply)
 			A.name = "[SP.containername] [SO.comment ? "([SO.comment])":"" ]"
 			if(SP.access)
 				if(isnum(SP.access))
-					A.req_access = list(SP.access)
+					A.set_req_access(list(SP.access))
 				else if(islist(SP.access) && SP.one_access)
 					var/list/L = SP.access // access var is a plain var, we need a list
-					A.req_one_access = L.Copy()
-					A.req_access = null
+					A.set_req_one_access(L.Copy())
+					A.set_req_access(null)
 				else if(islist(SP.access) && !SP.one_access)
 					var/list/L = SP.access
-					A.req_access = L.Copy()
-					A.req_one_access = null
+					A.set_req_access(L.Copy())
+					A.set_req_one_access(null)
 				else
 					log_runtime(span_danger("Supply pack with invalid access restriction [SP.access] encountered!"))
 
@@ -736,6 +743,8 @@ CAPABILITIES(/datum/system/supply)
 			slip.set_info(slip.info + ("</ul><br>"))
 			slip.set_info(slip.info + ("CHECK CONTENTS AND STAMP BELOW THE LINE TO CONFIRM RECEIPT OF GOODS<hr>"))
 
+	for(var/datum/supply_order/shipped as anything in delivered_queued)
+		rel_remove(src, nameof(shoppinglist), shipped)
 	log_game(shopping_log)
 	return
 

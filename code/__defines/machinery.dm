@@ -197,8 +197,12 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 // LINDA owns pipenets via SSair; SSair.process_pipenets is the live
 // dispatcher. Without this redirect, /datum/pipe_network/reconcile() never runs
 // and reconcile_air is silent — multi-pipeline networks don't equalize.
-#define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
-#define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks);SSair.currentrun.Remove(Datum)
+#define START_PROCESSING_PIPENET(Datum) \
+if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
+	rel_add(SSair, nameof(SSair.networks), Datum);\
+	Datum.datum_flags |= DF_ISPROCESSING\
+}
+#define STOP_PROCESSING_PIPENET(Datum) rel_remove(SSair, nameof(SSair.networks), Datum);Datum.datum_flags &= ~DF_ISPROCESSING;SSair.currentrun.Remove(Datum)
 
 
 /// The machine world service's cadence (code/game/machinery/machine_service.dm): gas wakes, the

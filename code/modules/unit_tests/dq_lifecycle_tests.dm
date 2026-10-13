@@ -40,6 +40,11 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	// what a belt's tools hold), made when it first has some and removed in that holder's final cleanup
 	// (dq_time_foundation_compatibility_tests proves the removal), so it grows with live instances and is no registration.
 	"capability_runtime_records",
+	// The staleness sweep's index of live entities that have stats or a swept look (staleness.dm): an item that holds a trait
+	// or a stat is tracked from its own Initialize(), and staleness_forget() drops it when it is destroyed
+	// (dq_lifecycle_staleness_forget proves the removal), so it grows with live instances and is no registration.
+	"stale_all",
+	"stale_new",
 ))
 
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on
@@ -337,3 +342,31 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 				failures += "[id]: [member.type]"
 	if(length(failures))
 		TEST_FAIL("deleted objects left in registries:\n[jointext(failures, "\n")]")
+
+/// A destroyed entity leaves the staleness sweep's index at once (not when the sweep next reaches its ref), and the
+/// margherita pizza's declared contents fit its volume (the overflow warned whenever a random MRE meal rolled it).
+/datum/unit_test/dq_lifecycle_staleness_forget
+
+/datum/unit_test/dq_lifecycle_staleness_forget/Run()
+	var/obj/item/clothing/suit/radiation/suit = allocate(/obj/item/clothing/suit/radiation)
+	var/ref = REF(suit)
+	staleness_track(suit)
+	if(GLOB.staleness_on)
+		TEST_ASSERT(GLOB.stale_all[ref], "a tracked entity is in the sweep index")
+	qdel(suit)
+	TEST_ASSERT(!GLOB.stale_all[ref], "a destroyed entity is out of the sweep index")
+	TEST_ASSERT(!(ref in GLOB.stale_new), "and out of the new-entries queue")
+	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/pizza = allocate(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita)
+	TEST_ASSERT(pizza.reagents.total_volume <= pizza.reagents.maximum_volume, "the margherita's contents fit its volume")
+
+/// The chameleon appearance lists exist from boot, so creating a chameleon item never fills a global (the state guard
+/// reported nine lists changed null -> list by dq_lifecycle_sandbox).
+/datum/unit_test/dq_chameleon_choices_built_at_boot
+
+/datum/unit_test/dq_chameleon_choices_built_at_boot/Run()
+	for(var/list/choices in list(GLOB.chamelion_jumpsuit_choices, GLOB.chamelion_head_choices, GLOB.chamelion_suit_choices, GLOB.chamelion_shoe_choices, GLOB.chamelion_back_choices, GLOB.chamelion_glove_choices, GLOB.chamelion_mask_choices, GLOB.chamelion_belt_choices, GLOB.chamelion_accessory_choices))
+		TEST_ASSERT(length(choices), "a chameleon choice list is built at boot")
+	var/list/before = GLOB.chamelion_suit_choices
+	var/obj/item/clothing/suit/chameleon/suit = allocate(/obj/item/clothing/suit/chameleon)
+	TEST_ASSERT(GLOB.chamelion_suit_choices == before, "creating a chameleon item does not rebuild the list")
+	TEST_ASSERT(!(suit.type in GLOB.chamelion_suit_choices), "a chameleon suit cannot disguise as itself")

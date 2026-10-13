@@ -236,4 +236,4 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 
 
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics/tvalve, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/tvalve, state)

@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/clothing/head/fishing)
 /// Worn and in-hand icons from the size and hue.
 /obj/item/clothing/head/fishing/proc/apply_icons()
 	icon_state = "[colourtype]soft[hatsize]"
-	item_state_slots = list(slot_r_hand_str = "[colourtype]soft", slot_l_hand_str = "[colourtype]soft", slot_head_str = "[colourtype]soft[hatsize]")
+	set_item_state_slots(list(slot_r_hand_str = "[colourtype]soft", slot_l_hand_str = "[colourtype]soft", slot_head_str = "[colourtype]soft[hatsize]"))
 
 /obj/item/clothing/head/fishing/proc/roll_slogan()
 	hatsize = 0

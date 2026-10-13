@@ -96,7 +96,7 @@ SYSTEM_DEF(profiler)
 			"pressure_pushes" = air_profile_gas_pressure_last(),
 		),
 		"queues" = list(
-			"hotspots" = length(SSair.hotspots),
+			"hotspots" = REGISTRY_COUNT(REGISTRY_HOTSPOTS),
 			"pressure_deltas" = length(SSair.high_pressure_delta),
 			"pipenets" = length(SSair.networks),
 			"pipe_devices" = air_profile_rust_pipe_device_count(),

@@ -44,7 +44,7 @@
 	var/obj/item/circuitboard/food_replicator/B = allocate(/obj/item/circuitboard/food_replicator, F)
 	rel_set(F, nameof(F.circuit), B)
 	F.set_anchored(TRUE)
-	F.state = FRAME_FASTENED
+	F.set_state(FRAME_FASTENED)
 	F.check_components()
 	F.update_desc()
 	F.seed_native_frame_graph()
@@ -68,7 +68,7 @@
 /datum/unit_test/dq_round3_frame_construction/computer_glass_roundtrip/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/frame/computer/F = allocate(/obj/structure/frame/computer, tile(3, 2))
-	F.state = FRAME_WIRED
+	F.set_state(FRAME_WIRED)
 	F.seed_native_frame_graph()
 	TEST_ASSERT_EQUAL(graph_current(F), STAGE_MACHINE_FRAME_WIRED, "a placed wired computer frame is seeded in the native graph")
 	var/obj/item/stack/material/glass/G = allocate(/obj/item/stack/material/glass, H.loc, 4)
@@ -91,7 +91,7 @@
 	var/obj/item/circuitboard/food_replicator/B = allocate(/obj/item/circuitboard/food_replicator, F)
 	rel_set(F, nameof(F.circuit), B)
 	F.set_anchored(TRUE)
-	F.state = FRAME_WIRED
+	F.set_state(FRAME_WIRED)
 	F.check_components()
 	F.update_desc()
 	F.seed_native_frame_graph()
@@ -110,7 +110,7 @@
 	var/obj/item/circuitboard/food_replicator/B = allocate(/obj/item/circuitboard/food_replicator, F)
 	rel_set(F, nameof(F.circuit), B)
 	F.set_anchored(TRUE)
-	F.state = FRAME_WIRED
+	F.set_state(FRAME_WIRED)
 	F.check_components()
 	F.update_desc()
 	F.seed_native_frame_graph()
@@ -217,7 +217,7 @@
 /datum/unit_test/dq_round3_frame_construction/generic_plain_glass_material/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/frame/computer/F = allocate(/obj/structure/frame/computer, tile(3, 2))
-	F.state = FRAME_WIRED
+	F.set_state(FRAME_WIRED)
 	F.seed_native_frame_graph()
 	var/obj/item/stack/material/G = allocate(/obj/item/stack/material, H.loc, 3)
 	TEST_ASSERT(!istype(G, /obj/item/stack/material/glass), "the actual generic stack is not the glass subtype")

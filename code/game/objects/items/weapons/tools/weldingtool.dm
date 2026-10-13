@@ -36,7 +36,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
 /obj/item/weldingtool/var/welding = 0
-TRACKED(/obj/item/weldingtool, welding)
 /// If true, keeps the welder processing even while off (fuel regeneration).
 /obj/item/weldingtool/var/always_process = FALSE
 TRACKED(/obj/item/weldingtool, always_process)

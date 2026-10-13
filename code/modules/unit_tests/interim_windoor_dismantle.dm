@@ -11,10 +11,10 @@
 	var/mob/living/carbon/human/actor = rc_actor(T)
 	var/obj/machinery/door/window/brigdoor/door = allocate(/obj/machinery/door/window/brigdoor, T)
 	door.set_dir(WEST)
-	door.base_state = "rightsecure"
+	door.set_base_state("rightsecure")
 	door.name = "Preserved windoor"
-	door.req_access = null
-	door.req_one_access = list(ACCESS_SECURITY)
+	door.set_req_access(null)
+	door.set_req_one_access(list(ACCESS_SECURITY))
 	var/obj/item/airlock_electronics/board
 	if(has_installed_board)
 		board = allocate(/obj/item/airlock_electronics, door)

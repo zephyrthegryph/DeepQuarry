@@ -223,7 +223,7 @@
 		tested_vessels++
 		var/found_valid_berth = FALSE
 		for(var/tag in list("hangar_3_expedition", "hangar_3_echidna"))
-			var/obj/effect/shuttle_landmark/southern_cross/expedition_station/berth = SSshuttles.registered_shuttle_landmarks[tag]
+			var/obj/effect/shuttle_landmark/southern_cross/expedition_station/berth = SSshuttles.get_landmark(tag)
 			if(berth?.accepts_shuttle(vessel.shuttle()) && berth.is_valid(vessel.shuttle()))
 				found_valid_berth = TRUE
 				break

@@ -112,7 +112,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 
 /// A finished painting takes no more strokes.
 /obj/item/canvas/proc/canvas_open(datum/act/op/A)
-	return (!finalized) ? null : MSG(canvas/finished) // ALLOW(reads): a finished painting is read when a stroke is made, never from a cached menu
+	return (!finalized) ? null : MSG(canvas/finished)
 
 /// Old attackby outside combat mode: open the canvas to paint on it (the click goes on).
 /obj/item/canvas/proc/interaction_paint(datum/act/op/A)
@@ -144,7 +144,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 		finalize(A.actor)
 
 /obj/item/canvas/proc/finalize(mob/user)
-	finalized = TRUE
+	set_finalized(TRUE)
 	author_name = user.real_name
 	author_ckey = user.ckey
 	generate_proper_overlay()
@@ -418,16 +418,8 @@ CAPABILITIES(/obj/item/paint_palette)
 /// A frame built on a wall (its constructor param).
 /obj/structure/sign/painting/var/building = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a persistent painting frame joins the persistence system's frames, and a built one sits on its wall
-/obj/structure/sign/painting/Initialize(mapload)
-	. = ..()
-	if(persistence_id)
-		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
-
-/// Phase 2: leaves the persistent painting frames.
-/obj/structure/sign/painting/lifecycle_dematerialize()
-	. = ..()
-	SSpersistence.painting_frames -= src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
+/// Every painting frame (the persistence system saves and loads those with a persistence_id): a registry, so a deleted frame leaves it.
+REGISTRY_MEMBERSHIP(/obj/structure/sign/painting, REGISTRY_PAINTING_FRAMES)
 
 CAPABILITIES(/obj/structure/sign/painting)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -571,7 +563,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	new_canvas.fill_grid_from_icon(I)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
-	new_canvas.finalized = TRUE
+	new_canvas.set_finalized(TRUE)
 	new_canvas.painting_name = title
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
@@ -665,7 +657,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	new_canvas.fill_grid_from_icon(I)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
-	new_canvas.finalized = TRUE
+	new_canvas.set_finalized(TRUE)
 	new_canvas.painting_name = title
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey

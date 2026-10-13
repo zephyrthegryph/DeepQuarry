@@ -493,7 +493,6 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 // ---- the look ----
 
 /// Its open panel has its own state; it shows its work while a part is made.
-TRACKED(/obj/machinery/mecha_part_fabricator_tg, being_built)
 
 /obj/machinery/mecha_part_fabricator_tg/draw(datum/look/look)
 	..()

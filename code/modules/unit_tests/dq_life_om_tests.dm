@@ -1057,8 +1057,8 @@
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
 	var/datum/seq_state/S = life_test_state(M)
-	changed(M, CHANGE_EXPLICIT)
-	TEST_ASSERT(!life_test_parked(M), "a change wakes it")
+	seq_wake(M, LIFE_SEQ)
+	TEST_ASSERT(!life_test_parked(M), "an explicit wake un-parks it")
 	var/frames = 0
 	while(S.asleep < S.table.n && frames < 6)
 		seq_run_frame_now(M, LIFE_SEQ)

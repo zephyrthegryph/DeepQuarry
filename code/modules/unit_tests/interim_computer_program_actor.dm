@@ -26,7 +26,7 @@
 
 /datum/unit_test/proc/interim_computer_actor_card(mob/living/carbon/human/user, turf/T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
-	card.access = list(ACCESS_ENGINE)
+	card.set_access(list(ACCESS_ENGINE))
 	TEST_ASSERT(user.put_in_active_hand(card), "the actual actor holds an engineering access card")
 	TEST_ASSERT_EQUAL(user.GetIdCard(), card, "the real access API resolves the actor's held ID")
 	return TRUE

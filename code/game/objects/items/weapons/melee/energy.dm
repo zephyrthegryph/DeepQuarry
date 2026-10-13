@@ -106,7 +106,6 @@
 TRACKED(/obj/item/melee/energy, colorable)
 TRACKED(/obj/item/melee/energy, active)
 TRACKED(/obj/item/melee/energy, lcolor)
-TRACKED(/obj/item/melee/energy, rainbow)
 
 CAPABILITIES(/obj/item/melee/energy)
 	configure(item_combat(sharp = FALSE, edge = FALSE, armor_penetration = 0))
@@ -465,7 +464,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 						if(O == src)
 							rel_remove(organ, nameof(organ.implants), src)
 			rel_remove(host, nameof(host.pinned), src)
-			LAZYREMOVE(host.embedded, src)
+			rel_remove(host, nameof(host.embedded), src)
 			host.drop_from_inventory(src)
 		expire(1)
 

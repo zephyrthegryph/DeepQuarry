@@ -77,8 +77,9 @@ radial_impl_prefixes = ["code/_onclick/hud/radial"]
 [lint.ownership]
 # ownership_lint.py: the index, the usage map, unknown_var, kinds, matrix and contradiction still read these
 # files; string_name, removed, callback, handle and raw_write skip them.
+# tracked_lists.dm is build output: the tracked-list mutators it writes (add_<v>, set_<v>_at, ...) are judged where the list is declared.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/__defines/tgs.dm", "code/engine/_generated/tracked_lists.dm"]
 
 # E5 semantic lints (tools/analyze/src/lints/sem_*.rs; tools/analyze/README.md, "Semantic layer").
 # try_calls: extra calls that survive macro expansion as a world-action start (ACT_TRY pairing), besides ACT_TRY, act_try, e0_act_try and the
@@ -120,6 +121,21 @@ ui_hosts = [
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
+[lint.auto_tracked.lists]
+# Vars the read-driven inference (tools/analyze/src/gens/auto_tracked.rs) never gives a generated setter: `var` for any type, `/type::var` for
+# one. Engine lifecycle state whose writes are on the qdel and bridge hot paths and which reactive code reads only through QDELETED() and
+# its siblings; the destroy itself publishes through on_destroy().
+exclude = ["gc_destroyed", "vg_entity"]
+# The heat domain bans a proc named set_temperature() outside code/domains/ (check_grep heat_raw_temperature_writes), so a generated setter for a var called
+# `temperature` would be a violation by name; a generator's own temperature belongs in the heat domain.
+# A lazily refreshed accumulator: check_charge() (reached from conditions and draws) tops it up from the clock, so the write happens inside an output
+# (PURITY). It is a memo of time, not state anything publishes.
+exclude_memo = ["/obj/item/cell::material_discharge_credit", "/atom::flags"]
+# (atom flags: lifecycle bits (ATOM_INITIALIZED, ATOM_MATERIALIZED) set while an atom is materialized, which can happen inside a draw.)
+exclude_heat = ["/obj/machinery/power/port_gen/pacman::temperature"]
+# Test fixtures that count their own draws from inside draw(): an output must not write tracked state (PURITY), and the counter is the test's probe.
+exclude_fixtures = ["/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]
+
 [lint.untracked_inputs]
 # Test fixtures read untracked state on purpose (dq_generated_deps_tests.dm proves an untracked stat is never cached).
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
@@ -143,7 +159,7 @@ list_init_exempt_files = ["code/__defines/tgs.dm"]
 # Homes for base-type vars (doc/rewrite/proposals/base_vars.md). A var a home macro names on its own type
 # (`TRACKED(/mob, stat)`), or whose declared type is under a home type path (the HUD datum, the profile records,
 # the sparse and cooldown stores), is not a `base_var` site. A lane that lands a new home adds it here.
-base_var_home_macros = ["TRACKED", "TRACKED_BRIDGED", "TRACKED_SCHEMA", "TRACKED_DATA", "STAT"]
+base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "STAT"]
 base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
 # records_data_only: the procs a /datum/record may define (accessors).
 record_accessor_prefixes = ["set_", "get_"]
@@ -285,6 +301,62 @@ core = [
 legacy_fields_converted = ["code/game/machinery/", "code/modules/power/"]
 # The folders (a directory ends in `/`, else an exact file) where the legacy declaration forms of the sweeps (DECLARE_INTERACTIONS and EXTEND_INTERACTIONS,
 # DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT) reached zero: a hard ban there. Folders are only ever added.
+# The files that still carry a hand changed() mark (the human-draw conversion left one wherever the worn or held state it stands for is not tracked yet). A hard ban in
+# every other file. Files are only ever removed: a call goes when the state behind it is tracked and the holder's draw follows it.
+changed_mark_pending = [
+  "code/game/gamemodes/cult/runes.dm",
+  "code/game/gamemodes/technomancer/devices/shield_armor.dm",
+  "code/game/gamemodes/technomancer/devices/tesla_armor.dm",
+  "code/game/objects/effects/decals/Cleanable/humans.dm",
+  "code/game/objects/effects/step_triggers.dm",
+  "code/game/objects/items.dm",
+  "code/game/objects/items/devices/personal_shield_generator.dm",
+  "code/game/objects/items/devices/vacpack.dm",
+  "code/game/objects/items/stacks/medical.dm",
+  "code/game/objects/items/weapons/canes.dm",
+  "code/game/objects/items/weapons/chewables.dm",
+  "code/game/objects/items/weapons/cigs_lighters.dm",
+  "code/game/objects/items/weapons/cosmetics.dm",
+  "code/game/objects/items/weapons/ecigs.dm",
+  "code/game/objects/items/weapons/material/ashtray.dm",
+  "code/game/objects/items/weapons/medigun/linked_medigun.dm",
+  "code/game/objects/items/weapons/melee/energy.dm",
+  "code/game/objects/items/weapons/melee/misc.dm",
+  "code/game/objects/items/weapons/shields.dm",
+  "code/game/objects/items/weapons/storage/backpack.dm",
+  "code/game/objects/items/weapons/storage/storage.dm",
+  "code/game/objects/items/weapons/swords_axes_etc.dm",
+  "code/game/objects/items/weapons/tanks/jetpack.dm",
+  "code/game/objects/items/weapons/tape.dm",
+  "code/game/objects/structures/under_wardrobe.dm",
+  "code/game/objects/structures/watercloset.dm",
+  "code/modules/admin/admin.dm",
+  "code/modules/artifice/deadringer.dm",
+  "code/modules/body/organs/internal/eyes.dm",
+  "code/modules/body/organs/organ_external.dm",
+  "code/modules/clothing/accessories/accessory.dm",
+  "code/modules/clothing/chameleon.dm",
+  "code/modules/clothing/clothing.dm",
+  "code/modules/clothing/glasses/glasses.dm",
+  "code/modules/clothing/glasses/hud.dm",
+  "code/modules/clothing/head/helmet.dm",
+  "code/modules/clothing/head/misc_special.dm",
+  "code/modules/clothing/masks/miscellaneous.dm",
+  "code/modules/clothing/shoes/magboots.dm",
+  "code/modules/clothing/spacesuits/rig/rig.dm",
+  "code/modules/clothing/spacesuits/void/zaddat.dm",
+  "code/modules/instruments/piano_synth.dm",
+  "code/modules/makeup/nailpolish.dm",
+  "code/modules/medical/stabilisation/field_stabilisation.dm",
+  "code/modules/mob/dead/corpse.dm",
+  "code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm",
+  "code/modules/paperwork/paper.dm",
+  "code/modules/projectiles/guns/energy/gunsword.dm",
+  "code/modules/projectiles/guns/projectile/shotgun.dm",
+  "code/modules/vore/fluffstuff/custom_clothes.dm",
+  "code/modules/vore/fluffstuff/custom_items.dm",
+  "code/modules/weapons/MadokaSpear.dm",
+]
 # The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its
 # ui_data(A) re-runs when something it reads changes. A hard ban there. Files are only ever added.
 ui_push_converted = [
@@ -689,6 +761,11 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 banned_outside = [
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "relations() @ code/engine/;code/game/machinery/;code/modules/power/;code/modules/shieldgen/shield_gen.dm;code/modules/unit_tests/;code/__defines/ = ref_one() / ref_many() (by =, target_key =), links() for a pair and owns_one() / owns_many() for an owned value, in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6)",
+  "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
+  "CHANGE_EXPLICIT @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a plain mark: a write publishes through its tracked var, relation, stat or hold, and a key that is not one var is PUBLISH_CHANGE(E, key)",
+  "CHANGE_RELATED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a forwarded change: watch the key of the thing that changed",
+  "CHANGE_RELATION_ADDED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
+  "CHANGE_RELATION_REMOVED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
   "OM_DERIVE_FIELD @ code/datums/om/;code/__defines/om.dm;code/modules/unit_tests/;code/tests/;code/modules/benchmarks/;code/controllers/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
@@ -1111,6 +1188,26 @@ banned = [
   "CHANGE_MOB_VITALS = deleted: nothing listened to it; a reader tracks the field it needs",
   "CHANGE_AREA_POWER = deleted: nothing listened to it; a reader tracks the field it needs",
   "CHANGE_METEORS = deleted: nothing listened to it; a reader tracks the field it needs",
+  "TRACKED_BRIDGED = TRACKED(T, v): a setter publishes the var's key; nothing waits on a channel any more",
+  "tracked_bridged_changed = tracked_changed(E, nameof(v)), or the generated setter",
+  "CACHE_ON_CHANGE = the producer that changes what a cache holds clears it (a shared cache: INVALIDATE_SHARED_CACHE), or the value is live state kept in a tracked var or a relation",
+  "declared_cache_vars = a shared cache (DECLARE_SHARED_CACHE) or live state; the declared-cache rules are gone",
+  "CHANGE_MACHINE_POWER = deleted: a machine's power is the STAT_HAS_POWER stat; watch it with on_change(STAT_HAS_POWER)",
+  "CHANGE_MACHINE_PANEL = deleted: panel_open is a tracked var (on_change(nameof(panel_open)))",
+  "CHANGE_MACHINE_BROKEN = deleted: a machine's integrity is the STAT_INTACT stat (on_change(STAT_INTACT))",
+  "CHANGE_MACHINE_ANCHORED = deleted: anchored is a tracked base var (on_change(nameof(anchored)))",
+  "CHANGE_MACHINE_OCCUPANT = deleted: an occupant is a slot or a relation; its write publishes the key",
+  "CHANGE_MACHINE_SETTINGS = deleted: a setting is a tracked var; its setter publishes the key",
+  "CHANGE_MACHINE_MODE = deleted: bolts, power and electrification are stats and tracked vars that publish their own keys",
+  "CHANGE_POWER_GRID_RATE = deleted: the power grid publishes its readings as native keys",
+  "CHANGE_POWER_GRID_STATE = deleted: the power grid publishes its readings as native keys",
+  "CHANGE_POWER_GRID_TOPOLOGY = deleted: the power grid publishes its readings as native keys",
+  "CHANGE_INTEGRITY = deleted: update_integrity() publishes ATOM_INTEGRITY_KEY; a read of get_integrity() is READS_AS that key",
+  "CHANGE_CAPABILITY = deleted: a capability key write publishes its key (capability_key_changed)",
+  "CHANGE_DATUM_A = deleted: a change channel is a published key",
+  "CHANGE_DATUM_B = deleted: a change channel is a published key",
+  "CHANGE_DATUM_C = deleted: a change channel is a published key",
+  "LIFE_WAKE_ALL = deleted: a Life step reads the keys that wake it; LIFE_WAKE_KEYS wake every step, seq_wake() wakes one entity",
   "CHANGE_TURF_GAS_VISUAL = deleted: nothing listened to it; a reader tracks the field it needs",
   "CHANGE_CLOCK = deleted with the OM shim layer: its engine implementation lives under code/engine/",
   "CHANGE_GENERIC_MASK = deleted with the OM shim layer: its engine implementation lives under code/engine/",

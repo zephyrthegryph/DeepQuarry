@@ -18,6 +18,7 @@
 	// ALLOW(instance_list): d: current transaction, index-parallel with item_list
 	var/list/price_list = list() // prices for each purchase
 	/// Physical objects scanned into this ticket, keyed by object with scanned price.
+	/// Scanned item handle (entity_handle) -> the price it scanned at.
 	var/list/verified_sale_items
 	/// Monotonic ticket identity. Any item, price, staff, or provider change
 	/// invalidates confirmations and sleeping PIN/tip prompts.
@@ -430,7 +431,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 		. = 1
 	rebuild_ticket()
 	if(!O.economic_sale_invoice_id)
-		LAZYSET(verified_sale_items, O, price)
+		LAZYSET(verified_sale_items, entity_handle(O), price)
 	ticket_changed()
 	// Animation and sound
 	flick("retail_scan", src)
@@ -532,7 +533,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 	var/mob/user = A.actor
 	to_chat(user, span_danger("You stealthily swipe the cryptographic sequencer through \the [src]."))
 	play_sfx(src, SFX_SPARKS)
-	req_access = list()
+	set_req_access(list())
 	emagged = 1
 	return OP_OK
 

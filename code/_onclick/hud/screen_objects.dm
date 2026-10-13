@@ -244,7 +244,6 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	if(choice != selecting)
 		set_selecting(choice)
 
-TRACKED(/atom/movable/screen/zone_sel, selecting)
 
 /// The selected zone is drawn over the doll.
 /atom/movable/screen/zone_sel/draw(datum/look/look)
@@ -252,6 +251,7 @@ TRACKED(/atom/movable/screen/zone_sel, selecting)
 	look.overlay(look_overlay_image('icons/mob/zone_sel.dmi', "[selecting]"))
 
 CAPABILITIES(/atom/movable/screen)
+	ref_one(nameof(master_ref), /datum)
 	click_on(PROC_REF(screen_click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The click goes to the clicker's

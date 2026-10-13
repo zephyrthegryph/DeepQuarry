@@ -377,7 +377,7 @@
 /datum/unit_test/dq_p2_reagents/cooking_container_is_full_by_size/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/cooking_container/fryer/C = fd_cooking(/obj/item/reagent_containers/cooking_container/fryer)
-	C.max_space = 5
+	C.set_max_space(5)
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/a = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/b = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/c = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)

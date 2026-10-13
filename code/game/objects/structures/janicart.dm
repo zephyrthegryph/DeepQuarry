@@ -22,8 +22,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 	var/static/list/equippable_item_whitelist
 
-TRACKED(/obj/structure/janitorialcart, has_items)
-TRACKED(/obj/structure/janitorialcart, signs)
 
 CAPABILITIES(/obj/structure/janitorialcart)
 	owns_one(nameof(mybag), /obj/item/storage/bag/trash)

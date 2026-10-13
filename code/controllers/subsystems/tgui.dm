@@ -71,6 +71,8 @@ SYSTEM_DEF(tgui)
 	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
+	/// The current modal of each host datum, keyed by REF(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
+	var/list/modals
 	/// The HTML base used for all UIs.
 	var/basehtml
 	/// interface name -> list of code-split chunk files (`*.chunk.js`/`.css`) that
@@ -96,6 +98,11 @@ SYSTEM_DEF(tgui)
 	/// URLs and browse_rsc resources cannot disappear beneath an open shell.
 	var/list/asset_generations = list()
 	var/asset_generation_sequence = 0
+
+CAPABILITIES(/datum/system/tgui)
+	owns_many(nameof(modals), /datum/tgui_modal)
+	ref_many(nameof(autoupdating), /datum/tgui)
+	ref_many(nameof(all_uis), /datum/tgui)
 
 /datum/system/tgui/preinit()
 	basehtml = file2text('tgui/public/tgui.html')
@@ -248,7 +255,7 @@ SYSTEM_DEF(tgui)
 		return STEP_PARK
 	for(var/datum/tgui/ui as anything in autoupdating.Copy())
 		if(QDELETED(ui) || ui.closing)
-			autoupdating -= ui
+			rel_remove(src, nameof(autoupdating), ui)
 			continue
 		ui.process()
 	return STEP_DONE
@@ -259,11 +266,11 @@ SYSTEM_DEF(tgui)
 		return
 	if(ui.autoupdate && !QDELETED(ui) && !ui.closing)
 		if(!(ui in autoupdating))
-			autoupdating += ui
+			rel_add(src, nameof(autoupdating), ui)
 			log_tgui(ui.user, "autoupdate on", context = "SStgui/sync_autoupdate")
 		kernel_wake_work("[type]:refresh_autoupdating")
 	else
-		autoupdating -= ui
+		rel_remove(src, nameof(autoupdating), ui)
 
 /**
  * public
@@ -614,7 +621,7 @@ SYSTEM_DEF(tgui)
 /datum/system/tgui/proc/on_open(datum/tgui/ui)
 	ui.user?.tgui_open_uis |= ui
 	LAZYOR(ui.src_object().open_tguis, ui)
-	all_uis |= ui
+	rel_add(src, nameof(all_uis), ui)
 	sync_autoupdate(ui)
 
 /**
@@ -628,8 +635,8 @@ SYSTEM_DEF(tgui)
  */
 /datum/system/tgui/proc/on_close(datum/tgui/ui)
 	// Remove it from the list of processing UIs.
-	all_uis -= ui
-	autoupdating -= ui
+	rel_remove(src, nameof(all_uis), ui)
+	rel_remove(src, nameof(autoupdating), ui)
 	// If the user exists, remove it from them too.
 	if(ui.user)
 		ui.user.tgui_open_uis -= ui
@@ -724,3 +731,18 @@ SYSTEM_DEF(tgui)
 /// The chunk asset bundle of this generation: its own for a live build, else the registry singleton.
 /datum/tgui_asset_generation/proc/chunk_assets() as /datum/asset/simple/namespaced
 	return live_chunk_assets || get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+
+// ---- Modals of host datums (code/modules/tgui/modal.dm): the one place that touches `modals` ----
+
+/// The modal `host` shows now, or null.
+/proc/tgui_modal_current(datum/host)
+	RETURN_TYPE(/datum/tgui_modal)
+	return LAZYACCESS(SStgui.modals, REF(host))
+
+/// Takes `host`'s modal out of SStgui without disposing of it.
+/proc/tgui_modal_detach(datum/host)
+	return rel_take(SStgui, nameof(SStgui.modals), key = REF(host))
+
+/// Makes `modal` the one `host` shows; SStgui owns it from here.
+/proc/tgui_modal_attach(datum/host, datum/tgui_modal/modal)
+	return rel_add(SStgui, nameof(SStgui.modals), modal, REF(host))

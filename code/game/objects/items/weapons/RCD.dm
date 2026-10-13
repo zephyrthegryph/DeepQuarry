@@ -348,7 +348,6 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_start_loaded, FALSE)
 /obj/item/rcd/proc/starting_matter()
 	return TYPE_TABLE_GET(src, rcd_start_loaded) ? max_stored_matter : stored_matter
 
-TRACKED(/obj/item/rcd, stored_matter)
 TRACKED(/obj/item/rcd, max_stored_matter)
 
 /// The charge level shown, 0..10, by how full the matter store is.

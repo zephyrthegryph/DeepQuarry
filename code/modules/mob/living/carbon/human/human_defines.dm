@@ -66,10 +66,6 @@
 	var/redgate_restricted = FALSE
 	var/hide_headset = FALSE
 	var/hide_glasses = FALSE
-TRACKED(/mob/living/carbon/human, hand_blood_color)
-TRACKED(/mob/living/carbon/human, ear_secondary_colors)
-TRACKED(/mob/living/carbon/human, hide_headset)
-TRACKED(/mob/living/carbon/human, hide_glasses)
 
 
 /mob/living/carbon/human
@@ -82,8 +78,6 @@ TRACKED(/mob/living/carbon/human, hide_glasses)
 	var/low_sorting_priority = FALSE
 
 	var/list/body_writing // assoc list by BP_ key
-TRACKED(/mob/living/carbon/human, wings_hidden)
-TRACKED(/mob/living/carbon/human, tail_hidden)
 
 
 /mob/living/carbon/human

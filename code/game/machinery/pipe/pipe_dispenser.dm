@@ -18,7 +18,6 @@
 	)
 	var/disposals = FALSE
 
-TRACKED(/obj/machinery/pipedispenser, unwrenched)
 
 /obj/machinery/pipedispenser/ui_assets(mob/user)
 	return list(

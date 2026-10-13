@@ -131,7 +131,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 			return
 		autopilot = TRUE
 		set_shuttle_flags(shuttle_flags | SHUTTLE_FLAGS_PROCESS)
-		SSshuttles.process_shuttles |= src
+		rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 		autopilot_delay = initial(autopilot_delay)
 		if(process_state == IDLE_STATE)
 			set_process_state(DO_AUTOPILOT)
@@ -140,7 +140,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 			return
 		autopilot = FALSE
 		set_shuttle_flags(shuttle_flags & ~SHUTTLE_FLAGS_PROCESS)
-		SSshuttles.process_shuttles -= src
+		rel_remove(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 		if (process_state == DO_AUTOPILOT)
 			set_process_state(initial(process_state))
 

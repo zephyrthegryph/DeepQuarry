@@ -199,7 +199,7 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	if(lastier >= 5)
 		if(H.vessel.get_reagent_amount("blood") < H.species.blood_volume)
 			var/datum/reagent/blood/B = locate_in_list(H.vessel.reagent_list, /datum/reagent/blood) //Grab some blood
-			B.volume += min(5, (H.species.blood_volume - H.vessel.get_reagent_amount("blood")))// regenerate blood
+			B.set_volume(B.volume + (min(5, (H.species.blood_volume - H.vessel.get_reagent_amount("blood")))))// regenerate blood
 
 	if(ishealing != washealing) // Either we stopped or started healing this cycle
 		if(ishealing)

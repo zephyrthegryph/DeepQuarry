@@ -3,6 +3,8 @@
 	var/card_icon = "card_back"
 	var/back_icon = "card_back"
 
+TRACKED(/obj/item/hand, cards)
+
 /obj/item/deck
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/playing_cards.dmi'
@@ -638,7 +640,6 @@ CAPABILITIES(/obj/item/hand)
 	var/jitter_x = 0
 	var/jitter_y = 0
 
-TRACKED(/obj/item/hand, concealed)
 TRACKED(/obj/item/hand, direction)
 TRACKED(/obj/item/hand, jitter_x)
 TRACKED(/obj/item/hand, jitter_y)

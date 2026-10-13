@@ -59,7 +59,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 		if(target)
 			transfer_tank( reagents, target, dir)
 
-TRACKED(/obj/machinery/reagent_refinery/reactor, toggle_mode)
 
 /obj/machinery/reagent_refinery/reactor/draw(datum/look/look)
 	..()

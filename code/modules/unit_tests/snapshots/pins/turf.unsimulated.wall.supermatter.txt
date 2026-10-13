@@ -1,7 +1,5 @@
 @turf human|none
--menu: Graffiti
 @turf robot|none
--menu: Graffiti
 +0 menu: Examine
 ai|none menu: Examine
 ai|none click: Click: Examine

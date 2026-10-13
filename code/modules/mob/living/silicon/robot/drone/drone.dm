@@ -147,7 +147,6 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 	set_real_name("[initial(name)] ([serial_number])")
 	name = real_name
 
-TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 
 /// A drone's look is its shell accessories and its hat; the sprite datum sheet is not used.
 /mob/living/silicon/robot/drone/look_parts(datum/look/look)
@@ -199,7 +198,7 @@ TRACKED(/mob/living/silicon/robot/drone, shell_accessories)
 	if(plating)
 		LAZYADD(accessories, "[shell_state]-shell-[plating]")
 	set_shell_accessories(accessories)
-	can_pick_shell = FALSE
+	set_can_pick_shell(FALSE)
 
 MSG_DEF_SELF(drone_ability/shell_picked, "you already selected a shell or this drone type isn't customizable")
 

@@ -1,4 +1,3 @@
-TRACKED(/obj/machinery/power/breakerbox, update_locked)
 
 // Updated version of old powerswitch by Atlantis
 // Has better texture, and is now considered electronic device

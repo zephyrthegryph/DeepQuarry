@@ -64,6 +64,7 @@ CAPABILITIES(/datum/expedition_site)
 	owns_one(nameof(station_spec), /datum/generated_station_spec)
 	owns_one(nameof(station_utilities), /datum/generated_station_utility_topology)
 	owns_many(nameof(station_controls))
+	ref_many(nameof(participants), /mob/living)
 
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level
@@ -123,8 +124,3 @@ CAPABILITIES(/datum/expedition_site)
 /datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
 	return assigned_shuttle
 
-/datum/expedition_site/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["floors"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L

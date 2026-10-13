@@ -28,8 +28,6 @@
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
 
-TRACKED(/obj/machinery/station_map, bogus)
-TRACKED(/obj/machinery/station_map, offsets_settled_flag)
 
 CAPABILITIES(/obj/machinery/station_map)
 	configure(light_glow(color = "#64C864"))
@@ -47,19 +45,17 @@ CAPABILITIES(/obj/machinery/station_map)
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
 	original_zLevel = loc.z
-	SSholomaps.station_holomaps += src
 	if(holomaps_holomaps_initialized())
 		setup_holomap()
 
 /// Phase 2: leaves the holomap index and stops watching.
 /obj/machinery/station_map/lifecycle_dematerialize()
 	. = ..()
-	SSholomaps.station_holomaps -= src
 	stopWatching()
 
 /obj/machinery/station_map/proc/setup_holomap()
 	var/turf/T = get_turf(src)
-	original_zLevel = T.z
+	set_original_zLevel(T.z)
 	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in holomaps_extraMiniMaps()))
 		set_bogus(TRUE)
 		holomap_datum.initialize_holomap_bogus()

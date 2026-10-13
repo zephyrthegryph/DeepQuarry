@@ -103,8 +103,6 @@
 	/// How many machine frames the cover stays up after the turret last had a target.
 	var/timeout = 10
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
-TRACKED(/obj/machinery/porta_turret, icon_color)
-TRACKED(/obj/machinery/porta_turret, lethal_icon_color)
 
 TRACKED(/obj/machinery/porta_turret, enabled)
 TRACKED(/obj/machinery/porta_turret, power_held)
@@ -186,7 +184,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// The turret's area has a control panel.
 /obj/machinery/porta_turret/proc/has_controller()
-	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
+	var/area/here = isturf(loc) ? loc.loc : null
 	return !!length(here?.turret_controls)
 
 TRACKED(/obj/machinery/porta_turret, ailock)
@@ -264,7 +262,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 /// A loose turret cannot be bolted down in space.
 /obj/machinery/porta_turret/proc/not_anchoring_in_space(datum/act/op/A)
-	return (anchored || !istype(loc, /turf/space)) ? null : MSG(porta_turret/in_space) // ALLOW(reads): the floor under it is asked when the wrench turns, never cached
+	return (anchored || !istype(loc, /turf/space)) ? null : MSG(porta_turret/in_space)
 
 /// A wreck pried apart: with luck, its gun and parts come out.
 /obj/machinery/porta_turret/proc/salvaged(datum/act/op/A)

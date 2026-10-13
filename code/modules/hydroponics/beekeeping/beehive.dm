@@ -9,16 +9,13 @@
 	var/honeycombs = 0 // Percent
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
-TRACKED(/obj/machinery/beehive, honeycombs)
 
 TRACKED(/obj/machinery/beehive, closed)
 
 /// Percent.
 /obj/machinery/beehive/var/bee_count = 0
-TRACKED(/obj/machinery/beehive, bee_count)
 /// Timer (machine steps).
 /obj/machinery/beehive/var/smoked = 0
-TRACKED(/obj/machinery/beehive, smoked)
 /// Bees inside or smoke still clearing: the hive has something to tick.
 /obj/machinery/beehive/proc/hive_active()
 	return bee_count || smoked
@@ -374,7 +371,6 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	icon = 'icons/obj/beekeeping.dmi'
 	icon_state = "beepack"
 	var/full = 1
-TRACKED(/obj/item/bee_pack, full)
 
 /// The look (the draw sweep: from its layers).
 /obj/item/bee_pack/draw(datum/look/look)

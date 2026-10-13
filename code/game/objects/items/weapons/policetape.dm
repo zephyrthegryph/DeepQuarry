@@ -58,7 +58,6 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			look.state("[icon_base]_dir_[crumpled]")
 			look.set_dir(tape_dir)
 
-TRACKED(/obj/item/tape, tape_dir)
 TRACKED(/obj/item/tape, crumpled)
 
 /obj/item/taperoll/medical

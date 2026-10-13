@@ -38,6 +38,9 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	var/list/sacrificed
 	var/list/harvested
 
+CAPABILITIES(/datum/antagonist/cultist)
+	ref_many(nameof(harvested), /datum/mind)
+
 /datum/antagonist/cultist/New()
 	..()
 	GLOB.cult = src

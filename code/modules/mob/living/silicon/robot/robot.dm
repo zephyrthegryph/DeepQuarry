@@ -418,7 +418,7 @@
 		if(C.set_powered(new_state))
 			changed = TRUE
 	if(new_state != has_power)
-		has_power = new_state
+		set_has_power(new_state)
 		changed = TRUE
 		if(!has_power)
 			to_chat(src, span_red("You are now running on emergency backup power."))
@@ -523,7 +523,7 @@
 // --- Naming ------------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/SetName(pickedName as text)
-	custom_name = pickedName
+	set_custom_name(pickedName)
 	updatename()
 
 /mob/living/silicon/robot/proc/sync()
@@ -948,7 +948,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /// A yanked object tears the wiring it was in.
 /mob/living/silicon/robot/yank_out_tear(obj/item/selection, mob/U)
-	LAZYREMOVE(embedded, selection)
+	rel_remove(src, nameof(embedded), selection)
 	injure(INJURY_CUT, 5, null, selection)
 	injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
 
@@ -1070,7 +1070,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	module.reset_module(src)
 	icon_selected = FALSE
 	updatename("Default")
-	has_recoloured = FALSE
+	set_has_recoloured(FALSE)
 	robotact?.update_static_data_for_all_viewers()
 	vore_capacity_ex = list()
 	set_vore_fullness_ex(list())

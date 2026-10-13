@@ -102,7 +102,7 @@
 			held_station_offer = existing
 			break
 		TEST_ASSERT(held_station_offer, "a full station board had no fixture offer to hold aside")
-		SScontracts.offered_contracts -= held_station_offer
+		rel_remove(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 		preexisting_station_offers--
 		expected_published = min(4, max(0, CONTRACT_BOARD_DEPARTMENT_LIMIT - preexisting_station_offers))
 	TEST_ASSERT(expected_published > 0, "the lifecycle test could not obtain a station-board fixture slot")
@@ -156,7 +156,7 @@
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
 			SScontracts.withdraw_candidate(candidate, "Lifecycle test cleanup")
 	if(held_station_offer)
-		SScontracts.offered_contracts |= held_station_offer
+		rel_add(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 	for(var/offer_key in test_keys)
 		SScontracts.offer_cooldowns -= offer_key
 
@@ -1082,7 +1082,7 @@
 	TEST_ASSERT(report.consent_time, "patient signature did not register rare-case consent")
 	TEST_ASSERT(report.print_case_forms(test_turf), "registered rare-case paperwork had no replacement path")
 	report.consent_time = world.time - MEDICAL_TRIAL_OBSERVATION_TIME
-	narrative.info += " Treatment relieved pleural pressure. Follow-up showed stable respiration without complication."
+	narrative.set_info(narrative.info + (" Treatment relieved pleural pressure. Follow-up showed stable respiration without complication."))
 	narrative.on_field_written(doctor, 1, null)
 	narrative.on_field_written(doctor, 2, null)
 	var/obj/item/paper/baseline = new(test_turf)
@@ -1349,9 +1349,9 @@
 	TEST_ASSERT(command.accept(), "producer-backed Command contract could not be accepted")
 	var/obj/machinery/computer/skills/management = new(test_turf)
 	var/obj/item/card/id/command_id = new(management)
-	command_id.access |= ACCESS_CAPTAIN
+	command_id.include_access(ACCESS_CAPTAIN)
 	rel_set(management, nameof(management.scan), command_id)
-	management.authenticated = actor.real_name
+	management.set_authenticated(actor.real_name)
 	var/list/old_allocations = list()
 	var/list/old_percents = list()
 	var/list/old_configured = list()

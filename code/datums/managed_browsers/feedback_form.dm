@@ -127,7 +127,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 
 /// The submission is confirmed only for a body that fits and says something (the handler tells the writer otherwise).
 /datum/managed_browser/feedback_form/proc/feedback_submittable(datum/act/op/A)
-	return length(feedback_body) && length(feedback_body) <= MAX_FEEDBACK_LENGTH // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return length(feedback_body) && length(feedback_body) <= MAX_FEEDBACK_LENGTH
 
 /datum/managed_browser/feedback_form/proc/apply_feedback_submission(selected)
 	if(selected != "Yes")
@@ -149,7 +149,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 
 
 /datum/managed_browser/feedback_form/proc/apply_feedback_body(value)
-	feedback_body = value
+	set_feedback_body(value)
 
 /datum/managed_browser/feedback_form/proc/apply_feedback_topic(value)
 	if(value)

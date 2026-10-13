@@ -1,4 +1,3 @@
-TRACKED(/obj/item/card/id/guest, expired)
 
 /////////////////////////////////////////////
 //Guest pass ////////////////////////////////
@@ -285,7 +284,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 		LAZYADD(internal_log, entry)
 
 		var/obj/item/card/id/guest/pass = new(src.loc)
-		pass.temp_access = LAZYCOPY(accesses)
+		pass.set_temp_access(LAZYCOPY(accesses))
 		pass.set_registered_name(giv_name)
 		EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
 		pass.reason = reason

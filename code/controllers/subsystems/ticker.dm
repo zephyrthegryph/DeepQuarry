@@ -56,7 +56,6 @@ SYSTEM_DEF(ticker)
 
 	EXPIRY_DECLARE(round_start_time)
 	var/list/round_start_events
-	var/list/round_end_events
 	var/mode_result = "undefined"
 	var/end_state = "undefined"
 
@@ -294,13 +293,6 @@ SYSTEM_DEF(ticker)
 		return
 	after(owner, row["delay"], row["handler"], with = row["with"])
 
-//These callbacks will fire before roundend report
-/datum/system/ticker/proc/OnRoundend(datum/callback/cb)
-	if(current_state >= GAME_STATE_FINISHED)
-		cb.InvokeAsync()
-	else
-		LAZYADD(round_end_events, cb)
-
 // Formerly the first half of setup() - The part that chooses the game mode.
 // Returns 0 if failed to pick a mode, otherwise 1
 /datum/system/ticker/proc/setup_choose_gamemode()
@@ -408,7 +400,7 @@ SYSTEM_DEF(ticker)
 /datum/system/ticker/proc/collect_minds()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.mind)
-			minds += player.mind
+			rel_add(src, nameof(minds), player.mind)
 		CHECK_TICK
 
 /datum/system/ticker/proc/equip_characters()
@@ -532,3 +524,6 @@ SYSTEM_DEF(ticker)
 		cancel_after(src, "reboot_timer")
 	else
 		Reboot("World reboot after administrative delay.")
+
+CAPABILITIES(/datum/system/ticker)
+	ref_many(nameof(minds), /datum/mind)

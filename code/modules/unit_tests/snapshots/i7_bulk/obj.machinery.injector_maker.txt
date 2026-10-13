@@ -46,11 +46,10 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-@obj.machinery human|/obj/item/reagent_containers
--menu: Insert container
--menu: Take out container
--click: Click: Insert container
-+3 click: Click: Use
+human|/obj/item/reagent_containers menu: Move To Top
+human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers menu: Use
+human|/obj/item/reagent_containers click: Click: Use
 @obj human|/obj/item/reagent_containers/hypospray/autoinjector/empty
 @obj human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty
 human|/obj/item/stack/material menu: Add plastic

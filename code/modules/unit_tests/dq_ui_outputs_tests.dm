@@ -56,7 +56,7 @@ TRACKED(/datum/dq_ui_out_host, other)
 /datum/unit_test/dq_ui_outputs_tracked_write_pushes_once/Run()
 	var/datum/dq_ui_out_host/host = new
 	var/datum/tgui/dq_ui_probe/probe = new
-	LAZYADD(host.open_tguis, probe)
+	host.add_open_tguis(probe)
 	dq_ui_frame()
 	TEST_ASSERT_EQUAL(probe.pushes, 0, "nothing changed: nothing is pushed")
 	host.set_shown(1)
@@ -77,7 +77,7 @@ TRACKED(/datum/dq_ui_out_host, other)
 	TEST_ASSERT_EQUAL(probe.pushes, 2, "the next change is the next push")
 	var/list/data = host.ui_data(null)
 	TEST_ASSERT_EQUAL(data["shown"], 4, "and ui_data() is what it shows")
-	LAZYREMOVE(host.open_tguis, probe)
+	host.remove_open_tguis(probe)
 
 /// A host that declares what its window reads pushes for those and nothing else; a window on another host is not touched.
 /datum/unit_test/dq_ui_outputs_reads_decide_the_push
@@ -87,8 +87,8 @@ TRACKED(/datum/dq_ui_out_host, other)
 	var/datum/dq_ui_out_host/bystander = new
 	var/datum/tgui/dq_ui_probe/probe = new
 	var/datum/tgui/dq_ui_probe/far_probe = new
-	LAZYADD(host.open_tguis, probe)
-	LAZYADD(bystander.open_tguis, far_probe)
+	host.add_open_tguis(probe)
+	bystander.add_open_tguis(far_probe)
 	dq_ui_frame()
 	host.set_other(5)
 	dq_ui_frame()
@@ -97,8 +97,8 @@ TRACKED(/datum/dq_ui_out_host, other)
 	dq_ui_frame()
 	TEST_ASSERT_EQUAL(probe.pushes, 1, "a var it reads does")
 	TEST_ASSERT_EQUAL(far_probe.pushes, 0, "and another host's window hears nothing")
-	LAZYREMOVE(host.open_tguis, probe)
-	LAZYREMOVE(bystander.open_tguis, far_probe)
+	host.remove_open_tguis(probe)
+	bystander.remove_open_tguis(far_probe)
 
 /// update_uis() and request_push() are requests, not pushes: fifty in a frame are one delivery, and a re-run of the interact is owed.
 /datum/unit_test/dq_ui_outputs_requests_coalesce

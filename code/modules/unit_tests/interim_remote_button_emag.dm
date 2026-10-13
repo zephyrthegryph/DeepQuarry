@@ -5,8 +5,8 @@
 /datum/unit_test/interim_remote_button_emag_access/run_gate()
 	var/obj/machinery/button/remote/button = allocate(/obj/machinery/button/remote, tile(4, 2))
 	p2_door_set_power(button, TRUE)
-	button.req_access = list(ACCESS_ENGINE_EQUIP)
-	button.req_one_access = list(ACCESS_SECURITY, ACCESS_RESEARCH)
+	button.set_req_access(list(ACCESS_ENGINE_EQUIP))
+	button.set_req_one_access(list(ACCESS_SECURITY, ACCESS_RESEARCH))
 	var/mob/living/carbon/human/user = make_person(null, tile(4, 3))
 	var/wiring_before = button.wires_num
 	TEST_ASSERT(button.operable(), "the button is operable")

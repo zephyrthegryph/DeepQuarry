@@ -92,8 +92,6 @@
 	//Flags
 	var/need_update_field = 0
 	var/need_player_check = 0
-TRACKED(/obj/machinery/mining/drill, need_player_check)
-TRACKED(/obj/machinery/mining/drill, supported)
 
 CAPABILITIES(/obj/machinery/mining/drill)
 	default_parts()

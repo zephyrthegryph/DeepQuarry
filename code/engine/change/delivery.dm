@@ -143,7 +143,9 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	while(length(GLOB.rx_cross_jobs))
 		var/list/job = GLOB.rx_cross_jobs[1]
 		GLOB.rx_cross_jobs.Cut(1, 2)
-		rx_deliver_cross(job[1], job[2], job[3], job[4], job[5])
+		var/datum/crossing = resolve_handle(job[1])
+		if(crossing) // a holder deleted before the drain gets no crossing (rx_deliver_cross ignored it anyway)
+			rx_deliver_cross(crossing, job[2], job[3], job[4], job[5])
 	// (holder -> (reaction or listener -> deliveries this drain)): a pair delivered more than RX_DRAIN_PASSES times is
 	// looping (its handler keeps changing what it reads) and is quarantined; every other pair keeps draining.
 	var/list/deliveries = list()
@@ -293,9 +295,9 @@ GLOBAL_VAR_INIT(rx_drain_loop_expected, FALSE)
 		if(L || !rx_request_cross(E, R, band, previous))
 			rx_deliver_cross(E, R, band, previous, L)
 	else
-		GLOB.rx_cross_jobs += list(list(E, R, band, previous, L))
+		GLOB.rx_cross_jobs += list(list(entity_handle(E), R, band, previous, L))
 
-/// Non-urgent crossings waiting for the drain, in the order they happened (never coalesced).
+/// Non-urgent crossings waiting for the drain, in the order they happened (never coalesced): (holder handle, reaction, band, previous, listener).
 GLOBAL_LIST_EMPTY(rx_cross_jobs)
 
 /proc/rx_deliver_cross(datum/E, datum/reaction/R, band, previous, datum/rx_listener/L)

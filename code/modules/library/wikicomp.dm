@@ -24,7 +24,7 @@
 	if(crash)
 		act_message(user, src, MSG_SELF("You try to smack some sense into %T%."), MSG_OTHERS("%U% performs percussive maintenance on %T%."))
 		if(prob(10))
-			crash = FALSE
+			set_crash(FALSE)
 	if(!crash)
 		tgui_interact(user)
 		play_sfx(src, SFX_KEYBOARD) // into console
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	if((A.authority & AUTH_REMOTE_ACCESS) && user.client) // a silicon's remote press
 		user.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, rand(4,10))
 	if(!crash)
-		crash = TRUE
+		set_crash(TRUE)
 		// crashes till it fixes itself
 		after(src, rand(100 SECONDS, 400 SECONDS), PROC_REF(uncrash))
 	. = TRUE
@@ -277,7 +277,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 
 /// The pin question opens for a human's donation while the terminal works (the handler uses the pin only for a card that needs one).
 /obj/machinery/librarywikicomp/proc/donation_needs_pin(datum/act/op/A)
-	return !crash && ishuman(A.actor) && A.args["donate"] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return !crash && ishuman(A.actor) && A.args["donate"]
 
 /obj/machinery/librarywikicomp/proc/pay_donation(obj/item/card/id/I, mob/user, amount, datum/tgui/ui, pin)
 	act_message(user, src, others = span_info("%U% swipes a card through %T%."))
@@ -294,4 +294,4 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 
 /// after() target: the prank crash fixes itself.
 /obj/machinery/librarywikicomp/proc/uncrash()
-	crash = FALSE
+	set_crash(FALSE)

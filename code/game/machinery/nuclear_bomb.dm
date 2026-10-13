@@ -62,7 +62,6 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return PROCESS_KILL
 
-TRACKED(/obj/machinery/nuclearbomb, extended)
 
 /obj/machinery/nuclearbomb/proc/is_extended(datum/act/op/A)
 	if(extended)

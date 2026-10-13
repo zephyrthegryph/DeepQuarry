@@ -145,8 +145,6 @@
 
 	user.clearmap()
 
-	user.mapobjs = list()
-
 	for(var/i=0; i<icount;i++)
 		var/atom/movable/screen/H = new /atom/movable/screen()
 
@@ -166,7 +164,7 @@
 		spent(J)
 		H.icon = HI
 		H.hud_layerise()
-		user.mapobjs += H
+		rel_add(user, nameof(user.mapobjs), H)
 #else
 
 	for(var/i = 0; i<icount; i++)
@@ -264,8 +262,6 @@
 
 	user.clearmap()
 
-	user.mapobjs = list()
-
 	for(var/i=0; i<icount;i++)
 		var/atom/movable/screen/H = new /atom/movable/screen()
 
@@ -278,7 +274,7 @@
 		H.icon = I
 		spent(I)
 		H.hud_layerise()
-		user.mapobjs += H
+		rel_add(user, nameof(user.mapobjs), H)
 
 #endif
 
@@ -302,14 +298,11 @@
 
 /mob/proc/clearmap()
 	src.client.screen -= src.mapobjs
-	for(var/atom/movable/screen/O in mapobjs)
-		spent(O)
-
-	mapobjs = null
+	rel_clear(src, nameof(mapobjs)) // the screens are owned: clearing disposes of them
 
 /obj/machinery/computer/security/proc/close_check(mob/user)
 	var/using = null
-	if(user.mapobjs)
+	if(length(user.mapobjs))
 		for(var/obj/machinery/computer/security/seccomp in oview(1,user))
 			if(seccomp == src)
 				using = 1

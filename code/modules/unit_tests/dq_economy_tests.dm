@@ -55,10 +55,10 @@
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_ENGINEERING), "Chief Engineer could not view Engineering finances")
 	TEST_ASSERT(!console.can_view_department(DEPARTMENT_MEDICAL), "Chief Engineer could view Medical finances")
 	TEST_ASSERT(!console.can_allocate_station_budget(), "Chief Engineer could allocate Station funds")
-	head_id.access |= ACCESS_CAPTAIN
+	head_id.include_access(ACCESS_CAPTAIN)
 	TEST_ASSERT(console.can_allocate_station_budget(), "Captain access could not allocate Station funds")
 	TEST_ASSERT(console.can_view_department(DEPARTMENT_MEDICAL), "Captain access could not view every department")
-	console.authenticated = "Budget tester"
+	console.set_authenticated("Budget tester")
 	var/list/data = console.tgui_data(null)
 	TEST_ASSERT(length(data["department_finances"]), "Captain finance payload contained no department accounts")
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
@@ -574,7 +574,7 @@
 	register.price_list["meal"] = 25
 	var/obj/item/spacecash/ewallet/wallet = new(customer)
 	wallet.owner_name = customer_account.owner_name
-	wallet.worth = 60
+	wallet.set_worth(60)
 	register.scan_wallet(wallet, customer)
 	TEST_ASSERT_EQUAL(wallet.worth, 35, "real register did not debit the e-wallet")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 25, "real register did not credit Service for an e-wallet sale")
@@ -896,7 +896,7 @@
 	collaborator_mind.transfer_to(collaborator)
 	var/obj/item/card/id/collaborator_id = new(collaborator)
 	collaborator_id.associated_account_number = collaborator_account.account_number
-	collaborator_id.access = list(ACCESS_CARGO)
+	collaborator_id.set_access(list(ACCESS_CARGO))
 	dq_test_wear_id(collaborator, collaborator_id)
 
 	TEST_ASSERT(!SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "unapproved account could see the covert market feed")
@@ -919,7 +919,7 @@
 	test_contract.deadline = world.time + 20 MINUTES
 	test_contract.configure_custody_operation("research_goods")
 	test_contract.state = CONTRACT_ACTIVE
-	SScontracts.active_contracts += test_contract
+	rel_add(SScontracts, nameof(SScontracts.active_contracts), test_contract)
 	TEST_ASSERT(test_contract.register_contact(null, collaborator, AGENT_CONTACT_CONFIDENTIAL, null), "Cargo contact could not sign a per-contract confidential agreement")
 	TEST_ASSERT(SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "signed per-contract Cargo contact could not see the private feed")
 	TEST_ASSERT(!SSsupply.market_true_identity_visible(syndicate_broker, collaborator), "Cargo contact was shown the covert principal instead of its cover identity")
@@ -943,7 +943,7 @@
 	var/datum/contract_requirement/event_count/funding_purchase = new(CONTRACT_EVENT_CARGO_MARKET_PURCHASE, 1)
 	funding_contract.add_requirement(funding_purchase)
 	funding_contract.state = CONTRACT_ACTIVE
-	SScontracts.active_contracts += funding_contract
+	rel_add(SScontracts, nameof(SScontracts.active_contracts), funding_contract)
 	TEST_ASSERT(funding_contract.register_contact(null, collaborator, AGENT_CONTACT_STANDARD, null), "Cargo contact could not sign the allowance-backed commission")
 	TEST_ASSERT(SSsupply.reserve_agent_contract_market(funding_contract), "preferred-supplier contract could not publish allowance-backed listings")
 	var/datum/cargo_market_listing/funded_listing = SSsupply.market_listing(funding_contract.market_reservation_ids[1])
@@ -971,7 +971,7 @@
 			break
 	own_take_member(SSsupply, nameof(/datum/system/supply::order_history), funded_order)
 	own_take_member(SSsupply, nameof(/datum/system/supply::adm_order_history), funded_admin_order)
-	SScontracts.active_contracts -= funding_contract
+	rel_remove(SScontracts, nameof(SScontracts.active_contracts), funding_contract)
 	qdel(funded_admin_order)
 	qdel(funded_order)
 	qdel(funding_contract)
@@ -993,7 +993,7 @@
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
 	auditor_id.associated_account_number = auditor_account.account_number
-	auditor_id.access = list(ACCESS_SECURITY)
+	auditor_id.set_access(list(ACCESS_SECURITY))
 	dq_test_wear_id(auditor, auditor_id)
 	TEST_ASSERT(SSsupply.market_security_auditor(auditor), "test Security ID did not authorize market forensics")
 	transaction.trace_strength = FACTION_AGENT_INVESTIGATION_THRESHOLD
@@ -1013,7 +1013,7 @@
 		if(offer_candidate.context?["suspect_account"] == owner_account.account_number)
 			SScontracts.withdraw_candidate(offer_candidate, "Covert market test cleanup")
 	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[owner_account.account_number]")
-	SScontracts.active_contracts -= test_contract
+	rel_remove(SScontracts, nameof(SScontracts.active_contracts), test_contract)
 	own_take_member(SSsupply, nameof(/datum/system/supply::market_transactions), transaction)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
@@ -1050,7 +1050,7 @@
 	contact_mind.transfer_to(contact)
 	var/obj/item/card/id/contact_id = new(contact)
 	contact_id.associated_account_number = contact_account.account_number
-	contact_id.access = list(ACCESS_CARGO)
+	contact_id.set_access(list(ACCESS_CARGO))
 	dq_test_wear_id(contact, contact_id)
 
 	var/datum/faction_agent_record/record = new
@@ -1070,8 +1070,8 @@
 	contract.configure_custody_operation("research_goods")
 	contract.state = CONTRACT_ACTIVE
 	SScontracts.register_contract(contract)
-	SScontracts.offered_contracts -= contract
-	SScontracts.active_contracts += contract
+	rel_remove(SScontracts, nameof(SScontracts.offered_contracts), contract)
+	rel_add(SScontracts, nameof(SScontracts.active_contracts), contract)
 	TEST_ASSERT(SSsupply.reserve_agent_contract_market(contract), "physical agent contract did not reserve a freight route")
 	var/datum/cargo_market_bid/bid = SSsupply.market_bid(contract.market_reservation_ids[1])
 	TEST_ASSERT_NOTNULL(bid, "physical agent contract had no reserved buyer")
@@ -1111,7 +1111,7 @@
 	auditor_mind.transfer_to(auditor)
 	var/obj/item/card/id/auditor_id = new(auditor)
 	auditor_id.associated_account_number = auditor_account.account_number
-	auditor_id.access = list(ACCESS_SECURITY)
+	auditor_id.set_access(list(ACCESS_SECURITY))
 	dq_test_wear_id(auditor, auditor_id)
 	contract.record_contribution(auditor_account.account_number, 10, "Authenticated third-department work", auditor_account.owner_name)
 	var/list/reward_weights = contract.reward_recipient_weights()
@@ -1263,3 +1263,30 @@
 /// What a direct call of an op effect hands it as its act: only the actor is read.
 /datum/dq_test_op_stub
 	var/mob/actor
+
+/// An order an event queued straight onto the supply system's shoppinglist (a shipping error) is bought with the next shuttle load: buy()
+/// once read a local list of the same name, so those orders were never delivered.
+/datum/unit_test/dq_supply_buy_ships_event_queued_orders
+
+/datum/shuttle/autodock/ferry/supply/unit_test
+	defer_initialisation = TRUE
+	shuttle_area = /area
+
+/datum/unit_test/dq_supply_buy_ships_event_queued_orders/Run()
+	var/datum/shuttle/autodock/ferry/supply/unit_test/fake_shuttle = new /datum/shuttle/autodock/ferry/supply/unit_test("Unit Test Supply")
+	fake_shuttle.shuttle_area = list(get_area(run_loc_floor_bottom_left))
+	var/datum/shuttle/autodock/ferry/supply/real_shuttle = SSsupply.shuttle
+	SSsupply.shuttle = fake_shuttle
+	var/datum/supply_order/order = new /datum/supply_order()
+	order.ordernum = supply_ordernum()
+	order.supply_pack_static = supply_supply_pack()[pick(supply_supply_pack())]
+	order.ordered_by = "Test Orderer"
+	rel_add(SSsupply, nameof(SSsupply.shoppinglist), order)
+	TEST_ASSERT(order in SSsupply.shoppinglist, "the queued order is on the shopping list")
+	SSsupply.buy()
+	TEST_ASSERT(order.status == SUP_ORDER_SHIPPED, "buy() shipped the order an event queued on the shopping list")
+	TEST_ASSERT(!(order in SSsupply.shoppinglist), "a shipped order leaves the shopping list")
+	for(var/turf/T in get_area(run_loc_floor_bottom_left))
+		own_turf_contents(T) // the delivered crate lands on a clear turf of the area: the test owns it
+	SSsupply.shuttle = real_shuttle
+	qdel(fake_shuttle)

@@ -29,7 +29,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/tmp/obj/machinery/power/solar_control/control
 	var/glass_type = /obj/item/stack/material/glass
 	var/SOLAR_MAX_DIST = 60 // ours are >40 away
-TRACKED(/obj/machinery/power/solar, adir)
 
 /obj/machinery/power/solar/drain_power()
 	return -1
@@ -232,7 +231,7 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	return OP_OK
 
 /obj/item/solar_assembly/proc/on_floor(datum/act/A)
-	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
+	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed)
 
 /obj/item/solar_assembly/proc/held_is_glass(datum/act/op/A)
 	var/obj/item/stack/material/S = A.held
@@ -290,7 +289,6 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	/// Running power sum for the solar service's current pass.
 	var/solar_pending_sum = 0
 	var/auto_start = SOLAR_AUTO_START_NO
-TRACKED(/obj/machinery/power/solar_control, cdir)
 
 // Used for mapping in solar arrays which automatically start itself.
 // Generally intended for far away and remote locations, where player intervention is rare.

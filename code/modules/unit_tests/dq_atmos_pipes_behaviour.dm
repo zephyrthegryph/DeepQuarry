@@ -135,7 +135,7 @@
 	D.set_grid_power(TRUE)
 	D.set_broken_condition(FALSE)
 	if(access)
-		D.req_access = access.Copy()
+		D.set_req_access(access.Copy())
 	D.atmos_init()
 	am_settle()
 	return D
@@ -343,7 +343,7 @@
 	var/list/inner = made.Copy(2, 5)
 	if(access)
 		var/obj/machinery/atmospherics/V = inner[2]
-		V.req_access = access.Copy()
+		V.set_req_access(access.Copy())
 	for(var/obj/machinery/atmospherics/M as anything in made)
 		M.atmos_init()
 	dq_atmos_test_publish_rust_pipenets(made)
@@ -444,11 +444,11 @@
 	var/obj/machinery/atmospherics/pipe/left = line[1]
 	var/obj/machinery/atmospherics/valve/shutoff/V = line[2]
 	TEST_ASSERT(V.open, "it starts open")
-	left.damaged_leak = TRUE
+	left.set_damaged_leak(TRUE)
 	left.handle_leaking()
 	am_settle()
 	TEST_ASSERT(!V.open, "a leak beside it shuts it")
-	left.damaged_leak = FALSE
+	left.set_damaged_leak(FALSE)
 	left.handle_leaking()
 	am_settle()
 	TEST_ASSERT(V.open, "sealed, it opens")
@@ -585,7 +585,7 @@
 	TEST_ASSERT(I.use_power, "a hand switches it on")
 	ap_click(H, I)
 	TEST_ASSERT(!I.use_power, "and off")
-	I.id = "ap_inj"
+	I.set_id("ap_inj")
 	ap_radio(I, "ap_inj", list("power" = "1", "set_volume_rate" = "30"))
 	TEST_ASSERT(I.use_power, "the radio switches it on")
 	TEST_ASSERT_EQUAL(I.volume_rate, 30, "and sets its rate")
@@ -708,7 +708,7 @@
 	var/list/line = pipe_line(/obj/machinery/atmospherics/pipe/simple/visible)
 	var/obj/machinery/atmospherics/pipe/P = line[2]
 	var/mob/living/carbon/human/H = person(null, tile(2, 2))
-	P.damaged_leak = TRUE
+	P.set_damaged_leak(TRUE)
 	P.handle_leaking()
 	TEST_ASSERT(P.leaking, "a cracked pipe leaks")
 	ap_click(H, P, welder(tile(2, 2)))

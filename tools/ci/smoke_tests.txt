@@ -29,3 +29,12 @@ dq_capability_runtime_storage
 ownership_transfer_from_hand
 dq_proximity/object_moves
 dq_timed_pin/last_occupant/cryo_yes
+dq_gc_sweep
+dx_deps_drift_names_read
+dx_deps_output_writes_state
+dq_b4_hud_generated_reads_merged
+kernel_hotspot_work
+dq_om_machine_step_park_wake
+dq_machinery_last_conversion_pin
+dq_machinery_timed_conversion_pin
+dx_menu_order

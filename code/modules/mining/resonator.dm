@@ -80,8 +80,6 @@
 
 TRACKED(/obj/item/resonator, burst_time)
 TRACKED(/obj/item/resonator, spreadmode)
-TRACKED(/obj/item/resonator, fieldsactive)
-TRACKED(/obj/item/resonator, cascading)
 TRACKED(/obj/item/resonator, fieldlimit)
 
 CAPABILITIES(/obj/item/resonator)
@@ -113,7 +111,7 @@ CAPABILITIES(/obj/item/resonator)
 	var/atom/target = A.target
 	if(!target || (src in target))
 		return MSG(op/not_available)
-	if(!isturf(target) && !isturf(target.loc)) // ALLOW(reads): native location is queried immediately before instant field creation with no wait or prompt
+	if(!isturf(target) && !isturf(target.loc))
 		return MSG(op/not_available)
 	var/turf/T = get_turf(target)
 	if(length(turf_contents_of_type(T, /obj/effect/resonance)))

@@ -1,8 +1,8 @@
 //! `analyze gen tracked_lists` -> `code/engine/_generated/tracked_lists.dm`.
 //!
-//! A list var declared `TRACKED(T, v)` (or `TRACKED_BRIDGED`) is mutated in place (`LAZYADD`, `Add`, `[]=`), which no setter
+//! A list var declared `TRACKED(T, v)` is mutated in place (`LAZYADD`, `Add`, `[]=`), which no setter
 //! sees: `set_v()` compares list references, so an in-place edit published nothing. This writes, for each such var, the procs
-//! that mutate it and publish through the same path as the setter (`tracked_changed`, or `changed` with the bridged channel):
+//! that mutate it and publish through the same path as the setter (`tracked_changed`):
 //!
 //! ```text
 //! add_v(x)         append (LAZYADD, Add, += )
@@ -27,17 +27,16 @@ use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::tree::{SourceFile, CODE_DM};
 use crate::pat_match;
 
-/// One TRACKED list var: the type that declares it, the var, the bridged channel (empty for a plain TRACKED).
+/// One TRACKED list var: the type that declares it and the var.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize, Default)]
 pub struct Decl {
     pub ty: String,
     pub var: String,
-    pub channel: String,
     pub rel: String,
     pub line: u32,
 }
 
-/// The `TRACKED(T, v)` / `TRACKED_BRIDGED(T, v, CHANNEL)` declaration lines of one file.
+/// The `TRACKED(T, v)` declaration lines of one file.
 pub fn declarations_in(f: &SourceFile) -> Vec<Decl> {
     let mut out = Vec::new();
     let text = f.text();
@@ -49,12 +48,8 @@ pub fn declarations_in(f: &SourceFile) -> Vec<Decl> {
         if t.starts_with('#') || t.starts_with("//") {
             continue;
         }
-        if let Some(m) = pat_match!(r"TRACKED(_BRIDGED)?\(\s*(/[\w/]+)\s*,\s*(\w+)\s*(?:,\s*(\w+)\s*)?\)").captures(t) {
-            let bridged = !m.s(1).is_empty();
-            if bridged && m.s(4).is_empty() {
-                continue;
-            }
-            out.push(Decl { ty: m.s(2).trim_end_matches('/').to_string(), var: m.s(3).to_string(), channel: if bridged { m.s(4).to_string() } else { String::new() }, rel: f.rel.clone(), line: i as u32 + 1 });
+        if let Some(m) = pat_match!(r"TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)").captures(t) {
+            out.push(Decl { ty: m.s(1).trim_end_matches('/').to_string(), var: m.s(2).to_string(), rel: f.rel.clone(), line: i as u32 + 1 });
         }
     }
     out
@@ -83,11 +78,7 @@ pub fn list_vars(sem: &crate::sem::Sem, decls: &[Decl]) -> BTreeMap<(String, Str
 }
 
 fn publish(d: &Decl) -> String {
-    if d.channel.is_empty() {
-        format!("tracked_changed(src, \"{}\")", d.var)
-    } else {
-        format!("changed(src, {}, \"{}\")", d.channel, d.var)
-    }
+    format!("tracked_changed(src, \"{}\")", d.var)
 }
 
 /// The procs and the version var for one list var.

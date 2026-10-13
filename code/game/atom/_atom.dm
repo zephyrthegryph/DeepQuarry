@@ -301,8 +301,9 @@
 	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
 	var/old_dir = dir
 	dir = new_dir
-	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look); an atom nothing draws or watches pays one var read.
-	if((rx?.look_key || rel_watchers) && old_dir != new_dir)
+	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look), and so does a stat, an
+	// on_change() hook or a pending operation that reads it; an atom nothing draws, watches or reads pays one var read and the demand test.
+	if(old_dir != new_dir && (rx?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir)))))
 		tracked_changed(src, nameof(dir))
 SETTER(/atom, dir)
 
@@ -310,14 +311,13 @@ SETTER(/atom, dir)
 /atom/look_set_dir(new_dir)
 	set_dir(new_dir)
 
-/// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers
-/// and, as a bridge, raises the channel the type's declared field names (machinery_fields.dm).
+/// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers.
 /atom/proc/set_density(new_density)
 	new_density = !!new_density // Sanitize to be strictly 0 or 1
 	if(density == new_density)
 		return FALSE
 	density = new_density
-	tracked_bridged_changed(src, nameof(density))
+	tracked_changed(src, nameof(density))
 	return TRUE
 SETTER(/atom, density)
 
@@ -326,6 +326,8 @@ SETTER(/atom, density)
 	if(invisibility == new_invisibility)
 		return FALSE
 	invisibility = new_invisibility
+	if(GLOB.stat_input_keys?[nameof(invisibility)] || GLOB.derived_read_vars?[nameof(invisibility)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(invisibility))))
+		tracked_changed(src, nameof(invisibility))
 	return TRUE
 
 /atom/proc/ex_act(strength = 3)
@@ -721,7 +723,11 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 
 /// Its icon state (after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)
+	if(icon_state == new_state)
+		return
 	icon_state = new_state
+	if(GLOB.stat_input_keys?[nameof(icon_state)] || GLOB.derived_read_vars?[nameof(icon_state)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon_state))))
+		tracked_changed(src, nameof(icon_state))
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)

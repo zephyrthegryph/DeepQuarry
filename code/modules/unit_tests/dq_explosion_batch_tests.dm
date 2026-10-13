@@ -64,7 +64,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	var/turf/T = test_floor()
 	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
 	var/obj/structure/dq_blast_probe/inner = allocate(/obj/structure/dq_blast_probe, C)
-	C.opened = FALSE
+	C.set_opened(FALSE)
 	inner.forceMove(C)
 	blast(list(C), 1)
 	TEST_ASSERT(QDELETED(C), "a devastating blast should destroy the closet")

@@ -50,9 +50,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/sound_env = STANDARD_STATION
 	var/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
 	VAR_PROTECTED/color_grading = null // Color blending for clients that enter this area
-TRACKED(/area, eject)
-TRACKED(/area, fire)
-TRACKED(/area, party)
 
 /area/New()
 	// Used by the maploader, this must be done in New, not init
@@ -247,11 +244,6 @@ TRACKED(/area, party)
 	//	new lighting behaviour with obj lights
 		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
 
-TRACKED(/area, power_equip)
-TRACKED(/area, power_light)
-TRACKED(/area, power_environ)
-TRACKED(/area, requires_power)
-TRACKED(/area, always_unpowered)
 
 /// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
 /// vars are tracked: every machine's has_power reads them (generated deps), so a flip reaches the machines through that stat's on_change hook,

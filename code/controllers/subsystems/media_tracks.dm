@@ -55,23 +55,23 @@ SYSTEM_DEF(media_tracks)
 
 			T.casino = entry["casino"] ? 1 : 0
 
-			all_tracks += T
+			rel_add(src, nameof(all_tracks), T)
 
 /datum/system/media_tracks/proc/sort_tracks()
 	report_progress("Sorting media tracks...")
 	sortTim(all_tracks, GLOBAL_PROC_REF(cmp_media_track_asc))
 
-	jukebox_tracks.Cut()
-	lobby_tracks.Cut()
-	casino_tracks.Cut()
+	rel_clear(src, nameof(jukebox_tracks))
+	rel_clear(src, nameof(lobby_tracks))
+	rel_clear(src, nameof(casino_tracks))
 
 	for(var/datum/track/T in all_tracks)
 		if(!T.secret && !T.casino)
-			jukebox_tracks += T
+			rel_add(src, nameof(jukebox_tracks), T)
 		if(T.lobby)
-			lobby_tracks += T
+			rel_add(src, nameof(lobby_tracks), T)
 		if(T.casino)
-			casino_tracks += T
+			rel_add(src, nameof(casino_tracks), T)
 
 /datum/system/media_tracks/proc/manual_track_add(mob/user)
 	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
@@ -201,7 +201,7 @@ SYSTEM_DEF(media_tracks)
 				to_chat(user, span_warning("URL, Title, or Duration was missing from a song. Skipping."))
 				continue
 			var/datum/track/T = new(songdata["url"], songdata["title"], songdata["duration"], songdata["artist"], songdata["genre"], songdata["secret"], songdata["lobby"], songdata["casino"])
-			all_tracks += T
+			rel_add(src, nameof(all_tracks), T)
 
 			report_progress("New media track added by [user.client]: [T.title]")
 		sort_tracks()
@@ -216,7 +216,7 @@ SYSTEM_DEF(media_tracks)
 	T.lobby = answers.lobby
 	T.casino = casino
 
-	all_tracks += T
+	rel_add(src, nameof(all_tracks), T)
 
 	report_progress("New media track added by [user.client]: [title]")
 	sort_tracks()
@@ -235,7 +235,7 @@ SYSTEM_DEF(media_tracks)
 
 	for(var/datum/track/T in all_tracks)
 		if(T.title == track || T.url == track)
-			all_tracks -= T
+			rel_remove(src, nameof(all_tracks), T)
 			spent(T)
 			report_progress("Media track removed by [user.client]: [track]")
 			sort_tracks()
@@ -247,7 +247,7 @@ SYSTEM_DEF(media_tracks)
 	if(!admin_require(user.client, R_DEBUG|R_FUN, "add_track", TRUE))
 		return
 	var/datum/track/T = new(new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
-	all_tracks += T
+	rel_add(src, nameof(all_tracks), T)
 	report_progress("Media track added by [user]: [T.title]")
 	sort_tracks()
 	return
@@ -260,7 +260,7 @@ SYSTEM_DEF(media_tracks)
 		return
 
 	report_progress("Media track removed by [user]: [T.title]")
-	all_tracks -= T
+	rel_remove(src, nameof(all_tracks), T)
 	spent(T, user)
 	sort_tracks()
 	return
@@ -272,6 +272,10 @@ SYSTEM_DEF(media_tracks)
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
 CAPABILITIES(/datum/system/media_tracks)
+	ref_many(nameof(all_tracks), /datum/track)
+	ref_many(nameof(jukebox_tracks), /datum/track)
+	ref_many(nameof(lobby_tracks), /datum/track)
+	ref_many(nameof(casino_tracks), /datum/track)
 	op("vv_add_track", topic_in(VV_TOPIC, "add_track"), then(PROC_REF(vv_topic_add_track)))
 	op("vv_remove_track", topic_in(VV_TOPIC, "remove_track"), then(PROC_REF(vv_topic_remove_track)))
 

@@ -178,6 +178,7 @@ SYSTEM_DEF(transcore)
 CAPABILITIES(/datum/transcore_db)
 	ref_many(nameof(implants))
 	owns_many(nameof(backed_up), /datum/transhuman/mind_record)
+	owns_many(nameof(has_left), /datum/transhuman/mind_record)
 	owns_many(nameof(body_scans), /datum/transhuman/body_record)
 
 /datum/transcore_db/proc/m_backup(datum/mind/mind, obj/item/nif/nif, one_time = FALSE)

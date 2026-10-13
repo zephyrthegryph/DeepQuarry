@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Re-blessed the conversion, hit and machinery pins and the menu-order golden for the sane right-click menu, bot tool ops and the glow trait; the HUD reads test and the hotspot test no longer depend on stale or wall-clock state; the smoke set now covers them"

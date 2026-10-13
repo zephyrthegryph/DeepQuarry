@@ -49,7 +49,4 @@
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 		ME.equip_look(look)
 
-TRACKED(/obj/mecha, show_pilot)
 TRACKED(/obj/mecha, face_state)
-TRACKED(/obj/mecha, pilot_lift)
-TRACKED(/obj/mecha, initial_icon)

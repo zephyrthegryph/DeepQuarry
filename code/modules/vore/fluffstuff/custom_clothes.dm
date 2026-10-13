@@ -2040,12 +2040,12 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip)
 	..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
-		icon_override = 'icons/vore/custom_clothes_mob.dmi'
+		set_icon_override('icons/vore/custom_clothes_mob.dmi')
 	update_clothing_icon()
 
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/dropped(mob/user, equipping, slot)
 	..()
-	icon_override = 'icons/vore/custom_clothes_mob.dmi'
+	set_icon_override('icons/vore/custom_clothes_mob.dmi')
 
 //CappyCat:Cappy Fuzzlyfeathers
 /obj/item/clothing/accessory/watch/custom

@@ -6,7 +6,7 @@
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
 	I.set_registered_name("Records Reader")
 	I.assignment = "Tester"
-	I.access = access
+	I.set_access(access)
 	hc_hold(H, I)
 	return H
 

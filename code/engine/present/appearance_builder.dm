@@ -215,7 +215,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /**
  * This draw read `thing` (a hat's item_state, a container's contents, a part's look): a change published on `thing` redraws the holder, as a
  * change of the holder's own state does. The subscription follows the draw, so a draw that stops reading `thing` stops hearing it. The thing
- * publishes through its tracked vars or changed(); a plain var it writes is not heard. Null reads nothing.
+ * publishes through its tracked vars or PUBLISH_CHANGE(); a plain var it writes is not heard. Null reads nothing.
  */
 /datum/look/proc/watch(datum/thing)
 	if(!isdatum(thing) || QDELETED(thing))

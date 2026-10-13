@@ -24,7 +24,7 @@
 		var/atom/movable/holder = allocate(holder_type, T)
 		var/obj/structure/closet/C = holder
 		if(istype(C))
-			C.opened = FALSE
+			C.set_opened(FALSE)
 		var/obj/structure/dq_blast_probe/inner = allocate(/obj/structure/dq_blast_probe, T)
 		inner.forceMove(holder)
 		blast(list(holder), 2)
@@ -40,7 +40,7 @@
 /datum/unit_test/dq_explosion_batch/mfo_closet_shields_a_light_blast/Run()
 	var/turf/T = test_floor()
 	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
-	C.opened = FALSE
+	C.set_opened(FALSE)
 	var/obj/structure/dq_blast_probe/inner = allocate(/obj/structure/dq_blast_probe, T)
 	inner.forceMove(C)
 	blast(list(C), 3)

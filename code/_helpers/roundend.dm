@@ -1,9 +1,5 @@
 /datum/system/ticker/proc/declare_completion(was_forced = END_ROUND_AS_NORMAL)
 
-	for(var/datum/callback/roundend_callbacks as anything in round_end_events)
-		roundend_callbacks.InvokeAsync()
-	LAZYCLEARLIST(round_end_events)
-
 	to_chat(world, span_filter_system("<BR><BR><BR><H1>The round has ended.</H1>"))
 	log_game("The round has ended.")
 	for(var/channel_tag in CONFIG_GET(str_list/channel_announce_end_game))

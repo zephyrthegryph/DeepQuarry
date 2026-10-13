@@ -183,7 +183,6 @@
 
 TRACKED(/obj/mecha, cabin_regulating)
 TRACKED(/obj/mecha, state)
-TRACKED(/obj/mecha, passenger_count)
 
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
@@ -207,6 +206,7 @@ CAPABILITIES(/obj/mecha)
 	ref_many(nameof(special_equipment), /obj/item/mecha_parts/mecha_equipment)
 	owns_one(nameof(minihud), /datum/mini_hud/mech)
 	owns_many(nameof(internal_components))
+	ref_many(nameof(cargo), /obj)
 	owns_one(nameof(radio), /obj/item/radio)
 	owns_one(nameof(eject_action), /datum/action/innate/mecha/mech_eject, starts = /datum/action/innate/mecha/mech_eject)
 	owns_one(nameof(internals_action), /datum/action/innate/mecha/mech_toggle_internals, starts = /datum/action/innate/mecha/mech_toggle_internals)
@@ -439,7 +439,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	for(var/atom/movable/A in src.cargo)
 		if(isturf(A.loc))
 			step_rand(A)
-	LAZYCLEARLIST(cargo)
 
 	if(loc)
 		loc.Exited(src)
@@ -488,7 +487,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 /// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
 /obj/mecha/var/current_processes = MECHA_PROC_INT_TEMP
-TRACKED(/obj/mecha, current_processes)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
 /// relation channels (the pilot slot's link).
@@ -2223,7 +2221,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/a = id
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
-		operation_req_access += a
+		add_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_del(datum/act/op/A, id)
@@ -2231,7 +2229,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		return FALSE
 	var/a = id
 	if(a in operation_req_access)
-		operation_req_access -= a
+		remove_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_finish(datum/act/op/A)
@@ -2725,7 +2723,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	occupant_message(span_notice("You unload [O]."))
 	if(!slot_remove(O, get_turf(src)))
 		O.forceMove(get_turf(src))
-	LAZYREMOVE(cargo, O)
+	rel_remove(src, nameof(cargo), O)
 	var/turf/T = get_turf(O)
 	if(T)
 		T.Entered(O)

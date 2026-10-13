@@ -15,7 +15,6 @@
 
 /// The item the gripper shows (a mirror of held_item, tracked so the look follows it).
 /obj/item/gripper/var/obj/item/shown_item
-TRACKED(/obj/item/gripper, shown_item)
 
 /obj/item/gripper/proc/update_ref(obj/item/new_item)
 	var/had_item = get_wrapped_item()

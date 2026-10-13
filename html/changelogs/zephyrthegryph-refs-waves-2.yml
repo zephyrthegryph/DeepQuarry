@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Hotspots, painting frames, station holomaps and overmap ships are registry members, and the tgui modal and map-load queues are owned by their systems, so deleted objects leave them instead of being hard-deleted"
+  - bugfix: "A tgui window that fails to open is ended instead of being left to the garbage collector"

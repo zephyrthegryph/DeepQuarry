@@ -118,7 +118,7 @@ MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
 	else
 		AM.forceMove(drop_location())
 
-	harvest_count++
+	set_harvest_count(harvest_count + 1)
 	return AM
 
 //bushes

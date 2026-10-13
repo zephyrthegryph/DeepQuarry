@@ -47,8 +47,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/park_after = 2
 	/// A member below this relevance (STAT_RELEVANCE) is out of the sweep. RELEVANCE_NONE: always relevant.
 	var/min_relevance = RELEVANCE_NONE
-	/// Change channels that wake every step (state_changed()).
-	var/wake_all = 0
 	/// Change keys (PUBLISH_CHANGE, tracked var names) that wake every step.
 	var/list/wake_keys
 	/// The proc name (PROC_REF) of the table proc, on the entity and on contributors: returns seq_step()s.
@@ -621,7 +619,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		E.seq_states.len = seq.idx
 	E.seq_states[seq.idx] = state
 	state.relevant = seq.relevant(E)
-	seq_listen(E)
 	seq_sync(E, state)
 	return state
 
@@ -682,18 +679,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 		else
 			member_leave(seq.parked_key, E, SEQ_SOURCE)
 
-/// E's listen mask includes every channel its sequences wake on (state_changed() reaches seq_channels()).
-/proc/seq_listen(datum/E)
-	E.om_listen |= seq_listen_mask(E)
-
-/// The channels E's sequences listen to: what their steps read, and wake_all.
-/proc/seq_listen_mask(datum/E)
-	. = 0
-	for(var/datum/seq_state/state as anything in E.seq_states)
-		if(!state)
-			continue
-		. |= state.table.chan_union | state.seq.wake_all
-
 /// Adds `contributor` (a datum defining the sequence's table proc: a trait state, a component) to E's table on
 /// `path`: its steps run on it with (entity, frame). One contributor per type. Every step wakes (a new table).
 /// The caller removes it (seq_extra_remove()) before the contributor goes.
@@ -748,7 +733,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	state.snaps = null
 #endif
-	seq_listen(E)
 	if(state.parked)
 		seq_unpark(E, state, "a new table")
 	return TRUE
@@ -860,31 +844,6 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 				woke = TRUE
 		if(woke)
 			seq_woke(E, state, "[key]")
-
-/// state_changed() / entity_dispatch_change() hook: channels `bits` of `E` changed. Wakes every step of E's sequences that
-/// reads one of them,.
-/proc/seq_channels(datum/E, bits)
-	for(var/datum/seq_state/state as anything in E.seq_states)
-		if(!state)
-			continue
-		if((!state.asleep && !state.running) || !(bits & state.table.chan_union))
-			continue
-		var/woke = FALSE
-		var/list/steps = state.table.steps
-		var/list/sleep_bits = state.bits
-		for(var/w in 1 to length(sleep_bits))
-			var/word = sleep_bits[w]
-			if(!word)
-				continue
-			var/base = (w - 1) << 4
-			for(var/b in 0 to 15)
-				if(!(word & (1 << b)))
-					continue
-				var/datum/seq_step/S = steps[base + b + 1]
-				if((S.chan_mask & bits) && seq_wake_pos(state, base + b + 1, !S.once))
-					woke = TRUE
-		if(woke)
-			seq_woke(E, state, "channels [bits]")
 
 /// Wakes every step of `E` on sequence `path` (the explicit wake).
 /proc/seq_wake(datum/E, path)

@@ -22,8 +22,7 @@ human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Hit
 human|/obj/item click: nothing
-@obj.structure human|/obj/item/reagent_containers/food
--menu: Move To Top
--menu: Rename food
--menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food menu: Hit
+human|/obj/item/reagent_containers/food menu: Use
+human|/obj/item/reagent_containers/food click: Click: Use
 keys: drag_buckle, grab_food, melee_hit, stock

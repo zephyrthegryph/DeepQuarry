@@ -310,7 +310,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 				if(istext(steps["id"]) && isnum(steps["amount"]))
 					new_recipes[key] += list(list("id" = steps["id"], "amount" = steps["amount"]))
 	if(length(new_recipes))
-		saved_recipes = new_recipes
+		set_saved_recipes(new_recipes)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_record_recipe(datum/act/op/A)
@@ -322,7 +322,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_clear_recipes(datum/act/op/A)
-	saved_recipes = list()
+	set_saved_recipes(list())
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_save_recording(datum/act/op/A)
@@ -339,13 +339,13 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 			if(!(label in TYPE_TABLE_GET(src, borghypo_reagent_ids)))
 				to_chat(user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
 				return
-		LAZYSET(saved_recipes, name, recording_recipe)
+		set_saved_recipes_at(name, recording_recipe)
 		recording_recipe = null
 		. = TRUE
 
 /// The overwrite question opens only for a name already saved.
 /obj/item/reagent_containers/borghypo/proc/recipe_name_taken(datum/act/op/A)
-	return !isnull(LAZYACCESS(saved_recipes, A.step_value("a1"))) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return !isnull(LAZYACCESS(saved_recipes, A.step_value("a1")))
 
 /obj/item/reagent_containers/borghypo/proc/recipe_overwrite_question(datum/act/op/A)
 	return "\"[A.step_value("a1")]\" already exists, do you want to overwrite it?"
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	if(selected_recipe_id == recipe_name)
 		selected_recipe_id = null
 		is_dispensing_recipe = FALSE
-	LAZYREMOVE(saved_recipes, recipe_name)
+	remove_saved_recipes(recipe_name)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_select_recipe(datum/act/op/A, recipe)

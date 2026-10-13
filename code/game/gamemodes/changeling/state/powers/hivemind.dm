@@ -18,7 +18,8 @@
 	verbpath = /mob/proc/changeling_hivedownload
 
 // HIVE MIND UPLOAD/DOWNLOAD DNA
-GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
+/// Handles of the absorbed_dna datums channeled into the air (a changeling owns each DNA; the bank holds none strongly).
+GLOBAL_LIST_EMPTY(hivemind_bank)
 
 /mob/proc/changeling_hiveupload()
 	set category = VERB_CAT_CHANGELING
@@ -34,7 +35,7 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 
 	var/list/names = list()
 	for(var/datum/absorbed_dna/DNA in changeling.absorbed_dna)
-		if(!(DNA in GLOB.hivemind_bank))
+		if(!(entity_handle(DNA) in GLOB.hivemind_bank))
 			names += DNA.name
 
 	if(names.len <= 0)
@@ -55,7 +56,7 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		return
 
 	changeling.chem_charges -= 10
-	GLOB.hivemind_bank += chosen_dna
+	GLOB.hivemind_bank += entity_handle(chosen_dna)
 	to_chat(src, span_notice("We channel the DNA of [S] to the air."))
 	feedback_add_details("changeling_powers","HU")
 	return TRUE
@@ -73,7 +74,11 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		return
 
 	var/list/names = list()
-	for(var/datum/absorbed_dna/DNA in GLOB.hivemind_bank)
+	for(var/bank_handle in GLOB.hivemind_bank.Copy())
+		var/datum/absorbed_dna/DNA = resolve_handle(bank_handle)
+		if(!DNA)
+			GLOB.hivemind_bank -= bank_handle // the DNA was deleted with its changeling
+			continue
 		if(!(DNA in changeling.absorbed_dna))
 			names[DNA.name] = DNA
 

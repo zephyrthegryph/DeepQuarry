@@ -138,8 +138,6 @@ CAPABILITIES(/obj/item/glass_jar)
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
 	return OP_PASS
-TRACKED(/obj/item/glass_jar, contains)
-TRACKED(/obj/item/glass_jar, filled)
 
 /// The jar, its water and what it holds (named and described by it): coins heaped, creatures seen through the glass.
 /obj/item/glass_jar/draw(datum/look/look)

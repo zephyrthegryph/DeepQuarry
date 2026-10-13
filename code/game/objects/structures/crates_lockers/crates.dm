@@ -153,7 +153,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 
 /// Whoever works the lock is not shut in with it.
 /obj/structure/closet/crate/secure/proc/actor_outside(datum/act/op/A)
-	return (A.actor?.loc != src) ? null : /datum/msg/req_failed // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
+	return (A.actor?.loc != src) ? null : /datum/msg/req_failed
 
 /// A hand's work on a locked crate is its lock; on an unlocked one, its door.
 /obj/structure/closet/crate/secure/touched_with_cutters(datum/act/op/A)
@@ -202,8 +202,8 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 		if(!lock_locked(src))
 			open()
 		else
-			req_access = list()
-			req_access += pick(SSaccess.get_all_station_access())
+			set_req_access(list())
+			add_req_access(pick(SSaccess.get_all_station_access()))
 
 /obj/structure/closet/crate/plastic
 	name = "plastic crate"

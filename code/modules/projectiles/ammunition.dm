@@ -164,7 +164,6 @@ CAPABILITIES(/obj/item/ammo_casing)
 	var/list/icon_keys		//keys
 	var/list/ammo_states	//values
 
-TRACKED(/obj/item/ammo_magazine, latent_rounds)
 TRACKED(/obj/item/ammo_magazine, max_ammo)
 
 CAPABILITIES(/obj/item/ammo_magazine)
@@ -341,8 +340,8 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	if(!(typestr in GLOB.magazine_icondata_keys) || !(typestr in GLOB.magazine_icondata_states))
 		magazine_icondata_cache_add(M)
 
-	M.icon_keys = GLOB.magazine_icondata_keys[typestr]
-	M.ammo_states = GLOB.magazine_icondata_states[typestr]
+	M.set_icon_keys(GLOB.magazine_icondata_keys[typestr])
+	M.set_ammo_states(GLOB.magazine_icondata_states[typestr])
 
 /proc/magazine_icondata_cache_add(obj/item/ammo_magazine/M)
 	var/list/icon_keys = list()

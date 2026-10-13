@@ -13,7 +13,6 @@
 	equip_type = EQUIP_HULL
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/var/repairing = FALSE
-TRACKED(/obj/item/mecha_parts/mecha_equipment/repair_droid, repairing)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	every(2 SECONDS, then(PROC_REF(repair_droid_step)), when = nameof(repairing))

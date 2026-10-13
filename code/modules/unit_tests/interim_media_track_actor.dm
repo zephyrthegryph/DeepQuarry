@@ -52,8 +52,7 @@
 	TEST_ASSERT(is_abstract(tracks), "the actual test system is abstract for kernel boot discovery")
 	TEST_ASSERT_NULL(system_table()[tracks.type], "the inherited system constructor does not register this abstract test fixture")
 	var/datum/track/retained = allocate(/datum/track, "interim://local", "Retained test track", 30 SECONDS)
-	var/list/catalog = tracks.all_tracks
-	catalog += retained
+	rel_add(tracks, nameof(tracks.all_tracks), retained)
 	TEST_ASSERT_EQUAL(tracks.all_tracks[1], retained, "the actual test catalog contains its exact track before denial")
 	TEST_ASSERT_EQUAL(test_op_handler(tracks, "vv_topic_add_track", actor), TRUE, "the actual VV add wrapper preserves its handled return")
 	TEST_ASSERT_EQUAL(tracks.add_actor, actor, "the actual VV add wrapper forwards its explicit actor to the real guarded helper")

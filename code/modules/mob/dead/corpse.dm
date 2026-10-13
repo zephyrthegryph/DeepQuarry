@@ -153,9 +153,9 @@
 			W.icon_state = corpseidicon
 		if(src.corpseidaccess)
 			if(jobdatum)
-				W.access = jobdatum.get_access()
+				W.set_access(jobdatum.get_access())
 			else
-				W.access = list()
+				W.set_access(list())
 		if(corpseidjob)
 			W.assignment = corpseidjob
 		W.set_registered_name(M.real_name)

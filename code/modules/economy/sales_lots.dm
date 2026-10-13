@@ -207,7 +207,6 @@
 	var/list/stock_suggested_prices
 	var/list/stock_stocker_accounts
 
-TRACKED(/obj/machinery/department_storefront, department_id)
 
 /obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
@@ -400,7 +399,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	var/list/verified = list()
 	items[item.name] = 1
 	prices[item.name] = price
-	verified[item] = price
+	verified[entity_handle(item)] = price
 	var/list/quote = department_service_quote(customer, department_id, price)
 	if(!quote)
 		to_chat(user, span_warning("Your account cannot cover this purchase."))

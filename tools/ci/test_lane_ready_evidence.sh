@@ -15,12 +15,16 @@ printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_merge_master.sh
 cat >tools/dq_merge_gates.sh <<'FIXTURE'
 #!/usr/bin/env bash
 set -euo pipefail
+if [ "$DQ_EVIDENCE_FIXTURE" = moved ]; then
+  # The real gates amend the merge commit (baseline shrink, look keys): HEAD moves before the proof is named.
+  echo probe >>moved.txt; git add moved.txt; git commit -q --amend --no-edit
+fi
 sha="$(git rev-parse HEAD)"
 dir=data/merge-gates
 mkdir -p "$dir"
 case "$DQ_EVIDENCE_FIXTURE" in
   missing) exit 0 ;;
-  incomplete|badcounts|wrongsha|wrongcommit|valid) ;;
+  incomplete|badcounts|wrongsha|wrongcommit|valid|moved) ;;
   *) exit 2 ;;
 esac
 proof_sha="$sha"
@@ -64,3 +68,14 @@ if DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=missing bash tools/dq_lane_ready.sh 
 fi
 if git notes --ref=lane-ready show HEAD >/dev/null 2>&1; then exit 1; fi
 echo 'PASS: reuse refuses untested selectors'
+
+# The gates may move HEAD (amend/record look keys) before naming their proof: a passing run must still stamp.
+git notes --ref=lane-ready remove HEAD >/dev/null 2>&1 || true
+before="$(git rev-parse HEAD)"
+DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=moved bash tools/dq_lane_ready.sh --tests /datum/unit_test/evidence_probe >data-moved.log 2>&1 || { cat data-moved.log >&2; echo 'FAIL: gates that moved HEAD were not stamped' >&2; exit 1; }
+[ "$(git rev-parse HEAD)" != "$before" ] || { echo 'FAIL: fixture did not move HEAD' >&2; exit 1; }
+git notes --ref=lane-ready show HEAD >/dev/null
+echo 'PASS: gates that moved HEAD still stamp'
+# The refusal names expected and found.
+grep -q 'expected:' data-wrongsha.log && grep -q 'found:' data-wrongsha.log || { echo 'FAIL: refusal lacks expected/found' >&2; exit 1; }
+echo 'PASS: refusal prints expected vs found'

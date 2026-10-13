@@ -18,8 +18,9 @@
 /// (a sleep or a runaway loop in a phase) shows the last phase it finished. Each line
 /// also carries the datum's reference count, so a step that leaves a reference behind
 /// (one that something outside the DM walk holds) shows as the step where the count rises.
+/// Log entries are not traced: logging a line creates an entry, evicting an old one destroys it, and tracing that destroy logs again without end.
 GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
-#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what] refs=[refcount(D)]") }
+#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth && !istype(D, /datum/log_entry)) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what] refs=[refcount(D)]") }
 
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
 	var/hint = QDEL_HINT_QUEUE
@@ -40,6 +41,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	GLOB.destroy_transaction_depth--
 	if(D && hint != QDEL_HINT_LETMELIVE)
 		capability_runtime_forget(D)
+		staleness_forget(D)
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint

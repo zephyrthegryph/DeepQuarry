@@ -81,7 +81,6 @@ CAPABILITIES(/turf/simulated/wall)
 TRACKED(/turf/simulated/wall, radioactive)
 /// TRUE while the wall carries a thermite coating (draws it; lighting it melts the wall).
 /turf/simulated/wall/var/thermite = FALSE
-TRACKED(/turf/simulated/wall, thermite)
 
 /// Call after its materials change.
 /turf/simulated/wall/proc/check_radioactive()
@@ -953,10 +952,10 @@ TRACKED(/turf/simulated/wall, thermite)
 				if(the_rcd.use_one_access)
 					A.electronics.one_access = the_rcd.use_one_access
 					A.electronics.req_one_access = the_rcd.conf_access.Copy()
-					A.req_one_access = the_rcd.conf_access.Copy()
+					A.set_req_one_access(the_rcd.conf_access.Copy())
 				else
 					A.electronics.set_conf_access(the_rcd.conf_access.Copy())
-					A.req_access = the_rcd.conf_access.Copy()
+					A.set_req_access(the_rcd.conf_access.Copy())
 			A.set_autoclose(TRUE)
 			return TRUE
 		if(RCD_WINDOOR)
@@ -1113,7 +1112,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	if(selected_windoor_type == "default")
 		selected_windoor_type = ""
 	A.icon_state = selected_windoor_open_dir+selected_windoor_type
-	A.base_state = selected_windoor_open_dir+selected_windoor_type
+	A.set_base_state(selected_windoor_open_dir+selected_windoor_type)
 	switch(selected_windoor_dir)
 		if("NORTH")
 			A.dir = NORTH
@@ -1134,10 +1133,10 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 		if(rcd.use_one_access)
 			A.electronics.one_access = rcd.use_one_access
 			A.electronics.req_one_access = rcd.conf_access.Copy()
-			A.req_one_access = rcd.conf_access.Copy()
+			A.set_req_one_access(rcd.conf_access.Copy())
 		else
 			A.electronics.set_conf_access(rcd.conf_access.Copy())
-			A.req_access = rcd.conf_access.Copy()
+			A.set_req_access(rcd.conf_access.Copy())
 	A.set_autoclose(TRUE)
 	rcd.finish_deferred_build(src, ask.answerer, RCD_WINDOOR)
 

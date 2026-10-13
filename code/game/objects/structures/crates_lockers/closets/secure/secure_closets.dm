@@ -39,7 +39,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 /// Whoever works the lock is not shut in with it.
 /obj/structure/closet/secure_closet/proc/actor_outside(datum/act/op/A)
-	return (A.actor?.loc != src) ? null : /datum/msg/req_failed // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
+	return (A.actor?.loc != src) ? null : /datum/msg/req_failed
 
 /// A locked locker is shut for good until unlocked: it opens only unlocked.
 /obj/structure/closet/secure_closet/can_open()
@@ -62,8 +62,8 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 			if(!lock_locked(src))
 				open()
 			else
-				req_access = list()
-				req_access += pick(SSaccess.get_all_station_access())
+				set_req_access(list())
+				add_req_access(pick(SSaccess.get_all_station_access()))
 
 /// An energy blade slices the lock of a shut locker open.
 /obj/structure/closet/secure_closet/proc/blade_sliced(datum/act/op/A)

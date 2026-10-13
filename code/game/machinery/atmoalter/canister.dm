@@ -47,8 +47,6 @@
 
 TRACKED(/obj/machinery/portable_atmospherics/canister, valve_open)
 TRACKED(/obj/machinery/portable_atmospherics/canister, working)
-TRACKED(/obj/machinery/portable_atmospherics/canister, gauge_band)
-TRACKED(/obj/machinery/portable_atmospherics/canister, canister_color)
 
 MSG_DEF_SELF(canister/has_liner, "It already has an engineered pressure liner.")
 MSG_DEF_SELF(canister/drain_first, "Drain and restore it before installing a pressure liner.")
@@ -309,7 +307,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 // ---- ops ----
 
 /obj/machinery/portable_atmospherics/canister/proc/no_liner(datum/act/A)
-	return (!pressure_liner_material_id) ? null : MSG(canister/has_liner) // ALLOW(reads): asked when the sheets are used, never from a cached menu
+	return (!pressure_liner_material_id) ? null : MSG(canister/has_liner)
 
 /obj/machinery/portable_atmospherics/canister/proc/drained_for_liner(datum/act/A)
 	return (!destroyed && gas_pressure_of(air_contents) <= ONE_ATMOSPHERE * 0.1) ? null : MSG(canister/drain_first)
@@ -317,7 +315,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 /obj/machinery/portable_atmospherics/canister/proc/install_liner(datum/act/op/A)
 	var/obj/item/stack/material/stock = A.held
 	var/datum/material/liner = stock.material
-	pressure_liner_material_id = liner.name
+	set_pressure_liner_material_id(liner.name)
 	set_construction_material(MATERIAL_ROLE_LINER, liner.name)
 	material_liner_integrity = 100
 	material_assembly(src).liner_integrity = 100

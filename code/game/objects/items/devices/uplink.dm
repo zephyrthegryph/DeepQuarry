@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/uplink)
 
 // Toggles the uplink on and off. Normally this will bypass the item's normal functions and go to the uplink menu, if activated.
 /obj/item/uplink/hidden/proc/toggle()
-	active = !active
+	set_active(!active)
 
 // Directly trigger the uplink. Turn on if it isn't already.
 /obj/item/uplink/hidden/proc/trigger(mob/user as mob)

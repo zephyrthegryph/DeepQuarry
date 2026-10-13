@@ -103,7 +103,7 @@ CAPABILITIES(/obj/dq_req_probe)
 	TEST_ASSERT_EQUAL(dq_req_reason("not_emagged", list(REQ_NOT_EMAGGED), H, probe), "its controls have been tampered with", "emagged fails")
 
 	TEST_ASSERT_NULL(dq_req_reason("access", list(REQ_ACCESS), H, probe), "no req_access: anyone passes")
-	probe.req_access = list(ACCESS_CAPTAIN)
+	probe.set_req_access(list(ACCESS_CAPTAIN))
 	TEST_ASSERT_EQUAL(dq_req_reason("access", list(REQ_ACCESS), H, probe), "access denied", "an ID-less actor lacks the access")
 
 /// A lifted guard: the Menu lists the op, and the op refuses with the guard's reason without running the effect.

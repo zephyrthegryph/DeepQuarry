@@ -29,8 +29,28 @@ pub const UNRESOLVED_RULES: &[&str] = &["unannotated_global", "dynamic_read", "h
 
 /// Engine procs a consumer may call whose reads the runtime registers itself, so the opaque crossing hides nothing: the stat and capability-key
 /// readers resolve to inputs the stat layer indexes (stat_value of a literal id is a stat read; cap_key_get a capability key read).
-/// A draw's `..()` into the engine's base draw reads the base look the engine itself keeps current.
-pub const OPAQUE_SEEN: &[&str] = &["/::stat_value", "/::cap_key_get", "/::condition_holds", "/::condition_id_holds", "/atom::draw", "/datum::draw"];
+/// A draw's `..()` into the engine's base draw reads the base look the engine itself keeps current. tracked_changed() publishes a write (a setter's
+/// last line) and reads nothing. expiry_clock_now() reads a clock, as `world.time` does (a clock read never subscribes).
+pub const OPAQUE_SEEN: &[&str] = &["/::stat_value", "/::cap_key_get", "/::condition_holds", "/::condition_id_holds", "/atom::draw", "/datum::draw", "/::tracked_changed", "/::expiry_clock_now"];
+
+/// The `(declaring type, var)` pairs a read set reads off the holder.
+fn note_reads(set: &ReadSet, reads: &mut BTreeSet<(String, String)>) {
+    for r in &set.reads {
+        if r.kind == ReadKind::Var && r.root == "holder" && r.hop_ok && !r.owner.is_empty() {
+            reads.insert((r.owner.clone(), r.var.clone()));
+        }
+    }
+}
+
+/// A call to the setter `analyze gen auto_tracked` writes (`<type>::set_<var>`): it writes the var and publishes it, and reads nothing the graph
+/// must follow, so the walk's not entering its body (the engine's generated directory is opaque) hides no input.
+fn is_generated_setter(eng: &ReadsEngine, callee: &str) -> bool {
+    let Some((owner, name)) = callee.rsplit_once("::") else { return false };
+    if !name.starts_with("set_") {
+        return false;
+    }
+    eng.sem.proc_ref(owner, name).is_some_and(|p| eng.sem.file_of(p.get().location) == Some(super::auto_tracked::AUTO_REL))
+}
 
 /// One untracked read of a consumer: what it is, and where the read sits.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -40,11 +60,21 @@ pub struct Untracked {
     pub line: u32,
 }
 
-/// What a consumer's reads leave the graph unable to see change.
-pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> Vec<Untracked> {
+/// The hops an output's subscriptions do not follow yet: a draw (or another derived output) redraws from its own vars and from the entities it
+/// declares it watches (`look.watch()`, a derived() hop over a relation); the engine does not subscribe it from a generated read through the
+/// container hop, so such a read is an input an output cannot hear change. Stat inputs, conditions and requirements do hear it.
+const DRAW_UNHEARD_HOPS: &[&str] = &["loc"];
+
+/// What a consumer's reads leave the graph unable to see change. `output`: the consumer is a draw() or another derived output.
+pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, output: bool) -> Vec<Untracked> {
     let mut out = Vec::new();
     for r in &set.reads {
         if r.kind != ReadKind::Var || r.root != "holder" || set.internal.contains(r) {
+            continue;
+        }
+        if output && r.hops.iter().any(|h| DRAW_UNHEARD_HOPS.contains(&h.as_str())) {
+            let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
+            out.push(Untracked { what: r.key(), rel, line });
             continue;
         }
         if !r.hop_ok || eng.classify(&r.owner, &r.var, written) == VarClass::Unknown {
@@ -61,7 +91,7 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> V
         }
     }
     for (callee, (rel, line)) in &set.opaque {
-        if OPAQUE_SEEN.contains(&callee.as_str()) {
+        if OPAQUE_SEEN.contains(&callee.as_str()) || is_generated_setter(eng, callee) {
             continue;
         }
         out.push(Untracked { what: format!("?opaque:{}", callee), rel: rel.clone(), line: *line });
@@ -165,6 +195,14 @@ pub struct DepsAnalysis {
     pub leaves: Vec<Leaf>,
     /// "<type>" -> the holder vars its own draw() reads.
     pub draw_reads: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the published keys its own draw() reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the
+    /// DM text of the key (a define is written `[MOB_KEY_NUTRITION]` so the compile resolves it): a PUBLISH_CHANGE of one redraws the thing.
+    pub draw_keys: BTreeMap<String, BTreeSet<String>>,
+    /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
+    /// set `gens::auto_tracked` turns into tracked vars.
+    pub reads: BTreeSet<(String, String)>,
+    /// The reads of `reads` no declaration makes reactive (see `gens::auto_tracked::candidate`): the vars the inference tracks.
+    pub candidates: BTreeSet<(String, String)>,
 }
 
 /// What each consumer's reads leave the graph unable to see change, over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual
@@ -188,6 +226,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let ann = Annotations::get(&sem, &decls);
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed() } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let written = WriteIndex::build(&sem);
+    let set_calls = super::auto_tracked::set_calls(tree);
+    let outside_setters = super::auto_tracked::writes_outside_setters(&sem);
+    let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     if let Some(an) = handlers::analyzed(tree) {
         for a in &an.handlers {
@@ -198,9 +239,12 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
                 if closed {
                     // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
-                    untracked_of(handled, &eng, &written)
+                    note_reads(handled, &mut reads);
+                    untracked_of(handled, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
                 } else {
-                    untracked_of(&eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path()), &eng, &written)
+                    let set = eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path());
+                    note_reads(&set, &mut reads);
+                    untracked_of(&set, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
                 }
             });
         }
@@ -216,7 +260,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             continue;
         }
         let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
-        consumers.insert(id, untracked_of(&set, &eng, &written));
+        note_reads(&set, &mut reads);
+        consumers.insert(id, untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output));
     }
     // STAT(T, v, FORMULA, formula = PROC_REF(f)): the formula is the stat's one input.
     for m in decls.markers_named("STAT") {
@@ -228,11 +273,15 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 continue;
             }
             let set = eng.analyze_handler(owner, name, "/datum/act/eval");
-            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written));
+            note_reads(&set, &mut reads);
+            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written, false));
         }
     }
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
+    let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
     for d in crate::sem::procs::proc_defs(&sem, &["draw"]) {
         if d.owner == "/" || handlers::OPAQUE_DIRS.iter().any(|p| d.rel.starts_with(p)) {
             continue;
@@ -242,13 +291,20 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             continue;
         }
         let set = eng.analyze(&d.owner, "draw");
+        note_reads(&set, &mut reads);
         let keys = draw_reads.entry(d.owner.clone()).or_default();
+        let published = draw_keys.entry(d.owner.clone()).or_default();
         for r in &set.reads {
             if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Var {
                 keys.insert(r.var.clone());
             }
+            // A capability's state key redraws its holder already (capability_key_changed -> look_key_changed); any other accessor key is a
+            // producer's PUBLISH_CHANGE, which reaches the draw through this table.
+            if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Accessor && !capability_keys.contains(&r.var) {
+                published.insert(crate::gens::reads::canonical_read_key(&r.kind, &r.var, &capability_keys, &defines));
+            }
         }
-        consumers.insert(id.clone(), untracked_of(&set, &eng, &written));
+        consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
         draws.insert(id);
     }
     let mut leaves = Vec::new();
@@ -264,7 +320,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     if trace {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
     }
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads })
+    let candidates = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, reads, candidates })
 }
 
 struct Deps;
@@ -292,6 +349,11 @@ fn emit_table(out: &mut GenOut, name: &str, rows: &[String]) {
     out.line(format!("GLOBAL_LIST_INIT({}, {}_build())", name, name));
 }
 
+/// A published key as DM text: quotes and backslashes escaped, `[` left alone (a define is written `[MOB_KEY_X]` and the compile interpolates it).
+fn quote_key(s: &str) -> String {
+    format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
 fn quote(s: &str) -> String {
     // `[` opens an embedded expression in a DM string: a list hop ("parts[].x") is written `\[`.
     format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"").replace('[', "\\["))
@@ -317,6 +379,17 @@ impl Generator for Deps {
             out.diag("deepquarry.dme", 1, "the semantic model could not be built; stat and draw dependencies cannot be generated");
             return;
         };
+        if std::env::var("DQ_AUTO_REPORT").is_ok() {
+            let mut hist: BTreeMap<&str, usize> = BTreeMap::new();
+            for u in an.consumers.values().flatten() {
+                *hist.entry(u.what.as_str()).or_default() += 1;
+            }
+            let mut rows: Vec<_> = hist.into_iter().collect();
+            rows.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+            for (what, n) in rows {
+                eprintln!("untracked-read {:5} {}", n, what);
+            }
+        }
         out.doc("\"<type>::<proc>\" -> what a stat input, condition, requirement, output or draw reads that nothing publishes: an untracked var");
         out.doc("(\"power_area.x\"), ?<rule> for a read the analysis could not resolve, ?opaque:<type>::<proc> for an engine body it does not enter.");
         out.doc("A stat with such an input recomputes on every read instead of caching (stat_value(), code/engine/stats/recompute.dm).");
@@ -349,6 +422,16 @@ impl Generator for Deps {
             .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
             .collect();
         emit_table(out, "generated_draw_reads", &rows);
+        out.blank();
+        out.doc("\"<type>\" -> the published keys its own draw() (and the parent draws it calls) reads through a READS_AS accessor: a PUBLISH_CHANGE of one");
+        out.doc("redraws the thing (publish_key_changed(), code/engine/stats/recompute.dm), so a draw needs no hand-written on_change() for a key it reads.");
+        let rows: Vec<String> = an
+            .draw_keys
+            .iter()
+            .filter(|(_, ks)| !ks.is_empty())
+            .map(|(t, ks)| format!("	{} = list({})", quote(t), ks.iter().map(|k| quote_key(k)).collect::<Vec<_>>().join(", ")))
+            .collect();
+        emit_table(out, "generated_draw_keys", &rows);
     }
 }
 

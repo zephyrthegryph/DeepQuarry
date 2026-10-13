@@ -30,18 +30,18 @@
 	var/datum/computer_file/program/digitalwarrant/W = allocate(/datum/computer_file/program/digitalwarrant)
 	check(W, H, "addwarrant", "warrant_id_ok", MSG(digitalwarrant/no_id))
 	I.set_registered_name("")
-	I.access = list(ACCESS_SECURITY)
+	I.set_access(list(ACCESS_SECURITY))
 	H.equip_to_slot(I, SLOT_ID_ID)
 	TEST_ASSERT_EQUAL(H.GetIdCard(), I, "actual actor ID lookup sees the equipped card")
 	check(W, H, "addwarrant", "warrant_id_ok", MSG(digitalwarrant/no_id))
 	I.set_registered_name("Boundary Tester")
-	I.access = list()
+	I.set_access(list())
 	check(W, H, "addwarrant", "warrant_id_ok", MSG(digitalwarrant/no_id))
-	I.access = list(ACCESS_SECURITY)
+	I.set_access(list(ACCESS_SECURITY))
 	check(W, H, "addwarrant", "warrant_id_ok", null)
 	var/datum/computer_file/program/email_administration/E = allocate(/datum/computer_file/program/email_administration)
 	check(E, H, "back", "network_admin_access", /datum/msg/req_silent)
-	I.access = list(ACCESS_NETWORK)
+	I.set_access(list(ACCESS_NETWORK))
 	check(E, H, "back", "network_admin_access", null)
 	check(E, H, "changepass", "has_account", /datum/msg/req_silent)
 	var/datum/computer_file/data/email_account/account = allocate(/datum/computer_file/data/email_account, TRUE) // existing glob_load argument avoids registering this isolated account into the live network
@@ -257,13 +257,13 @@
 	var/obj/machinery/seed_storage/storage = allocate(/obj/machinery/seed_storage, H.loc)
 	var/obj/item/seeds/tomatoseed/seed = allocate(/obj/item/seeds/tomatoseed, H.loc)
 	var/obj/item/storage/bag/plants/bag = allocate(/obj/item/storage/bag/plants, H.loc)
-	storage.lockdown = FALSE
+	storage.set_lockdown(FALSE)
 	check(storage, H, "insert_seeds", "not_locked_down_holds", null, seed)
 	check(storage, H, "insert_bag", "not_locked_down_holds", null, bag)
-	storage.lockdown = TRUE
+	storage.set_lockdown(TRUE)
 	check(storage, H, "insert_seeds", "not_locked_down_holds", "it's locked down", seed)
 	check(storage, H, "insert_bag", "not_locked_down_holds", "it's locked down", bag)
-	storage.lockdown = FALSE
+	storage.set_lockdown(FALSE)
 	check(storage, H, "insert_seeds", "not_locked_down_holds", null, seed)
 	check(storage, H, "insert_bag", "not_locked_down_holds", null, bag)
 
@@ -428,11 +428,11 @@
 	var/obj/machinery/pipelayer/P = allocate(/obj/machinery/pipelayer, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	P.set_on(FALSE)
-	P.metal = 0
+	P.set_metal(0)
 	check(P, H, "toggle", "can_run", /datum/msg/pipelayer/no_metal)
-	P.metal = 1
+	P.set_metal(1)
 	check(P, H, "toggle", "can_run", null)
-	P.metal = 0
+	P.set_metal(0)
 	P.set_on(TRUE)
 	check(P, H, "toggle", "can_run", null)
 	P.set_on(FALSE)
@@ -479,12 +479,12 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/pump/P = allocate(/obj/machinery/pump, H.loc)
 	var/obj/item/cell/C = allocate(/obj/item/cell, H.loc)
-	P.open = FALSE
-	P.unlocked = FALSE
+	P.set_open(FALSE)
+	P.set_unlocked(FALSE)
 	check(P, H, "insert_cell", "battery_panel_open", MSG(pump/panel_watertight), C)
-	P.unlocked = TRUE
+	P.set_unlocked(TRUE)
 	check(P, H, "insert_cell", "battery_panel_open", MSG(pump/panel_screwed), C)
-	P.open = TRUE
+	P.set_open(TRUE)
 	check(P, H, "insert_cell", "battery_panel_open", null, C)
 	var/obj/item/cell/initial_cell = P.cell
 	TEST_ASSERT_NOTNULL(initial_cell, "The default parts initialize their real cell view")
@@ -551,15 +551,15 @@
 /datum/unit_test/dq_requirement_industry_boundary/food/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/reagent_containers/food/snacks/bun/B = allocate(/obj/item/reagent_containers/food/snacks/bun, H.loc)
-	B.package = FALSE
-	B.canned = FALSE
+	B.set_package(FALSE)
+	B.set_canned(FALSE)
 	check(B, H, "stuff", "stuffing_free", null)
-	B.package = TRUE
+	B.set_package(TRUE)
 	check(B, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
-	B.package = FALSE
-	B.canned = TRUE
+	B.set_package(FALSE)
+	B.set_canned(TRUE)
 	check(B, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
-	B.canned = FALSE
+	B.set_canned(FALSE)
 	check(B, H, "stuff", "stuffing_free", null)
 	var/obj/item/reagent_containers/food/drinks/coffee/C = allocate(/obj/item/reagent_containers/food/drinks/coffee, H.loc)
 	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, TRUE)
@@ -772,21 +772,21 @@
 	var/obj/item/surgical/retractor/retractor = allocate(/obj/item/surgical/retractor, H.loc)
 	var/obj/item/surgical/hemostat/hemostat = allocate(/obj/item/surgical/hemostat, H.loc)
 	var/obj/item/surgical/bioregen/bioregen = allocate(/obj/item/surgical/bioregen, H.loc)
-	limb.stage = 0
+	limb.set_stage(0)
 	check_when(limb, H, "bench_scalpel", TRUE, scalpel)
 	check_when(limb, H, "bench_retract", FALSE, retractor)
-	limb.stage = 1
+	limb.set_stage(1)
 	check_when(limb, H, "bench_scalpel", FALSE, scalpel)
 	check_when(limb, H, "bench_retract", TRUE, retractor)
-	limb.stage = 2
+	limb.set_stage(2)
 	check_when(limb, H, "bench_scalpel", TRUE, scalpel)
 	check_when(limb, H, "bench_extract", TRUE, hemostat)
 	check_when(limb, H, "bench_rejuvenate", FALSE, bioregen)
-	limb.stage = 3
+	limb.set_stage(3)
 	check_when(limb, H, "bench_scalpel", FALSE, scalpel)
 	check_when(limb, H, "bench_extract", FALSE, hemostat)
 	check_when(limb, H, "bench_rejuvenate", TRUE, bioregen)
-	limb.stage = 0
+	limb.set_stage(0)
 	check_when(limb, H, "bench_scalpel", TRUE, scalpel)
 
 /datum/unit_test/dq_requirement_sixth_boundary/hailer_override_texts/Run()
@@ -884,9 +884,9 @@
 	TEST_ASSERT_NOTNULL(B.padding_material, "the actual padding mutation creates material")
 	check(B, H, "unpad", "has_padding", null)
 	check(B, H, "pad", "can_be_padded", MSG(bed/already_padded), steel)
-	B.can_pad = FALSE
+	B.set_can_pad(FALSE)
 	check(B, H, "pad", "can_be_padded", MSG(bed/cant_pad), steel)
-	B.can_pad = TRUE
+	B.set_can_pad(TRUE)
 	B.set_padding_material(null)
 	check(B, H, "pad", "can_be_padded", null, cloth)
 	var/obj/structure/bed/chair/chair = allocate(/obj/structure/bed/chair, H.loc)
@@ -899,11 +899,11 @@
 	var/obj/machinery/computer/skills/skills = allocate(/obj/machinery/computer/skills, H.loc)
 	check(security, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
 	check(skills, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
-	security.authenticated = H.real_name
+	security.set_authenticated(H.real_name)
 	skills.authenticated = H.real_name
 	check(security, H, "edit_notes", "records_authenticated", null)
 	check(skills, H, "edit_notes", "records_authenticated", null)
-	security.authenticated = null
+	security.set_authenticated(null)
 	skills.authenticated = null
 	check(security, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
 	check(skills, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
@@ -913,10 +913,10 @@
 	var/obj/item/canvas/C = allocate(/obj/item/canvas, H.loc)
 	check(C, H, "paint", "canvas_open", null)
 	check(C, H, "finalize", "canvas_open", null)
-	C.finalized = TRUE
+	C.set_finalized(TRUE)
 	check(C, H, "paint", "canvas_open", MSG(canvas/finished))
 	check(C, H, "finalize", "canvas_open", MSG(canvas/finished))
-	C.finalized = FALSE
+	C.set_finalized(FALSE)
 	check(C, H, "paint", "canvas_open", null)
 
 /datum/unit_test/dq_requirement_seventh_boundary/toilet_cleanup_gates/Run()

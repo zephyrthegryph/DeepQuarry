@@ -4,7 +4,7 @@
 SYSTEM_DEF(flight)
 	name = "Flight Operations"
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	// The old subsystem depended on SSshuttles (it registers SSshuttles.ships); boot right after it.
+	// The old subsystem depended on SSshuttles (its ships register in REGISTRY_OVERMAP_SHIPS); boot right after it.
 	needs = list(/datum/system/shuttles, /datum/system/expedition)
 	// rebuild_registry() registers any live expedition sites.
 	var/list/destinations = list()
@@ -192,11 +192,11 @@ CAPABILITIES(/datum/system/flight)
 	port_by_landmark.Cut()
 	if(length(using_map.station_levels))
 		var/station_z = using_map.station_levels[1]
-		if(!shuttles_registered_shuttle_landmarks()["hangar_3_expedition"])
+		if(!resolve_handle(shuttles_registered_shuttle_landmarks()["hangar_3_expedition"]))
 			var/turf/general_berth = locate(161, 140, station_z)
 			if(istype(get_area(general_berth), /area/hangar/three))
 				new /obj/effect/shuttle_landmark/southern_cross/expedition_station/general(general_berth)
-		if(!shuttles_registered_shuttle_landmarks()["hangar_3_echidna"])
+		if(!resolve_handle(shuttles_registered_shuttle_landmarks()["hangar_3_echidna"]))
 			var/turf/echidna_berth = locate(155, 141, station_z)
 			if(istype(get_area(echidna_berth), /area/hangar/three))
 				new /obj/effect/shuttle_landmark/southern_cross/expedition_station/echidna(echidna_berth)
@@ -211,7 +211,9 @@ CAPABILITIES(/datum/system/flight)
 		"echidna_dock",
 	)
 	for(var/landmark_tag in shuttles_registered_shuttle_landmarks())
-		var/obj/effect/shuttle_landmark/landmark = shuttles_registered_shuttle_landmarks()[landmark_tag]
+		var/obj/effect/shuttle_landmark/landmark = resolve_handle(shuttles_registered_shuttle_landmarks()[landmark_tag])
+		if(!landmark)
+			continue
 		var/host_id
 		if(landmark.landmark_tag in carrier_port_tags)
 			host_id = carrier_id

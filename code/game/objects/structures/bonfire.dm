@@ -65,7 +65,6 @@ CAPABILITIES(/obj/structure/bonfire/permanent)
 TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
 // ition Start
-TRACKED(/obj/structure/bonfire, grill)
 
 /obj/structure/bonfire/examine(mob/user)
 	. = ..()

@@ -84,7 +84,6 @@
 	special_handling = TRUE
 
 TRACKED(/obj/item/mail/blank, sealed)
-TRACKED(/obj/item/mail/blank, set_recipient)
 
 CAPABILITIES(/obj/item/mail/blank)
 	// a blank envelope is sealed or opened in hand, not unwrapped
@@ -167,8 +166,6 @@ CAPABILITIES(/obj/item/mail/blank)
 	set_sealed(TRUE)
 	return OP_OK
 
-TRACKED(/obj/item/mail, colored_envelope)
-TRACKED(/obj/item/mail, stamps)
 TRACKED(/obj/item/mail, postmarked)
 TRACKED(/obj/item/mail, postmark_dx)
 TRACKED(/obj/item/mail, postmark_roll)
@@ -366,7 +363,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)
-		SSmail.admin_mail += new_mail
+		rel_add(SSmail, nameof(SSmail.admin_mail), new_mail)
 		log_and_message_admins("spawned [chosen] inside an envelope at the shuttle")
 	else
 		var/obj/item/mail/ground_mail = new /obj/item/mail(user_mob.loc)

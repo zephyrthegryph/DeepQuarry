@@ -209,7 +209,7 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/bore)
 	if(ismineralturf(A))
 		var/turf/simulated/mineral/MI = A
 		forceMove(get_turf(A)) // Careful.
-		permutated.Add(A)
+		rel_add(src, nameof(permutated), A)
 		MI.GetDrilled(TRUE)
 		return 0
 	else if(istype(A, /turf/simulated/wall) || istype(A, /turf/simulated/shuttle/wall))	// Cause a loud, but relatively minor explosion on the wall it hits.

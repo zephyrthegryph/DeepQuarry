@@ -16,7 +16,6 @@
 	var/needle = "meterX"
 	var/sent_kpa
 
-TRACKED(/obj/machinery/meter, needle)
 TRACKED(/obj/machinery/meter, open)
 TRACKED(/obj/machinery/meter, id)
 
@@ -191,7 +190,7 @@ CAPABILITIES(/obj/machinery/meter)
 	return (open) ? null : MSG(meter/panel_shut)
 
 /obj/machinery/meter/proc/pipe_here(datum/act/A)
-	return (!!locate_within(loc, /obj/machinery/atmospherics/pipe)) ? null : MSG(meter/no_pipe) // ALLOW(reads): asked when the multitool is used, never from a cached menu
+	return (!!locate_within(loc, /obj/machinery/atmospherics/pipe)) ? null : MSG(meter/no_pipe)
 
 /// The multitool moves the meter to the next pipe on its tile.
 /obj/machinery/meter/proc/retargeted(datum/act/op/A)

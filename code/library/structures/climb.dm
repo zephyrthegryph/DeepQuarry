@@ -159,7 +159,7 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	READS_FROM() // who is climbing is the engine's record of waiting ops, never cached
 	var/list/found = list()
 	for(var/ref in GLOB.op_pending_all)
-		var/datum/pending_op/P = GLOB.op_pending_all[ref]
+		var/datum/pending_op/P = resolve_handle(GLOB.op_pending_all[ref])
 		if(!P || !P.active || QDELETED(P) || P.holder != holder || !istype(P.cap, /datum/capability/lib/climb))
 			continue
 		if(P.actor)

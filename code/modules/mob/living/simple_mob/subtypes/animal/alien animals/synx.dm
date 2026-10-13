@@ -544,10 +544,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 TRACKED(/mob/living/simple_mob/animal/synx, overlay_colors)
 TRACKED(/mob/living/simple_mob/animal/synx, body_style)
 TRACKED(/mob/living/simple_mob/animal/synx, horns)
-TRACKED(/mob/living/simple_mob/animal/synx, markings)
 TRACKED(/mob/living/simple_mob/animal/synx, eyes)
-TRACKED(/mob/living/simple_mob/animal/synx, transformed)
-TRACKED(/mob/living/simple_mob/animal/synx, stomach_distended)
 
 /// The modular look: tinted body, horns, markings and eyes layers over the base state, and the belly sprites unless transformed (they do not exist yet).
 /mob/living/simple_mob/animal/synx/draw(datum/look/look)

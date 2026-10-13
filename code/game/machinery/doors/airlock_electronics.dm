@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	return (!locked) ? null : MSG(airlock_electronics/logged_out)
 
 /obj/item/airlock_electronics/proc/not_hardened(datum/act/A)
-	return (!secure) ? null : MSG(airlock_electronics/hardened) // ALLOW(reads): the hardened kind is a different type; the flag never changes
+	return (!secure) ? null : MSG(airlock_electronics/hardened)
 
 /// A cryptographic sequencer removes the access restrictions (a hardened device cannot be bypassed).
 /obj/item/airlock_electronics/proc/emag_effect(datum/act/op/A)

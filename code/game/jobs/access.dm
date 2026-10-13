@@ -6,9 +6,9 @@
 /// Swaps req_access and req_one_access for the shared copy with the same contents.
 /obj/proc/intern_access_lists()
 	if(length(req_access) && is_access_id_list(req_access))
-		req_access = string_list(req_access)
+		set_req_access(string_list(req_access))
 	if(length(req_one_access) && is_access_id_list(req_one_access))
-		req_one_access = string_list(req_one_access)
+		set_req_one_access(string_list(req_one_access))
 
 /proc/is_access_id_list(list/L)
 	for(var/entry in L)
@@ -32,7 +32,7 @@
 
 /obj/proc/check_access_list(list/L)
 	// We don't require access
-	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
+	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		return TRUE
 
 	// They passed nothing, but we are something that requires access

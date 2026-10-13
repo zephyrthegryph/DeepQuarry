@@ -929,8 +929,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 	update_icon_define_digi = 'icons/inventory/suit/mob_digi.dmi'
 
-TRACKED(/obj/item/clothing/suit, hood_up)
-TRACKED(/obj/item/clothing/suit, toggleicon)
 
 CAPABILITIES(/obj/item/clothing/suit)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
@@ -1016,7 +1014,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 	if(has_taur_tail)
 		var/datum/sprite_accessory/tail/taur/taurtail = taur.tail_style
 		if(taurtail.suit_sprites && (icon_exists(taurtail.suit_sprites, get_worn_icon_state(slot_wear_suit_str))))
-			icon_override = taurtail.suit_sprites
+			set_icon_override(taurtail.suit_sprites)
 			taurized = TRUE
 	// means that if a taur puts on an already taurized suit without a taur sprite
 	// for their taur type, but the previous taur type had a sprite, it stays
@@ -1025,7 +1023,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 		taurized = FALSE
 
 	if(!taurized)
-		icon_override = initial(icon_override)
+		set_icon_override(initial(icon_override))
 		taurized = FALSE
 
 // Taur suits need to be shifted so its centered on their taur half.
@@ -1199,9 +1197,9 @@ CAPABILITIES(/obj/item/clothing/under)
 	// The _s is because the icon update procs append it.
 	if((under_icon == rolled_down_icon && (icon_exists(under_icon, worn_state))) || (icon_exists(under_icon, "[worn_state]_d")))
 		if(rolled_down != 1)
-			rolled_down = 0
+			set_rolled_down(0)
 	else
-		rolled_down = -1
+		set_rolled_down(-1)
 	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/proc/update_rollsleeves_status()
@@ -1224,9 +1222,9 @@ CAPABILITIES(/obj/item/clothing/under)
 	// The _s is because the icon update procs append it.
 	if((under_icon == rolled_down_sleeves_icon && (icon_exists(under_icon, worn_state))) || (icon_exists(under_icon, "[worn_state]_r")))
 		if(rolled_sleeves != 1)
-			rolled_sleeves = 0
+			set_rolled_sleeves(0)
 	else
-		rolled_sleeves = -1
+		set_rolled_sleeves(-1)
 	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/update_clothing_icon()
@@ -1336,19 +1334,19 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You cannot roll down [src]!"))
 		return
 	if((rolled_sleeves == 1) && !(rolled_down))
-		rolled_sleeves = 0
+		set_rolled_sleeves(0)
 
-	rolled_down = !rolled_down
+	set_rolled_down(!rolled_down)
 	if(rolled_down)
 		set_body_parts_covered(worn_of_type(type).covers)
 		set_body_parts_covered(worn_of(src).covers & (~(UPPER_TORSO|ARMS)))
 		protection_of(src).heat_parts &= ~(UPPER_TORSO|ARMS)
 		protection_of(src).cold_parts &= ~(UPPER_TORSO|ARMS)
 		if(icon_exists(rolled_down_icon, worn_state))
-			icon_override = rolled_down_icon
-			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(rolled_down_icon)
+			set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		else
-			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_d")
+			set_item_state_slots_at(slot_w_uniform_str, "[worn_state]_d")
 
 		to_chat(user, span_notice("You roll down your [src]."))
 	else
@@ -1356,8 +1354,8 @@ CAPABILITIES(/obj/item/clothing/under)
 		set_heat_protection(protection_of_type(type).heat_parts)
 		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_icon)
-			icon_override = initial(icon_override)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(initial(icon_override))
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll up your [src]."))
 	update_clothing_icon()
 	worn_protection_changed()
@@ -1376,24 +1374,24 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You must roll up your [src] first!"))
 		return
 
-	rolled_sleeves = !rolled_sleeves
+	set_rolled_sleeves(!rolled_sleeves)
 	if(rolled_sleeves)
 		set_body_parts_covered(worn_of(src).covers & (~(ARMS)))
 		protection_of(src).heat_parts &= ~(ARMS)
 		protection_of(src).cold_parts &= ~(ARMS)
 		if(icon_exists(rolled_down_sleeves_icon, worn_state))
-			icon_override = rolled_down_sleeves_icon
-			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(rolled_down_sleeves_icon)
+			set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		else
-			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_r")
+			set_item_state_slots_at(slot_w_uniform_str, "[worn_state]_r")
 		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
 		set_body_parts_covered(worn_of_type(type).covers)
 		set_heat_protection(protection_of_type(type).heat_parts)
 		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_sleeves_icon)
-			icon_override = initial(icon_override)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(initial(icon_override))
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
 	worn_protection_changed()

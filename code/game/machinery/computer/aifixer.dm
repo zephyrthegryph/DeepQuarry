@@ -13,7 +13,6 @@
 
 /// Variable dictating if we are in the process of restoring the occupier AI
 /obj/machinery/computer/aifixer/var/restoring = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/computer/aifixer/proc/can_use_card(datum/act/op/A)
 	if(!operable())
@@ -37,7 +36,6 @@ TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTI
 		new_occupant.control_disabled = TRUE
 		rel_set(src, nameof(occupier), new_occupant)
 		card.clear()
-		changed(src)
 	else
 		to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [card]. What exactly are you trying to do here?"))
 	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.

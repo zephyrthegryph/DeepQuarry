@@ -22,8 +22,6 @@
 // single TGUI window with all channels/messages shipped in one payload
 // and curr_page driving the view. Photo embedding (browse_rsc) is not
 // yet wired through TGUI assets, so message photos are omitted.
-TRACKED(/obj/item/newspaper, curr_page)
-TRACKED(/obj/item/newspaper, scribble_page)
 
 MSG_DEF_SELF(newspaper/unintelligible, "the paper is full of unintelligible symbols")
 
@@ -33,6 +31,7 @@ MSG_DEF_SELF(newspaper/unintelligible, "the paper is full of unintelligible symb
 	return OP_OK
 
 CAPABILITIES(/obj/item/newspaper)
+	ref_many(nameof(news_content), /datum/feed_channel) // the network owns the channels; a deleted one leaves the paper
 	configure(item_combat(attack_verbs = list("bapped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_actor_kind(/mob/living/carbon/human, because = MSG(newspaper/unintelligible))), then(PROC_REF(interaction_self)))

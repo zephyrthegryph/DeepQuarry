@@ -162,7 +162,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 /mob/living/silicon/robot/proc/apply_name(new_name)
 	if(!custom_name)
 		if (new_name)
-			custom_name = new_name
+			set_custom_name(new_name)
 			sprite_name = new_name
 
 /mob/living/silicon/robot/proc/apply_module(datum/robot_sprite/new_datum, new_module)

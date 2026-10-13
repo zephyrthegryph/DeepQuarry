@@ -212,8 +212,6 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
-TRACKED(/mob, lying)
-TRACKED(/mob, is_shifted)
 TRACKED(/mob, incorporeal_move)
 
 CAPABILITIES(/mob)
@@ -235,6 +233,8 @@ CAPABILITIES(/mob)
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
 	ref_many(nameof(pinned), /obj/item) // Borrowed objects pinning the mob to a wall.
+	owns_many(nameof(mapobjs), /atom/movable/screen) // the camera-overview map screens this mob is shown: disposed of when cleared
+	ref_many(nameof(embedded), /obj/item) // Items embedded in a mob with no organs to hold them: a deleted item leaves the list.
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
 	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
@@ -323,7 +323,6 @@ CAPABILITIES(/mob)
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
-TRACKED(/mob, size_multiplier)
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
@@ -331,8 +330,6 @@ TRACKED(/mob, size_multiplier)
 TRACKED(/mob, stat)
 TRACKED(/mob, seedarkness)
 TRACKED(/mob, transforming)
-TRACKED(/mob, resting)
-TRACKED(/mob, status_flags)
 TRACKED(/mob, real_name)
 
 
