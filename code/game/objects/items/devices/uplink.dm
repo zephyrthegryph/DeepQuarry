@@ -240,7 +240,7 @@ CAPABILITIES(/obj/item/uplink/hidden)
 
 /// It carries a hidden uplink from the start.
 CAPABILITIES(/obj/item/radio/uplink)
-	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, on_destroy = ON_DESTROY_DELETE, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/uplink/interaction_self(mob/user, obj/item/held)
 	. = ..()
@@ -254,14 +254,14 @@ CAPABILITIES(/obj/item/radio/uplink)
 
 /// It carries a hidden uplink from the start.
 CAPABILITIES(/obj/item/multitool/uplink)
-	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, on_destroy = ON_DESTROY_DELETE, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ
 
 /// It carries a hidden uplink from the start.
 CAPABILITIES(/obj/item/radio/headset/uplink)
-	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, on_destroy = ON_DESTROY_DELETE, starts = /obj/item/uplink/hidden)
 
 /// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item

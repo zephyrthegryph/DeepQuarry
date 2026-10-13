@@ -570,6 +570,45 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(A, SEQ_TEST)
 	TEST_ASSERT(("cap" in A.log) && ("own" in A.log), "both ran: [jointext(A.log, ",")]")
 
+// ---------------------------------------------------------------- replan inside a frame
+
+/// An entity whose early step drops its contributor mid-frame (the table shrinks), and whose last step reads a var.
+/datum/seq_test_entity/replanner
+	var/datum/seq_test_contributor/extra
+
+/datum/seq_test_entity/replanner/test_steps()
+	. = ..()
+	. += seq_step(PROC_REF(rp), after = "T_FIRST")
+	. += seq_step(PROC_REF(late), after = "tail", reads = nameof(heat), should_run = PROC_REF(late_busy))
+
+/datum/seq_test_entity/replanner/proc/rp(datum/seq_frame/test/F)
+	log += "rp"
+	if(extra)
+		seq_extra_remove(src, SEQ_TEST, extra)
+		extra = null
+
+/datum/seq_test_entity/replanner/proc/late(datum/seq_frame/test/F)
+	log += "late"
+
+/datum/seq_test_entity/replanner/proc/late_busy()
+	return FALSE
+
+/// A step earlier in a frame can replan the entity onto a smaller table; the steps after it still run from the old table and fall asleep
+/// there. Test builds note what a sleeping step read, by its position: that note must not index the new, shorter table (it threw "list
+/// index out of bounds" from seq_snapshot_note on the Life sequence, in the operating-computer tests).
+/datum/unit_test/kernel_sequence_replan_mid_frame
+
+/datum/unit_test/kernel_sequence_replan_mid_frame/Run()
+	var/datum/seq_test_entity/replanner/E = allocate(/datum/seq_test_entity/replanner)
+	var/datum/seq_state/S = seq_start(E, SEQ_TEST)
+	E.extra = new /datum/seq_test_contributor
+	TEST_ASSERT(seq_extra_add(E, SEQ_TEST, E.extra), "the contributor is added")
+	var/datum/seq_table/old_table = S.table
+	seq_run_frame_now(E, SEQ_TEST)
+	TEST_ASSERT(("late" in E.log), "the last step ran in the frame that replanned: [jointext(E.log, ",")]")
+	TEST_ASSERT_NOTEQUAL(S.table, old_table, "the entity moved to the table without the contributor")
+	TEST_ASSERT(length(S.snaps) <= S.table.n, "no note was kept for a position past the new table")
+
 // ---------------------------------------------------------------- the audit
 
 /// A sleeping step whose should_run() holds, with its conditions passing and no rewake pending, is a missed wake:

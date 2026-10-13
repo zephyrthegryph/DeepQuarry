@@ -35,6 +35,7 @@ pub const MARKERS: &[&str] = &[
     "READ_LOOKUP",
     "READS_FROM",
     "STATIC_ENTRY",
+    "PROC_SUMMARY",
 ];
 
 /// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).

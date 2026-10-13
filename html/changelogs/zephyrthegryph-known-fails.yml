@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The Graffiti option on walls and floors only shows when you hold something sharp that can engrave the surface"
+  - bugfix: "A uplink implant or uplink radio, multitool or headset deletes its hidden uplink when it is destroyed instead of dropping it on the floor"
+  - bugfix: "A life sequence step that changes a mob's step table mid-tick no longer runs out of its state table in test builds"
