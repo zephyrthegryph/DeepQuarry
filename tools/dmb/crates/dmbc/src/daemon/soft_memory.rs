@@ -1,18 +1,19 @@
 //! Startup-only soft pressure policy; this is not a hard allocation bound.
 //! DMB_DAEMON_SOFT_PRIVATE_BYTES accepts 256 MiB..32 GiB integer bytes.
-//! Unset preserves ordinary CLI pressure at 4,000,000,000 bytes.
+//! Unset uses 8,000,000,000 bytes: the retained DeepQuarry session is about 6 GB
+//! private, so a lower default keeps the daemon in permanent soft pressure.
 use std::{ffi::OsStr, io};
-pub(super) const DEFAULT: u64 = 4_000_000_000;
+pub(super) const DEFAULT: u64 = 8_000_000_000;
 pub(super) fn startup() -> io::Result<u64> {
     parse(std::env::var_os("DMB_DAEMON_SOFT_PRIVATE_BYTES").as_deref())
 }
 /// Ceiling above which the compact symbolic core, generation and link bindings
 /// may be evicted. Below it pressure sheds only transient buffers, so the next
 /// edit stays resident. DMB_DAEMON_HARD_PRIVATE_BYTES overrides; the default is
-/// 2x the soft limit (measured: the full resident memo for DeepQuarry is about 6 GB private, of which about 2.3 GB is the compactable symbolic/classification stores that give edit hits) and an explicit value below the soft limit is rejected.
+/// 1.5x the soft limit (measured: the full resident memo for DeepQuarry is about 6 GB private, of which about 2.3 GB is the compactable symbolic/classification stores that give edit hits) and an explicit value below the soft limit is rejected.
 pub(super) fn hard(soft: u64) -> io::Result<u64> {
     match std::env::var_os("DMB_DAEMON_HARD_PRIVATE_BYTES") {
-        None => Ok(soft.saturating_mul(2)),
+        None => Ok(soft.saturating_add(soft / 2)),
         Some(value) => parse(Some(&value)).and_then(|hard| {
             if hard >= soft {
                 Ok(hard)
@@ -39,7 +40,7 @@ mod tests {
     #[test]
     fn hard_ceiling_defaults_above_soft_limit() {
         if std::env::var_os("DMB_DAEMON_HARD_PRIVATE_BYTES").is_none() {
-            assert_eq!(hard(4_000_000_000).unwrap(), 8_000_000_000);
+            assert_eq!(hard(DEFAULT).unwrap(), 12_000_000_000);
         }
     }
     #[test]
