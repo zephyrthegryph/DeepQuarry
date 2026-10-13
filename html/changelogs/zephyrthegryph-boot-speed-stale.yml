@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Focused test runs sweep a bounded slice of the boot backlog for stale caches at the end of each test; the full suite and the merge gates still check everything"
