@@ -17,7 +17,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 		var/obj/item/oldest = GLOB.adminfaxes[1]
 		GLOB.adminfaxes.Cut(1, 2)
 		if(!QDELETED(oldest))
-			qdel(oldest)
+			oldest.expire(0)
 
 /obj/machinery/photocopier/faxmachine
 	name = "fax machine"

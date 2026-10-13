@@ -68,7 +68,6 @@ init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	var/static/list/d
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	if(isnull(scrubbing_gas))
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	set_scrubbing_gas(default_scrubbing_gas)
 init_lines	code/ATMOSPHERICS/components/unary/vent_scrubber.dm	icon = null
-init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	SSair.hotspots += src
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	if(!isnull(starting_volume))
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	volume = starting_volume
 init_lines	code/ATMOSPHERICS/environmental/LINDA_fire.dm	if(!isnull(starting_temperature))
@@ -269,15 +268,6 @@ init_lines	code/game/machinery/atm_ret_field.dm	for(var/obj/machinery/atmospheri
 init_lines	code/game/machinery/atm_ret_field.dm	if(F != src)
 init_lines	code/game/machinery/atm_ret_field.dm	log_mapping("Duplicate ARFGS at [x],[y],[z]")
 init_lines	code/game/machinery/atm_ret_field.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/machinery/atm_ret_field.dm	var/area/A = get_area(src)
-init_lines	code/game/machinery/atm_ret_field.dm	ASSERT(istype(A))
-init_lines	code/game/machinery/atm_ret_field.dm	LAZYADD(A.all_arfgs, src)
-init_lines	code/game/machinery/atm_ret_field.dm	areas_added = list(A)
-init_lines	code/game/machinery/atm_ret_field.dm	for(var/direction in GLOB.cardinal)
-init_lines	code/game/machinery/atm_ret_field.dm	A = get_area(get_step(src,direction))
-init_lines	code/game/machinery/atm_ret_field.dm	if(istype(A) && !(A in areas_added))
-init_lines	code/game/machinery/atm_ret_field.dm	LAZYADD(A.all_arfgs, src)
-init_lines	code/game/machinery/atm_ret_field.dm	areas_added += A
 init_lines	code/game/machinery/atm_ret_field.dm	update_nearby_tiles() //Force ZAS update
 init_lines	code/game/machinery/atmoalter/area_atmos_computer.dm	scanscrubbers()
 init_lines	code/game/machinery/atmoalter/canister.dm	fill_preset()
@@ -1065,8 +1055,6 @@ init_lines	code/game/objects/mob_spawner.dm	COOLDOWN_START(src, spawn_cooldown, 
 init_lines	code/game/objects/structures/artstuff.dm	reset_grid()
 init_lines	code/game/objects/structures/artstuff.dm	color_drop = image(icon, null, "brush_color")
 init_lines	code/game/objects/structures/artstuff.dm	color_drop.color = selected_color
-init_lines	code/game/objects/structures/artstuff.dm	if(persistence_id)
-init_lines	code/game/objects/structures/artstuff.dm	SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 init_lines	code/game/objects/structures/catwalk.dm	if(delete_me)
 init_lines	code/game/objects/structures/catwalk.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/structures/catwalk.dm	for(var/obj/structure/catwalk/C in get_turf(src))
@@ -1777,7 +1765,6 @@ init_lines	code/modules/holomap/mapper.dm	rel_add(src, nameof(map_image_cache), 
 init_lines	code/modules/holomap/mapper.dm	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 init_lines	code/modules/holomap/mapper.dm	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 init_lines	code/modules/holomap/station_holomap.dm	original_zLevel = loc.z
-init_lines	code/modules/holomap/station_holomap.dm	SSholomaps.station_holomaps += src
 init_lines	code/modules/holomap/station_holomap.dm	if(holomaps_holomaps_initialized())
 init_lines	code/modules/holomap/station_holomap.dm	setup_holomap()
 init_lines	code/modules/hydroponics/beekeeping/beehive.dm	recipes = GLOB.wax_recipes
@@ -1931,27 +1918,6 @@ init_lines	code/modules/integrated_electronics/subtypes/memory.dm	complexity = n
 init_lines	code/modules/library/lib_items.dm	for(var/obj/item/I in contents_of(loc))
 init_lines	code/modules/library/lib_items.dm	if(istype(I, /obj/item/book))
 init_lines	code/modules/library/lib_items.dm	I.forceMove(src)
-init_lines	code/modules/lighting/lighting_fake_sun.dm	world_suns += src
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(!advanced_lighting)
-init_lines	code/modules/lighting/lighting_fake_sun.dm	do_sun = FALSE
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(family) //Allows one to make multiple fake_suns to use the same settings
-init_lines	code/modules/lighting/lighting_fake_sun.dm	for(var/obj/effect/fake_sun/l in world_suns) //check all the suns that exist
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(l.family == family && l.shared_settings) //do you have settings we need?
-init_lines	code/modules/lighting/lighting_fake_sun.dm	choice = l.shared_settings
-init_lines	code/modules/lighting/lighting_fake_sun.dm	break
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(!choice) //We didn't get anything from our family, let's pick something
-init_lines	code/modules/lighting/lighting_fake_sun.dm	choice = pick(TYPE_TABLE_GET(src, fake_sun_light_setups))
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(family) //Let's pass our settings on to our family
-init_lines	code/modules/lighting/lighting_fake_sun.dm	shared_settings = choice
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(choice["brightness"] <= LIGHTING_SOFT_THRESHOLD) // dark!
-init_lines	code/modules/lighting/lighting_fake_sun.dm	var/datum/simple_sun/Ssun = new()
-init_lines	code/modules/lighting/lighting_fake_sun.dm	Ssun.brightness = CLAMP01(choice["brightness"])
-init_lines	code/modules/lighting/lighting_fake_sun.dm	Ssun.color = choice["color"]
-init_lines	code/modules/lighting/lighting_fake_sun.dm	var/datum/planet_sunlight_handler/pshandler = new(Ssun)
-init_lines	code/modules/lighting/lighting_fake_sun.dm	if(z > SSlighting.z_to_pshandler.len)
-init_lines	code/modules/lighting/lighting_fake_sun.dm	SSlighting.z_to_pshandler.len = z
-init_lines	code/modules/lighting/lighting_fake_sun.dm	SSlighting.z_to_pshandler[z] = pshandler
-init_lines	code/modules/lighting/lighting_fake_sun.dm	SSlighting.update_sunlight(pshandler) //Queue an update for when it starts running
 init_lines	code/modules/looking_glass/lg_area.dm	rel_set(src, nameof(our_landmark), locate_within(src, /obj/effect/landmark/looking_glass))
 init_lines	code/modules/looking_glass/lg_area.dm	if(!our_landmark())
 init_lines	code/modules/looking_glass/lg_area.dm	log_mapping("Looking glass area [name] couldn't find a landmark")
@@ -2484,7 +2450,6 @@ init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	atom_break()
 init_lines	code/modules/overmap/ships/engines/gas_thruster.dm	break
 init_lines	code/modules/overmap/ships/ship.dm	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 init_lines	code/modules/overmap/ships/ship.dm	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
-init_lines	code/modules/overmap/ships/ship.dm	SSshuttles.ships += src
 init_lines	code/modules/overmap/ships/ship.dm	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 init_lines	code/modules/overmap/ships/ship.dm	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 init_lines	code/modules/overmap/ships/ship.dm	SSflight?.register_vessel(src)
@@ -4077,7 +4042,6 @@ world_reads	code/game/gamemodes/cult/narsie.dm	GLOB.narsie_cometh = 1
 world_reads	code/game/gamemodes/cult/ritual.dm	if(!GLOB.cultwords["travel"])
 world_reads	code/game/gamemodes/cult/ritual.dm	for(var/V in GLOB.cultwords)
 world_reads	code/game/gamemodes/cult/ritual.dm	words[GLOB.cultwords[V]] = V
-world_reads	code/game/machinery/atm_ret_field.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/camera/camera.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/machinery/doors/firedoor.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/fire_alarm.dm	set_security_level(GLOB.security_level ? get_security_level() : "green")

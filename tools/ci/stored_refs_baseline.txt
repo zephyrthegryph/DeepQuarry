@@ -264,7 +264,6 @@ var	code/engine/declare/definition_types.dm	var/datum/source
 var	code/engine/declare/definition_types.dm	var/datum/target
 var	code/engine/declare/definition_types.dm	var/datum/requirement_definition/compiled_expr
 var	code/engine/declare/graph.dm	var/datum/state_graph/graph
-var	code/engine/declare/link_state.dm	GLOBAL_DATUM_INIT(link_watcher, /datum/link_watcher, new)
 var	code/engine/declare/schema.dm	var/datum/schema/member
 var	code/engine/declare/schema.dm	var/datum/schema/key_schema
 var	code/engine/declare/table.dm	var/datum/item
@@ -1397,14 +1396,12 @@ list	code/controllers/kernel/kernel.dm	var/list/work_by_key = list()
 list	code/controllers/kernel/kernel.dm	var/list/p_carry
 list	code/controllers/kernel/kernel.dm	var/list/cadence_items = list()
 list	code/controllers/kernel/kernel.dm	var/list/urgent_queue = list()
-list	code/controllers/kernel/membership.dm	var/list/keys_of = list()
 list	code/controllers/kernel/work_item.dm	var/list/urgent_pending
 list	code/controllers/measure/meter.dm	var/list/systems
 list	code/controllers/subsystems/assets.dm	var/list/datum/asset_cache_item/cache = list()
 list	code/controllers/subsystems/atoms.dm	var/list/after_init_pending
 list	code/controllers/subsystems/atoms.dm	var/list/after_init_loose
 list	code/controllers/subsystems/atoms_batch.dm	var/list/after_inits
-list	code/controllers/subsystems/atoms_batch.dm	var/list/batch_trace
 list	code/controllers/subsystems/contracts.dm	var/list/definitions
 list	code/controllers/subsystems/contracts.dm	var/list/subject_identities
 list	code/controllers/subsystems/contracts.dm	var/list/opportunity_rules
@@ -1438,12 +1435,7 @@ list	code/datums/gear/_gear.dm	GLOBAL_LIST_EMPTY_TYPED(loadout_categories, /datu
 list	code/datums/gear/_gear.dm	GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 list	code/datums/gear/_gear.dm	var/list/gear = list() // ALLOW(instance_list): d: every loadout category holds its gear (singletons)
 list	code/datums/locations/locations.dm	var/list/children = list() // ALLOW(instance_list): d: location tree children
-list	code/datums/native/entities.dm	var/list/bound = list() // ALLOW(instance_list): singleton system, one instance
-list	code/datums/native/entities.dm	var/list/entities_by_index = list() // ALLOW(instance_list): singleton system, one instance
 list	code/datums/operations/req.dm	GLOBAL_LIST_EMPTY(reqs_interned)
-list	code/datums/registries.dm	var/list/members
-list	code/datums/registries.dm	var/list/member_keys
-list	code/datums/registries.dm	var/list/present
 list	code/datums/underwear/underwear.dm	var/list/tweaks // Underwear customizations.
 list	code/domains/heat/heat_entries.dm	GLOBAL_LIST_EMPTY(heat_entry_edges)
 list	code/engine/actions/change.dm	GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the order first marked
@@ -1492,7 +1484,6 @@ list	code/engine/declare/definition_tables.dm	var/list/services
 list	code/engine/declare/definition_types.dm	var/list/compiled_requires
 list	code/engine/declare/graph.dm	GLOBAL_LIST_EMPTY(state_graphs) // graph id (or anonymous signature) -> /datum/state_graph
 list	code/engine/declare/graph.dm	var/list/edges
-list	code/engine/declare/link_state.dm	var/list/link_ends
 list	code/engine/declare/relations.dm	GLOBAL_LIST_EMPTY(list_states) // "[type]|[var]" -> /datum/list_state; built on first use
 list	code/engine/declare/table.dm	var/list/items
 list	code/engine/declare/type_traits.dm	GLOBAL_LIST_EMPTY(type_trait_defaults)

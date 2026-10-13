@@ -172,7 +172,6 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 			log_mapping("Duplicate ARFGS at [x],[y],[z]")
 			return INITIALIZE_HINT_QDEL
 
-	ASSERT(istype(get_area(src)))
 
 /obj/structure/atmospheric_retention_field
 	resistance_flags = BOMB_PROOF
