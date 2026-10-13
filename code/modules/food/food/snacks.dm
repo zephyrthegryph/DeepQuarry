@@ -3639,6 +3639,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
 	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, REAGENT_ID_CHEESE = 15)
 	nutriment_amt = 35
+	// 70 nutriment + 5 protein + 6 tomato juice: the default 80 overflowed by one and logged a WARNING whenever a random MRE meal rolled this pizza.
+	volume = 81
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita)
