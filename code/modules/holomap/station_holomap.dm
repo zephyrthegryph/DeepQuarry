@@ -45,14 +45,12 @@ CAPABILITIES(/obj/machinery/station_map)
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
 	original_zLevel = loc.z
-	SSholomaps.station_holomaps += src
 	if(holomaps_holomaps_initialized())
 		setup_holomap()
 
 /// Phase 2: leaves the holomap index and stops watching.
 /obj/machinery/station_map/lifecycle_dematerialize()
 	. = ..()
-	SSholomaps.station_holomaps -= src
 	stopWatching()
 
 /obj/machinery/station_map/proc/setup_holomap()

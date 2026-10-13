@@ -537,7 +537,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
 	targets += observe_list_format(sort_names(REGISTRY_MEMBERS(REGISTRY_MECHAS)))
-	targets += observe_list_format(shuttles_ships())
+	targets += observe_list_format(shuttles_ships().Copy())
 
 	client.perspective = EYE_PERSPECTIVE
 
