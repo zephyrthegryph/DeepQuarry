@@ -141,13 +141,13 @@ CAPABILITIES(/obj/singularity/narsie/large)
 		if(T.icon_state != "cult-narsie")
 			T.desc = "something that goes beyond your understanding went this way."
 			T.icon = 'icons/turf/flooring/cult.dmi'
-			T.icon_state = "cult-narsie"
+			T.set_icon_state("cult-narsie")
 			set_glow(T, GLOW(1, null, null))
 
 /obj/singularity/narsie/proc/narsiewall(turf/T)
 	T.desc = "An opening has been made on that wall, but who can say if what you seek truly lies on the other side?"
 	T.icon = 'icons/turf/walls.dmi'
-	T.icon_state = "cult-narsie"
+	T.set_icon_state("cult-narsie")
 	T.set_opacity(0)
 	T.set_density(FALSE)
 	set_glow(src, GLOW(1, null, null))
@@ -316,17 +316,17 @@ CAPABILITIES(/obj/singularity/narsie/large)
 /obj/singularity/narsie/on_capture()
 	chained = 1
 	move_self = 0
-	icon_state ="narsie-small-chains"
+	set_icon_state("narsie-small-chains")
 
 /obj/singularity/narsie/on_release()
 	chained = 0
 	move_self = 1
-	icon_state ="narsie-small"
+	set_icon_state("narsie-small")
 
 /obj/singularity/narsie/large/on_capture()
 	chained = 1
 	move_self = 0
-	icon_state ="narsie-chains"
+	set_icon_state("narsie-chains")
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))//removing the client image of nar-sie while it is chained
 		if(M.client)
 			M.see_narsie(src)
@@ -334,7 +334,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 /obj/singularity/narsie/large/on_release()
 	chained = 0
 	move_self = 1
-	icon_state ="narsie"
+	set_icon_state("narsie")
 
 /obj/singularity/narsie/cultify()
 	return
@@ -351,7 +351,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 
 /obj/singularity/narsie/proc/narsie_spawn_animation()
 	icon = 'icons/obj/narsie_spawn_anim.dmi'
-	dir = SOUTH
+	set_dir(SOUTH)
 	move_self = 0
 	flick("narsie_spawn_anim",src)
 	after(src, 1.1 SECONDS, PROC_REF(after_animation))

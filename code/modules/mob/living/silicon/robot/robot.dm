@@ -1569,7 +1569,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		return
 
 	H.desc = "An all-access ID-card, shaped like a robot!"
-	H.icon_state = "[sprite_name]"
+	H.set_icon_state("[sprite_name]")
 	return H
 
 /mob/living/silicon/robot/onTransitZ(old_z, new_z)

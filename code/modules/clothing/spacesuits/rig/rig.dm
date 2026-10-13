@@ -305,7 +305,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	set_canremove(TRUE)
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 		if(!piece) continue
-		piece.icon_state = "[suit_state]"
+		piece.set_icon_state("[suit_state]")
 		if(airtight)
 			update_airtight(piece, 0) // Unseal
 	refresh_worn_pieces()
@@ -339,8 +339,8 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	var/atom/movable/screen/rig_booting/booting_R = new
 
 	if(!seal_target)
-		booting_L.icon_state = "boot_left"
-		booting_R.icon_state = "boot_load"
+		booting_L.set_icon_state("boot_left")
+		booting_R.set_icon_state("boot_load")
 		animate(booting_L, alpha=230, time=3 SECONDS, easing=SINE_EASING)
 		animate(booting_R, alpha=200, time=2 SECONDS, easing=SINE_EASING)
 		M.client?.screen += booting_L
@@ -458,7 +458,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	seal_finish(M, seal_target, booting_L, booting_R, FALSE)
 
 /obj/item/rig/proc/seal_one_piece(mob/living/carbon/human/M, obj/item/piece, msg_type, seal_target)
-	piece.icon_state = "[suit_state][!seal_target ? "_sealed" : ""]"
+	piece.set_icon_state("[suit_state][!seal_target ? "_sealed" : ""]")
 	switch(msg_type)
 		if("boots")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
@@ -497,7 +497,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		consume(booting_R, M)
 		for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 			if(!piece) continue
-			piece.icon_state = "[suit_state][!seal_target ? "" : "_sealed"]"
+			piece.set_icon_state("[suit_state][!seal_target ? "" : "_sealed"]")
 		set_canremove(!seal_target)
 		if(airtight)
 			update_component_sealed()
@@ -515,7 +515,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
 	consume(booting_L, M)
-	booting_R.icon_state = "boot_done"
+	booting_R.set_icon_state("boot_done")
 	after(M, 4 SECONDS, GLOBAL_PROC_REF(rig_boot_hud_clear), with = list(M, booting_R))
 
 	if(canremove)

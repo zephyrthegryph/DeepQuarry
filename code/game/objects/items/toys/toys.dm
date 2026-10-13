@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/toy/balloon)
 		src.reagents.touch_turf(get_turf(hit_atom))
 		for(var/atom/A in get_turf(hit_atom))
 			src.reagents.touch(A)
-		src.icon_state = "burst"
+		set_icon_state("burst")
 		expire(5)
 	return
 
@@ -1899,7 +1899,7 @@ CAPABILITIES(/obj/item/toy/plushie/nukeplushie)
 	if(istype(A, /obj/item/toy/plushie/ipc) && !toasted)
 		toasted = TRUE
 		icon = 'icons/obj/toy.dmi'
-		icon_state = "toast"
+		set_icon_state("toast")
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
 		play_sfx(loc, SFX_MACHINES_DING)
 
@@ -1907,7 +1907,7 @@ CAPABILITIES(/obj/item/toy/plushie/nukeplushie)
 	if(istype(A, /obj/item/toy/plushie/ipc) && !toasted)
 		toasted = TRUE
 		icon = 'icons/obj/toy.dmi'
-		icon_state = "toast"
+		set_icon_state("toast")
 		to_chat(user, span_notice(" You insert bread into the toaster. "))
 		play_sfx(loc, SFX_MACHINES_DING)
 
@@ -2070,13 +2070,13 @@ CAPABILITIES(/obj/item/toy/rock)
 	var/mob/living/user = A.request.answerer
 	switch(A.answer.value)
 		if("fred")
-			src.icon_state = "fred"
+			set_icon_state("fred")
 			to_chat(user, "You draw a face on the rock.")
 		if("rock")
-			src.icon_state = "rock"
+			set_icon_state("rock")
 			to_chat(user, "You wipe the plastic clean.")
 		if("roxie")
-			src.icon_state = "roxie"
+			set_icon_state("roxie")
 			to_chat(user, "You draw a face on the rock and pull aside the plastic slightly, revealing a small pink bow.")
 	return
 
@@ -2374,7 +2374,7 @@ CAPABILITIES(/obj/item/toy/minigibber)
 	after(src, 4.5 SECONDS, PROC_REF(hiss_rewound))
 
 /obj/item/toy/toy_xeno/proc/hiss_rewound()
-	icon_state = "[initial(icon_state)]"
+	set_icon_state("[initial(icon_state)]")
 
 CAPABILITIES(/obj/item/toy/toy_xeno)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -2385,7 +2385,7 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 5 SECONDS) //5 second cooldown
 		act_message(user, src, others = span_notice("%U% pulls back the string on %T%."))
-		icon_state = "[initial(icon_state)]cool"
+		set_icon_state("[initial(icon_state)]cool")
 		after(src, 0.5 SECONDS, PROC_REF(hiss))
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
@@ -2495,7 +2495,7 @@ CAPABILITIES(/obj/item/toy/russian_revolver/trick_revolver)
 	var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 	s.set_up(5, 1, src)
 	s.start()
-	icon_state = "shoot"
+	set_icon_state("shoot")
 	after(src, 0.5 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /*
@@ -2579,7 +2579,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 			C.throw_at(get_step(src, pick(GLOB.alldirs)), 9, 1, src)
 
 		play_sfx(src, SFX_ITEMS_CONFETTI)
-		icon_state = "tastybread_popped"
+		set_icon_state("tastybread_popped")
 		popped = 1
 		user.status_at_least(STAT_STUNNED, 1)
 
@@ -2595,7 +2595,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 		if(popped && !real)
 			consumed(O, src)
 			popped = 0
-			icon_state = "tastybread"
+			set_icon_state("tastybread")
 	return OP_PASS
 
 /obj/item/toy/snake_popper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -2615,7 +2615,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 				C.throw_at(get_step(src, pick(GLOB.alldirs)), 9, 1, src)
 
 			play_sfx(src, SFX_ITEMS_CONFETTI)
-			icon_state = "tastybread_popped"
+			set_icon_state("tastybread_popped")
 			popped = 1
 			user.status_at_least(STAT_STUNNED, 1)
 
@@ -2850,7 +2850,7 @@ CAPABILITIES(/obj/item/toy/partypopper)
 		var/datum/effect/effect/system/confetti_spread/s = new /datum/effect/effect/system/confetti_spread
 		s.set_up(5, 1, src)
 		s.start()
-		icon_state = "partypopper_e"
+		set_icon_state("partypopper_e")
 		var/turf/T = get_step(src, user.dir)
 		if(!turf_clear(T))
 			T = get_turf(src)
@@ -3112,7 +3112,7 @@ CAPABILITIES(/obj/item/toy/plushie/teshari/y_yw)
 	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
 
 /obj/item/toy/nuke/proc/alarm_sequence()
-	icon_state = "nuketoy"
+	set_icon_state("nuketoy")
 	play_sfx(src, SFX_MACHINES_ALARM)
 	after(src, 13.5 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoycool"))
 	after(src, 13.5 SECONDS + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoyidle"))

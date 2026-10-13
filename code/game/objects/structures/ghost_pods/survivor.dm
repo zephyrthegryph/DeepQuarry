@@ -115,7 +115,7 @@ CAPABILITIES(/obj/structure/ghost_pod/manual/survivor)
 
 	H.offer_spawn_rename()
 
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 
 	H.forceMove(T)
 

@@ -212,7 +212,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 		to_chat(user, span_warning("\The [src] won't take you!"))
 		return
 	set_occupant(user)
-	icon_state = "scanner_1"
+	set_icon_state("scanner_1")
 	add_fingerprint(user)
 	SStgui.update_uis(src)
 
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	if(!move_into(src, OCCUPANT_SLOT_DNA_SCANNER, M))
 		return
 	set_occupant(M)
-	icon_state = "scanner_1"
+	set_icon_state("scanner_1")
 
 	// search for ghosts, if the corpse is empty and the scanner is connected to a cloner
 	if(locate(/obj/machinery/computer/cloning, get_step(src, NORTH)) \
@@ -318,7 +318,7 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	else
 		slot_remove(WC, loc)
 	set_occupant(null)
-	icon_state = "scanner_0"
+	set_icon_state("scanner_0")
 	SStgui.update_uis(src)
 
 /obj/machinery/computer/scan_consolenew

@@ -82,7 +82,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/snake)
 	if(Target)
 		LAZYINITLIST(iterated_turfs); iterated_turfs.Insert(1, Target)
 		on_leave_turf(get_turf(src))
-		dir = get_dir(src, Target)
+		set_dir(get_dir(src, Target))
 		forceMove(Target)
 		on_enter_turf(Target)
 		return TRUE

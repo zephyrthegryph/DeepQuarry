@@ -111,8 +111,8 @@
 /// Gives `H` what a connected client gives a body: someone controlling it, a HUD, and a place in the Life sequence.
 /datum/unit_test/dq_gameplay/proc/possess(mob/living/carbon/human/H)
 	var/mob/controller = allocate(/mob/living/simple_mob/e0_fixture, tile(4, 4))
-	controller.invisibility = INVISIBILITY_MAXIMUM
-	controller.density = FALSE
+	controller.set_invisibility(INVISIBILITY_MAXIMUM)
+	controller.set_density(FALSE)
 	rel_set(H, nameof(H.teleop), controller)
 	if(!H.hud_used)
 		H.set_hud_used(new /datum/hud(H))

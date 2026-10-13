@@ -8,7 +8,7 @@
 
 /obj/effect/temporary_effect/item_pickup_ghost/proc/assumeform(obj/item/picked_up)
 	icon = picked_up.icon
-	icon_state = picked_up.icon_state
+	set_icon_state(picked_up.icon_state)
 	pixel_x = picked_up.pixel_x
 	pixel_y = picked_up.pixel_y
 	color = picked_up.color

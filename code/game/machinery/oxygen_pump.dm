@@ -177,7 +177,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	set_maintenance(!under_maintenance())
 	act_message(user, src, MSG_SELF(span_notice("You [under_maintenance() ? "open" : "close"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [under_maintenance() ? "opens" : "closes"] %T%.")))
-	icon_state = (under_maintenance()) ? icon_state_open : icon_state_closed
+	set_icon_state((under_maintenance()) ? icon_state_open : icon_state_closed)
 	return OP_OK
 
 /obj/machinery/oxygen_pump/examine(mob/user)

@@ -55,7 +55,7 @@ MSG_DEF_SELF(emergency_beacon/active, "It is already active, or is otherwise mal
 		return
 	act_message(user, src, MSG_SELF(span_warning("You activate %T%, spiking it into the ground!")), MSG_OTHERS(span_warning("%U% activates %T%!")))
 	set_beacon_active(TRUE)
-	icon_state = "e_beacon_active"
+	set_icon_state("e_beacon_active")
 	user.drop_item()
 	set_anchored(TRUE)
 	gps.set_tracking(TRUE)

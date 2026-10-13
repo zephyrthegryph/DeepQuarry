@@ -68,13 +68,13 @@ TRACKED(/obj/item/implant, malfunction)
 	M?.injure(INJURY_BURN, 15, part, src)
 	name = "melted implant"
 	desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
-	icon_state = "implant_melted"
+	set_icon_state("implant_melted")
 	set_malfunction(MALFUNCTION_PERMANENT)
 
 /obj/item/implant/proc/implant_loadout(mob/living/carbon/human/H)
 	. = istype(H) && handle_implant(H, initialize_loc)
 	if(.)
-		invisibility = initial(invisibility)
+		set_invisibility(initial(invisibility))
 		known_implant = TRUE
 		post_implant(H)
 
@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/implant/tracking)
 		if(ELAPSED(implant_mob, timeofdeath, CLOCK_WORLD) >= degrade_time)
 			name = "melted implant"
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
-			icon_state = "implant_melted"
+			set_icon_state("implant_melted")
 			set_malfunction(MALFUNCTION_PERMANENT)
 			set_tracking_active(FALSE)
 	return 1

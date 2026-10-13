@@ -122,7 +122,7 @@
 
 		act_message(H, null, others = "<b>%U%</b> phases to somewhere far away!")
 		var/obj/effect/temp_visual/shadekin/phase_out/phaseanimout = new /obj/effect/temp_visual/shadekin/phase_out(H.loc)
-		phaseanimout.dir = H.dir
+		phaseanimout.set_dir(H.dir)
 		SK.respite_activating = TRUE
 
 		H.drop_l_hand()
@@ -130,7 +130,7 @@
 
 		SK.shadekin_set_energy(0)
 		SK.in_dark_respite = TRUE
-		H.invisibility = INVISIBILITY_SHADEKIN
+		H.set_invisibility(INVISIBILITY_SHADEKIN)
 
 		// Dark respite mends three quarters of every injury.
 		H.mend(TREAT_BURN_CARE, H.injury_load(INJURY_CATEGORY_THERMAL) * 0.75)
@@ -150,7 +150,7 @@
 			if(I.organ_tag == O_LUNGS)
 				H.SetLosebreath(0)
 		H.set_nutrition(0)
-		H.invisibility = INVISIBILITY_SHADEKIN
+		H.set_invisibility(INVISIBILITY_SHADEKIN)
 		BITRESET(H.hud_updateflag, HEALTH_HUD)
 		BITRESET(H.hud_updateflag, STATUS_HUD)
 		BITRESET(H.hud_updateflag, LIFE_HUD)
@@ -165,8 +165,8 @@
 				H.phase_in(get_turf(H), SK)
 			else
 				var/obj/effect/temp_visual/shadekin/phase_in/phaseanim = new /obj/effect/temp_visual/shadekin/phase_in(H.loc)
-				phaseanim.dir = H.dir
-			H.invisibility = initial(H.invisibility)
+				phaseanim.set_dir(H.dir)
+			H.set_invisibility(initial(H.invisibility))
 			SK.respite_activating = FALSE
 			PUBLISH(belly.owner, belly_change)
 			H.clear_fullscreen("belly")
@@ -198,7 +198,7 @@
 	SK.in_dark_respite = TRUE
 
 	forceMove(pick(GLOB.latejoin_thedark))
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	SK.respite_activating = FALSE
 
 /mob/living/proc/can_leave_dark()

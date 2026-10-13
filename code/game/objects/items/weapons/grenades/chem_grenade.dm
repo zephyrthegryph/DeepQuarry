@@ -46,7 +46,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 			rel_take(src, nameof(detonator))
 			set_det_time(null)
 			set_stage(0)
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 		else if(length(beakers))
 			for(var/obj/B in beakers)
 				if(istype(B))
@@ -92,7 +92,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		if(istimer(detonator.a_right))
 			var/obj/item/assembly/timer/T = detonator.a_right
 			set_det_time(10*T.time)
-		icon_state = initial(icon_state) +"_ass"
+		set_icon_state(initial(icon_state) +"_ass")
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 		set_stage(1)
 	else if(is_type_in_list(W, TYPE_TABLE_GET(src, chem_grenade_containers)) && (!stage || stage==1) && path != 2)
@@ -132,7 +132,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		to_chat(A.actor, span_notice("You lock the empty assembly."))
 		name = "fake grenade"
 	playsound(src, sounds_of(A.held).use, 50, TRUE)
-	icon_state = "[initial(icon_state)]_locked"
+	set_icon_state("[initial(icon_state)]_locked")
 	return OP_OK
 
 /// Unlocked, the parts come loose again; a live grenade almost always goes off instead.
@@ -150,7 +150,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 	to_chat(user, span_notice("You unlock the assembly."))
 	playsound(src, sounds_of(A.held).use, 50, TRUE)
 	name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
-	icon_state = initial(icon_state) + (detonator ? "_ass" : "")
+	set_icon_state(initial(icon_state) + (detonator ? "_ass" : ""))
 	active = FALSE
 	return OP_OK
 
@@ -170,7 +170,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 			detonator.a_right.activate()
 			active = 1
 	if(active)
-		icon_state = initial(icon_state) + "_active"
+		set_icon_state(initial(icon_state) + "_active")
 
 		if(user)
 			msg_admin_attack("[key_name_admin(user)] primed \a [src.name]")
@@ -179,7 +179,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 
 /obj/item/grenade/chem_grenade/proc/primed(primed = 1)
 	if(active)
-		icon_state = initial(icon_state) + (primed?"_primed":"_active")
+		set_icon_state(initial(icon_state) + (primed?"_primed":"_active"))
 
 /obj/item/grenade/chem_grenade/detonate()
 	if(!stage || stage<2) return
@@ -190,7 +190,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 
 	active = 0
 	if(!has_reagents)
-		icon_state = initial(icon_state) +"_locked"
+		set_icon_state(initial(icon_state) +"_locked")
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2, 2)
 		after(src, 0, PROC_REF(sync_det_time)) //Otherwise det_time is erroneously set to 0 after this
 		return
@@ -215,7 +215,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		C.drop_from_inventory(src)
 		C.throw_mode_off()
 
-	invisibility = INVISIBILITY_MAXIMUM //Why am i doing this?
+	set_invisibility(INVISIBILITY_MAXIMUM) //Why am i doing this?
 	expire(5 SECONDS) //To make sure all reagents can work correctly before deleting the grenade.
 
 /obj/item/grenade/chem_grenade/large

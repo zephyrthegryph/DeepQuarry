@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/anobattery)
 /obj/item/anobattery/proc/UpdateSprite()
 	var/p = (stored_charge/capacity)*100
 	p = min(p, 100)
-	icon_state = "anobattery[round(p,25)]"
+	set_icon_state("anobattery[round(p,25)]")
 
 /obj/item/anobattery/proc/use_power(amount)
 	stored_charge = max(0, stored_charge - amount)
@@ -244,11 +244,11 @@ CAPABILITIES(/obj/item/anodevice)
 
 /obj/item/anodevice/proc/UpdateSprite()
 	if(!inserted_battery())
-		icon_state = "anodev"
+		set_icon_state("anodev")
 		return
 	var/p = (inserted_battery().stored_charge/inserted_battery().capacity)*100
 	p = min(p, 100)
-	icon_state = "anodev[round(p,25)]"
+	set_icon_state("anodev[round(p,25)]")
 
 /obj/item/anodevice/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

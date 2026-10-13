@@ -158,7 +158,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 		return
 	beaker.forceMove(loc)
 	rel_take(src, nameof(beaker))
-	icon_state = "pandemic0"
+	set_icon_state("pandemic0")
 
 /// The release reason keeps the archived strain from the opening selection.
 /datum/prompt/text/pandemic_release_reason
@@ -256,7 +256,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 		return TRUE
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)
-	icon_state = "pandemic1"
+	set_icon_state("pandemic1")
 	return TRUE
 
 /obj/machinery/computer/pandemic/proc/get_viruses_data(datum/reagent/blood/blood)

@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/beartrap)
 	..()
 
 	if(!QDELETED(src))
-		max_integrity = max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT
+		set_max_integrity(max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		name = (material.edge_damage() * force_divisor > 15) ?  "[material.display_name] razor wire" : "[material.display_name] [initial(name)]"
 

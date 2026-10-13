@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 		open_request(src, /datum/prompt/choice, PROC_REF(output_chosen), answerer = user, title = "Vac Settings", question = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return
 	vac_power = TYPE_TABLE_GET(src, vac_attachment_settings)[set_input]
-	icon_state = "sucker-[vac_power]"
+	set_icon_state("sucker-[vac_power]")
 
 /obj/item/vac_attachment/proc/output_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 	if(istype(output_atom, /obj/item/storage/bag/trash))
 		if(get_turf(output_atom) != get_turf(user))
 			vac_power = 0
-			icon_state = "sucker-0"
+			set_icon_state("sucker-0")
 			rel_clear(src, nameof(output_dest))
 			to_chat(user, span_warning("Trash bag not found. Shutting down."))
 			return
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 			if(vac_owner && user != vac_owner)
 				return
 			vac_power = 0
-			icon_state = "sucker-0"
+			set_icon_state("sucker-0")
 			rel_clear(src, nameof(output_dest))
 			to_chat(user, span_warning("Target destination not found. Shutting down."))
 			return
@@ -371,15 +371,15 @@ CAPABILITIES(/obj/item/vac_attachment)
 
 /obj/item/vac_attachment/pickup(mob/user)
 	.=..()
-	icon_state = "sucker-[vac_power]"
+	set_icon_state("sucker-[vac_power]")
 
 /obj/item/vac_attachment/equipped()
 	.=..()
-	icon_state = "sucker-[vac_power]"
+	set_icon_state("sucker-[vac_power]")
 
 /obj/item/vac_attachment/dropped(mob/user, equipping, slot)
 	. = ..()
-	icon_state = "sucker_drop"
+	set_icon_state("sucker_drop")
 
 /obj/item/vac_attachment/proc/visibility_chosen(datum/act/op/A)
 	var/datum/prompt/R = A.answer
@@ -388,11 +388,11 @@ CAPABILITIES(/obj/item/vac_attachment)
 	var/mob/user = A.actor
 	switch(R.value)
 		if("Show Pack")
-			item_state = "sucker"
+			set_item_state("sucker")
 		if("Show Tube")
-			item_state = "sucker_nobag"
+			set_item_state("sucker_nobag")
 		if("Hidden")
-			item_state = null
+			set_item_state(null)
 	changed(src)
 	return OP_OK
 

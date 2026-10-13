@@ -522,8 +522,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 	B.title = book_title
 	B.author = row[2]
 	B.dat = row[4]
-	B.icon_state = "book[rand(1,16)]"
-	B.item_state = B.icon_state
+	B.set_icon_state("book[rand(1,16)]")
+	B.set_item_state(B.icon_state)
 	visible_message("[src]'s printer hums as it produces a completely bound book. How did it do that?")
 
 // admin ghost view routes to LibraryComp.tsx with is_admin_view
@@ -652,7 +652,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	var/obj/item/book/b = new(src.loc)
 	b.dat = source_paper.info
 	b.name = "Print Job #" + "[rand(100, 999)]"
-	b.icon_state = "book[rand(1,7)]"
+	b.set_icon_state("book[rand(1,7)]")
 	consumed(source_paper, src)
 
 /obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
@@ -666,7 +666,7 @@ CAPABILITIES(/obj/machinery/bookbinder)
 	for(var/obj/item/photo/P in contents_of(source_bundle))
 		P.forceMove(b)
 	b.name = "Print Job #" + "[rand(100, 999)]"
-	b.icon_state = "book[rand(1,7)]"
+	b.set_icon_state("book[rand(1,7)]")
 	consumed(source_bundle, src)
 
 /// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).

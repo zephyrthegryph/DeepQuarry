@@ -315,7 +315,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 
 /obj/structure/door_assembly/proc/update_state()
 	var/state = assembly_state()
-	icon_state = "door_as_[glass == 1 ? "g" : ""][istext(glass) ? glass : base_icon_state][state]"
+	set_icon_state("door_as_[glass == 1 ? "g" : ""][istext(glass) ? glass : base_icon_state][state]")
 	name = ""
 	switch (state)
 		if(0)

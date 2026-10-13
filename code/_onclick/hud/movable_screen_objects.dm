@@ -140,7 +140,7 @@ CAPABILITIES(/atom/movable/screen/movable)
 
 	var/atom/movable/screen/movable/M = new()
 	M.name = "Movable UI Object"
-	M.icon_state = "block"
+	M.set_icon_state("block")
 	M.maptext = "Movable"
 	M.maptext_width = 64
 
@@ -164,7 +164,7 @@ CAPABILITIES(/atom/movable/screen/movable)
 
 	var/atom/movable/screen/movable/snap/S = new()
 	S.name = "Snap UI Object"
-	S.icon_state = "block"
+	S.set_icon_state("block")
 	S.maptext = "Snap"
 	S.maptext_width = 64
 

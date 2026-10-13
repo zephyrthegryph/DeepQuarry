@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/generic_item)
 				icon = icon_on
 			else
 				icon = 'icons/obj/props/items.dmi'
-			icon_state = icon_state_on
+			set_icon_state(icon_state_on)
 			if(user)
 				user.visible_message(span_notice("[text_activated]"))
 			if(effect == 1)
@@ -81,7 +81,7 @@ CAPABILITIES(/obj/item/generic_item)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)
 			on = 0
-			icon_state = icon_state_off
+			set_icon_state(icon_state_off)
 			if(icon_off)
 				icon = icon_off
 			else
@@ -309,7 +309,7 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 	P.sound_activated = s_sound
 	P.delay_time = s_delay
 	P.object = s_object
-	P.icon_state = s_icon_state_off
+	P.set_icon_state(s_icon_state_off)
 	P.icon_off = s_icon
 	P.icon_on = s_icon2
 	if(s_icon)

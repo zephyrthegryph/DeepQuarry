@@ -1004,7 +1004,7 @@ init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	var/obj/i
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	rel_set(medigun, nameof(medigun.medigun_base_unit), src)
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	if(!is_twohanded())
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.beam_range = 4
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.icon_state = "medblaster_cmo"
+init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.set_icon_state("medblaster_cmo")
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.base_icon_state = "medblaster_cmo"
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.wielded_item_state = ""
 init_lines	code/game/objects/items/weapons/melee/energy.dm	set_glow(src, GLOW(lrange, lpower, lcolor))
@@ -1155,7 +1155,7 @@ init_lines	code/game/objects/structures/props/beam_prism.dm	rel_set(P, nameof(P.
 init_lines	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_lines	code/game/objects/structures/props/machines.dm	var/obj/effect/overlay/vis/mask = new
 init_lines	code/game/objects/structures/props/machines.dm	mask.icon = icon
-init_lines	code/game/objects/structures/props/machines.dm	mask.icon_state = "nt_pod_mask"
+init_lines	code/game/objects/structures/props/machines.dm	mask.set_icon_state("nt_pod_mask")
 init_lines	code/game/objects/structures/props/machines.dm	mask.render_target = "*nt_podmask[REF(src)]"
 init_lines	code/game/objects/structures/props/machines.dm	mask.vis_flags = VIS_INHERIT_ID
 init_lines	code/game/objects/structures/props/machines.dm	vis_contents += mask
@@ -1749,7 +1749,7 @@ init_lines	code/modules/holomap/mapper.dm	if(!mask_icon)
 init_lines	code/modules/holomap/mapper.dm	mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 init_lines	code/modules/holomap/mapper.dm	var/atom/movable/screen/mapper/marker/mark = new()
 init_lines	code/modules/holomap/mapper.dm	mark.icon = 'icons/effects/64x64.dmi'
-init_lines	code/modules/holomap/mapper.dm	mark.icon_state = "mapper_none"
+init_lines	code/modules/holomap/mapper.dm	mark.set_icon_state("mapper_none")
 init_lines	code/modules/holomap/mapper.dm	mark.layer = 10
 init_lines	code/modules/holomap/mapper.dm	rel_add(src, nameof(icon_image_cache), mark, "bad")
 init_lines	code/modules/holomap/mapper.dm	var/atom/movable/screen/mapper/map/tmp = new()
@@ -3339,7 +3339,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_BOWL)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "bowl"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "bowl"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("bowl")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decorations = TRUE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	additional_desc = "There appear to be [pick("dark","faintly glowing","pungent","bright")] [pick("red","purple","green","blue")] stains inside."
@@ -3347,7 +3347,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_URN)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "urn"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "urn[rand(1,2)]"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("urn[rand(1,2)]")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decorations = TRUE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	additional_desc = "It [pick("whispers faintly","makes a quiet roaring sound","whistles softly","thrums quietly","throbs")] if you put it to your ear."
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_STATUETTE)
@@ -3427,7 +3427,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_BOX)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "box"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/storage/box(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "box"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("box")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/storage/box/new_box = new_item
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/max_size = pick(1,2,2,3,3,3,4,4)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_box.restrict_hold(null, max_size)
@@ -3507,7 +3507,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_image_decor
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(25))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/soulstone(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = icon_state
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state(icon_state)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = "Redspace Gem"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.desc = "A glowing stone made of what appears to be a pure chunk of redspace. It seems to have the power to transfer the consciousness of dead or nearly-dead humanoids into it."
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CULTBLADE)
@@ -3525,7 +3525,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_TELEBE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/radio/beacon(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	talkative = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "unknown[rand(1,4)]"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("unknown[rand(1,4)]")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.desc = ""
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CLAYMORE)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
@@ -3535,7 +3535,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = p
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(30))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "blade1"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("blade1")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CULTROBES)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/list/possible_headwear = list(/obj/item/clothing/head/culthood,
@@ -3585,7 +3585,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	possible_laser_pa
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/new_laser = pick(possible_laser_paths)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_gun.projectile_type = new_laser
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new_gun
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "egun[rand(1,18)]"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("egun[rand(1,18)]")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_gun.desc = "This is an antique energy weapon."
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(10))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_gun.power_supply.set_maxcharge(0)
@@ -3597,7 +3597,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "Reli
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_GUN)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/gun/projectile/artifact/new_gun = new /obj/item/gun/projectile/artifact(src.loc)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new_gun
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.icon_state = "gun[rand(1,7)]"
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_icon_state("gun[rand(1,7)]")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = "Relic Gun"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_gun.caliber = "[pick(".357", "12g", ".38", "7.62mm", ".38", "9mm", "10mm", ".45", "5.45mm", "7.62mm")]" //A list of gun calibers that are obtainable.
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	additional_desc = "[pick("A dusty engraving on the side says" + span_bold("[new_gun.caliber]") + " The ammo slot seems like it'd only fit single shells at a time.",\

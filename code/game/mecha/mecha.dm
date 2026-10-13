@@ -607,7 +607,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	rel_set(src, nameof(radio), new /obj/item/radio(src))
 	radio.name = "[src] radio"
 	radio.icon = icon
-	radio.icon_state = icon_state
+	radio.set_icon_state(icon_state)
 	radio.subspace_transmission = 1
 
 /obj/mecha/proc/recalibration_done(T)

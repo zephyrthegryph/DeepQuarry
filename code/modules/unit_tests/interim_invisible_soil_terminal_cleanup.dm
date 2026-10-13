@@ -13,7 +13,7 @@
 	var/obj/effect/plant/plant = allocate(/obj/effect/plant, T, seed)
 	TEST_ASSERT(plant && !QDELETED(plant), "The real floor plant completes its original seeded constructor")
 	TEST_ASSERT_EQUAL(plant.seed(), seed, "The actual original plant retains the exact registered seed")
-	plant.invisibility = INVISIBILITY_MAXIMUM
+	plant.set_invisibility(INVISIBILITY_MAXIMUM)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/soil = allocate(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible, T, seed)
 	TEST_ASSERT(soil && !QDELETED(soil) && soil.loc == T, "The actual invisible soil holder completes its real floor constructor")
 	TEST_ASSERT_EQUAL(soil.seed, seed, "The actual original holder uses the exact shared registered seed")

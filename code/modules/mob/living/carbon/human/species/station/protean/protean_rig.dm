@@ -689,7 +689,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	suit_state = R.suit_state
 	name = R.name
 	icon = R.icon
-	icon_state = R.icon_state
+	set_icon_state(R.icon_state)
 	user.drop_item(R)
 	R.forceMove(src)
 	assimilated_rig = R
@@ -705,7 +705,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			piece.set_armor(get_armor())
 			piece.set_max_pressure_protection(rigsuit_max_pressure)
 			piece.set_max_heat_protection_temperature(protection_of(src).max_heat)
-			piece.icon_state = src.icon_state
+			piece.set_icon_state(src.icon_state)
 			piece.icon = initial(piece.icon)
 			piece.set_default_worn_icon(worn_of_type(piece.type).worn_icon)
 
@@ -724,7 +724,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		slowdown = initial(slowdown)
 		name = tempRig.name
 		icon = tempRig.icon // Reset the icon back to its original
-		icon_state = tempRig.icon_state
+		set_icon_state(tempRig.icon_state)
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
 		wearer()?.worn_protection_changed()

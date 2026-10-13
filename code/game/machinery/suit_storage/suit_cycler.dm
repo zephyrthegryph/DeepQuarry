@@ -498,7 +498,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 /obj/machinery/suit_cycler/proc/finished_job(mob/user)
 	var/turf/T = get_turf(src)
 	T.visible_message("[icon2html(src,viewers(src))]" + span_notice("The [src] beeps several times."))
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	set_active(0)
 	play_sfx(src, SFX_MACHINES_BOOBEEBEEP)
 

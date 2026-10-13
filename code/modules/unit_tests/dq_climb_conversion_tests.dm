@@ -101,7 +101,7 @@
 /datum/unit_test/dq_climb/a_railing_is_climbed_onto_then_over/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/railing/R = allocate(/obj/structure/railing, at)
-	R.dir = EAST
+	R.set_dir(EAST)
 	var/mob/living/carbon/human/H = actor(floor_at(0, 1))
 	climb_it(H, R)
 	test_time(5 SECONDS)
@@ -118,7 +118,7 @@
 /datum/unit_test/dq_climb/an_unanchored_railing_breaks_under_the_climber/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/railing/R = allocate(/obj/structure/railing, at)
-	R.dir = EAST
+	R.set_dir(EAST)
 	R.set_anchored(FALSE)
 	var/mob/living/carbon/human/H = actor(floor_at(0, 1))
 	climb_it(H, R)
@@ -132,7 +132,7 @@
 /datum/unit_test/dq_climb/a_ledge_is_vaulted/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/ledge/L = allocate(/obj/structure/ledge, at)
-	L.dir = EAST
+	L.set_dir(EAST)
 	var/mob/living/carbon/human/H = actor(floor_at(0, 1))
 	climb_it(H, L)
 	test_time(5 SECONDS)

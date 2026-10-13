@@ -417,7 +417,7 @@ CAPABILITIES(/obj/item/melee/fluff/holochain/mass)
 /obj/item/fluff/id_kit_mime/afterattack(obj/O, mob/user as mob)
 	var/new_icon = "mime"
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
-		O.icon_state = new_icon // Changes the icon without changing the access.
+		O.set_icon_state(new_icon) // Changes the icon without changing the access.
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		act_message(user, null, others = span_warning(" %U% reprints their ID."))
 		consume(src, user)
@@ -534,11 +534,11 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 
 	switch(unbuttoned)
 		if(0)
-			icon_state = "[initial(icon_state)]_open"
+			set_icon_state("[initial(icon_state)]_open")
 			unbuttoned = TRUE
 			to_chat(user, "You unbutton the coat.")
 		if(1)
-			icon_state = "[initial(icon_state)]"
+			set_icon_state("[initial(icon_state)]")
 			unbuttoned = FALSE
 			to_chat(user, "You button up the coat.")
 	changed(src)
@@ -629,7 +629,7 @@ TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/update_state(tostate)
 	state = tostate
-	icon_state = "[initial(icon_state)][tostate]"
+	set_icon_state("[initial(icon_state)][tostate]")
 
 /obj/item/paper/khcrystal_manual
 	name = "VM-LC91-1 manual"
@@ -714,7 +714,7 @@ CAPABILITIES(/obj/item/cane/fluff)
 	var/new_desc = "Its a thin screen showing ID information, but it seems to be flickering."
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
 		O.icon = new_icon
-		O.icon_state = new_icon_state // Changes the icon without changing the access.
+		O.set_icon_state(new_icon_state) // Changes the icon without changing the access.
 		O.desc = new_desc
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		act_message(user, null, others = span_warning(" %U% reprints their ID."))
@@ -1181,7 +1181,7 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
 	set_sharp(TRUE)
 	set_edge(TRUE)
-	icon_state = "[active_state]_sharp"
+	set_icon_state("[active_state]_sharp")
 	injury_kind = INJURY_CUT
 
 /obj/item/melee/fluffstuff/wolfgirlsword/deactivate(mob/living/user)
@@ -1189,7 +1189,7 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 		to_chat(user, span_notice("The [src] grows dull!"))
 	..()
 	set_attack_verb(list("bapped", "thwapped", "bonked", "whacked"))
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	injury_kind = initial(injury_kind)
 
 //SilencedMP5A5 - Serdykov Antoz
@@ -1605,17 +1605,17 @@ CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
 		return OP_OK
 	if(stance == I_HELP)
 		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
-		icon_state = "pandorba"
+		set_icon_state("pandorba")
 	else if (stance == I_HURT)
 		act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
-		icon_state = "pandorba_h"
+		set_icon_state("pandorba_h")
 	else if (stance == I_GRAB)
 		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), \
 			MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
-		icon_state = "pandorba_g"
+		set_icon_state("pandorba_g")
 	else
 		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
-		icon_state = "pandorba_d"
+		set_icon_state("pandorba_d")
 		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
 	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
@@ -1630,7 +1630,7 @@ CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
 
 /obj/item/dice/loaded/ceph/rollDice(mob/user, silent)
 	..()
-	icon_state = "ceph_d6[result]"
+	set_icon_state("ceph_d6[result]")
 
 CAPABILITIES(/obj/item/dice/loaded/ceph)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))

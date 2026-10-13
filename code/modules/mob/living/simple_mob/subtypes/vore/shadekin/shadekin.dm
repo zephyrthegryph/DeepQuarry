@@ -250,7 +250,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 
 	shadekin.dark_energy = 0
 	shadekin.in_dark_respite = TRUE
-	invisibility = INVISIBILITY_LEVEL_TWO
+	set_invisibility(INVISIBILITY_LEVEL_TWO)
 
 	mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
 	mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
@@ -286,7 +286,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 /mob/living/simple_mob/shadekin/on_death(gibbed)
 	. = ..()
 	cut_overlays()
-	icon_state = ""
+	set_icon_state("")
 	flick("tp_out",src)
 	expire(1 SECOND) //Back from whence you came!
 
@@ -296,7 +296,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 
 	forceMove(pick(GLOB.latejoin_thedark))
 	flick("tp_in",src)
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	shadekin.respite_activating = FALSE
 
 /mob/living/simple_mob/shadekin/can_leave_dark()

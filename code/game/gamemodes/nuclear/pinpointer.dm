@@ -36,27 +36,27 @@ CAPABILITIES(/obj/item/pinpointer)
 		to_chat(user, span_notice("You activate the pinpointer"))
 	else
 		set_active(FALSE)
-		icon_state = "pinoff"
+		set_icon_state("pinoff")
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
 /obj/item/pinpointer/proc/pinpointer_step(datum/act/timer/A)
 	if(!the_disk())
 		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	set_dir(get_dir(src,the_disk()))
 
 	switch(get_dist(src,the_disk()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/examine(mob/user)
 	. = ..()
@@ -82,43 +82,43 @@ CAPABILITIES(/obj/item/pinpointer)
 
 /obj/item/pinpointer/advpinpointer/proc/worklocation()
 	if(!get_location())
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 		return
 
 	set_dir(get_dir(src,get_location()))
 
 	switch(get_dist(src,get_location()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/advpinpointer/proc/workobj()
 	if(!target_ref())
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 		return
 
 	set_dir(get_dir(src,target_ref()))
 
 	switch(get_dist(src,target_ref()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
 	var/mob/user = A.actor
 
 	set_active(FALSE)
-	icon_state = "pinoff"
+	set_icon_state("pinoff")
 	rel_clear(src, nameof(target))
 	rel_clear(src, nameof(location))
 
@@ -225,7 +225,7 @@ CAPABILITIES(/obj/item/pinpointer)
 			to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		set_active(FALSE)
-		icon_state = "pinoff"
+		set_icon_state("pinoff")
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
 /obj/item/pinpointer/nukeop/pinpointer_step(datum/act/timer/A)
@@ -245,20 +245,20 @@ CAPABILITIES(/obj/item/pinpointer)
 	if(!the_disk())
 		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	set_dir(get_dir(src, the_disk()))
 
 	switch(get_dist(src, the_disk()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/nukeop/proc/worklocation()
 	if(!GLOB.bomb_set)
@@ -270,24 +270,24 @@ CAPABILITIES(/obj/item/pinpointer)
 	if(!home())
 		rel_set(src, nameof(home), locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
 		if(!home())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	if(loc.z != home().z)	//If you are on a different z-level from the shuttle
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 
 	else
 		set_dir(get_dir(src, home()))
 
 		switch(get_dist(src, home()))
 			if(0)
-				icon_state = "pinondirect"
+				set_icon_state("pinondirect")
 			if(1 to 8)
-				icon_state = "pinonclose"
+				set_icon_state("pinonclose")
 			if(9 to 16)
-				icon_state = "pinonmedium"
+				set_icon_state("pinonmedium")
 			if(16 to INFINITY)
-				icon_state = "pinonfar"
+				set_icon_state("pinonfar")
 
 // This one only points to the ship.  Useful if there is no nuking to occur today.
 /obj/item/pinpointer/shuttle
@@ -302,7 +302,7 @@ CAPABILITIES(/obj/item/pinpointer)
 		to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		set_active(FALSE)
-		icon_state = "pinoff"
+		set_icon_state("pinoff")
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
 /obj/item/pinpointer/shuttle/pinpointer_step(datum/act/timer/A)
@@ -313,24 +313,24 @@ CAPABILITIES(/obj/item/pinpointer)
 				break
 
 		if(!our_shuttle())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	if(loc.z != our_shuttle().z)	//If you are on a different z-level from the shuttle
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 
 	else
 		set_dir(get_dir(src, our_shuttle()))
 
 		switch(get_dist(src, our_shuttle()))
 			if(0)
-				icon_state = "pinondirect"
+				set_icon_state("pinondirect")
 			if(1 to 8)
-				icon_state = "pinonclose"
+				set_icon_state("pinonclose")
 			if(9 to 16)
-				icon_state = "pinonmedium"
+				set_icon_state("pinonmedium")
 			if(16 to INFINITY)
-				icon_state = "pinonfar"
+				set_icon_state("pinonfar")
 
 /obj/item/pinpointer/shuttle/merc
 	shuttle_comp_id = "Mercenary"

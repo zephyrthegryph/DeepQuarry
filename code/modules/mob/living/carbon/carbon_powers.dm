@@ -3,11 +3,11 @@
 	set name = "Toggle Active Cloaking"
 
 	if(invisibility == INVISIBILITY_OBSERVER)
-		invisibility = initial(invisibility)
+		set_invisibility(initial(invisibility))
 		to_chat(src, span_notice("You are now visible."))
 		alpha = min(alpha + 100, 255)
 	else
-		invisibility = INVISIBILITY_OBSERVER
+		set_invisibility(INVISIBILITY_OBSERVER)
 		to_chat(src, span_notice("You are now invisible."))
 		alpha = max(alpha - 100, 0)
 

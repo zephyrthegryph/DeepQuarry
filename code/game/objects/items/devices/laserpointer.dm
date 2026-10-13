@@ -199,7 +199,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 
 
 	//laser pointer image
-	icon_state = "[initial(icon_state)]_[pointer_icon_state]"
+	set_icon_state("[initial(icon_state)]_[pointer_icon_state]")
 	var/list/showto = list()
 	for(var/mob/M in viewers(world.view,targloc))
 		if(M.client)
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 	after(src, cooldown, PROC_REF(reset_laser_icon))
 
 /obj/item/laser_pointer/proc/reset_laser_icon()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
 /obj/item/laser_pointer/proc/laser_pointer_step(datum/act/timer/A)
 	if(prob(20 - recharge_locked*5))

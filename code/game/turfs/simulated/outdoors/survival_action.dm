@@ -47,7 +47,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	var/obj/item/stack/material/flint/R = new(get_turf(src), rand(1,4))
 	R.pixel_x = rand(-6,6)
 	R.pixel_y = rand(-6,6)
-	icon_state = "dirt0"
+	set_icon_state("dirt0")
 	return OP_OK
 
 /turf/simulated/floor/outdoors/newdirt/proc/pile_done(datum/act/op/A)
