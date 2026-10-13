@@ -46,7 +46,7 @@
 	TEST_ASSERT_NOTNULL(H.get_equipped_item(SLOT_ID_SHOES), "and shoes")
 	var/obj/item/card/id/card = H.GetIdCard()
 	TEST_ASSERT_NOTNULL(card, "and carries an ID")
-	var/image/worn = H.overlays_standing[UNIFORM_LAYER]
+	var/image/worn = H.look_layers()[UNIFORM_LAYER]
 	TEST_ASSERT(worn && draws_icon(H, worn.icon), "the uniform is drawn on the joiner")
 	// The place they arrive at.
 	var/area/A = get_area(H)

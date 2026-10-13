@@ -65,8 +65,8 @@ Run, from your worktree:
 bash tools/dq_merge_master.sh
 ```
 
-It fetches, merges `origin/master` (`--no-commit`, so the regenerated `look_keys.txt` goes into the merge commit itself instead of a
-separate "Regenerate look_keys.txt" commit after it), resolves the modify/delete conflicts on the generated files as
+It fetches, merges `origin/master` (`--no-commit`, so the normalized `look_keys.txt` goes into the merge commit itself instead of a
+separate commit after it), resolves the modify/delete conflicts on the generated files as
 "untracked" (`git rm --cached`; the files stay on disk), untracks any generated file your branch still
 tracks, commits the merge and regenerates. Any other conflict is listed for you to resolve as usual.
 It never runs checkout, reset, restore, stash or cherry-pick.
@@ -176,10 +176,13 @@ the sha of those still failing; `--adopt --reason` adds a run's NEW failures (a 
 automatically: `dq_push_master.sh` no longer refreshes it after a push. `dq_merge_gates.sh` does not fail on a known failure but prints
 "KNOWN FAILURE STILL PRESENT - fix required"; a lane that fixes the test removes the entry in its own commit. A new failure still fails the gate.
 
-**Merge-safe tooling.** `code/modules/unit_tests/snapshots/look_keys.txt` stays committed (it is the record `dq_focused_test.sh` narrows
-the look probes against, so it cannot be build output) but never conflicts: `.gitattributes` gives it `merge=union` and every merge script
-(`dq_merge_master.sh`, `dq_merge_gates.sh`, `dq_push_master.sh`) regenerates it from the tree after the merge. A plain `git merge --no-ff <lane>`
-in the merge worktree therefore succeeds; whatever the union left in the file is replaced by the gates. Do not hand-merge it.
+**Merge-safe tooling.** `code/modules/unit_tests/snapshots/look_keys.txt` stays committed (it is the record of look keys a pin run
+actually probed and matched, so it cannot be build output or regenerated from the tree) but never conflicts: `.gitattributes` gives it
+`merge=union` and every merge script (`dq_merge_master.sh`, `dq_merge_gates.sh`, `dq_push_master.sh`) runs
+`check_look_keys_format.sh --normalize` after the merge, which only drops rows (dead types, or a type the union left with two different keys)
+and never writes a key. A plain `git merge --no-ff <lane>` in the merge worktree therefore succeeds. A type whose look changed in a lane or in
+the merge matches no row (its key in `data/look-plan.tsv` differs), is *unverified*, and `dq_merge_gates.sh` runs the look pins over exactly that
+set before stamping and records their keys into the merge commit (a lane-ready run does the same for its own lane). Do not hand-merge or regenerate it.
 `dq_merge_gates.sh` records the tip of each `--lanes` branch and origin/master as the gates started (`lane_tips=`, `base_master=` in
 `data/merge-gates/<sha>.ok`), refuses a lane that is not in HEAD, and shrinks the ratchet baselines (`analyze baseline --update`, never
 adds) into the merge commit instead of a repair commit. `dq_push_master.sh` (`--expect "ref ..."` / `DQ_PUSH_EXPECT` add tips) refuses a
@@ -192,8 +195,8 @@ captures, writes the original back and checks the look returned (a type whose lo
 probes on fresh instances). The vars probed are narrowed to those a draw can read by `analyze look-keys` (`data/look-plan.tsv`: per type a key and a
 probe list, `*` meaning unknown, scan everything). `dq_focused_test.sh` runs the pins as `DQ_LOOK_SHARDS` (default 4, `--look-shards=N`) worlds from the
 one compiled `.dmb`, each probing every Nth type (`sweep_owns`), beside one world for any other selected tests; the summaries merge into one
-`data/test-runs/<id>_focused.json`. Without `--full` only types whose key differs from `code/modules/unit_tests/snapshots/look_keys.txt` are probed (no
-changed type: no world is booted); a passing run that covered both pins rewrites that file, so commit it with the snapshots. `--full` probes everything
+`data/test-runs/<id>_focused.json`. Without `--full` only the unverified types (current key matches no row of `code/modules/unit_tests/snapshots/look_keys.txt`) are probed (no
+unverified type: no world is booted); a passing run that covered both pins records the keys of the types it probed (and no others) in that file, so commit it with the snapshots. `--full` probes everything
 (merge worktree, nightly); `--bless` and `--repeat` run the pins unsharded and full; `tools/dq_pin.sh --look-state/--look-tree` records new pins with
 `--look-shards=1 --full`. `--look-order=reverse|shuffle:N` reorders the types and `--look-dump=DIR` writes the rows each world produced, merged and
 sorted under `DIR/merged` (two runs compare with `diff -r`): the determinism proof. `--no-split-slow` / `DQ_FOCUS_SPLIT=0` restores one world. Other
@@ -253,6 +256,10 @@ When a lane finishes, from its worktree:
 ```sh
 bash tools/dq_lane_ready.sh --tests "dq_my_test dq_my_other/*"      # [--covers 'code/game/machinery/**'] [--no-pins] [--no-merge]
 ```
+
+The gates can move `HEAD` while they run (they normalize `look_keys.txt`, amend ratchet-baseline shrinks into the unpushed merge commit and record probed look keys),
+and the proof is named by the `HEAD` they end on. The wrapper follows that move before it looks for `data/merge-gates/<sha12>.ok`; if no proof matches, the error prints
+the expected file and the sha it found. `tools/ci/test_lane_ready_evidence.sh` covers it.
 
 It merges current `origin/master` (`dq_merge_master.sh`), runs `dq_merge_gates.sh` on the merge (gen; one test world with the cross-branch
 smoke set, your tests and the incremental look pins; the production compile and DreamChecker; the ratchets), commits the look keys and snapshots

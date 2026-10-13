@@ -314,8 +314,3 @@ CAPABILITIES(/datum/ai_laws)
 
 
 
-/datum/ai_laws/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L

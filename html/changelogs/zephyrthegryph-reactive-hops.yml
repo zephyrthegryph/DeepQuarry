@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The read lints (untracked_inputs, sem/reads) judge the closed read walk: global procs are walked, global state is classified (constant after boot, a system's tracked var, or an untracked input), and the baselines are re-seeded per site (a change of measurement: 1089 sites under the old walk, 1010 under the new)"

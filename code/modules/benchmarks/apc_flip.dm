@@ -1,7 +1,7 @@
 // E3's phase 1 spike (doc/rewrite/final_api.html, section 7 "Inline recompute is measured, not assumed"; section 19 "E3, stats"):
 // one APC channel flips with 50 dependent machines. The same flip, three ways:
 //
-//   old     the legacy shape: the APC walks its machines and each one runs the body of power_change() (set_powered, changed, the event, heat);
+//   old     the legacy shape: the APC walks its machines and each one runs the body of power_change() (set_powered, the event, heat);
 //   inline  each machine's stat is a hop reader settled inline on the flip (the forced settle rule SETTLE_INLINE);
 //   marked  each is marked by the flip and recomputed by the marked drain (the rule a collection edge gets: SETTLE_MARKED).
 //
@@ -9,11 +9,10 @@
 // The pass condition (section 19, phase 1 gate): inline recompute at or under the old path.
 
 /// The old path's machine: a real machine taking the body of power_change() that follows the area lookup (the area answers `on`):
-/// set_powered() writes NOPOWER and publishes, changed() marks it, the power event goes out, the heat output updates.
+/// set_powered() writes NOPOWER and publishes, the power event goes out, the heat output updates.
 /obj/machinery/dx_bench_drawer/proc/old_power_change(on)
 	if(!set_powered(on))
 		return FALSE
-	changed(src)
 	if(power_lost())
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
 	else

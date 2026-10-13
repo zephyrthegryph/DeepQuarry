@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/supply_beacon)
 
 /// Spent: the drop was sent, the beacon never works again.
 /obj/machinery/power/supply_beacon/var/expended = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/supply_beacon, expended, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/supply_beacon, expended)
 /// Draws power (and arms the drop) while switched on and not yet spent.
 CAPABILITIES(/obj/machinery/power/supply_beacon)
 	silicon_hand(adjacent = TRUE)

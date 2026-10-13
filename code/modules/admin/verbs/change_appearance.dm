@@ -174,7 +174,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 
 	if(stage >= 5 && new_eyes)
 		target_human.looks.set_eyes_color(new_eyes)
-		target_human.update_eyes()
 
 	if(stage >= 6 && new_skin)
 		target_human.looks.set_skin_color(new_skin)
@@ -198,8 +197,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 /datum/admin_edit_appearance_review/proc/finish_edit()
 	var/mob/living/carbon/human/target_human = target
 	target_human.update_dna(target_human)
-	target_human.update_hair(FALSE)
-	target_human.update_icons_body()
 
 /datum/prompt/choice/admin_edit_target
 	rights = R_FUN

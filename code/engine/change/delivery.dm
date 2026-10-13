@@ -2,6 +2,7 @@
 // The contracts are stated in reactions.dm.
 
 /// Calls `handler` (a PROC_REF on `holder`, or a /proc path) with the rest of the arguments.
+PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/rx_call(datum/holder, handler, ...)
 	var/list/rest = length(args) > 2 ? args.Copy(3) : list()
 	if(deferred_proc_is_global(handler))

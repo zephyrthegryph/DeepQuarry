@@ -7,13 +7,17 @@
 //!
 //! * the holder's own vars, and hops through declared relations (`REL/OWN/...`);
 //! * procs of the same type and of a hop's type (followed), `..()` parents;
-//! * global helpers through `READS_FROM(arg)`;
+//! * global helpers: through `READS_FROM(arg)` in the lints' targeted walk; the closed walk walks every global proc like any proc, every
+//!   parameter bound to what the call passed (`PROC_SUMMARY` only for a body that cannot be walked: `vars[]`, `call()`, a Verdigris call);
 //! * accessor procs with `READS_AS(proc, key, via = ...)` (not followed: they stand for their key);
 //! * context hops `A.actor`, `A.held`, `A.target` (typed hops from the act context).
 //!
 //! The result is a static over-approximation: every read anywhere in the body subscribes, whatever
-//! branch it sits in. `A.args`, `world.time` and `GLOB` reads never subscribe (documented, not a gap).
-//! What it cannot resolve is reported as a [`Diag`]: an unannotated global call, `vars[]`, `call()`.
+//! branch it sits in. `A.args` and `world.time` never subscribe. In the closed walk a read of global state (`GLOB.x`, `SSx.y`, a real
+//! global) is classified (`sem/globals.rs`): constant after init (written only while the world boots), a tracked var of a system (a system
+//! read, which publishes), the framework's own bookkeeping (a shared cache, engine state read by engine code), or an `untracked_global`.
+//! What it cannot resolve is reported as a [`Diag`]: `untracked_global`, `vars[]`, `call()`, a Verdigris call, a hop through a var that is
+//! not a declared relation (and, in the targeted walk, an unannotated global call).
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -39,6 +43,29 @@ pub const IMPURE_CALLS: &[&str] = &[
 ];
 /// Calls that talk to a player: forbidden in a pure body (the no-message guard).
 pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_message", "say", "emote", "show_message", "playsound", "play_sfx"];
+
+/// Files that declare the framework's own state besides [`ENGINE_DIRS`]: the kernel (`Kernel`, its work tables) and the base datum
+/// (`gc_destroyed`, `rx`). An engine body reading a var declared in one of them is the framework reading itself.
+pub fn framework_file(rel: &str) -> bool {
+    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/controllers/kernel/") || rel == "code/datums/datum.dm" || is_test_code(rel)
+}
+
+/// Test-only code (the unit tests and the test driver): compiled out of production, so never an input of a stat or a look.
+pub fn is_test_code(rel: &str) -> bool {
+    rel.starts_with("code/tests/") || rel.starts_with("code/modules/unit_tests/")
+}
+
+/// Calls whose body is an effect or a diagnostic: the closed walk does not follow them. What they read is not an input of the value
+/// being computed (a `qdel()` runs the destroy machinery, `to_chat()` the chat service, `set_x()` a setter), and the call itself is
+/// recorded as an effect for the purity check.
+pub fn effect_call(name: &str) -> bool {
+    IMPURE_CALLS.contains(&name)
+        || MESSAGE_CALLS.contains(&name)
+        || name.starts_with("rel_")
+        || name.starts_with("set_")
+        || name.starts_with("log_")
+        || matches!(name, "stack_trace" | "crash_with" | "WARNING" | "warning" | "notice" | "testing" | "message_admins" | "to_world" | "admin_notice" | "fx_sparks" | "after" | "every" | "world_next_tick")
+}
 
 /// A supported numeric lookup argument, kept in the actual caller's coordinate system.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
@@ -148,7 +175,7 @@ pub struct Effect {
     pub line: u32,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct ReadSet {
     pub reads: BTreeSet<Read>,
     /// Context scalar/object fields read through the act (`A.dt` -> "dt"), with a line each.
@@ -164,6 +191,10 @@ pub struct ReadSet {
     /// Procs in an opaque (engine-internal) directory the walk reached but did not enter, with the call site: what they read is
     /// invisible to the graph, so a consumer that calls one cannot prove its inputs complete (`gen deps`, `untracked_inputs`).
     pub opaque: BTreeMap<String, (String, u32)>,
+    /// Reads the framework makes of its own state: an engine body reading a var an engine file declares (`holder.rx`, the stat record).
+    /// They stay in `reads` (the subscriptions are complete) but are not inputs a stat or a look can be stale on: `gen deps` and the lints
+    /// leave them out. Closed walk only; a read also made from outside the engine is not in this set.
+    pub internal: BTreeSet<Read>,
 }
 
 impl ReadSet {
@@ -367,6 +398,9 @@ enum Root {
     Local,
     Scalar(LookupArgument),
     Lookup(Box<LookupBound>),
+    /// Global state: the `GLOB` datum, a real global var, or a datum reached through one (`GLOB.x`, `SSair`). Not an entity the runtime can
+    /// subscribe to; a read through it is classified by [`super::globals::GlobalIndex`] (the closed walk only).
+    Global(String),
 }
 
 impl Val {
@@ -398,7 +432,21 @@ pub struct ReadsEngine<'a> {
     pub virtual_dispatch: bool,
     overrides_cache: std::sync::Mutex<HashMap<(String, String), std::sync::Arc<Vec<String>>>>,
     definers: std::sync::OnceLock<HashMap<String, Vec<String>>>,
+    globals: std::sync::OnceLock<super::globals::GlobalIndex>,
+    writes: std::sync::OnceLock<WriteIndex>,
+    /// What a context-free walk of a proc found (closed walk only), by (owner, proc, receiver, argument shapes): see `Walk::run_proc`.
+    memo: std::sync::RwLock<HashMap<MemoKey, std::sync::Arc<MemoNode>>>,
 }
+
+/// One memoized context-free walk: what its own body found, and the memoized walks it calls.
+struct MemoNode {
+    own: ReadSet,
+    children: Vec<(MemoKey, bool)>,
+    /// Neither it nor anything it calls found anything: a consumer that reaches it records nothing.
+    trivial: bool,
+}
+
+type MemoKey = (String, String, Root, Option<String>, Vec<(Root, Option<String>)>, bool);
 
 struct Frame<'a> {
     proc: ProcRef<'a>,
@@ -425,11 +473,23 @@ struct Walk<'a, 'e> {
     override_depth: u32,
     /// Greater than zero beneath a proc of an engine-internal directory ([`ENGINE_DIRS`]) a closed walk entered.
     engine_depth: u32,
+    /// Set by the caller of the next `run_proc`: an act-typed parameter that got no context stays a plain value (a global helper walked
+    /// without READS_FROM is not handed the handler's context).
+    no_act: bool,
+    /// The memoized nodes this consumer reached directly (while walking its own code or a node being computed), with whether the call sat
+    /// beneath an engine body or an override.
+    children: Vec<(MemoKey, bool)>,
+    /// Memoized nodes this thread is computing now (a recursive helper reaches itself).
+    computing: HashSet<MemoKey>,
+    /// Nodes already merged into the set.
+    merged: HashSet<MemoKey>,
+    /// (rule, file, line, message) -> position in `out.diags`: a finding is recorded once however many paths reach it.
+    diag_ix: HashMap<(&'static str, String, u32, String), usize>,
 }
 
 impl<'a> ReadsEngine<'a> {
     pub fn new(sem: &'a Sem, decls: &'a Decls, ann: &'a Annotations) -> ReadsEngine<'a> {
-        ReadsEngine { sem, decls, ann, opaque_dirs: Vec::new(), virtual_dispatch: false, overrides_cache: Default::default(), definers: Default::default() }
+        ReadsEngine { sem, decls, ann, opaque_dirs: Vec::new(), virtual_dispatch: false, overrides_cache: Default::default(), definers: Default::default(), globals: Default::default(), writes: Default::default(), memo: Default::default() }
     }
 
     /// The closed walk: nothing is skipped (engine bodies are walked, or carry a `PROC_SUMMARY`) and a virtual call is the union of its
@@ -468,6 +528,16 @@ impl<'a> ReadsEngine<'a> {
         out
     }
 
+    /// Which global vars change after boot (built once; the closed walk classifies global reads with it).
+    pub fn globals(&self) -> &super::globals::GlobalIndex {
+        self.globals.get_or_init(|| super::globals::GlobalIndex::build(self.sem))
+    }
+
+    /// Which var names are written anywhere (built once).
+    pub fn write_index(&self) -> &WriteIndex {
+        self.writes.get_or_init(|| WriteIndex::build(self.sem))
+    }
+
     pub fn with_opaque(mut self, dirs: &[&str]) -> Self {
         self.opaque_dirs = dirs.iter().map(|s| s.to_string()).collect();
         self
@@ -477,9 +547,10 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0 };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
+        w.finish();
         out
     }
 
@@ -489,9 +560,10 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0 };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
+        w.finish();
         out
     }
 
@@ -685,17 +757,47 @@ impl<'a, 'e> Walk<'a, 'e> {
         if self.mute > 0 {
             return;
         }
+        if self.eng.virtual_dispatch && r.kind == ReadKind::Var {
+            if self.internal_read(rel, &r) {
+                if !self.out.reads.contains(&r) {
+                    self.out.internal.insert(r.clone());
+                }
+            } else {
+                self.out.internal.remove(&r);
+            }
+        }
         if !self.out.sites.contains_key(&r) {
             self.out.sites.insert(r.clone(), (rel.to_string(), line));
         }
         self.out.reads.insert(r);
     }
 
+    /// Whether a var read is the framework reading its own state: the body is engine code and so is the var's declaration.
+    fn internal_read(&self, rel: &str, r: &Read) -> bool {
+        if !framework_file(rel) {
+            return false;
+        }
+        match self.eng.sem.var_decl(&r.owner, &r.var) {
+            Some(v) => framework_file(&v.file),
+            None => false,
+        }
+    }
+
     fn diag(&mut self, rule: &'static str, rel: &str, line: u32, msg: String) {
         let closed_only = self.override_depth > 0 || self.engine_depth > 0;
-        match self.out.diags.iter_mut().find(|d| d.rule == rule && d.rel == rel && d.line == line && d.msg == msg) {
-            Some(d) => d.closed_only &= closed_only,
-            None => self.out.diags.push(Diag { rule, closed_only, rel: rel.to_string(), line, msg }),
+        self.record_diag(Diag { rule, closed_only, rel: rel.to_string(), line, msg });
+    }
+
+    /// Records a finding once; a second sighting is closed-only only if both were.
+    fn record_diag(&mut self, d: Diag) {
+        // The index covers diags recorded since the walk began; a walk that starts with some (never today) would miss them.
+        let key = (d.rule, d.rel.clone(), d.line, d.msg.clone());
+        match self.diag_ix.get(&key) {
+            Some(&i) => self.out.diags[i].closed_only &= d.closed_only,
+            None => {
+                self.diag_ix.insert(key, self.out.diags.len());
+                self.out.diags.push(d);
+            }
         }
     }
 
@@ -712,6 +814,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         if p.is_builtin() || self.depth > MAX_DEPTH {
             return;
         }
+        let no_act = std::mem::take(&mut self.no_act);
         let owner = {
             let o = &p.ty().get().path;
             if o.is_empty() { "/".to_string() } else { o.clone() }
@@ -720,9 +823,113 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !self.visited.insert(vkey) {
             return;
         }
-        self.out.followed.insert(format!("{}::{}", owner, p.name()));
-        if let Some(summary) = self.eng.ann.summaries.get(&(owner.clone(), p.name().to_string())) {
-            self.apply_summary(&owner, p.name(), summary, &this, bind);
+        if !self.eng.virtual_dispatch {
+            self.out.followed.insert(format!("{}::{}", owner, p.name()));
+        }
+        // A walk that starts from no entity (a helper handed untracked values, a method of a global singleton) finds the same thing wherever
+        // it is called from. It is done once per engine and kept as a node of a graph: its own findings plus the nodes it calls. A consumer
+        // records the nodes it reaches and, when its walk ends, merges each node once (`finish`).
+        let context_free = self.eng.virtual_dispatch
+            && self.mute == 0
+            && !self.eng.ann.summaries.contains_key(&(owner.clone(), p.name().to_string()))
+            && matches!(this.root, Root::Local | Root::Global(_))
+            && bind.iter().all(|v| matches!(v.root, Root::Local | Root::Global(_)));
+        if context_free {
+            let key: MemoKey = (owner.clone(), p.name().to_string(), this.root.clone(), this.ty.clone(), bind.iter().map(|v| (v.root.clone(), v.ty.clone())).collect(), no_act);
+            let outer = self.override_depth > 0 || self.engine_depth > 0;
+            let known = self.eng.memo.read().unwrap().get(&key).map(|n| n.trivial);
+            if known == Some(true) {
+                return;
+            }
+            if known.is_none() && !self.computing.contains(&key) {
+                self.computing.insert(key.clone());
+                let saved_out = std::mem::take(&mut *self.out);
+                let saved_visited = std::mem::take(&mut self.visited);
+                let saved_children = std::mem::take(&mut self.children);
+                let saved_ix = std::mem::take(&mut self.diag_ix);
+                let (saved_override, saved_engine, saved_depth) = (std::mem::take(&mut self.override_depth), std::mem::take(&mut self.engine_depth), std::mem::take(&mut self.depth));
+                self.enter(p, this, bind, first_is_ctx, no_act, &owner);
+                self.override_depth = saved_override;
+                self.engine_depth = saved_engine;
+                self.depth = saved_depth;
+                self.visited = saved_visited;
+                let own = std::mem::replace(&mut *self.out, saved_out);
+                let children = std::mem::replace(&mut self.children, saved_children);
+                self.diag_ix = saved_ix;
+                self.computing.remove(&key);
+                let memo = self.eng.memo.read().unwrap();
+                let bare = own.reads.is_empty() && own.diags.is_empty() && own.lookup_diags.is_empty() && own.opaque.is_empty() && own.ctx_fields.is_empty();
+                let trivial = bare && children.iter().all(|(c, _)| memo.get(c).map(|n| n.trivial).unwrap_or(false));
+                drop(memo);
+                self.eng.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
+                if trivial {
+                    return;
+                }
+            }
+            self.children.push((key, outer));
+            return;
+        }
+        self.enter(p, this, bind, first_is_ctx, no_act, &owner);
+    }
+
+    /// Merges every memoized node the walk reached (and the nodes they call, once each) into the set. `outer` carries "found beneath an
+    /// engine body or an override" down the edges.
+    fn finish(&mut self) {
+        let mut stack: Vec<(MemoKey, bool)> = std::mem::take(&mut self.children);
+        stack.reverse();
+        while let Some((key, outer)) = stack.pop() {
+            if !self.merged.insert(key.clone()) {
+                continue;
+            }
+            let Some(node) = self.eng.memo.read().unwrap().get(&key).cloned() else { continue };
+            self.merge(&node.own, outer);
+            for (child, flag) in node.children.iter().rev() {
+                if !self.merged.contains(child) {
+                    stack.push((child.clone(), outer || *flag));
+                }
+            }
+        }
+    }
+
+    /// Adds one memoized node's own findings to this walk's set.
+    fn merge(&mut self, d: &ReadSet, outer: bool) {
+        for r in &d.reads {
+            if !d.internal.contains(r) {
+                self.out.internal.remove(r);
+            }
+        }
+        for r in &d.internal {
+            if !self.out.reads.contains(r) {
+                self.out.internal.insert(r.clone());
+            }
+        }
+        for r in &d.reads {
+            self.out.reads.insert(r.clone());
+            if let Some(site) = d.sites.get(r) {
+                self.out.sites.entry(r.clone()).or_insert_with(|| site.clone());
+            }
+        }
+        for (k, v) in &d.ctx_fields {
+            self.out.ctx_fields.entry(k.clone()).or_insert_with(|| v.clone());
+        }
+        for x in &d.diags {
+            let mut y = x.clone();
+            y.closed_only |= outer;
+            self.record_diag(y);
+        }
+        for x in &d.lookup_diags {
+            if !self.out.lookup_diags.contains(x) {
+                self.out.lookup_diags.push(x.clone());
+            }
+        }
+        for (k, v) in &d.opaque {
+            self.out.opaque.entry(k.clone()).or_insert_with(|| v.clone());
+        }
+    }
+
+    fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) {
+        if let Some(summary) = self.eng.ann.summaries.get(&(owner.to_string(), p.name().to_string())) {
+            self.apply_summary(owner, p.name(), summary, &this, bind);
             return;
         }
         let value = p.get();
@@ -749,7 +956,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 if v.ty.is_none() || v.root == Root::Local {
                     v.ty = Some(d.clone());
                 }
-                if self.eng.sem.is_subtype(d, "/datum/act") && (first_is_ctx || bind.get(i).is_some()) && (v.root == Root::Local) {
+                if self.eng.sem.is_subtype(d, "/datum/act") && (first_is_ctx || bind.get(i).is_some()) && !no_act && (v.root == Root::Local) {
                     v.root = Root::Act;
                     if let (Some(c), true) = (&self.ctx_override, i == 0 && first_is_ctx) {
                         v.ty = Some(c.clone());
@@ -981,7 +1188,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                     self.eval(fr, lhs);
                 }
                 let owner = fr.this.ty.clone().unwrap_or_default();
-                self.out.effects.push(Effect { kind: "assign", name: n.clone(), owner, proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line });
+                if !self.eng.virtual_dispatch { self.out.effects.push(Effect { kind: "assign", name: n.clone(), owner, proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line }); }
                 return;
             }
         }
@@ -996,7 +1203,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                         // compound: the old value is read.
                         let _ = self.field(fr, v.clone(), name.as_str());
                     }
-                    self.out.effects.push(Effect { kind: "assign", name: name.as_str().to_string(), owner: v.ty.clone().unwrap_or_default(), proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line });
+                    if !self.eng.virtual_dispatch { self.out.effects.push(Effect { kind: "assign", name: name.as_str().to_string(), owner: v.ty.clone().unwrap_or_default(), proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line }); }
                     Val::local(None)
                 }
                 Follow::Field(_, name) => self.field(fr, v, name.as_str()),
@@ -1102,6 +1309,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         if name == "." || name == ".." {
             return fr.locals.get(name).cloned().unwrap_or_else(|| Val::local(None));
         }
+        if name == "global" {
+            // `global.proc()` / `global.var`: the global scope, never a var of src.
+            return Val::local(None);
+        }
         if let Some(v) = fr.locals.get(name) {
             return v.clone();
         }
@@ -1110,9 +1321,91 @@ impl<'a, 'e> Walk<'a, 'e> {
             self.diag("dynamic_read", &rel, line, "vars[] reads are not allowed in a handler".to_string());
             return Val::local(None);
         }
+        if let Some(v) = self.global_ident(fr, name, line) {
+            return v;
+        }
         // A var of src.
         let this = fr.this.clone();
         self.field(fr, this, name)
+    }
+
+    /// Global state the framework owns and keeps value-transparent: a shared cache (its store, its counter, the cache datum: a hit is the
+    /// builder's value, invalidated by the cache's own policy, doc/rewrite/caching.md), or engine state (declared in an engine directory)
+    /// read by an engine body. The first is structural; the second is the framework's own bookkeeping, which the staleness checker
+    /// cross-checks and which is not an input of any stat or look.
+    fn global_internal(&self, fr: &Frame<'a>, var: &str, ty: &str, decl_file: &str) -> bool {
+        let sem = self.eng.sem;
+        if sem.is_subtype(ty, "/datum/shared_cache") {
+            return true;
+        }
+        for prefix in ["_scs_", "_sch_"] {
+            if let Some(cache) = var.strip_prefix(prefix) {
+                if sem.var_decl("/", &format!("_sc_{cache}")).map(|v| v.declared == "/datum/shared_cache").unwrap_or(false) {
+                    return true;
+                }
+            }
+        }
+        framework_file(&fr.rel) && framework_file(decl_file)
+    }
+
+    /// A bare identifier that names a global var (`GLOB`, `SSair`, a `var/global`): global state, not a var of src. Closed walk only.
+    fn global_ident(&mut self, fr: &Frame<'a>, name: &str, line: u32) -> Option<Val> {
+        if !self.eng.virtual_dispatch || matches!(name, "world" | "usr" | "src" | "args" | "vars" | "global" | "null" | "client" | "." | "..") {
+            return None;
+        }
+        let sem = self.eng.sem;
+        if let Some(ty) = &fr.this.ty {
+            // A var the receiver's type declares shadows a global of the same name.
+            if sem.var_owner(ty, name).map(|o| o != "/").unwrap_or(false) {
+                return None;
+            }
+        }
+        let sig = sem.var_decl("/", name)?;
+        if sem.var_owner("/", name).as_deref() != Some("/") {
+            return None;
+        }
+        let rel = fr.rel.clone();
+        if name != "GLOB" && self.mute == 0 && !sig.is_const && !self.eng.globals().constant_after_init(name) && !self.global_internal(fr, name, &sig.declared, &sig.file) {
+            self.diag("untracked_global", &rel, line, name.to_string());
+        }
+        let ty = (!sig.declared.is_empty()).then(|| sig.declared.clone());
+        if sig.is_object() {
+            Some(Val { ty, root: Root::Global(name.to_string()), hops: Vec::new(), hop_ok: true, list: false })
+        } else {
+            Some(Val::local(ty))
+        }
+    }
+
+    /// `g.name` where `g` is global state: classifies the read. A var of a system that is tracked is a read of that system's state (it
+    /// publishes); a var nothing writes after boot reads like a constant; anything else is an input nothing publishes.
+    fn global_field(&mut self, fr: &mut Frame<'a>, v: Val, path: &str, name: &str) -> Val {
+        let sem = self.eng.sem;
+        let rel = fr.rel.clone();
+        let line = self.line;
+        let Some(ty) = v.ty.clone() else { return Val::local(None) };
+        let Some(sig) = sem.var_decl(&ty, name) else { return Val::local(None) };
+        let owner = sem.var_owner(&ty, name).unwrap_or_else(|| ty.clone());
+        let child = if path == "GLOB" { format!("GLOB.{name}") } else { format!("{path}.{name}") };
+        let is_glob = path == "GLOB";
+        let mut tracked_system = None;
+        if !is_glob && sem.is_subtype(&ty, "/datum/system") && self.eng.is_tracked(&owner, name) {
+            let short = ty.trim_start_matches("/datum/system/").split('/').next().unwrap_or("").to_string();
+            tracked_system = Some(short);
+        }
+        if let Some(system) = tracked_system {
+            let r = Read { root: format!("system:{}", system), hops: Vec::new(), var: name.to_string(), owner: ty.clone(), kind: ReadKind::System, hop_ok: true };
+            self.add_read(r, &rel, line);
+        } else if self.mute == 0 {
+            let constant = sig.is_const || if is_glob { self.eng.globals().constant_after_init(name) } else { !self.eng.write_index().is_written(name) };
+            if !constant && !self.global_internal(fr, name, if is_glob { &sig.declared } else { &ty }, &sig.file) {
+                self.diag("untracked_global", &rel, line, child.clone());
+            }
+        }
+        if sig.is_object() && child.matches('.').count() < MAX_HOPS {
+            Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: Root::Global(child), hops: Vec::new(), hop_ok: true, list: false }
+        } else {
+            Val::local((!sig.declared.is_empty()).then(|| sig.declared))
+        }
     }
 
     /// `v.name`: a var read on the entity `v` is (when it is tracked), else nothing.
@@ -1120,6 +1413,9 @@ impl<'a, 'e> Walk<'a, 'e> {
         let sem = self.eng.sem;
         let rel = fr.rel.clone();
         let line = self.line;
+        if let Root::Global(path) = v.root.clone() {
+            return self.global_field(fr, v, &path, name);
+        }
         if name == "vars" && v.tracked() {
             self.diag("dynamic_read", &rel, line, "vars[] reads are not allowed in a handler".to_string());
             return Val::local(None);
@@ -1186,8 +1482,11 @@ impl<'a, 'e> Walk<'a, 'e> {
             if !is_rel && sig.is_object() && self.mute == 0 {
                 // (Inside read_once() nothing is subscribed, so a hop that does not subscribe is not a finding.)
                 // Followed anyway (the reads stay complete); flagged so classification can say why a hop does not subscribe.
-                let msg = format!("hop through `{}` ({}) which is not a declared relation", name, owner);
-                self.diag("hop_not_relation", &rel, line, msg);
+                let engine_hop = self.eng.virtual_dispatch && self.internal_read(&rel, &Read { root: String::new(), hops: Vec::new(), var: name.to_string(), owner: owner.clone(), kind: ReadKind::Var, hop_ok: true });
+                if !engine_hop {
+                    let msg = format!("hop through `{}` ({}) which is not a declared relation", name, owner);
+                    self.diag("hop_not_relation", &rel, line, msg);
+                }
             }
             return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: v.root.clone(), hops, hop_ok: v.hop_ok && is_rel, list: sig.is_list() };
         }
@@ -1221,6 +1520,9 @@ impl<'a, 'e> Walk<'a, 'e> {
         let line = self.line;
         let rel = fr.rel.clone();
         self.note_call(fr, name, &v, line);
+        if self.eng.virtual_dispatch && effect_call(name) {
+            return Val::local(None);
+        }
         if v.root == Root::Act {
             // A.snapshot(), A.captured(...): context API, not a read.
             return Val::local(None);
@@ -1244,6 +1546,13 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
             return Val::local(None);
         };
+        if matches!(v.root, Root::Global(_)) {
+            // A proc on a global singleton (`SSair.x()`, `GLOB.thing.x()`): followed, its reads classified as global reads.
+            if self.eng.virtual_dispatch && !p.is_builtin() {
+                self.run_proc(p, v, &argv, false);
+            }
+            return Val::local(None);
+        }
         if p.is_builtin() || !v.tracked() || !v.hop_ok {
             return Val::local(None);
         }
@@ -1285,7 +1594,7 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     fn note_call(&mut self, fr: &Frame<'a>, name: &str, recv: &Val, line: u32) {
         let impure = IMPURE_CALLS.contains(&name) || name.starts_with("rel_") || MESSAGE_CALLS.contains(&name) || name.starts_with("set_");
-        if impure {
+        if impure && !self.eng.virtual_dispatch {
             self.out.effects.push(Effect { kind: "call", name: name.to_string(), owner: recv.ty.clone().unwrap_or_default(), proc: fr.proc.name().to_string(), rel: fr.rel.clone(), line });
         }
     }
@@ -1309,6 +1618,9 @@ impl<'a, 'e> Walk<'a, 'e> {
         let rel = fr.rel.clone();
         let this = fr.this.clone();
         self.note_call(fr, name, &this, line);
+        if self.eng.virtual_dispatch && effect_call(name) {
+            return Val::local(None);
+        }
         if let Some(decl) = self.eng.ann.lookups.get(name) {
             let argument = argv.get(decl.argument).and_then(|v| match &v.root {
                 Root::Scalar(a) => Some(a.clone()),
@@ -1370,6 +1682,8 @@ impl<'a, 'e> Walk<'a, 'e> {
                         return Val::local(None);
                     }
                     self.run_virtual(p, &ty, name, this, &argv);
+                } else if matches!(this.root, Root::Global(_)) && self.eng.virtual_dispatch {
+                    self.run_proc(p, this, &argv, false);
                 }
                 return Val::local(None);
             }
@@ -1377,6 +1691,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         // A global proc.
         if let Some(p) = sem.global_proc(name) {
             if p.is_builtin() {
+                return Val::local(None);
+            }
+            if self.eng.virtual_dispatch && sem.rel(p.get().location).starts_with("code/_helpers/logging/") {
+                // The logging helpers write the world log; what they read is not an input of a value.
                 return Val::local(None);
             }
             if let Some(summary) = self.eng.ann.summaries.get(&("/".to_string(), name.to_string())) {
@@ -1414,6 +1732,24 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
                 let g = Val::local(None);
                 self.run_proc(p, g, &bind, false);
+            } else if self.eng.virtual_dispatch {
+                // Walked like any proc, every parameter bound to what the call passed: a tracked argument keeps its root, so what the body
+                // reads of it is a read of the caller's entity. Global state the body reads is classified in `global_field`.
+                let value = p.get();
+                // (An act context does not travel into a helper: the helper declares the context type it takes, and the handler's own
+                // context fields are checked at the handler.)
+                let bind: Vec<Val> = value
+                    .parameters
+                    .iter()
+                    .enumerate()
+                    .map(|(i, prm)| match argv.get(i) {
+                        Some(a) if a.root != Root::Act => a.clone(),
+                        _ => Val::local(type_str(&prm.var_type)),
+                    })
+                    .collect();
+                self.no_act = true;
+                self.run_proc(p, Val::local(None), &bind, false);
+                self.no_act = false;
             } else {
                 self.diag("unannotated_global", &rel, line, format!("global proc `{}` is called without READS_FROM", name));
             }
@@ -1654,5 +1990,116 @@ mod closed_walk_tests {
             }
             std::fs::remove_dir_all(root).unwrap();
         }
+    }
+
+    const GLOBALS: &str = "/datum/controller/global_vars
+	var/boot_table = 1
+	var/dyn = 0
+	var/list/cache_like
+var/datum/controller/global_vars/GLOB
+/datum/system
+/datum/system/boot
+	var/state = 0
+/datum/system/boot/proc/initialize()
+	GLOB.boot_table = 7
+	GLOB.boot_table++
+	setup()
+/datum/system/boot/proc/setup()
+	GLOB.cache_like = list()
+/proc/bump()
+	GLOB.dyn++
+";
+
+    #[test]
+    fn a_global_helper_is_walked_and_a_tracked_argument_keeps_its_root() {
+        let content = "/datum/thing
+	var/charge = 0
+	var/rating = 1
+TRACKED(/datum/thing, charge)
+TRACKED(/datum/thing, rating)
+/proc/helper(datum/thing/T, scale)
+	return T.charge * scale
+/datum/thing/proc/probe()
+	return helper(src, rating)
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let legacy = ReadsEngine::new(&sem, &decls, &ann).analyze("/datum/thing", "probe");
+        assert!(legacy.diags.iter().any(|d| d.rule == "unannotated_global"), "the legacy walk reports an unannotated global");
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed().analyze("/datum/thing", "probe");
+        assert_eq!(closed.keys(), BTreeSet::from(["charge".to_string(), "rating".to_string()]), "the helper's read of its tracked argument is a read of the holder");
+        assert!(closed.diags.is_empty(), "{:?}", closed.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_global_written_only_while_booting_reads_like_a_constant() {
+        let content = "/datum/thing
+	var/charge = 0
+TRACKED(/datum/thing, charge)
+/datum/thing/proc/boot_read()
+	return GLOB.boot_table + charge
+/datum/thing/proc/dyn_read()
+	return GLOB.dyn + charge
+/datum/thing/proc/via_helper()
+	return peek_dyn()
+/proc/peek_dyn()
+	return GLOB.dyn
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/globals.dm", GLOBALS), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+        let globals = closed.globals();
+        assert!(globals.constant_after_init("boot_table"), "written only by a system's initialize()");
+        assert!(globals.constant_after_init("cache_like"), "written only by setup(), which only initialize() calls");
+        assert!(!globals.constant_after_init("dyn"), "bump() is called from nowhere that boots");
+        let boot = closed.analyze("/datum/thing", "boot_read");
+        assert!(boot.diags.iter().all(|d| d.rule != "untracked_global"), "{:?}", boot.diags);
+        let dynamic = closed.analyze("/datum/thing", "dyn_read");
+        assert!(dynamic.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "{:?}", dynamic.diags);
+        let helper = closed.analyze("/datum/thing", "via_helper");
+        assert!(helper.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "a global read inside a walked helper is found: {:?}", helper.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn an_effect_call_is_not_followed_and_a_proc_a_callback_names_is_not_boot_only() {
+        let content = "/datum/thing
+	var/charge = 0
+TRACKED(/datum/thing, charge)
+/datum/thing/proc/probe()
+	set_charge(GLOB.dyn)
+	return charge
+/datum/thing/proc/set_charge(v)
+	return GLOB.dyn
+";
+        let boot = "/datum/system/boot/proc/initialize()
+	keep()
+	later(PROC_REF(timed))
+/proc/keep()
+	GLOB.boot_table = 3
+/proc/timed()
+	GLOB.dyn = 2
+/proc/later(x)
+	return x
+";
+        let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/globals.dm", &GLOBALS.replace("/datum/system/boot/proc/initialize()
+	GLOB.boot_table = 7
+	GLOB.boot_table++
+	setup()
+/datum/system/boot/proc/setup()
+	GLOB.cache_like = list()
+", "")), ("code/boot.dm", boot), ("code/content.dm", content)]);
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
+        assert!(closed.globals().constant_after_init("boot_table"), "keep() runs only from initialize()");
+        assert!(!closed.globals().constant_after_init("dyn"), "timed() is named by a PROC_REF, so something else runs it");
+        let set = closed.analyze("/datum/thing", "probe");
+        assert!(set.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "the argument is read; the setter body is not: {:?}", set.diags);
+        assert_eq!(set.diags.iter().filter(|d| d.rule == "untracked_global").count(), 1, "{:?}", set.diags);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

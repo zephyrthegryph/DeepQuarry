@@ -117,7 +117,6 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 		if(other)
 			other.update_twohanding()
 			other.update_held_icon()
-			update_inv_l_hand()
 
 /mob/living/ret_grab(list/L, mobchain_limit = 5)
 	// We're the first!
@@ -166,7 +165,6 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	var/obj/item/inhand = get_active_hand()
 	if(inhand)
 		inhand.attack_self(src)
-		update_inv_active_hand()
 	return
 
 /mob/living/abiotic(full_body = 0)

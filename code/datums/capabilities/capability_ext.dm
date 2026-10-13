@@ -47,7 +47,7 @@
 	C.legacy_holder_init(A, FALSE)
 	cap_join_systems(A, C)
 	refresh_granted_verbs(A)
-	changed(A, CHANGE_CAPABILITY)
+	state_changed(A) // the extra capability is drawn, examined and shown in windows: every output re-derives
 	return TRUE
 
 /// Detaches the extra capability with key (or type) `key` from A.
@@ -62,7 +62,7 @@
 			LAZYREMOVE(capability_runtime(A).data, C.key)
 			if(isdatum(data))
 				spent(data)
-			changed(A, CHANGE_CAPABILITY)
+			state_changed(A) // the extra capability is gone from the holder's outputs
 			return TRUE
 	return FALSE
 

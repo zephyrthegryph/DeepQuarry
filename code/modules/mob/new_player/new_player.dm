@@ -371,7 +371,6 @@
 
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()
-	new_character.update_icons_body()
 	new_character.update_transform()
 
 	new_character.key = key		//Manually transfer the key to log them in

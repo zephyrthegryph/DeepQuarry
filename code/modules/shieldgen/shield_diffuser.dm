@@ -28,7 +28,7 @@ TRACKED(/obj/machinery/shield_diffuser, enabled)
 //If underfloor, hide the cable^H^H diffuser
 /obj/machinery/shield_diffuser/hide(i)
 	if(istype(loc, /turf))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+		hide_under_floor(src, i)
 
 /obj/machinery/shield_diffuser/hides_under_flooring()
 	return 1

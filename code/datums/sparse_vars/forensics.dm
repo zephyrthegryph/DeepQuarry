@@ -39,6 +39,7 @@ TRACKED(/atom, forensic_fluorescent)
 GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 
 /proc/dq_get_blood_color(atom/a)
+	READS_FROM(a)
 	if(a.forensic_blood_color != null)
 		return a.forensic_blood_color
 	return _dq_resolve_typed_default(a.type, GLOB.dq_blood_color_by_type, GLOB._dq_blood_color_resolved, null)

@@ -360,7 +360,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 		play_sfx(our_turf, SFX_MACHINES_HISS)
 
 
-TRACKED_BRIDGED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics, rust_device_rev)
 
 /// The device's Rust law needs re-publishing (see rust_device_rev): push_to_rust() runs once this frame.
 /obj/machinery/atmospherics/proc/rust_device_dirty()

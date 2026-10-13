@@ -1337,7 +1337,6 @@ var	code/modules/tickets/tickets_player_ui.dm	var/tmp/datum/ticket/T
 var	code/modules/tooltip/tooltip.dm	var/tmp/atom/last_target
 var	code/modules/turbolift/turbolift.dm	var/tmp/datum/turbolift_floor/target_floor // Where are we going?
 var	code/modules/turbolift/turbolift.dm	var/tmp/datum/turbolift_floor/current_floor // Where is the lift currently?
-var	code/modules/turbolift/turbolift_console.dm	var/tmp/datum/turbolift/lift
 var	code/modules/turbolift/turbolift_door.dm	var/tmp/datum/turbolift_floor/floor
 var	code/modules/vehicles/construction.dm	var/tmp/obj/item/cell/cell
 var	code/modules/vehicles/janicart.dm	var/tmp/obj/item/storage/bag/trash/mybag

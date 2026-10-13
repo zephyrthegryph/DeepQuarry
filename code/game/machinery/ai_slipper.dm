@@ -13,7 +13,7 @@
 	req_access = list(ACCESS_AI_UPLOAD)
 
 /obj/machinery/ai_slipper/var/cooldown_on = FALSE
-TRACKED_BRIDGED(/obj/machinery/ai_slipper, cooldown_on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/ai_slipper, cooldown_on)
 /obj/machinery/ai_slipper/var/cooldown_stopped = FALSE
 TRACKED(/obj/machinery/ai_slipper, cooldown_stopped)
 

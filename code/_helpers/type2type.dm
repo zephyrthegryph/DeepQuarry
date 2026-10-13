@@ -186,6 +186,7 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 
 // Converts a hexadecimal color (e.g. #FF0050) to a list of numbers for red, green, and blue (e.g. list(255,0,80) ).
 /proc/hex2rgb(hex)
+	READS_FROM()
 	// Strips the starting #, in case this is ever supplied without one, so everything doesn't break.
 	if(findtext(hex,"#",1,2))
 		hex = copytext(hex, 2)
@@ -199,14 +200,17 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 
 // The three procs below require that the '#' part of the hex be stripped, which hex2rgb() does automatically.
 /proc/hex2rgb_r(hex)
+	READS_FROM()
 	var/hex_to_work_on = copytext(hex,1,3)
 	return hex2num(hex_to_work_on)
 
 /proc/hex2rgb_g(hex)
+	READS_FROM()
 	var/hex_to_work_on = copytext(hex,3,5)
 	return hex2num(hex_to_work_on)
 
 /proc/hex2rgb_b(hex)
+	READS_FROM()
 	var/hex_to_work_on = copytext(hex,5,7)
 	return hex2num(hex_to_work_on)
 
@@ -551,6 +555,7 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 	while (found)
 
 /proc/type2parent(child)
+	READS_FROM()
 	var/string_type = "[child]"
 	var/last_slash = findlasttext(string_type, "/")
 	if (last_slash != 1)

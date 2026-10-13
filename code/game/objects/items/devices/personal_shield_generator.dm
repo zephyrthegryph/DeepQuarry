@@ -265,7 +265,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 			to_chat(user, span_warning("You activate the shield!"))
 			user.remove_body_effect(/datum/body_effect/shield_projection) //Just to make sure they aren't using two at once!
 			user.apply_body_effect(modifier_type)
-			user.update_modifier_visuals() //Forces coloration to WORK.
+			changed(src)
 			play_sfx(src, SFX_WEAPONS_SABERON) //Shield turning off! PLACEHOLDER
 
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held) //Make this work on Alt-Click

@@ -30,8 +30,7 @@
 	var/list/after
 	/// Condition names (the sequence's conditions()) that must hold; "!name": must not.
 	var/list/when
-	/// What should_run() reads: publish_change() keys (text, a native() spec's keys) and change channels (numbers,
-	/// state_changed()). Any of them changing wakes the step.
+	/// What should_run() reads: publish_change() keys (text, a native() spec's keys). Any of them changing wakes the step.
 	var/list/reads
 	/// Proc name on its target, TRUE while the step has work: should_run() on the entity, should_run(entity) on a
 	/// contributor. Null: always (the step never sleeps on its own). Asked when a woken step is about to run (FALSE:
@@ -65,8 +64,6 @@
 	var/cond_forbid = 0
 	/// Condition bits whose reads all wake this step: a skip blocked only by these sleeps.
 	var/covered = 0
-	/// Change channels that wake it: its reads', its conditions' and the sequence's wake_all.
-	var/chan_mask = 0
 	/// publish_change() keys that wake it (its reads' and its conditions').
 	var/list/keys
 	/// Its cost slot in the sequence (profiled frames).
@@ -127,7 +124,7 @@
 		return length(L) ? L.Copy() : null
 	return list(value)
 
-/// Reads as a flat list: numbers stay change channels, native() specs give their keys, anything else is a key.
+/// Reads as a flat list: native() specs give their keys, anything else is a key.
 /proc/seq_reads(reads)
 	if(isnull(reads))
 		return null
@@ -136,8 +133,8 @@
 	var/list/out = list()
 	for(var/read in reads)
 		if(isnum(read))
-			out += read
-		else if(istype(read, /datum/native_read))
+			CRASH("seq_reads: [read] is a number; change channels are gone, name the key it stands for")
+		if(istype(read, /datum/native_read))
 			var/datum/native_read/N = read
 			out |= N.keys
 		else if(!isnull(read))
@@ -161,8 +158,6 @@
 	var/list/pos_of
 	/// publish_change() key -> positions it wakes.
 	var/list/by_key
-	/// Every change channel some step wakes on.
-	var/chan_union = 0
 	/// `after` targets this table does not have (a step of another type or contributor, or a typo: the graph
 	/// tests check every one is declared somewhere).
 	var/list/unresolved
@@ -258,13 +253,9 @@
 
 /// Compiles one step of `T`: its condition masks, what wakes it, its cost slot and rewake key.
 /datum/sequence/proc/compile_step(datum/seq_table/T, datum/seq_step/S)
-	var/chans = wake_all
 	var/list/keys = wake_keys ? wake_keys.Copy() : list()
 	for(var/read in S.reads)
-		if(isnum(read))
-			chans |= read
-		else
-			keys |= read
+		keys |= read
 	for(var/name in S.when)
 		var/negated = copytext(name, 1, 2) == "!"
 		var/cond_name = negated ? copytext(name, 2) : name
@@ -281,13 +272,8 @@
 		if(length(C.reads))
 			S.covered |= bit
 			for(var/read in C.reads)
-				if(isnum(read))
-					chans |= read
-				else
-					keys |= read
-	S.chan_mask = chans
+				keys |= read
 	S.keys = length(keys) ? keys : null
-	T.chan_union |= chans
 	for(var/k in keys)
 		var/list/positions = T.by_key[k]
 		if(!positions)

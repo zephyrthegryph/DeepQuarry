@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "look_keys.txt now records only look keys a pin run probed and matched; merges and gates normalize it instead of regenerating it, and unverified types are probed by the next pin run"

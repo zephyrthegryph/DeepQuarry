@@ -319,7 +319,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	// A worn storage shows what is in it on the wearer's sprite.
 	if(ismob(loc))
 		var/mob/wearer = loc
-		wearer.update_inv_belt()
+		changed(src)
 
 // ---- Gather and empty ----
 

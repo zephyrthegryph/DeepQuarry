@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The change channels machines and sequences woke on are gone (CHANGE_MACHINE_*, CHANGE_POWER_GRID_*, CHANGE_INTEGRITY, CHANGE_CAPABILITY, CHANGE_DATUM_*, TRACKED_BRIDGED, changed()); a machine setting is a tracked var, the airlock sensor alert, field generator power, reconstitutor tank, omni overlays and turbolift modes publish through their setters, and the declared caches became shared caches or live state"

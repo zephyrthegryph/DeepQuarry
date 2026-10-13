@@ -124,8 +124,3 @@ CAPABILITIES(/datum/expedition_site)
 /datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
 	return assigned_shuttle
 
-/datum/expedition_site/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["floors"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L

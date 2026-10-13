@@ -353,7 +353,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		call(target, setter)(value)
 	else
 		target.vars[name] = value
-	changed(target)
+	state_changed(target)
 	dq_look_settle()
 
 /// One probe on the made instance: write, capture, write the original back, check the look returned to `base`. Returns FALSE when

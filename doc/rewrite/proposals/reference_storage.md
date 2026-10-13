@@ -66,9 +66,23 @@ Seeded 2026-10-12: 1,768 sites (var 1,391, list 377); 1,737 after generated outp
 
 `/datum/unit_test/dq_gc_sweep` (normal tier, `code/modules/unit_tests/dq_gc_sweep_tests.dm`) creates and
 deletes a representative set (machines, items, a human with an outfit, simple mobs, a window datum opened
-and closed, HUD screens, lights) and checks each deleted object's reference count right after its delete,
-against a control datum measured the same way. A surplus reference fails the test and runs the reference
-finder on that object, so the log names the holder. No waiting for the collector's five-minute check.
+and closed, HUD screens, lights) and, once the collector's filter pass has run, checks that no subject is
+left in its check queue with any reference besides the queue's own. A surplus reference fails the test and
+runs the reference finder on that object, so the log names the holder. No waiting for the collector's
+five-minute check. The judgement is plain zero for every subject: there are no per-family baselines.
+
+Two things the test depends on, both learned the hard way:
+
+- Count in a proc of its own, before reading anything from the object. A frame that has read a var of an
+  object (`D.gc_destroyed`) holds one more reference to it until the frame returns, so a count taken in
+  the middle of a loop that also reads the object is one too high for every subject. That once looked like
+  a hidden reference in machines, bags and living mobs (none of them had one) and was worked around with
+  per-family baselines, a dropped cat and a throwaway last mob. `dq_gc_sweep_controls()` proves the count
+  is exact (zero for a datum only its queue entry names, one for a datum a variable also holds) before the
+  sweep trusts it.
+- The sweep also checks `GLOB.latency_sweep_holders`: a deleted holder leaves it in
+  `lifecycle_dematerialize()`, so the list does not keep dead machines, bags or mobs for the sweep cursor
+  to prune.
 
 ## Waves
 
@@ -89,3 +103,43 @@ finder on that object, so the log names the holder. No waiting for the collector
 5. Object vars to `ref_one` / `owns_one` / `links()`, worst types first.
 
 Each wave lowers the baseline and lands on its own.
+
+## Relation shapes and what they cost (2026-10-13)
+
+The wave conversions kept hitting hot engine tables the relation core was too slow or too narrow for. The core now has these shapes
+(`code/engine/refs/members.dm`; `rel_add`, `rel_remove`, `rel_clear`, `rel_take` work on all of them):
+
+| Shape | Declare | Membership | Add | Remove one | Order | Keys |
+|---|---|---|---|---|---|---|
+| plain list | `var/list/x` + `ref_many` / `owns_many` | reverse index (a list over 24 long is not scanned) | O(1) | scan at the engine's list speed (the front is O(1): a queue) | insertion order | text, in an owns_many |
+| alist set | `var/alist/x = alist()` + `ref_many` / `owns_many` | `member in x`, O(1) | O(1) | O(1) | the hash's, not insertion | none |
+| alist map | `var/alist/x = alist()` + `ref_many` / `owns_many`; `rel_add(E, var, member, key)` | `rel_keys_of()` | O(1) | O(keys of the member) | the hash's | number, text or path; a member may sit under several keys |
+
+- `islist()` is FALSE for an alist. Relation code asks `REL_LISTLIKE(x)`; your own code that reads a relation var does `istype(x, /alist)` where
+  it matters. `for(var/m in set)` walks the members; `for(var/k, m in map)` walks key and member.
+- A number is an index in a plain list, never a key, so a numeric key makes an alist (a null var is made one by the first `rel_add(..., key)`;
+  declare it `= alist()` so readers see one before the first write). A sparse or fixed-size table (a meter's slot table, regions by id) is an alist
+  map with numeric keys: reading is `x[key]`, and an empty slot is an absent key.
+- `rel_add(E, var, null, key)` empties that key. Replacing the member under a key disposes of the old one (owns_many) unless it still sits
+  under another key. Deleting a member, `rel_remove`, `rel_take(member =)` and `rel_clear` take it from every key it sat under: the holder keeps
+  each member's keys (`rel_keys_of()`), so none of these scans the map.
+- Keep an ordered `list` only where a reader needs the order (a FIFO queue, a sorted display). Everything else that is a set or a table should be
+  an alist.
+- An alist is not walked by the reference finder (`find_references`), so a leaked member of one is harder to find: the GC sweep test is the check.
+
+Handles (`entity_handle` / `resolve_handle` / `entity_handle_of`, `code/engine/time/handles.dm`) stay text, because a handle keys plain lists
+everywhere. What changed is where the text work is done: once, when a slot is taken.
+
+| Operation | Before | After |
+|---|---|---|
+| `entity_handle(D)`, first call | 31.6 us | 16.6 us (9 us once `D` has its relation key) |
+| `entity_handle(D)`, repeat | 3.3 us | 1.6 us |
+| `resolve_handle(h)` | 31.4 us | 4.0 us |
+| `entity_handle(turf)` | 165 us | 2.9 us |
+| `resolve_handle(turf handle)` | 5 us | 6 us the first time (parsed), about 2 us after (the position is cached as a number) |
+
+A turf handle is the turf's key (no new string) once the level has been released and reused it carries `#<generation>`; a handle to a
+deleted datum stays dead when its slot is reused (the slot's text carries the generation, and a freed slot's text leaves the index).
+
+The cost passes are `dq_rel_perf_*` (`code/modules/unit_tests/dq_rel_perf_*.dm`): microseconds per operation at two sizes, no thresholds.
+`dq_rel_core_*` is the correctness set: long lists, sets, numeric tables, deletion of members and holders, handle reuse.

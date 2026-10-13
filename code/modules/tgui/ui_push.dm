@@ -1,7 +1,7 @@
 // Coalesced UI pushes (doc/rewrite/final_api.html section 7 "outputs, reads, phase R" and section 13 "ui_data(A)"; G14 of the framework gap plan).
 //
 // What an open window shows is its host's ui_data(A) (tgui_data() merges it). When state it reads changes, the framework pushes it: a
-// tracked write marks the host (changed() / publish_change() -> the refresh engine's DEP_UI output, from the generated ui_from() reads of its
+// tracked write marks the host (publish_change() -> the refresh engine's DEP_UI output, from the generated ui_from() reads of its
 // ui_data() body, or a declared ui_from()), and refresh_ui() queues each of the host's open windows here. The queue is drained once per tick
 // in the kernel's phase R, after the lanes (so after the presentation lane's refresh drain has marked everything this tick changed): each
 // window gets at most ONE push per tick however many of its reads changed, with its status re-checked first.

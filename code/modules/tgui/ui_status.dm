@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY(ui_status_user_keys)
 		var/datum/stat_def/can_act = stat_def_of(STAT_CAN_ACT)
 		if(can_act)
 			GLOB.ui_status_user_keys += can_act.stat_key
-			GLOB.ui_status_user_keys += can_act.name // a stat with a var publishes under the var's name (stat recompute: changed(E, 0, name))
+			GLOB.ui_status_user_keys += can_act.name // a stat with a var publishes under the var's name (stat recompute: state_changed(E, 0, name))
 	return GLOB.ui_status_user_keys
 
 /// The keys of a window's host that decide its status: it moved.

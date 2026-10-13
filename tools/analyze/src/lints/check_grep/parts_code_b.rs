@@ -140,14 +140,14 @@ pub fn parts() -> Vec<Part> {
         ),
         Part::new(
             "tools_use_tool_banned",
-            "tools: the legacy use_tool() timer",
+            "tools: use_tool banned",
             "use_tool() and its tool jobs are gone. A tool used on something is an op: tool(TOOL_X) or lit_welder(fuel =), begins(), starts(), wait(t), then(), on_interrupt() (python tools/codemods/use_tool_wait.py).",
             Files::Code,
             line(r"\buse_tool\("),
         ),
         Part::new(
             "objects_ratchet_on_damage_reactions",
-            "objects: ratchet on DAMAGE_REACTION",
+            "objects: ratchet on DAMAGE_REACTIONs",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",
             Files::Code,
             line(r"^DAMAGE_REACTION(_AFTER)?\("),
@@ -163,7 +163,7 @@ pub fn parts() -> Vec<Part> {
         .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
         Part::new(
             "objects_ratchet_on_periodic",
-            "objects: ratchet on DECLARE_PERIODIC and machine_step",
+            "objects: ratchet on periodic",
             "DECLARE_PERIODIC*/machine_step in code/game/objects or code/game/turfs over the ratchet. every(interval, then(PROC_REF(x)), when =) in the type's CAPABILITIES.",
             Files::Code,
             line(r"^DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?\(|^/[A-Za-z0-9_/]*/machine_step\("),
@@ -173,7 +173,7 @@ pub fn parts() -> Vec<Part> {
         // zero (`legacy_forms_converted` in tools/ci/lint_scopes.toml). A folder is added when its last site is converted, never taken off.
         Part::new(
             "legacy_declaration_forms_banned_in_converted_folders",
-            "legacy declaration forms: banned in the converted folders",
+            "legacy declaration forms: banned in converted folders",
             "DECLARE_INTERACTIONS/EXTEND_INTERACTIONS/declare_interactions(), DAMAGE_REACTION(_AFTER), DECLARE_EMAG(_REPEATABLE), DECLARE_PERIODIC* or DECLARE_REPEAT in a folder listed under legacy_forms_converted. Declare op(...) entries, extend(/datum/act/hit/x, ...) or on_notice(/datum/notice/hit/x, ...), emag(then(...)) and every(interval, then(...), when =) in the type's CAPABILITIES block.",
             Files::Code,
             line(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(|^/[A-Za-z0-9_/]+/declare_interactions\(|^DAMAGE_REACTION(_AFTER)?\(|^DECLARE_EMAG(_REPEATABLE)?\(|^DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?\(|^DECLARE_REPEAT\("),
@@ -182,8 +182,8 @@ pub fn parts() -> Vec<Part> {
         .allow(Allow::None),
         Part::new(
             "legacy_field_forms_banned_in_converted_folders",
-            "legacy field forms: banned in the field-converted folders",
-            "Use TRACKED/TRACKED_BRIDGED or the actual capability state setter; these folders completed their field migration.",
+            "legacy field forms: banned in converted folders",
+            "Use TRACKED or the actual capability state setter; these folders completed their field migration.",
             Files::Code,
             line(r"^(OM_FIELD(_[A-Z_]+)?|OM_DERIVE_FIELD|OM_FLAG_FIELD)\("),
         )
@@ -193,12 +193,21 @@ pub fn parts() -> Vec<Part> {
         // is listed under `ui_push_converted` when its last SStgui.update_uis() and hand changed() mark is gone; a hard ban there. Files are only ever added.
         Part::new(
             "hand_window_pushes_banned_in_converted_files",
-            "hand window pushes: update_uis() and changed() banned in the converted files",
+            "hand window pushes banned in converted files",
             "SStgui.update_uis() or a hand changed() mark in a file listed under ui_push_converted. Track what the window shows (TRACKED / a setter / a relation) and let ui_data(A) re-run: the framework pushes the window once per frame, and an op handler that returns TRUE updates the acting window.",
             Files::Code,
             line(r"\bupdate_uis\(|\bchanged\("),
         )
         .flt(vec![Flt::KeepPaths("ui_push_converted")]),
+        // changed(E) is the human-draw conversion's interim mark of a worn or held look. The files that still carry one are `changed_mark_pending`; no other file may add one.
+        Part::new(
+            "hand_changed_marks_banned_outside_the_pending_files",
+            "hand changed() marks banned outside the pending files",
+            "a hand changed() mark in a file that carries none. Track the state the draw reads (TRACKED / a setter / a relation / a stat) so the holder's draw follows it; a worn or held look is watched by its holder.",
+            Files::Code,
+            line(r"(?<![\w.])changed\(\s*\w+\s*\)"),
+        )
+        .flt(vec![Flt::DropPaths("changed_mark_pending")]),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

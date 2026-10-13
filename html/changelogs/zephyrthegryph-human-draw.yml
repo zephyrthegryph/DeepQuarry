@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The human's look is one draw(look): clothing, body parts, hair, tail and wings, damage and surgery overlays redraw from tracked state, and the hand-kept update_icons renderer is gone"

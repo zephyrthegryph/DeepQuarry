@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Relations: constant-time membership for long ref_many lists, alist sets and numeric-keyed alist maps for ref_many / owns_many, cheaper entity handles"

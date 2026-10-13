@@ -461,7 +461,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /// The owner's wires changed: what reads them hears it.
 /datum/cap_data/wires/proc/changed_wires()
 	if(owner && !QDELETED(owner))
-		changed(owner, 0, WIRES_KEY)
+		PUBLISH_CHANGE(owner, WIRES_KEY)
 
 /// Runs the wire's effects on each capability that brought it, for the event "cut", "mend" or "pulse".
 /datum/cap_data/wires/proc/wire_effects(wire, event, mob/user)

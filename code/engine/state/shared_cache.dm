@@ -85,6 +85,7 @@ SHARED_CACHE_GLOBAL(shared_cache_uid_counter = 0)
 				LAZYADD(shared_cache_notice_types[path], src)
 
 /// Builds and stores the value for `key`. Extra arguments go to the builder instead of the key.
+PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /datum/shared_cache/proc/miss(key, ...)
 	if(!store)
 		resolve_store()

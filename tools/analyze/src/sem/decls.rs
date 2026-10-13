@@ -608,7 +608,7 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                 });
             }
         }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
         if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
@@ -789,8 +789,11 @@ mod block_tests {
     fn no_indented_line_is_no_block() {
         let f = SourceFile::from_text("code/a.dm", "CAPABILITY_DEF(x, CAP_X, key = NONE)\n\n/datum/capability/def/x/entries()\n\treturn list()\n");
         let d = scan_file(&f);
-        assert_eq!(d.markers.len(), 1);
+        // The CAPABILITY_DEF line keeps its own three arguments (no block swallows the lines below it); the second marker is the
+        // CAP_ENTRIES one the capability's `entries()` body (`return list()`) reads as.
+        assert_eq!(d.markers.len(), 2);
         assert_eq!(d.markers[0].args, vec!["x", "CAP_X", "key = NONE"]);
+        assert_eq!(d.markers[1].name, CAP_ENTRIES);
     }
 
     #[test]

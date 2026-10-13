@@ -491,6 +491,8 @@
 
 //Some mob icon layering defines
 #define BODY_LAYER		-100
+/// /mob/living/var/water_depth of a human standing in the stardog's fur (drawn sunk into it like water).
+#define WATER_DEPTH_FUR "fur"
 
 // Clothing flags, organized in roughly top-bottom
 #define EXAMINE_SKIPHELMET			0x0001

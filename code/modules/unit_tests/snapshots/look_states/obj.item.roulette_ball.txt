@@ -1,0 +1,9 @@
+/obj/item/roulette_ball/hollow holds_mob=1 +state: roulette_ball_glass_full
+/obj/item/roulette_ball/hollow holds_mob=1 +overlay: icons/obj/casino.dmi:roulette_ball_glass_full:8:#000000
+/obj/item/roulette_ball/hollow holds_mob=1 -state: roulette_ball_glass
+/obj/item/roulette_ball/hollow holds_mob=1 -overlay: icons/obj/casino.dmi:roulette_ball_glass:8:#000000
+/obj/item/roulette_ball/hollow holds_mob=2 +state: roulette_ball_glass_full
+/obj/item/roulette_ball/hollow holds_mob=2 +overlay: icons/obj/casino.dmi:roulette_ball_glass_full:8:#000000
+/obj/item/roulette_ball/hollow holds_mob=2 -state: roulette_ball_glass
+/obj/item/roulette_ball/hollow holds_mob=2 -overlay: icons/obj/casino.dmi:roulette_ball_glass:8:#000000
+
