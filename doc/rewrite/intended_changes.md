@@ -4880,3 +4880,14 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+## Loot pins re-blessed after rand() to rolls() conversions (rewrite/loot-drift)
+
+* **`dq_loot_roll_pin`, `/obj/random/fishing_junk`** (7 of its 20 seed rows): the only table that nests `/obj/structure/closet/crate/secure/loot`.
+  Cause: 81e61e24e9 rolls the crate's lock code with `rolls(nameof(code), ...)` from the instance's own stream; `Initialize()` drew its four digits
+  from the world RNG the pin had seeded, so everything the pin rolled after a crate read four draws later (and the crate's own loot loop with it).
+  Tables and weights are unchanged. 299 of 306 declarations stayed identical.
+* **`dq_loot_search_pin`** (58 of 253 rows): the pin seeds the world RNG per run, so a search that follows an item made by a converted
+  `Initialize()` reads later draws. Cause: the init waves after the 9a149c59de bless that moved item randomness into `rolls()`/`pick_one()`
+  (2034398b25 cable coils, the wirecutters handle colour, and the pizza box and tool family), same mechanism as 68e9f5ae83 above. No table or
+  weight changed; only which seed finds what moved.
