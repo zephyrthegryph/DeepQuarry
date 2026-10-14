@@ -107,7 +107,7 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 		particle_holder.shared_users--
 		if (particle_holder.shared_users <= 0)
 			type_holders -= holder_handle
-			qdel(particle_holder)
+			spent(particle_holder)
 		if (!length(type_holders))
 			GLOB.shared_particles -= particle_key
 		return
