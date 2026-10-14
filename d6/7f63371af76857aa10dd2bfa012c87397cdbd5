@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"d67f63371af76857aa10dd2bfa012c87397cdbd5","ok":true,"passed":56,"failed":0,"new_failed":0,"lanes":"rewrite/registries","tests_json":"data/test-runs/20261014T010329_d67f63371a_focused.json","created":"2026-10-14T01:03:42Z"}
