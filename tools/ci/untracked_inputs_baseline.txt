@@ -105,6 +105,7 @@ draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_manifold_icons reads GLOB.icon_manager.manifold_icons
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_manifold_icons reads GLOB.icon_manager.manifold_icons
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_manifold_icons reads GLOB.icon_manager.manifold_icons
+draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_manifold_icons reads GLOB.icon_manager.manifold_icons
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_device_icons reads GLOB.icon_manager.device_icons
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_device_icons reads GLOB.icon_manager.device_icons
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_device_icons reads GLOB.icon_manager.device_icons
@@ -123,6 +124,7 @@ draw_untracked	code/_onclick/telekinesis.dm	@/obj/item/tk_grab::focus reads ?hop
 draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.midnight_rollovers
 draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.rollovercheck_last_timeofday
 draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.midnight_rollovers
+draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.rollovercheck_last_timeofday
 draw_untracked	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads /atom::flags
 draw_untracked	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads GLOB.latency_sweep_holders
 draw_untracked	code/datums/forensics_crime.dm	@/datum/forensics_crime::has_blooddna reads /list::forensic_data.blood_DNA.len
@@ -178,6 +180,8 @@ draw_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	@/obj/st
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	@/obj/structure/bed::look_parts reads ?hop_not_relation
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	@/obj/structure/bed::look_parts reads ?hop_not_relation
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/comfy::look_parts reads ?hop_not_relation
+draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/bay::look_parts reads ?hop_not_relation
+draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/bay::look_parts reads ?hop_not_relation
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/bay::look_parts reads ?hop_not_relation
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/bay::look_parts reads ?hop_not_relation
 draw_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	@/obj/item/stool::material_icon_colour reads /datum/material::material.icon_colour
@@ -290,7 +294,3 @@ draw_untracked	code/modules/vehicles/Securitrain.dm	@/obj/vehicle/train/security
 draw_untracked	code/modules/vehicles/bike.dm	@/obj/vehicle/bike::draw reads /atom::layer
 draw_untracked	code/modules/vehicles/quad.dm	@/obj/vehicle/train/engine/quadbike::draw reads /atom::layer
 draw_untracked	code/modules/vehicles/quad.dm	@/obj/vehicle/train/trolley/trailer::draw reads /atom::layer
-draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	@/datum/pipe_icon_manager::gen_manifold_icons reads GLOB.icon_manager.manifold_icons
-draw_untracked	code/controllers/kernel/system.dm	@/datum/system::ready reads GLOB.rollovercheck_last_timeofday
-draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/bay::look_parts reads ?hop_not_relation
-draw_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	@/obj/structure/bed/chair/bay::look_parts reads ?hop_not_relation

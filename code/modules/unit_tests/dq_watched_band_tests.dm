@@ -151,3 +151,25 @@
 	TEST_ASSERT(E.beam_shown(), "a live network shows the beam")
 	TEST_ASSERT(length(E.rx?.look_overlays) > before, "the grid's avail changing redrew the emitter with its beam (overlays [before] -> [length(E.rx?.look_overlays)])")
 	power_test_drop_grid(grid_id)
+
+/// The old rule refused above 1%, not at it: a strict band read keeps exactly 1% modifiable.
+/datum/unit_test/dq_watched_charge_refusal_is_strict_at_one_percent
+
+/datum/unit_test/dq_watched_charge_refusal_is_strict_at_one_percent/Run()
+	var/obj/machinery/power/smes/buildable/hybrid/S = allocate(/obj/machinery/power/smes/buildable/hybrid, test_floor())
+	TEST_ASSERT_NOTNULL(S.vg_entity, "the SMES has no Rust entity")
+	set_var(S, nameof(S.recharge_rate), 0)
+	set_var(S, nameof(S.input_attempt), FALSE)
+	set_var(S, nameof(S.output_attempt), FALSE)
+	set_var(S, nameof(S.safeties_enabled), TRUE)
+	S.set_capacity(1000000)
+	S.push_to_rust()
+	S.set_stored_charge(S.capacity / 100)
+	dq_test_ticks(5)
+	TEST_ASSERT_EQUAL(S.stored_charge(), S.capacity / 100, "the charge sits exactly on 1%")
+	TEST_ASSERT_NULL(S.modify_refusal(null), "exactly 1% is not above 1%: the unit may be modified")
+	S.set_stored_charge(S.capacity / 100 + 100)
+	dq_test_ticks(5)
+	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "above 1% refuses")
+	TEST_ASSERT_EQUAL(watched_band(5, list(5), TRUE), 0, "a strict band leaves a value on its level below it")
+	TEST_ASSERT_EQUAL(watched_band(5, list(5)), 1, "a plain band puts a value on its level above it")
