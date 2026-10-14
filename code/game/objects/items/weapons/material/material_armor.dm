@@ -193,7 +193,7 @@
 
 		var/slowdownUncapped = (material_slowdown_multiplier * slowdownModified) - material_slowdown_modifier
 
-		set_slowdown(max(slowdownUncapped, 0))
+		slowdown = max(slowdownUncapped, 0)
 
 /obj/item/clothing/suit/armor/material
 	name = "armor"

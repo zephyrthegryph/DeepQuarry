@@ -94,7 +94,7 @@
 /// A ctrl-click switches a powered unary device (a heater, a freezer) on or off for someone its access lets in. Not a vent, a scrubber or an
 /// injector: the air alarm (or the injector's own switch) drives those.
 /obj/machinery/atmospherics/unary/proc/ctrl_power_offered(datum/act/op/A)
-	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector"))
+	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
 
 // ---- an area air device's wrench (a vent, a scrubber) ----
 

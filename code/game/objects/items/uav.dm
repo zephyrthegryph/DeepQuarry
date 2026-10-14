@@ -275,13 +275,13 @@ CAPABILITIES(/obj/item/uav)
 		if(UAV_OFF) //Packing
 			set_state(UAV_PACKED)
 			set_w_class(ITEMSIZE_LARGE)
-			set_slowdown(0.5)
+			slowdown = 0.5
 			set_density(FALSE)
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			set_state(UAV_OFF)
 			set_w_class(ITEMSIZE_HUGE)
-			set_slowdown(1.5)
+			slowdown = 1.5
 			set_density(TRUE)
 			return TRUE
 	return FALSE

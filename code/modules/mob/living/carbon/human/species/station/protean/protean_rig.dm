@@ -550,7 +550,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	set_armor(dq_armor_none())
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
 		piece.set_armor(dq_armor_none())
-	set_slowdown(PROTEAN_RIG_INERT_SLOWDOWN)
+	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	changed(src)
 	wearer()?.worn_protection_changed()
@@ -568,9 +568,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		piece.set_armor(restored)
 	wearer()?.worn_protection_changed()
 	if(istype(R))
-		set_slowdown(initial(R.slowdown) * 0.5)
+		slowdown = initial(R.slowdown) * 0.5
 	else
-		set_slowdown(initial(slowdown))
+		slowdown = initial(slowdown)
 	offline_slowdown = slowdown
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] woke at [AREACOORD(src)].")
 
@@ -694,7 +694,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	user.drop_item(R)
 	R.forceMove(src)
 	assimilated_rig = R
-	set_slowdown((initial(R.slowdown) *0.5))
+	slowdown = (initial(R.slowdown) *0.5)
 	offline_slowdown = slowdown
 
 /// Old verb "Remove Assimilated Rig".
@@ -722,7 +722,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		boots.sprite_sheets_obj = tempRig.boots.sprite_sheets.Copy()
 		chest.set_sprite_sheets(tempRig.chest.sprite_sheets.Copy())
 		chest.sprite_sheets_obj = tempRig.chest.sprite_sheets.Copy()
-		set_slowdown(initial(slowdown))
+		slowdown = initial(slowdown)
 		name = tempRig.name
 		set_icon(tempRig.icon) // Reset the icon back to its original
 		set_icon_state(tempRig.icon_state)

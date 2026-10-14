@@ -329,13 +329,13 @@ CAPABILITIES(/atom/movable/screen)
 			else
 				user.m_int = null
 		if(I_WALK)
-			user.set_m_intent(I_WALK)
+			user.m_intent = I_WALK
 			user.m_int = "14,14"
 		if("face")
-			user.set_m_intent("face")
+			user.m_intent = "face"
 			user.m_int = "15,14"
 		if(I_RUN)
-			user.set_m_intent(I_RUN)
+			user.m_intent = I_RUN
 			user.m_int = "13,14"
 		if("Reset Machine")
 			user.unset_machine()

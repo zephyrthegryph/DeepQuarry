@@ -1,5 +1,6 @@
 # untracked_inputs: reads of untracked state by stat inputs, requirements, outputs and draws (analyze gen deps). rule<TAB>file<TAB>identity (@reader reads owner::var).
 # Shrink-only: `analyze baseline --update --lint untracked_inputs` drops fixed sites and never adds one.
+stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	@/obj/machinery/atmospherics/unary::ctrl_power_offered reads /obj/machinery/atmospherics::power_rating
 stat_input_untracked	code/_helpers/game.dm	@/::isPlayerLevel reads using_map.player_levels
 stat_input_untracked	code/controllers/subsystems/tgui.dm	@/datum/system/tgui::get_open_ui reads /datum/tgui::open_tguis[].user
 stat_input_untracked	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads /atom::flags

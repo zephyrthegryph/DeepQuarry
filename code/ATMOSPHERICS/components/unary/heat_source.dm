@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 
 /obj/machinery/atmospherics/unary/heater/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
-	set_power_rating(max_power_rating * (power_setting/100))
+	power_rating = max_power_rating * (power_setting/100)
 	heat_entries_refresh(src)
 
 /obj/machinery/atmospherics/unary/heater/examine(mob/user)

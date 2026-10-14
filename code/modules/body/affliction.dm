@@ -184,7 +184,7 @@
 /datum/affliction/proc/clear_stage()
 	for(var/symptom_type in active_symptoms)
 		affliction_symptom(symptom_type).on_resolve(owner, src)
-	set_stage(null)
+	stage = null
 	active_symptoms = null
 	symptom_pool = null
 	spontaneous_emotes = null
@@ -409,7 +409,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
 	if(!stages || !stages[new_stage])
 		return
-	set_stage(new_stage)
+	stage = new_stage
 	var/list/entry = stages[new_stage]
 	if(entry["name"])
 		name = entry["name"]

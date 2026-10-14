@@ -4547,7 +4547,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	set_bolted(A, FALSE, TRUE)
 	A.set_frozen(FALSE)
 	A.autoclose_cancel()
-	A.set_safe(TRUE)
+	A.safe = TRUE
 	A.set_autoclose(TRUE)
 	var/obj/blocker = new(T)
 	blocker.set_density(TRUE)

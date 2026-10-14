@@ -122,9 +122,9 @@
 	worn_protection_changed()
 
 /obj/item/clothing/proc/update_accessory_slowdown()
-	set_slowdown(initial(slowdown))
+	slowdown = initial(slowdown)
 	for(var/obj/item/clothing/accessory/A in accessories)
-		set_slowdown(slowdown + A.slowdown)
+		slowdown += A.slowdown
 
 /obj/item/clothing/proc/removetie_verb()
 	set name = "Remove Accessory"

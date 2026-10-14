@@ -108,10 +108,10 @@ CAPABILITIES(/obj/item/material/fishing_net)
 
 /obj/item/material/fishing_net/proc/update_weight()
 	if(holds_creature())
-		set_slowdown(initial(slowdown) * 2)
+		slowdown = initial(slowdown) * 2
 		set_reach(1)
 	else
-		set_slowdown(initial(slowdown))
+		slowdown = initial(slowdown)
 		set_reach(combat_of_type(type).reach)
 
 /obj/item/material/fishing_net/butterfly_net
