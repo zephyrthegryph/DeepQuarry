@@ -122,8 +122,6 @@ draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	if(!underlays)
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[cache_name + "[D]"] = I
 draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[state + "[D]" + "[GLOB.pipe_colors[pipe_color]]"] = I
 draw_untracked	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = dir, color = PIPE_COLOR_BLUE))
-draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
-draw_untracked	code/ATMOSPHERICS/components/trinary_devices/mixer.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
 draw_untracked	code/_helpers/time.dm	if (world.timeofday < GLOB.rollovercheck_last_timeofday)
 draw_untracked	code/_helpers/time.dm	if(GLOB.rollover_safety_date < world.realtime - (12 HOURS))
 draw_untracked	code/_helpers/time.dm	GLOB.midnight_rollovers++
@@ -323,20 +321,12 @@ draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	if(
 draw_untracked	code/modules/mob/living/carbon/human/species/species_getters.dm	return blood_mask
 draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	if(!H || base_species == name) return ..()
 draw_untracked	code/modules/mob/living/silicon/pai/pai.dm	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
-draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	var/obj/item/wrapped = shown_item
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 draw_untracked	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
 draw_untracked	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
 draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	var/draw_icon = icon
 draw_untracked	code/modules/mob/living/simple_mob/appearance.dm	look.eyes(src, eye_state, custom_eye_color, !isnull(eye_state))
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	state = "[icon_living][previous ? 1 : 0]_hunt"
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	state = "[icon_living][previous ? 1 : 0]"
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(previous)
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(previous) //midsection
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(next)
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.watch(next)
-draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.set_color(next.color)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	look.set_color(next.color)
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = hat.color, appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
 draw_untracked	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	look.overlay(look_overlay_image(icon, mane_state, plane = PLANE_LIGHTING_ABOVE, color = mane_color, appearance_flags = (appearance_flags | RESET_COLOR)))

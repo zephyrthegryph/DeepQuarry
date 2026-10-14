@@ -823,7 +823,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(can_change(owner(), APPEARANCE_RACE))
 		to_chat(user,span_notice("You eject the disk."))
 		DC.disk.forceMove(get_turf(DC))
-		rel_take(DC, nameof(/obj/machinery/computer/scan_consolenew::disk))
+		rel_take(DC, nameof(/obj/machinery/computer/transhuman/designer::disk))
 		return TRUE
 	return FALSE
 

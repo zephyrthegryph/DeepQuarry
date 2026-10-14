@@ -346,6 +346,7 @@
 	handle_comp()
 
 CAPABILITIES(/datum/shadekin)
+	ref_one(nameof(owner), /mob/living)
 	ref_many(nameof(active_dark_maws))
 	interface("ShadekinConfig", title = "Shadekin Config")
 	op("adjust_time", ui_act("adjust_time", arg("val", num())), then(PROC_REF(ui_act_adjust_time)))

@@ -45,6 +45,7 @@
 /// A carbon mob grants what its species declares while its species relation names it (the relation scope, scopes.dm): a species change is a write
 /// of the var and everything the old species gave goes in the same step.
 CAPABILITIES(/mob/living/carbon)
+	ref_one(nameof(bloodstr), /datum/reagents/metabolism/bloodstream)
 	cooldowns(taste_cooldown, taste_repeat_cooldown)
 	every(PROC_REF(dream_interval), then(PROC_REF(dream_sequence)), when = nameof(dream_fragments))
 	rel_grants(nameof(species))

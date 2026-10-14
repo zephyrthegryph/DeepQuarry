@@ -19,6 +19,10 @@ MSG_DEF_SELF(decompiler/begin, span_danger("You begin decompiling %T%."))
 
 /// A client-less drone is eaten whole, five seconds standing still. (Pests and loose scrap on the tile are the instant part of afterattack.)
 CAPABILITIES(/obj/item/matter_decompiler)
+	ref_one(nameof(metal), /datum/matter_synth/metal)
+	ref_one(nameof(glass), /datum/matter_synth/glass)
+	ref_one(nameof(wood), /datum/matter_synth/wood)
+	ref_one(nameof(plastic), /datum/matter_synth/plastic)
 	op("decompile_drone", at_target(/mob/living/silicon/robot/drone), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(decompilable)), begins(MSG(decompiler/begin)), on_interrupt(PROC_REF(decompile_drone_interrupted)), wait(5 SECONDS), then(PROC_REF(decompile_drone_done)))
 
 /// The decompiler is carried by a cyborg and the drone has nobody in it.

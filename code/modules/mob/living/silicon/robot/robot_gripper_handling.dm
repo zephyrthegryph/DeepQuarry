@@ -22,7 +22,7 @@
 		rel_set(src, nameof(held_item), new_item)
 	else if(had_item)
 		rel_clear(src, nameof(held_item))
-	set_shown_item(held_item) // the look follows the held item (a relation write redraws nothing by itself)
+	rel_set(src, nameof(shown_item), held_item) // the look follows the held item (the relation write publishes the change)
 	var/holding_item = get_wrapped_item()
 	// Feedback
 

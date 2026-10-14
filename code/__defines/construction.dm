@@ -84,7 +84,7 @@
 #define STANDARD_ATMOS_CHOOSE_NODE(node_num, direction) \
 	for(var/obj/machinery/atmospherics/target in get_step(src, direction)) { \
 		if(can_be_node(target, node_num)) { \
-			node##node_num = target; \
+			rel_set(src, nameof(node##node_num), target); \
 			break; \
 		} \
 	}

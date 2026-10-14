@@ -9,7 +9,8 @@ CAPABILITIES(/datum/malf_hardware)
 
 /datum/malf_hardware/proc/install()
 	if(owner_ref() && istype(owner_ref(), /mob/living/silicon/ai))
-		owner_ref().hardware = src
+		var/mob/living/silicon/ai/AI = owner_ref()
+		rel_set(AI, nameof(AI.hardware), src)
 		if(driver)
 			grant(owner_ref(), granted_verb(driver), src)
 

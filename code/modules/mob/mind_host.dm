@@ -35,6 +35,8 @@
 	var/view_type = /mob/living/carbon/brain
 
 CAPABILITIES(/datum/mind_host)
+	ref_one(nameof(owner), /obj/item)
+	ref_one(nameof(tissue), /obj/item/organ/internal/brain)
 	owns_one(nameof(view), /mob/living/carbon/brain)
 
 /datum/mind_host/New(obj/item/new_owner, obj/item/organ/internal/brain/tissue)

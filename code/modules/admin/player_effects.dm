@@ -1,7 +1,7 @@
 
 ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a player character with various 'special treatments' from a list.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in get_mob_with_client_list())
 	var/datum/eventkit/player_effects/spawner = new()
-	rel_set(spawner, nameof(/datum/accessory_stat_modifier::target), target)
+	rel_set(spawner, nameof(/datum/eventkit/player_effects::target), target)
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
@@ -606,7 +606,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		return
 	var/change_sight = answer_of(A, "number")
 	if(change_sight)
-		var/datum/species/own_species = rel_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
+		var/datum/species/own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species)) // PROTO: private copy
 		own_species.darksight = change_sight
 
 /datum/eventkit/player_effects/proc/ui_act_cocoon(datum/act/op/A)
@@ -650,9 +650,9 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/energy_new = answer_of(A, "now")
 	if(isnull(energy_max) || isnull(energy_new))
 		return
-	var/datum/species/own_species = rel_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
+	var/datum/species/own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species)) // PROTO: private copy
 	own_species.lleill_energy_max = energy_max
-	own_species = rel_private(Tar, nameof(/datum/dna::species))
+	own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species))
 	own_species.lleill_energy = energy_new
 
 /datum/eventkit/player_effects/proc/ui_act_lleill_invisibility(datum/act/op/A)

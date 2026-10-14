@@ -55,6 +55,9 @@
 	button_icon = 'icons/mob/xeno_screen.dmi'
 	var/mob/living/simple_mob/xeno_ch/parent_xeno
 
+CAPABILITIES(/datum/action/innate/xeno_ch)
+	ref_one(nameof(parent_xeno), /mob/living/simple_mob/xeno_ch)
+
 
 /datum/action/innate/xeno_ch/Grant(mob/living/L)
 	if(L)

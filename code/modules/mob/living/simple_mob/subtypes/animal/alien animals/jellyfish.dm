@@ -105,6 +105,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
 	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)

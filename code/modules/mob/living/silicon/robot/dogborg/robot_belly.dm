@@ -16,6 +16,7 @@
 	var/list/active_ore_bags
 
 CAPABILITIES(/datum/robot_belly)
+	ref_one(nameof(owner), /mob/living/silicon/robot)
 	ref_many(nameof(active_ore_bags), /obj/item/ore_bag)
 
 /mob/living/silicon/robot/var/datum/robot_belly/robot_belly

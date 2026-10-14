@@ -31,7 +31,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
 	soulcatcher_pref_flags = M.vore_prefs.soulcatcher_pref_flags
 	M.ghostize()
-	stored_mind().current = null
+	rel_clear(stored_mind(), nameof(/datum/mind::current))
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind().active = TRUE

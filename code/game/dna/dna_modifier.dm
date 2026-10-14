@@ -684,7 +684,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			// Traitgenes Storing the entire body record
 			var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
 			rel_set(R, nameof(/datum/transhuman/body_record::mydna), new /datum/dna2/record)
-			R.mydna.dna = new
+			rel_set(R.mydna, nameof(/datum/dna2/record::dna), new /datum/dna)
 			R.mydna.dna.ResetUI()
 			R.mydna.dna.ResetSE()
 			rel_add(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), R, bufferId)

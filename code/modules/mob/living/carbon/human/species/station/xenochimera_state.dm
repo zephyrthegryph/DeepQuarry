@@ -12,6 +12,7 @@
 	VAR_PRIVATE/datum/transhuman/body_record/revival_record
 
 CAPABILITIES(/datum/xenochimera)
+	ref_one(nameof(owner), /mob/living/carbon/human)
 	owns_one(nameof(revival_record), /datum/transhuman/body_record)
 
 TRACKED(/datum/xenochimera, feral)

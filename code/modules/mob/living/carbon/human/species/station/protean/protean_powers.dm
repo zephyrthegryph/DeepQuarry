@@ -103,6 +103,7 @@ CAPABILITIES(/datum/protean_power)
 	var/datum/protean_power/power
 
 CAPABILITIES(/obj/effect/protean_power_button)
+	ref_one(nameof(power), /datum/protean_power)
 	param(nameof(power), pos = 1, apply = PROC_REF(show_power))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).

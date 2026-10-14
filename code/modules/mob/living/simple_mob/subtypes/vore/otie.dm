@@ -236,6 +236,7 @@
 	icon_rest = "hotiesc_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	ref_one(nameof(friend), /mob/living/carbon/human)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "dies!"))
 	op("otie_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(otie_interaction_feed)))

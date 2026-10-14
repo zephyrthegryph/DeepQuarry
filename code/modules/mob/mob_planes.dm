@@ -7,6 +7,7 @@
 	var/list/plane_masters[VIS_COUNT] // ALLOW(instance_list): d: fixed-size list/x[VIS_COUNT] indexed by plane slot; every plane holder fills it
 
 CAPABILITIES(/datum/plane_holder)
+	ref_one(nameof(my_mob), /mob)
 	owns_many(nameof(plane_masters), /atom/movable/screen/plane_master)
 
 /datum/plane_holder/New(mob/this_guy)
@@ -246,6 +247,7 @@ CAPABILITIES(/datum/plane_holder)
 	var/mob/my_mob
 
 CAPABILITIES(/atom/movable/screen/plane_master/augmented)
+	ref_one(nameof(my_mob), /mob)
 	param(nameof(my_mob), pos = 1)
 
 /// Phase 2: its mob leaves the entopic users.

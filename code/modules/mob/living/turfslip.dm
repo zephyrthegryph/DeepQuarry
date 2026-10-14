@@ -7,6 +7,9 @@
 	var/slip_dist = 1
 	var/dirtslip = FALSE
 
+CAPABILITIES(/datum/turfslip)
+	ref_one(nameof(owner), /mob/living)
+
 /// Owned: the slide in progress, if any.
 /mob/living/var/datum/turfslip/turfslip
 

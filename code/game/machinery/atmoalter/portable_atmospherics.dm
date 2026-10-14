@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 	//Perform the connection
 	rel_set(src, nameof(connected_port), new_port)
-	connected_port().connected_device = src
+	rel_set(new_port, nameof(new_port.connected_device), src)
 	connected_port().set_on(1)
 
 	set_anchored(TRUE) //Prevent movement

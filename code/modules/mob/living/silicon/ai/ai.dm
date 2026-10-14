@@ -76,7 +76,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/malfunctioning = 0						// Master var that determines if AI is malfunctioning.
 	var/datum/malf_hardware/hardware = null		// Installed piece of hardware.
 	var/datum/malf_research/research = null		// Malfunction research datum.
-	var/obj/machinery/power/apc/hack = null		// APC that is currently being hacked.
 	var/list/hacked_apcs = null					// List of all hacked APCs
 	var/APU_power = 0							// If set to 1 AI runs on APU power
 	var/hacking = 0								// Set to 1 if AI is hacking APC, cyborg, other AI, or running system override.
@@ -128,6 +127,12 @@ CAPABILITIES(/mob/living/silicon/ai)
 	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(start_laws), early = TRUE)
 	owns_one(nameof(announcement), /datum/announcement/priority, starts = /datum/announcement/priority, starts_args = NO_LOC, starts_set = list("title" = "A.I. Announcement", "announcement_type" = "A.I. Announcement", "newscast" = 1))
 	owns_one(nameof(psupply), /obj/machinery/ai_powersupply, starts = /obj/machinery/ai_powersupply)
+	ref_one(nameof(camera), /obj/machinery/camera)
+	owns_one(nameof(hardware), /datum/malf_hardware)
+	ref_one(nameof(master_multicam), /atom/movable/screen/movable/pic_in_pic/ai)
+	ref_one(nameof(holo), /obj/machinery/hologram/holopad)
+	ref_one(nameof(deployed_shell), /mob/living/silicon/robot)
+	ref_one(nameof(brain_at_make), /obj/item/mmi)
 	rolls(nameof(name), PROC_REF(roll_ai_name))
 	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
 	derives(nameof(additional_law_channels), PROC_REF(ai_law_channels))
@@ -380,6 +385,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	keeps_if(PROC_REF(made_in_an_ai))
 	setup(PROC_REF(stand_by_ai))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	ref_one(nameof(powered_ai), /mob/living/silicon/ai)
 
 /obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)
 	if(!powered_ai || powered_ai.stat == DEAD)

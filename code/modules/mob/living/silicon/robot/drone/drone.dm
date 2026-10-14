@@ -50,7 +50,6 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 
 	//Used for self-mailing.
 	var/mail_destination = ""
-	var/obj/machinery/drone_fabricator/master_fabricator
 	var/law_type = /datum/ai_laws/drone
 	var/module_type = /obj/item/robot_module/drone
 	var/hat_x_offset = 0

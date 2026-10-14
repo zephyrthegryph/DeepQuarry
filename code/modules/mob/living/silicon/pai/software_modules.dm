@@ -287,7 +287,7 @@ CAPABILITIES(/datum/pai_software/door_jack)
 	var/mob/living/silicon/pai/P = user
 	var/turf/T = get_turf(P)
 	P.hack_aborted = 0
-	rel_set(P, nameof(/obj/machinery/cablelayer::cable), new /obj/item/pai_cable(T))
+	rel_set(P, nameof(/mob/living/silicon/pai::cable), new /obj/item/pai_cable(T))
 	for(var/mob/M in viewers(T))
 		M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
 						span_warning("You hear the soft click of something light and hard falling to the ground."), 2)
