@@ -39,7 +39,6 @@ init_new_child	code/modules/xenoarcheaology/finds/find_spawning.dm	rel_set(src, 
 destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
 destroy_drop	code/game/objects/micro_structures.dm	for(var/mob/thing in contents_of(src))
 destroy_drop	code/game/objects/objs.dm	for(var/thing in contents_of(src))
-destroy_drop	code/game/objects/structures/crates_lockers/closets/statue.dm	dump_contents()
 destroy_drop	code/modules/ventcrawl/ventcrawl_atmospherics.dm	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
 destroy_drop	code/modules/vore/eating/belly_obj.dm	for(var/mob/observer/G in contents_of(src))
 destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [thing] tumbles out!"))

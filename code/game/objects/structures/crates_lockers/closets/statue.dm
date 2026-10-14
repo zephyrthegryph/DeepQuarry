@@ -84,12 +84,10 @@
 			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)
 		M.reset_perspective() // Fixes a blackscreen flicker
 
-// the statue's mob is released unmuted and unregistered.
-/obj/structure/closet/statue/on_destroy(force)
-	// Release the mob properly (unmuted, unregistered) before the base
-	// Destroy() spills the interior.
+// Release the subject before phase 3 spills the slot. Once on_destroy() runs,
+// slot_contents() is already empty and cannot restore speech or remove stasis.
+/obj/structure/closet/statue/proc/release_encased_subject(cause, datum/by)
 	dump_contents()
-	..()
 
 /// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
 /obj/structure/closet/statue/proc/stasis_holds(datum/act/injure/hit)
@@ -121,6 +119,7 @@
 
 // A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
 CAPABILITIES(/obj/structure/closet/statue)
+	on_ending(PROC_REF(release_encased_subject))
 	when(nameof(release_delay), after_init(nameof(release_delay), then(PROC_REF(release))))
 	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
 	without("door")
