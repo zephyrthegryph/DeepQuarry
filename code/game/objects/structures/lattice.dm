@@ -2,7 +2,7 @@
 	name = "lattice"
 	desc = "A lightweight support lattice."
 	icon = 'icons/obj/structures.dmi'
-	icon_state = "latticefull"
+	icon_state = "latticeblank"
 	density = FALSE
 	anchored = TRUE
 	w_class = ITEMSIZE_NORMAL
@@ -19,7 +19,6 @@
 			// log_mapping("Found multiple lattices at '[log_info_line(loc)]'") // We do this on map lint level. This messes with random seed genned maps where such can happen in rare cases
 			return INITIALIZE_HINT_QDEL
 	icon = 'icons/obj/smoothlattice.dmi'
-	icon_state = "latticeblank"
 	if(mapload)
 		// Every mapped lattice exists before any initializes, and each draws itself here: no
 		// deferred redraw for it or its neighbours (that was up to five timers per lattice,
