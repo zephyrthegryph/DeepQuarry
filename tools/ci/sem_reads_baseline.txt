@@ -23,6 +23,7 @@ unknown_read	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_regi
 unknown_read	code/datums/containment/latency_policy.dm	@/::dq_latency_sweep_register reads /atom::flags
 unknown_read	code/game/atom/_atom.dm	@/atom::get_oversized_icon_offsets reads /atom::@actor:pixel_x
 unknown_read	code/game/atom/_atom.dm	@/atom::get_oversized_icon_offsets reads /atom::@actor:pixel_y
+unknown_read	code/game/objects/items/devices/radio/radio.dm	@/obj/item/radio::CanUseTopic reads /obj/item/radio::on
 unknown_read	code/modules/clothing/under/miscellaneous.dm	@/obj/item/clothing/gloves/bluespace::mob_can_unequip reads /datum/record/vore_prefs::@actor:vore_prefs.resizable
 unknown_read	code/modules/mob/inventory.dm	@/mob::remove_from_mob reads /mob::@actor:client
 unknown_read	code/modules/mob/living/carbon/human/human_helpers.dm	@/mob/living/carbon/human::get_gender reads /atom::@actor:gender

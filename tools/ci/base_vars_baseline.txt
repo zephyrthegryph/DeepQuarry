@@ -3,6 +3,7 @@
 # `// ALLOW(base_vars): <reason>` doesn't count.
 # Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
 base_var	code/ATMOSPHERICS/atom_flags_1.dm	@/atom::flags_1
+base_var	code/ATMOSPHERICS/environmental/LINDA_system.dm	@/atom::can_atmos_pass
 base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::pressure_resistance
 base_var	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	@/atom/movable::last_high_pressure_movement_air_cycle
 base_var	code/ATMOSPHERICS/tg_infra_compat.dm	@/obj/machinery::rebuilding
@@ -144,6 +145,7 @@ base_var	code/game/objects/items.dm	@/obj/item::storage_cost
 base_var	code/game/objects/items.dm	@/obj/item::no_attack_log
 base_var	code/game/objects/items.dm	@/obj/item::actions
 base_var	code/game/objects/items.dm	@/obj/item::actions_types
+base_var	code/game/objects/items.dm	@/obj/item::slowdown
 base_var	code/game/objects/items.dm	@/obj/item::zoomdevicename
 base_var	code/game/objects/items.dm	@/obj/item::zoom
 base_var	code/game/objects/items.dm	@/obj/item::embed_chance
@@ -422,6 +424,7 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::charges
 base_var	code/modules/mob/mob_defines.dm	@/mob::losebreath
 base_var	code/modules/mob/mob_defines.dm	@/mob::m_int
+base_var	code/modules/mob/mob_defines.dm	@/mob::m_intent
 base_var	code/modules/mob/mob_defines.dm	@/mob::lastKnownIP
 base_var	code/modules/mob/mob_defines.dm	@/mob::skip_buckled_move_redirect
 base_var	code/modules/mob/mob_defines.dm	@/mob::seer
