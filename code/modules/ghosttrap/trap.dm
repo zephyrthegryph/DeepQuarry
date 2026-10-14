@@ -1,20 +1,17 @@
 // This system is used to grab a ghost from observers with the required preferences and
 // lack of bans set. See posibrain.dm for an example of how they are called/used. ~Z
 
-GLOBAL_LIST(ghost_traps)
+/// The table of traps (object name -> trap), built once at global init: it is fixed for the life of the world.
+GLOBAL_LIST_INIT(ghost_traps, populate_ghost_traps())
 
 /proc/get_ghost_trap(trap_key)
-	READS_FROM() // the table of traps is fixed at boot: no entity state
-	if(!GLOB.ghost_traps)
-		populate_ghost_traps()
 	return GLOB.ghost_traps[trap_key]
 
 /proc/populate_ghost_traps()
-	READS_FROM() // builds the fixed table of traps once: no entity state
-	GLOB.ghost_traps = list()
+	. = list()
 	for(var/traptype in typesof(/datum/ghosttrap))
 		var/datum/ghosttrap/G = new traptype
-		GLOB.ghost_traps[G.object] = G
+		.[G.object] = G
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/ghosttrap)
 /datum/ghosttrap
