@@ -292,6 +292,39 @@ test_types() {
 		}'
 }
 
+# close_matches <name-or-glob>: up to 8 declared test types that look like what was typed (a missing dir prefix such as dq_eg2/, a typo
+# in one word, a glob whose literal parts match something else), one per line, best first.
+close_matches() {
+	local want="${1,,}" lit
+	lit="${want//[*?[\]]/ }"
+	awk -v want="$want" -v lit="$lit" '
+		BEGIN { n = split(lit, frag, " ") }
+		NF {
+			t = tolower($0); base = t; sub(/.*\//, "", base); score = 0
+			if (index(t, want) || (length(t) >= 5 && index(want, t))) score += 100
+			if (base == want) score += 90
+			for (i = 1; i <= n; i++) if (length(frag[i]) >= 3 && index(t, frag[i])) score += 20 + length(frag[i])
+			for (k = 1; k <= length(want) && k <= length(t) && substr(want, k, 1) == substr(t, k, 1); k++) ;
+			if (k > 6) score += k
+			wb = want; sub(/.*\//, "", wb)
+			for (k = 1; k <= length(wb) && k <= length(base) && substr(wb, k, 1) == substr(base, k, 1); k++) ;
+			if (k > 6) score += k
+			if (score > 0) print score " " $0
+		}' <<<"$all_types" | sort -k1,1nr -k2 | head -n 8 | cut -d' ' -f2
+}
+report_unknown() { # arg what
+	local m
+	echo "$2" >&2
+	m="$(close_matches "${1#/datum/unit_test/}")"
+	if [ -n "$m" ]; then
+		echo "  close matches:" >&2
+		sed 's/^/    /' <<<"$m" >&2
+	else
+		echo "  (no declared test type looks like it; use --list with a *word* glob to search the declared types)" >&2
+	fi
+}
+
+bad_names=0
 args=()
 tests=()
 repeat=1
@@ -342,21 +375,24 @@ for arg in "$@"; do
 					fi
 				done <<<"$all_types"
 				if [ "$matched" -eq 0 ]; then
-					echo "no /datum/unit_test type matches '$arg'" >&2
-					exit 2
+					report_unknown "$arg" "no /datum/unit_test type matches '$arg'"
+					bad_names=1
 				fi
 			else
 				# A name the build does not compile would reach the world as an unknown type and fail the run at boot: refuse it here.
 				[ -n "$all_types" ] || all_types="$(test_types)"
 				if ! grep -qxF -- "$name" <<<"$all_types"; then
-					echo "no compiled /datum/unit_test type named '$name' (is its file included in _unit_tests.dm?)" >&2
-					exit 2
+					report_unknown "$arg" "no compiled /datum/unit_test type named '$name' (is its file included in _unit_tests.dm?)"
+					bad_names=1
+					continue
 				fi
 				tests+=("$name")
 			fi
 			;;
 	esac
 done
+# Every unknown name is reported before anything compiles (a typo or a missing dir prefix used to cost a whole run).
+[ "$bad_names" -eq 0 ] || { echo "dq_focused_test: unknown test name(s) above; nothing was compiled" >&2; exit 2; }
 [ ${#tests[@]} -gt 0 ] || usage
 if [ "$list_only" -eq 1 ]; then
 	printf '%s
