@@ -321,6 +321,7 @@ CAPABILITIES(/obj/structure/frame)
 	param(nameof(building), pos = 2)
 	param(nameof(type_at_make), pos = 3)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(type_at_make), /datum/frame/frame_types)
 
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer

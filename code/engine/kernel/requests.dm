@@ -31,6 +31,8 @@
 	/// The entity that asked. A plain reference: the registry's sweep ends the request cancelled once the owner is deleted,
 	/// and ending it deletes the request, so the reference is held a second past the owner's death at most.
 	var/datum/owner
+	/// TRUE once an op adopted this answered prompt (pending_op/request_done): request_end() leaves it alive, and the op deletes it when it ends.
+	var/kept_by_op = FALSE
 	/// Who answers a prompt: a mob. Null for a backend request.
 	var/mob/answerer
 	/// TRUE when the request was opened with an answerer: its death ends the request (REQ_CANCELLED).
@@ -409,6 +411,8 @@ CAPABILITIES(/datum/system/requests)
 		request_costs_settle(R, FALSE)
 	request_op_resume(R)
 	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.value) stays readable.
+	if(R.kept_by_op)
+		return TRUE // an op owns it now (its handlers read the answer's fields at later steps)
 	qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: ending it is its deletion
 	return TRUE
 

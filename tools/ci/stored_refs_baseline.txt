@@ -329,32 +329,6 @@ var	code/engine/state/schema.dm	GLOBAL_DATUM(type_metadata_registry, /datum/type
 var	code/engine/state/serializer.dm	GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 var	code/engine/stats/def.dm	var/datum/schema/schema
 var	code/engine/stats/store.dm	var/datum/stat_record/stats
-var	code/game/antagonist/alien/borer.dm	GLOBAL_DATUM(borers, /datum/antagonist/borer)
-var	code/game/antagonist/alien/xenomorph.dm	GLOBAL_DATUM(xenomorphs, /datum/antagonist/xenos)
-var	code/game/antagonist/antagonist.dm	var/datum/mind/leader // Current leader, if any.
-var	code/game/antagonist/outsider/commando.dm	GLOBAL_DATUM(commandos, /datum/antagonist/deathsquad/mercenary)
-var	code/game/antagonist/outsider/deathsquad.dm	GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
-var	code/game/antagonist/outsider/ert.dm	GLOBAL_DATUM(ert, /datum/antagonist/ert)
-var	code/game/antagonist/outsider/mercenary.dm	GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
-var	code/game/antagonist/outsider/ninja.dm	GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
-var	code/game/antagonist/outsider/raider.dm	GLOBAL_DATUM(raiders, /datum/antagonist/raider)
-var	code/game/antagonist/outsider/shipwreck_survivor.dm	GLOBAL_DATUM(survivors, /datum/antagonist/shipwreck_survivor)
-var	code/game/antagonist/outsider/technomancer.dm	GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
-var	code/game/antagonist/outsider/trader.dm	GLOBAL_DATUM(traders, /datum/antagonist/trader)
-var	code/game/antagonist/outsider/wizard.dm	GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
-var	code/game/antagonist/station/contract_operative.dm	GLOBAL_DATUM(contract_operatives, /datum/antagonist/contract_operative)
-var	code/game/antagonist/station/cultist.dm	GLOBAL_DATUM(cult, /datum/antagonist/cultist)
-var	code/game/antagonist/station/cultist.dm	var/datum/mind/sacrifice_target
-var	code/game/antagonist/station/event.dm	GLOBAL_DATUM(event, /datum/antagonist/event)
-var	code/game/antagonist/station/highlander.dm	GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
-var	code/game/antagonist/station/infiltrator.dm	GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
-var	code/game/antagonist/station/loyalist.dm	GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
-var	code/game/antagonist/station/renegade.dm	GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
-var	code/game/antagonist/station/revolutionary.dm	GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
-var	code/game/antagonist/station/rogue_ai.dm	GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
-var	code/game/antagonist/station/stowaway.dm	GLOBAL_DATUM(stowaways, /datum/antagonist/stowaway)
-var	code/game/antagonist/station/thug.dm	GLOBAL_DATUM(thugs, /datum/antagonist/thug)
-var	code/game/antagonist/station/traitor.dm	GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 var	code/game/area/ai_monitored.dm	var/obj/machinery/camera/motioncamera
 var	code/game/atom/armor.dm	var/tmp/datum/armor_override
 var	code/game/atoms_movable.dm	var/datum/thrownthing/throwing // running: set only mid-throw
@@ -387,7 +361,6 @@ var	code/game/machinery/CableLayer.dm	var/obj/structure/cable/last_piece
 var	code/game/machinery/OpTable.dm	/obj/machinery/optable/var/mob/living/carbon/human/victim
 var	code/game/machinery/air_alarm.dm	var/datum/radio_frequency/radio_connection
 var	code/game/machinery/atmo_control.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/atmo_control.dm	var/datum/radio_frequency/radio_connection
 var	code/game/machinery/atmoalter/meter.dm	var/obj/machinery/atmospherics/pipe/target
 var	code/game/machinery/atmoalter/meter.dm	var/datum/gas_mixture/watched_air
 var	code/game/machinery/bomb_tester.dm	var/obj/machinery/portable_atmospherics/canister/test_canister
@@ -409,25 +382,6 @@ var	code/game/machinery/computer/message.dm	var/obj/item/pda/customrecepient
 var	code/game/machinery/computer/security.dm	var/datum/data/record/active1
 var	code/game/machinery/cryopod.dm	var/obj/machinery/computer/cryopod/control_computer
 var	code/game/machinery/doors/airlock.dm	/obj/machinery/door/airlock/var/tmp/obj/structure/door_assembly/assembly_at_make
-var	code/game/machinery/doors/airlock_control.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/doors/airlock_control.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/doors/airlock_control.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/doors/alarmlock.dm	var/datum/radio_frequency/air_connection
-var	code/game/machinery/doors/door.dm	var/atom/movable/overlay/c_animation
-var	code/game/machinery/embedded_controller/airlock_docking_controller.dm	var/datum/embedded_program/docking/airlock/docking_program
-var	code/game/machinery/embedded_controller/embedded_controller_base.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/frame.dm	/obj/structure/frame/var/datum/frame/frame_types/type_at_make
-var	code/game/machinery/gear_dispenser.dm	var/obj/effect/overlay/vis/door
-var	code/game/machinery/gear_dispenser.dm	var/datum/gear_disp/held_gear_disp
-var	code/game/machinery/jukebox.dm	var/datum/track/current_track
-var	code/game/machinery/magnet.dm	var/datum/radio_frequency/radio_connection
-var	code/game/machinery/medical_kiosk.dm	var/mob/living/active_user
-var	code/game/machinery/newscaster.dm	var/datum/feed_channel/parent_channel
-var	code/game/machinery/newscaster.dm	var/datum/feed_channel/viewing_channel
-var	code/game/machinery/newscaster.dm	var/obj/machinery/exonet_node/node
-var	code/game/machinery/newscaster.dm	var/obj/item/photo/photo
-var	code/game/machinery/nuclear_bomb.dm	var/obj/item/disk/nuclear/auth
-var	code/game/machinery/petrification.dm	var/mob/living/carbon/human/target
 var	code/game/machinery/pipe/construction.dm	/obj/item/pipe/var/tmp/obj/machinery/atmospherics/make_from
 var	code/game/machinery/pointdefense.dm	var/obj/effect/meteor/engaging = null // The meteor we're shooting at (a relation view)
 var	code/game/machinery/telecomms/telemonitor.dm	var/obj/machinery/telecomms/SelectedMachine
@@ -452,107 +406,20 @@ var	code/game/mecha/mecha.dm	var/obj/item/mecha_parts/mecha_equipment/tool/jetpa
 var	code/game/mecha/mecha.dm	var/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/energy_relay
 var	code/game/mecha/mecha.dm	var/obj/machinery/atmospherics/portables_connector/connected_port = null
 var	code/game/mecha/mecha.dm	var/tmp/obj/effect/decal/mecha_wreckage/wreck
-var	code/game/mecha/mecha.dm	var/obj/item/mecha_parts/mecha_equipment/selected
-var	code/game/mecha/mecha.dm	var/obj/item/card/id/active_id_card
-var	code/game/mecha/mecha.dm	var/atom/active_caller
-var	code/game/mecha/mecha_actions.dm	var/obj/mecha/chassis
-var	code/game/objects/effects/anomalies/anomalies_bioscrambler.dm	var/mob/living/pursuit_target
-var	code/game/objects/effects/anomalies/anomaly_stats.dm	var/obj/effect/anomaly/attached_anomaly
-var	code/game/objects/effects/anomalies/anomaly_stats.dm	var/obj/machinery/anomaly_harvester/attached_harvester
-var	code/game/objects/effects/anomalies/anomaly_stats_mods.dm	var/obj/effect/anomaly/attached_anomaly
-var	code/game/objects/effects/chem/water.dm	var/mob/spray_actor
-var	code/game/objects/effects/countdown.dm	var/atom/attached_to
 var	code/game/objects/effects/decals/posters/posters.dm	/obj/structure/sign/poster/var/tmp/obj/item/poster/hung_from
-var	code/game/objects/effects/effect_system.dm	var/atom/holder
-var	code/game/objects/effects/overlays.dm	var/tmp/atom/BeamSource
-var	code/game/objects/effects/particle_holder.dm	var/atom/parent
-var	code/game/objects/effects/portals.dm	var/obj/item/target
-var	code/game/objects/effects/prop/snake.dm	var/atom/movable/creator
-var	code/game/objects/effects/prop/snake.dm	var/atom/hunting
-var	code/game/objects/effects/simple_portals.dm	var/atom/destination
-var	code/game/objects/effects/simple_portals.dm	var/obj/effect/simple_portal/linked/linked_portal
 var	code/game/objects/effects/spiders.dm	/obj/effect/spider/eggcluster/var/tmp/atom/laid_by
-var	code/game/objects/effects/spiders.dm	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 var	code/game/objects/effects/spiders.dm	/obj/effect/spider/spiderling/var/tmp/atom/laid_by
-var	code/game/objects/effects/step_triggers.dm	var/obj/effect/landmark/the_landmark
 var	code/game/objects/effects/temporary_visuals/miscellaneous.dm	/obj/effect/temp_visual/decoy/var/tmp/atom/mimiced_atom
 var	code/game/objects/effects/temporary_visuals/miscellaneous.dm	/obj/effect/temp_visual/impact_effect/monochrome_laser/var/tmp/obj/item/projectile/hit_by
 var	code/game/objects/items.dm	var/tmp/obj/item/organ/internal/augment/my_augment
-var	code/game/objects/items/devices/aicard.dm	var/mob/living/silicon/ai/carded_ai
-var	code/game/objects/items/devices/chameleonproj.dm	var/obj/item/chameleon/master = null
-var	code/game/objects/items/devices/communicator/communicator.dm	var/obj/machinery/camera/communicator/video_source // Their camera
-var	code/game/objects/items/devices/communicator/communicator.dm	var/obj/machinery/exonet_node/node = null //Reference to the Exonet node, to avoid having to look it up so often.
-var	code/game/objects/items/devices/debugger.dm	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
-var	code/game/objects/items/devices/hacktool.dm	var/obj/item/multitool/hacktool/hacktool
-var	code/game/objects/items/devices/multitool.dm	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
-var	code/game/objects/items/devices/multitool.dm	var/obj/machinery/clonepod/connecting //same for cryopod linkage
-var	code/game/objects/items/devices/multitool.dm	var/obj/machinery/connectable //Used to connect machinery.
-var	code/game/objects/items/devices/personal_shield_generator.dm	var/obj/item/personal_shield_generator/linked_generator
-var	code/game/objects/items/devices/powersink.dm	var/obj/structure/cable/attached // the attached cable
-var	code/game/objects/items/devices/radio/headset.dm	var/mob/living/carbon/human/wearer
-var	code/game/objects/items/devices/radio/radio.dm	var/datum/radio_frequency/radio_connection
-var	code/game/objects/items/devices/radio/radio.dm	GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
-var	code/game/objects/items/devices/radio/radio.dm	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
 var	code/game/objects/items/devices/radio/radio_service.dm	var/obj/source
 var	code/game/objects/items/devices/scanners/sleevemate.dm	GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
-var	code/game/objects/items/devices/spy_bug.dm	var/obj/item/bug_monitor/linkedmonitor
-var	code/game/objects/items/devices/spy_bug.dm	var/obj/machinery/camera/bug/selected_camera
-var	code/game/objects/items/devices/transfer_valve.dm	var/mob/attacher
-var	code/game/objects/items/devices/translocator.dm	var/obj/item/perfect_tele_beacon/destination
-var	code/game/objects/items/devices/translocator.dm	var/obj/item/perfect_tele/tele_hand
-var	code/game/objects/items/devices/tvcamera.dm	/obj/item/clothing/accessory/bodycam/var/atom/showing
-var	code/game/objects/items/devices/uplink_random_lists.dm	GLOBAL_DATUM_INIT(default_uplink_selection, /datum/uplink_random_selection/default, new)
-var	code/game/objects/items/devices/uplink_random_lists.dm	GLOBAL_DATUM_INIT(all_uplink_selection, /datum/uplink_random_selection/all, new)
-var	code/game/objects/items/devices/vacpack.dm	var/tmp/mob/living/vac_owner
-var	code/game/objects/items/ghost_hunting/weapons.dm	var/atom/movable/grabbed_entity
-var	code/game/objects/items/petrifier.dm	var/mob/living/carbon/human/target
-var	code/game/objects/items/petrifier.dm	var/obj/machinery/petrification/linked
-var	code/game/objects/items/sahoc.dm	var/mob/living/capsuleowner //taken from Capsule Code
 var	code/game/objects/items/weapons/cigs_lighters.dm	var/obj/item/clothing/mask/smokable/cigarette/crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint
-var	code/game/objects/items/weapons/explosives.dm	var/atom/target
-var	code/game/objects/items/weapons/id cards/cards.dm	var/mob/living/silicon/robot/robot_owner
-var	code/game/objects/items/weapons/id cards/syndicate_ids.dm	var/mob/registered_user
-var	code/game/objects/items/weapons/implants/implant.dm	var/mob/imp_in
-var	code/game/objects/items/weapons/implants/implant.dm	var/obj/item/organ/external/part = null
-var	code/game/objects/items/weapons/implants/implant.dm	var/obj/item/scanned
-var	code/game/objects/items/weapons/implants/implant.dm	var/mob/owner
-var	code/game/objects/items/weapons/implants/neuralbasic.dm	var/obj/item/organ/internal/brain/my_brain
-var	code/game/objects/items/weapons/inducer.dm	var/mob/living/carbon/human/hume
-var	code/game/objects/items/weapons/medigun/bork_medigun.dm	var/mob/current_target
-var	code/game/objects/items/weapons/medigun/linked_medigun.dm	var/obj/item/medigun_backpack/medigun_base_unit
-var	code/game/objects/items/weapons/melee/energy.dm	var/mob/living/creator
-var	code/game/objects/items/weapons/mop_deploy.dm	var/mob/living/creator
-var	code/game/objects/items/weapons/storage/internal.dm	var/obj/item/master_item
-var	code/game/objects/items/weapons/storage/storage.dm	var/obj/item/storage/storage
-var	code/game/objects/items/weapons/storage/storage.dm	var/obj/item/held_item
-var	code/game/objects/items/weapons/syndie.dm	var/obj/item/syndie/c4explosive/bomb
-var	code/game/objects/items/weapons/tanks/jetpack.dm	var/obj/item/rig/holder
-var	code/game/objects/items/weapons/tanks/tanks.dm	var/obj/item/tank/tank = null
-var	code/game/objects/items/weapons/tanks/tanks.dm	var/obj/item/assembly_holder/assembly = null
-var	code/game/objects/items/weapons/tools/weldingtool.dm	var/obj/item/mecha_parts/mecha_equipment/equip_mount
-var	code/game/objects/mail.dm	var/datum/mind/addressee
-var	code/game/objects/mail.dm	var/obj/item/mail/saved
-var	code/game/objects/structures/artstuff.dm	var/obj/item/canvas/painting = null
-var	code/game/objects/structures/artstuff.dm	var/obj/item/paint_brush/brush
-var	code/game/objects/structures/bedsheet_bin.dm	var/obj/item/hidden
-var	code/game/objects/structures/coathanger.dm	var/obj/item/clothing/suit/coat
 var	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	var/datum/mind/owner
 var	code/game/objects/structures/crates_lockers/closets/statue.dm	/obj/structure/closet/statue/var/tmp/mob/living/statue_of
 var	code/game/objects/structures/droppod.dm	/obj/structure/drop_pod/var/tmp/atom/movable/cargo_at_make
 var	code/game/objects/structures/gargoyle.dm	/obj/structure/gargoyle/var/tmp/mob/living/carbon/human/petrified
-var	code/game/objects/structures/morgue.dm	var/obj/structure/morgue/connected = null
-var	code/game/objects/structures/pillows.dm	var/obj/structure/bed/pillowpile/pile
-var	code/game/objects/structures/props/machines.dm	var/obj/effect/overlay/vis/outside
-var	code/game/objects/structures/props/machines.dm	var/obj/effect/overlay/vis/door
-var	code/game/objects/structures/props/machines.dm	var/obj/effect/overlay/vis/fluid
-var	code/game/objects/structures/stasis_cage.dm	var/mob/living/simple_mob/contained
-var	code/game/objects/structures/target_stake.dm	var/obj/item/target/pinned_target // the current pinned target
 var	code/game/objects/structures/transit_tubes.dm	var/datum/gas_mixture/air_contents
-var	code/game/objects/structures/trash_pile.dm	var/mob/living/hider // A simple animal that might be hiding in the pile
-var	code/game/objects/structures/under_wardrobe.dm	var/datum/gear_tweak/tweak
-var	code/game/objects/structures/watercloset.dm	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
-var	code/game/orbit.dm	GLOBAL_DATUM_INIT(orbit_watcher, /datum/orbit_watcher, new)
-var	code/game/turfs/initialization/init.dm	var/datum/turf_initializer/turf_initializer = null
 var	code/library/machine/wires.dm	var/datum/wire_hold_source/cut_source
 var	code/library/machine/wires.dm	var/datum/wire_hold_source/pulse_source
 var	code/library/machine/wires.dm	var/datum/owner

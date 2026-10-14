@@ -88,6 +88,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 		asks(/datum/prompt/choice, fields = list("title" = "Options!", "question" = computed(PROC_REF(options_question)), "choices" = computed(PROC_REF(option_names)), "timeout" = 0), step = "option"),
 		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(tag_question)), "default" = computed(PROC_REF(tag_default)), "max_len" = MAX_NAME_LEN, "timeout" = 0), step = "tag", when = PROC_REF(saving_to_buffer)),
 		then(PROC_REF(option_chosen)))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /obj/machinery/air_sensor
 	/// The readings of the last broadcast (list2params), so an unchanged reading is not sent again.
@@ -227,6 +228,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control)
 		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(frequency_title)), "question" = computed(PROC_REF(frequency_question)), "default" = computed(PROC_REF(frequency_default)), "max_value" = RADIO_HIGH_FREQ, "min_value" = RADIO_LOW_FREQ, "subject" = computed(PROC_REF(control_holder)), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "frequency", keeps = ADJACENT | ALIVE, when = PROC_REF(frequency_requested)),
 		then(PROC_REF(control_option_op)))
 	ui_shape(sensors = list_of(row()))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /obj/machinery/computer/general_air_control/ui_data(datum/act/eval/A)
 	var/list/data = list()

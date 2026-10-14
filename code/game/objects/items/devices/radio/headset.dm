@@ -725,6 +725,7 @@ CAPABILITIES(/obj/item/radio/headset)
 CAPABILITIES(/obj/item/radio/headset/event)
 	configure(light_glow(range = 6, power = 0, color = "#ffaaaa"))
 	owns_many(nameof(remove_spells))
+	ref_one(nameof(wearer), /mob/living/carbon/human)
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null

@@ -42,9 +42,6 @@
 	dir = EAST
 	var/width = 1
 
-	// turf animation
-	var/atom/movable/overlay/c_animation
-
 	/// Sheets of plasteel fitted so far (0 to 2): welded into place they make the door heat proof.
 	var/reinforcing = 0
 	var/tintable = 0
@@ -602,7 +599,3 @@ CAPABILITIES(/obj/machinery/door)
 	for(var/obj/machinery/door/D in range(src,range))
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))
 			D.toggle()
-
-/// c animation (a relation view: it reads null once the target is deleted).
-/obj/machinery/door/proc/c_animation() as /atom/movable/overlay
-	return c_animation

@@ -9,6 +9,9 @@
 	var/air_frequency = ALERT_FREQ
 	autoclose = 0
 
+CAPABILITIES(/obj/machinery/door/airlock/alarmlock)
+	ref_one(nameof(air_connection), /datum/radio_frequency)
+
 /obj/machinery/door/airlock/alarmlock/Initialize(mapload)
 	. = ..()
 	SSradio.remove_object(src, air_frequency)

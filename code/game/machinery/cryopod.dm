@@ -305,6 +305,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
 	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(loading_drag_adjacent), silent = TRUE), req(PROC_REF(loading_passenger_allowed), silent = TRUE), req(PROC_REF(can_take_occupant))), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
+	ref_one(nameof(control_computer), /obj/machinery/computer/cryopod)
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)

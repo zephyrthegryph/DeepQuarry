@@ -5,7 +5,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 
 const NOTES = 'refs/notes/lane-ready';
-const NON_CODE = [/^html\/changelogs\//, /^doc\//, /^data\//, /^[A-Za-z_.-]+\.md$/];
+const NON_CODE = [/^html\/changelogs\//, /^doc\//, /^data\/bench\//, /^[A-Za-z_.-]+\.md$/];
 
 function git(args, opts = {}) {
   const r = spawnSync('git', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...opts });

@@ -23,6 +23,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	interface("TelecommsLogBrowser")
 	tcomms_probe_console()
 	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete)), req(PROC_REF(entry_exists))), then(PROC_REF(ui_act_delete)))
+	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
 
 /obj/machinery/computer/telecomms/server/probed()
 	return servers

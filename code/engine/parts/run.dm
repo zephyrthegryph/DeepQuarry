@@ -444,7 +444,8 @@
 	var/list/args_saved
 	var/list/ordered_args_saved
 	var/list/log_saved
-	var/list/step_answers_saved
+	/// The answered prompts of the steps so far, by step name (an alist the op owns: request_done() adopts each, the end of the op deletes them).
+	var/list/answered_steps
 	var/list/captured_saved
 	/// wait(repeats =): the laps of the current series finished so far (the act reads it as A.laps()).
 	var/laps = 0
@@ -462,6 +463,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(answerer), /mob, on_other_deleted = OTHER_DELETE_ME) // asks(answerer =): the third party an open question was put to
 	ref_one(nameof(kept), /atom, on_other_deleted = OTHER_DELETE_ME) // asks(keeps_answer = TRUE): the thing the question was answered with, held like the target
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
+	owns_many(nameof(answered_steps), /datum/request) // the answered prompts (step name -> prompt): the op keeps them alive for its handlers and disposes of them when it ends
 	owns_one(nameof(progbar), /datum/progress_view)
 	owns_one(nameof(cog), /datum/cog_view)
 	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
@@ -596,7 +598,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	args_saved = A.args
 	ordered_args_saved = A.ordered_args
 	log_saved = A.log_lines
-	step_answers_saved = A.step_answers
 	captured_saved = A.captured_values
 	A.holder = null // ALLOW(ownership): a pooled transient: reset on release
 	A.target = null
@@ -628,7 +629,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.args = args_saved
 	A.ordered_args = ordered_args_saved
 	A.log_lines = log_saved
-	A.step_answers = step_answers_saved
+	A.step_answers = null
+	for(var/step_name in answered_steps)
+		LAZYSET(A.step_answers, step_name, answered_steps[step_name])
 	A.captured_values = captured_saved
 	A.laps_done = laps
 	return TRUE
@@ -792,6 +795,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	A.request = R // ALLOW(ownership): a pooled transient: reset on release
 	A.answer = R // ALLOW(ownership): a pooled transient: reset on release
 	LAZYSET(A.step_answers, R.step_name || "answer", R) // ALLOW(ownership): a pooled transient: reset on release
+	R.kept_by_op = TRUE // request_end() does not delete it: the op owns it from here, so a later step's handler still reads its fields
+	rel_add(src, nameof(answered_steps), R, R.step_name || "answer")
 	if(Q.args["keeps_answer"])
 		var/atom/chosen = A.answer_target()
 		if(QDELETED(chosen))
@@ -1204,7 +1209,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	args_saved = null
 	ordered_args_saved = null
 	log_saved = null
-	step_answers_saved = null
+	rel_clear(src, nameof(answered_steps)) // owned: the answered prompts are deleted with the op
 	captured_saved = null
 	cancel_after(src, "op_wait")
 	if(request)
@@ -1259,7 +1264,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	args_saved = null
 	ordered_args_saved = null
 	log_saved = null
-	step_answers_saved = null
 	captured_saved = null
 	..()
 

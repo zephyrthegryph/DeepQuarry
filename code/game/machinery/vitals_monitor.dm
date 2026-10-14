@@ -144,6 +144,7 @@ CAPABILITIES(/obj/machinery/vitals_monitor)
 	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
 	drag_onto(PROC_REF(drop_input))
 	default_parts()
+	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /// Old verb "Toggle Monitor Beeping".
 /obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(datum/act/op/A)

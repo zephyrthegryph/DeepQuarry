@@ -15,7 +15,6 @@
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// (below) are its only writer now.
 	var/mob/living/carbon/human/avatar
-	var/datum/mind/vr_mind
 	var/datum/effect/effect/system/smoke_spread/bad/smoke
 
 	var/eject_dead = TRUE
@@ -43,6 +42,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant))), needs(req(PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
 	op("vr_sleeper_eject", menu(), label("Eject VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req(PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
+	ref_one(nameof(avatar), /mob/living/carbon/human)
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -388,7 +388,3 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 /// avatar (a relation view: it reads null once the target is deleted).
 /obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human
 	return avatar
-
-/// vr mind (a relation view: it reads null once the target is deleted).
-/obj/machinery/vr_sleeper/proc/vr_mind() as /datum/mind
-	return vr_mind

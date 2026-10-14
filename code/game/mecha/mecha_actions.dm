@@ -70,6 +70,9 @@
 	overlay_icon = 'icons/effects/actions_mecha.dmi'
 	var/obj/mecha/chassis
 
+CAPABILITIES(/datum/action/innate/mecha)
+	ref_one(nameof(chassis))
+
 /datum/action/innate/mecha/Grant(mob/living/L, obj/mecha/M)
 	if(M)
 		rel_set(src, nameof(chassis), M)

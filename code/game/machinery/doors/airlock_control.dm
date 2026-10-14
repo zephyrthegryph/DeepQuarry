@@ -190,6 +190,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 		list("Frequency", "frequency", "frequency"),
 		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior.")))
 	op("cycle", hand(), label("Use"), wait(0), then(PROC_REF(cycle_asked)))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /// A hand on the sensor asks the controller to cycle.
 /obj/machinery/airlock_sensor/proc/cycle_asked(datum/act/op/A)
@@ -332,6 +333,7 @@ CAPABILITIES(/obj/machinery/access_button)
 		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'.")))
 	op("press", inputs(hand(), item(/obj/item/card/id), item(/obj/item/pda)), label("Use"), wait(0), needs(req(PROC_REF(button_allows))), then(PROC_REF(pressed)))
 	on_op("press", then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 /// Whoever has access presses it.
 /obj/machinery/access_button/proc/button_allows(datum/act/op/A)

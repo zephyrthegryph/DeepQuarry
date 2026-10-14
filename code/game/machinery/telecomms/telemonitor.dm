@@ -122,6 +122,7 @@ TRACKED(/obj/machinery/computer/telecomms, temp)
 CAPABILITIES(/obj/machinery/computer/telecomms/monitor)
 	interface("TelecommsMachineBrowser")
 	tcomms_probe_console()
+	ref_one(nameof(SelectedMachine), /obj/machinery/telecomms)
 
 /obj/machinery/computer/telecomms/monitor/probed()
 	return machinelist

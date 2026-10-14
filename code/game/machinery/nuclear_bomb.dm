@@ -196,6 +196,7 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act)), req(PROC_REF(can_make_deployable))), then(PROC_REF(interaction_make_deployable)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
+	ref_one(nameof(auth), /obj/item/disk/nuclear)
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 MSG_DEF(nuclearbomb/covers_cut, "You cut through the bolt cover.", "%U% cuts through the bolt covers on %T%.")

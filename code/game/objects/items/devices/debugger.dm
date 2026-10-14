@@ -15,8 +15,6 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	throw_speed = 3
 	desc = "You can use this on airlocks or APCs to try to hack them without cutting wires."
 
-	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
-
 CAPABILITIES(/obj/item/debugger)
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
@@ -44,7 +42,3 @@ CAPABILITIES(/obj/item/debugger)
 		else
 			to_chat(user, span_notice("The device's software appears to be fine."))
 		return 1
-
-/// Relation view: buffer (reads null once it is gone).
-/obj/item/debugger/proc/buffer() as /obj/machinery/telecomms
-	return buffer

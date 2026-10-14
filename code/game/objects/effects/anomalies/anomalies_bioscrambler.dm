@@ -16,6 +16,9 @@
 	/// Range of anomaly pulse
 	var/range = 2
 
+CAPABILITIES(/obj/effect/anomaly/bioscrambler)
+	ref_one(nameof(pursuit_target))
+
 /obj/effect/anomaly/bioscrambler/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(pursuit_target), find_nearest_target())

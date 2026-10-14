@@ -39,3 +39,17 @@ Single-quoted resources referenced from `code/`:
 Together about 215 MB of the 224 MB.
 
 Options (not implemented): under `CITESTING`, have the sound-set tables reference sounds by string path (no packing) instead of `'file'`; skip the skybox dmis. Both change asset loading and any test that reads sound file existence or icon states. I did not measure the load delta: a smaller .rsc needs a recompile (about 5 min plus the compile queue) and a test world launch, and a world started by hand would have to be killed, which I did not do. Experiment to run: compile once with the sound tables excluded from packing and compare the `Boot timing` line (three samples each).
+
+## Experiments (2026-10-14, `boot-speed/world`; `Boot timing` line, `-profile` on, machine loaded)
+
+| Variant | .rsc | launch to `world/New` |
+|---|---|---|
+| master | 224.5 MB | 30.0 s, 25.8 s |
+| no z2/z3 (sector `.dmm` includes removed) | 224.5 MB | 29.1 s, 24.8 s, 21.9 s |
+| no z2/z3 and every `.ogg` under `sound/` replaced by a 2.6 KB stub (.rsc rebuilt from scratch) | 123.1 MB | 26.4 s |
+
+Run-to-run noise on this machine is about 4 s. Removing 20,000 of the 34,000 compiled atoms gains about 1 s; shrinking the .rsc by 101 MB (45%) gains nothing measurable.
+Conclusion: neither option pays. Compiled map atoms (about 1 s) and .rsc size (about 0 s) are not where the pre-`world/New` time goes, so neither the z2/z3 opt-in nor the sound-free test build was implemented.
+The no-z2/z3 boot also passed the boot gate with no tests that need those levels, so the remaining time is DreamDaemon startup work this note has not isolated (dmb load and proc tables, native DLL load, z1 atoms).
+
+Build quirks found: `compileDerived()` hashes the dme text, defines and compiler version only, so changing a resource file reuses the old .dmb; and DreamMaker keeps an existing .rsc, so a repack needs the old `deepquarry.test.rsc` deleted.

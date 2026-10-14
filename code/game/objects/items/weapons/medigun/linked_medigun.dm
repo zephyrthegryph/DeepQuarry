@@ -32,6 +32,7 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	op("cancel_healing", in_hand(), then(PROC_REF(healing_cancelled)))
 	// One beam cycle a second; each cycle asks process_medigun() for the next. The user may walk while it runs; the wait draws nothing (the old task was hidden).
 	op("medigun_cycle", ai(), takes("patient", "filter", "ishealing"), silent_wait(), wait(1 SECOND, keeps = HELD | ALIVE), then(PROC_REF(process_medigun_timed_done)))
+	ref_one(nameof(medigun_base_unit), /obj/item/medigun_backpack)
 
 /// Preserve the linked device's existing two-hand update and cancellation state.
 /obj/item/bork_medigun/linked/proc/healing_cancelled(datum/act/op/A)

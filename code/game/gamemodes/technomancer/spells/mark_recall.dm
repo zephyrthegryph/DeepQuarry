@@ -14,6 +14,9 @@
 	var/image/I
 	var/turf/T
 
+CAPABILITIES(/datum/technomancer_marker)
+	ref_one(nameof(caster))
+
 /datum/technomancer_marker/New(mob/user)
 	rel_set(src, nameof(caster), user)
 	rel_set(src, nameof(T), get_turf(user))

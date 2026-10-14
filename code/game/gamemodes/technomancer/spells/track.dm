@@ -25,6 +25,7 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 /obj/item/spell/track/var/tracking = FALSE
 TRACKED(/obj/item/spell/track, tracking)
 CAPABILITIES(/obj/item/spell/track)
+	ref_one(nameof(tracked))
 	every(0.5 SECONDS, then(PROC_REF(track)), when = nameof(tracking))
 
 /obj/item/spell/track/on_use_cast(mob/user)
