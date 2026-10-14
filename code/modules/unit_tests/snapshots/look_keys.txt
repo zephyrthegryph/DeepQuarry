@@ -30,6 +30,14 @@
 /mob/living/carbon/human/alraune	1b8184ac8a3ccc0e	*
 /mob/living/carbon/human/altevian	38ca67472d036628	*
 /mob/living/carbon/human/diona	7f97842a238521ed	*
+/mob/living/carbon/human/dummy	e370182dddb982b5	*
+/mob/living/carbon/human/dummy/mannequin	07bdd8bd2bc08ffe	*
+/mob/living/carbon/human/dummy/mannequin/autoequip	19809fb2ab91dc6b	*
+/mob/living/carbon/human/dummy/mannequin/autoequip/sergal	ceefb53aec27b165	*
+/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran	9f161200ee78656a	*
+/mob/living/carbon/human/dummy/mannequin/autoequip/teshari	32af452cf759bb92	*
+/mob/living/carbon/human/dummy/mannequin/autoequip/unathi	033aca2e80620fe9	*
+/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin	6675bac08465c20a	*
 /mob/living/carbon/human/farwa	066e4b9ea96a7b60	*
 /mob/living/carbon/human/generated_station_command_officer	19e97191c13aa030	*
 /mob/living/carbon/human/grey	4694d76a1c7d94ba	*
@@ -11231,7 +11239,7 @@
 /obj/item/paper/djstation/update	b986487a207aff73	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/djstation/visitor_log	a8bc43bd03818e7c	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/dockingcodes	b786108acbe93ab3	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
-/obj/item/paper/dosimeter_manual	3ae4b0b106e8e47b	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
+/obj/item/paper/dosimeter_manual	a9a030bfbf67c69f	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/flag	ac80cff89ce74862	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/fluff	ced23928455d6b43	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
 /obj/item/paper/fluff/junkmail_generic	da3f2ac4402254a0	carried_afflictions,contract_document,created_area,crumpled,economic_adoption,fields,identity,info,mind_host,possessed_voice,stamp_marks
@@ -13787,6 +13795,7 @@
 /obj/item/remote_scene_tool	270745645830ccb5	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
 /obj/item/remote_scene_tool/tally_doll	99730d14b2392ac6	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
 /obj/item/remote_scene_tool/tally_necklace	a9d8603b8429ffe0	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
+/obj/item/remote_scene_tool/voodoo_doll	1e5e4495dc032d73	*
 /obj/item/remote_scene_tool/voodoo_necklace	0c0ff422009f7bc1	carried_afflictions,economic_adoption,icon_root,identity,last_loc,linked,mind_host,partner_live,partner_name,partner_wearer,possessed_voice,worn_mob
 /obj/item/research_sample	9ea986031ba93391	carried_afflictions,economic_adoption,fixed_name,identity,mind_host,possessed_voice
 /obj/item/research_sample/bluespace	495255243cd1306e	*
