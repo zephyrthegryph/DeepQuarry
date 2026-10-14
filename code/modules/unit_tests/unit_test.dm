@@ -920,11 +920,11 @@ GLOBAL_VAR(dq_test_select_names)
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
+	var/runtimes_before = GLOB.total_runtimes
 	// Framework boot-backlog parking belongs before the fixture leak baselines.
 	staleness_test_begin()
 	var/duration = 0
 	var/tick_start_index = 0
-	var/runtimes_before = GLOB.total_runtimes
 	var/list/sites_before = SSexpedition?.sites?.Copy()
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
