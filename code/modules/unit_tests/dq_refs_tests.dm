@@ -230,3 +230,66 @@
 	TEST_ASSERT(registry_has(REGISTRY_MONEY_ACCOUNTS, A), "registry_join() lists it")
 	qdel(A)
 	TEST_ASSERT(!registry_has(REGISTRY_MONEY_ACCOUNTS, A), "deleting it drops it")
+
+// ---------------------------------------------------------------- shared particle holders
+
+/// A shared particle holder is qdel'd when its last user leaves: an item that shows one and is qdel'd
+/// frees it (removing its particles), the pool forgets the key, and no handle to it is left to resolve a collected target.
+/datum/unit_test/dq_shared_particles_user_qdel_frees_holder
+
+/datum/unit_test/dq_shared_particles_user_qdel_frees_holder/Run()
+	var/key = "dq_test_particles_single"
+	var/obj/item/user = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/obj/effect/abstract/shared_particle_holder/holder = user.add_shared_particles(/particles/smoke, key)
+	TEST_ASSERT(holder in user.vis_contents, "the user shows the holder")
+	user.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(holder), "the holder was qdel'd when its only user left")
+	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
+	TEST_ASSERT(!(holder in user.vis_contents), "the user no longer shows the holder")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")
+
+/// Two users sharing one holder (pool_size 1): the first removal keeps it, the second frees it.
+/datum/unit_test/dq_shared_particles_two_users_share_holder
+
+/datum/unit_test/dq_shared_particles_two_users_share_holder/Run()
+	var/key = "dq_test_particles_shared"
+	var/obj/item/first = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/obj/item/second = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/obj/effect/abstract/shared_particle_holder/holder = first.add_shared_particles(/particles/smoke, key, NONE, 1)
+	var/obj/effect/abstract/shared_particle_holder/other = second.add_shared_particles(/particles/smoke, key, NONE, 1)
+	TEST_ASSERT(holder == other, "the second user got the same holder")
+	first.remove_shared_particles(key)
+	TEST_ASSERT(!QDELETED(holder), "the holder survives while one user remains")
+	TEST_ASSERT(holder in second.vis_contents, "the remaining user still shows it")
+	TEST_ASSERT(GLOB.shared_particles[key], "the pool keeps the key")
+	second.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(holder), "the second removal frees the holder")
+	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")
+
+/// Users of one pool on separate holders (pool_size above 1): removing one user frees only its own holder.
+/datum/unit_test/dq_shared_particles_pooled_holders_free_individually
+
+/datum/unit_test/dq_shared_particles_pooled_holders_free_individually/Run()
+	var/key = "dq_test_particles_pooled"
+	var/obj/item/first = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/obj/item/second = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/obj/effect/abstract/shared_particle_holder/a = first.add_shared_particles(/particles/smoke, key)
+	var/obj/effect/abstract/shared_particle_holder/b = second.add_shared_particles(/particles/smoke, key)
+	TEST_ASSERT(a != b, "each user below the pool size got its own holder")
+	first.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(a), "the leaving user's holder was freed, not dropped")
+	TEST_ASSERT(!QDELETED(b), "the other holder is untouched")
+	second.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(b), "the last user frees the last holder")
+	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")
