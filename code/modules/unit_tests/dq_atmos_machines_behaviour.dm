@@ -1017,6 +1017,7 @@
 /datum/unit_test/dq_atmos_m/canister_welder
 /datum/unit_test/dq_atmos_m/canister_welder/run_gate()
 	set_global(nameof(GLOB.test_prompts), list())
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/turf/T = tile(3, 1)
 	var/obj/machinery/portable_atmospherics/canister/oxygen/full = allocate(/obj/machinery/portable_atmospherics/canister/oxygen, T)
 	var/mob/living/carbon/human/H = person()

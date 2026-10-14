@@ -4900,3 +4900,7 @@ Affected requirement-pin classes:
 Master 5b0a2f09d0 typed the internal-storage owner and cloning scanner links without preserving their invalid-owner/null paths. This lane carries the already-approved keeps_if/setup and null-return repairs and real owner/rebinding tests from the stamped acceptance lane. The constructor pins remain unchanged.
 
 Master f13b84652d removed the unused AI equipment window. The only pin refresh carried here removes ai_use_equipment from the keys rows of /obj/mecha and /obj/mecha/working/ripley, without changing any other key or menu/click row.
+
+## Hit-pin tracked-list metadata after e1141671e5
+
+Master e1141671e5 (2026-10-13) converted the chameleon uniform EMP slot write to set_item_state_slots_at(). The generated item_state_slots_version counter therefore increments from zero to one for EMP severities 1 and 2. This counter is invalidation bookkeeping, not a gameplay hit result. The producer excludes exactly that generated counter; the existing golden is unchanged. dq_hit_public_chameleon_emp verifies both real EMP severities still produce the psyche visible/worn sprites and psychedelic name.

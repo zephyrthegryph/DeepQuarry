@@ -674,9 +674,14 @@ GLOBAL_VAR(dq_test_select_names)
 
 /// Puts back everything set_var()/set_global()/set_config() changed.
 /datum/unit_test/proc/restore_test_overrides()
+	var/prompt_scope_diagnostic = type == /datum/unit_test/dq_atmos_m/canister_welder
+	if(prompt_scope_diagnostic)
+		log_test("PROMPT SCOPE RESTORE: [type] entries=[length(saved_vars)] current_null=[isnull(GLOB.test_prompts)]")
 	for(var/i in length(saved_vars) to 1 step -1)
 		var/list/entry = saved_vars[i]
 		var/datum/target = entry[1]
+		if(prompt_scope_diagnostic && entry[2] == nameof(GLOB.test_prompts))
+			log_test("PROMPT SCOPE RESTORE: saved_null=[isnull(entry[3])] target_live=[!QDELETED(target)]")
 		if(!QDELETED(target))
 			target.vars[entry[2]] = entry[3]
 	for(var/entry_type in saved_configs)
@@ -684,6 +689,8 @@ GLOBAL_VAR(dq_test_select_names)
 		global.config.Set(entry_type, box[1])
 	saved_vars = null
 	saved_configs = null
+	if(prompt_scope_diagnostic)
+		log_test("PROMPT SCOPE RESTORE: after_null=[isnull(GLOB.test_prompts)]")
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")

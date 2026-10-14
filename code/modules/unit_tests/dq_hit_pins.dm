@@ -32,6 +32,26 @@
 		var/obj/item/warm = allocate(item_type, test_floor())
 		qdel(warm)
 
+/datum/unit_test/dq_hit_public_chameleon_emp/New()
+	..()
+	var/obj/item/clothing/under/chameleon/warm = allocate(/obj/item/clothing/under/chameleon, test_floor())
+	qdel(warm)
+
+/datum/unit_test/dq_hit_public_chameleon_emp/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	for(var/severity in list(1, 2))
+		var/obj/item/clothing/under/chameleon/uniform = allocate(/obj/item/clothing/under/chameleon, test_floor())
+		TEST_ASSERT_EQUAL(uniform.icon_state, "black", "The real uniform starts with its original disguise")
+		uniform.emp_act(severity)
+		test_drain()
+		TEST_ASSERT_EQUAL(uniform.icon_state, "psyche", "The real EMP path reveals the uniform's visible sprite")
+		TEST_ASSERT_EQUAL(uniform.item_state_slots[slot_w_uniform_str], "psyche", "The real EMP path preserves the uniform's actual worn-slot sprite")
+		TEST_ASSERT_EQUAL(uniform.name, "psychedelic", "The real EMP path still exposes its intended name")
+		var/list/state = dq_hit_state(uniform)
+		TEST_ASSERT(!("item_state_slots_version" in state), "Generated list invalidation metadata is outside the hit snapshot contract")
+
 /// Vars that carry no behaviour (identity, engine bookkeeping) or change on their own.
 /proc/dq_hit_skip_vars()
 	var/static/list/skip = list(
@@ -40,6 +60,8 @@
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
 		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx",
+		// Generated tracked-list invalidation metadata, not the uniform slot sprite or EMP effect.
+		"item_state_slots_version",
 	)
 	return skip
 
@@ -187,6 +209,12 @@
 			. += "[trigger] | turf: -[row] x[lost]"
 	if(!length(.))
 		. += "[trigger] | nothing"
+	// Capture the immediate hit result before settling its real explosion epoch.
+	for(var/attempt in 1 to 200)
+		if(!SSexplosions.has_work())
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!SSexplosions.has_work(), "[type] [trigger] left explosion work after 200 real ticks")
 	if(!QDELETED(target))
 		qdel(target)
 	own_turf_contents(T)
