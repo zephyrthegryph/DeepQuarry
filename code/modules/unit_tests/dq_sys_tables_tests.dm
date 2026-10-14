@@ -21,6 +21,7 @@ TYPE_TABLE_DECLARE(/datum/tt_test, tt_test_empty, null)
 
 /// Tables inherit, override per subtype, are shared and built once per type.
 /datum/unit_test/dq_sys_tables_inherit
+	boot_needs = list()
 
 /datum/unit_test/dq_sys_tables_inherit/Run()
 	var/datum/tt_test/root = new
@@ -48,6 +49,7 @@ TYPE_TABLE_DECLARE(/datum/tt_test, tt_test_empty, null)
 
 /// COW_LIST copies on first write; COW_READ falls back to the table until then.
 /datum/unit_test/dq_sys_tables_cow
+	boot_needs = list()
 
 /datum/unit_test/dq_sys_tables_cow/Run()
 	var/datum/tt_test/a = new

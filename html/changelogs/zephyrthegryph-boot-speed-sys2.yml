@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Kernel, state-batch, staleness, static-entry and table-inheritance tests declare boot_needs = list(), so a focused run of them skips deferrable boot work"
