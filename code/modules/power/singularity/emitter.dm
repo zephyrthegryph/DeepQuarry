@@ -53,6 +53,7 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 
 
 CAPABILITIES(/obj/machinery/power/emitter)
+	setup(PROC_REF(prepare_initial_emitter_state))
 	configure(uses_power(active = 30000))
 	climb()
 	rotatable()
@@ -71,9 +72,8 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		asks(/datum/prompt/choice, fields = list("title" = "Particle Selection", "question" = "Select particle type", "choices" = ANOMALY_PARTICLE_ALL)),
 		then(PROC_REF(particle_chosen)))
 
-// ALLOW(init/INSTANCE_STATE): the rung a mapped emitter starts on is the one its sprite shows first
-/obj/machinery/power/emitter/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare initial emitter state, after the complete parent chain.
+/obj/machinery/power/emitter/proc/prepare_initial_emitter_state()
 	previous_state = state
 	emp_protection_flags |= EMP_PROTECT_SELF
 

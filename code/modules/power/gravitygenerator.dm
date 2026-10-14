@@ -156,8 +156,8 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 	use_power = USE_POWER_ACTIVE
 	current_overlay = "activated"
 
-/obj/machinery/gravity_generator/main/station/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare station parts, after the complete parent chain.
+/obj/machinery/gravity_generator/main/station/proc/prepare_station_parts()
 	setup_parts()
 	var/obj/machinery/gravity_generator/part/M = middle
 	if(istype(M))
@@ -484,3 +484,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 #undef GRAV_NEEDS_WELDING
 #undef GRAV_NEEDS_PLASTEEL
 #undef GRAV_NEEDS_WRENCH
+
+CAPABILITIES(/obj/machinery/gravity_generator/main/station)
+	setup(PROC_REF(prepare_station_parts))

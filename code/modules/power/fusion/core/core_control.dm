@@ -12,6 +12,7 @@
 
 // Its window is its monitor's (a hand on a working console opens it); a multitool sets the ident tag the monitor looks for.
 CAPABILITIES(/obj/machinery/computer/fusion_core_control)
+	setup(PROC_REF(prepare_core_monitor))
 	configure(light_glow(color = COLOR_ORANGE))
 	op("use", hand(), when(req_empty_hand()), label("Use"), wait(0), needs(req_operable()), then(PROC_REF(open_monitor)))
 	op("set_tag", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
@@ -20,8 +21,8 @@ CAPABILITIES(/obj/machinery/computer/fusion_core_control)
 	owns_one(nameof(monitor), starts = /datum/tgui_module/rustcore_monitor)
 	ref_one(nameof(cur_viewed_device), /obj/machinery/power/fusion_core)
 
-/obj/machinery/computer/fusion_core_control/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare core monitor, after the complete parent chain.
+/obj/machinery/computer/fusion_core_control/proc/prepare_core_monitor()
 	monitor.core_tag = id_tag
 
 

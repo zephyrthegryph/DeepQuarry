@@ -1392,15 +1392,15 @@ CAPABILITIES(/obj/machinery/light/small/torch)
 /obj/machinery/light/broken
 	icon_state = "tube-broken"
 
-/obj/machinery/light/broken/Initialize(mapload)
-	. = ..()
+/// Declared setup: break mapped light, after the complete parent chain.
+/obj/machinery/light/broken/proc/break_mapped_light()
 	broken()
 
 /obj/machinery/light/broken/small
 	icon_state = "bulb-broken"
 
-/obj/machinery/light/broken/small/Initialize(mapload)
-	. = ..()
+/// Declared setup: break mapped small light, after the complete parent chain.
+/obj/machinery/light/broken/small/proc/break_mapped_small_light()
 	broken()
 
 /// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
@@ -1455,3 +1455,9 @@ MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 /obj/machinery/light/proc/tuned(datum/act/op/A)
 	var/obj/item/light/B = bulb()
 	return B ? B.apply_tune(A) : OP_REFUSED
+
+CAPABILITIES(/obj/machinery/light/broken)
+	setup(PROC_REF(break_mapped_light))
+
+CAPABILITIES(/obj/machinery/light/broken/small)
+	setup(PROC_REF(break_mapped_small_light))

@@ -17,6 +17,7 @@
 /// Radioactive rods pulse radiation (periodic_step()) for as long as they are radioactive.
 /obj/item/fuel_assembly/var/radioactivity = 0
 CAPABILITIES(/obj/item/fuel_assembly)
+	setup(PROC_REF(prepare_fuel_material))
 	every(2 SECONDS, then(PROC_REF(fuel_assembly_step)), when = nameof(radioactivity))
 	param(nameof(fuel_type), pos = 1)
 	param(nameof(fuel_colour), pos = 2)
@@ -40,14 +41,13 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a fuel rod is named, coloured and made radioactive or luminous by its material
-/obj/item/fuel_assembly/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare fuel material, after the complete parent chain.
+/obj/item/fuel_assembly/proc/prepare_fuel_material()
 	var/datum/material/material = get_material_by_name(fuel_type)
 	if(istype(material))
 		name = "[material.use_name] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [material.use_name]."
-		fuel_colour = material.icon_colour
+		set_fuel_colour(material.icon_colour)
 		fuel_type = material.use_name
 		// radioactivity / luminescence moved to components on /datum/material.
 		var/mat_rad = dq_material_radioactivity(material)
@@ -86,13 +86,13 @@ CAPABILITIES(/obj/item/fuel_assembly)
 /obj/item/fuel_assembly/blitz
 	fuel_type = "     "
 
-/obj/item/fuel_assembly/blitz/unshielded/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare unshielded blitz, after the complete parent chain.
+/obj/item/fuel_assembly/blitz/unshielded/proc/prepare_unshielded_blitz()
 	name = "unshielded blitz rod"
 	desc = "An extremely unstable, raw rod of compressed supermatter and phoron. This seems like a terrible idea."
-	fuel_colour = "#FCE300"
+	set_fuel_colour("#FCE300")
 	fuel_type = "blitzu"
-	rod_glows = TRUE
+	set_rod_glows(TRUE)
 	rod_quantities[fuel_type] = initial_amount
 	radiation_pulse(
 		source = src,
@@ -117,6 +117,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 		destroyed(src)
 
 CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
+	setup(PROC_REF(prepare_unshielded_blitz))
 	op("unshielded_lead_shell", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(unshielded_pick_up)))
 
@@ -171,13 +172,13 @@ CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
 /obj/item/fuel_assembly/blitz/shielded
 	name = "blitz rod"
 
-/obj/item/fuel_assembly/blitz/shielded/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare shielded blitz, after the complete parent chain.
+/obj/item/fuel_assembly/blitz/shielded/proc/prepare_shielded_blitz()
 	name = "blitz rod"
 	desc = "A highly unstable, and highly explosive supermatter and phoron fuel rod with a lead shell, created by someone of questionable sanity. This thing has to violate at least a few intergalactic regulations."
-	fuel_colour = "#76888F"
+	set_fuel_colour("#76888F")
 	fuel_type = "blitz"
-	rod_glows = TRUE
+	set_rod_glows(TRUE)
 	rod_quantities[fuel_type] = initial_amount
 	set_glow(src, GLOW(2, 2, "#FCE300"))
 
@@ -191,3 +192,6 @@ CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
 	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))
 	look.overlay(look_image(icon, "fuel_assembly_bracket"))
 	look.overlay(look_image(icon, "glow"), when = rod_glows)
+
+CAPABILITIES(/obj/item/fuel_assembly/blitz/shielded)
+	setup(PROC_REF(prepare_shielded_blitz))

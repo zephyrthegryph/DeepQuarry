@@ -22,6 +22,7 @@
 /// Flies one step every 0.1 s for as long as it exists; move() deletes it when its range runs out. A mob that walks into it is hit as if
 /// the particle had hit it.
 CAPABILITIES(/obj/effect/accelerated_particle)
+	setup(PROC_REF(move))
 	every(0.1 SECONDS, then(PROC_REF(move)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	param(nameof(dir), pos = 1, default = SOUTH)
@@ -42,10 +43,6 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 	energy = 50
 
 // ALLOW(init/INSTANCE_STATE): a particle starts moving the way it faces
-/obj/effect/accelerated_particle/Initialize(mapload)
-	. = ..()
-	move()
-
 /obj/effect/accelerated_particle/Bump(atom/A)
 	if (A)
 		if(ismob(A))

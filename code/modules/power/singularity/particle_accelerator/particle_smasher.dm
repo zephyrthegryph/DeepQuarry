@@ -23,13 +23,6 @@
 	var/max_storage = 3	// How many items can be jammed into it?
 	var/list/recipes	// The list containing the Particle Smasher's recipes.
 
-/obj/machinery/particle_smasher/Initialize(mapload)
-	. = ..()
-	prepare_recipes()
-
-
-/// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
-/// It bleeds it off (work_step(null)) while it has any.
 /obj/machinery/particle_smasher/var/energy = 0
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
@@ -49,6 +42,7 @@ MSG_DEF_SELF(particle_smasher/has_container, "It already has a container attache
 // An analyzer does nothing here (the old attackby swallowed it); a sheet fills the target, a beaker attaches, an ID swipes to no effect, and
 // anything else that can come out of the hand goes into its fabrication storage while there is room. A wrench secures it to the floor.
 CAPABILITIES(/obj/machinery/particle_smasher)
+	setup(PROC_REF(prepare_recipes))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(energy), wakes_on = list(nameof(energy)))
 	owns_many(nameof(recipes))
 	op("analyzer_block", item(/obj/item/analyzer), label("Use"), then(PROC_REF(nothing_happens)))

@@ -24,11 +24,11 @@
 	resistance_flags = BOMB_PROOF
 
 CAPABILITIES(/obj/singularity/energy_ball)
+	setup(PROC_REF(prepare_energy_ball_glow))
 	param(nameof(miniball), pos = 2)
 
-// ALLOW(init/INSTANCE_STATE): a full energy ball glows
-/obj/singularity/energy_ball/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare energy ball glow, after the complete parent chain.
+/obj/singularity/energy_ball/proc/prepare_energy_ball_glow()
 	if(!miniball)
 		set_glow(src, GLOW(10, 7, "#EEEEFF"))
 

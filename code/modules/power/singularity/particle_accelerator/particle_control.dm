@@ -19,8 +19,8 @@
 	var/parts = null
 
 
-/obj/machinery/particle_accelerator/control_box/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare strength power, after the complete parent chain.
+/obj/machinery/particle_accelerator/control_box/proc/prepare_strength_power()
 	update_active_power_usage(power_of_type(type).active * (strength + 1))
 
 // a running accelerator powers down.
@@ -229,6 +229,7 @@ MSG_DEF_SELF(pa_control/timed_out, "ERROR: Request timed out. Check wire contact
 // hand opens them) and its window works once it is closed and its interface wire is whole. While it runs it makes every emitter of the
 // assembled accelerator emit (emit_step(), every machine service interval) at its strength.
 CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
+	setup(PROC_REF(prepare_strength_power))
 	configure(uses_power(idle = 500, active = 70000))
 	ref_many(nameof(connected_parts), /obj/structure/particle_accelerator)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emit_step)), when = nameof(active))

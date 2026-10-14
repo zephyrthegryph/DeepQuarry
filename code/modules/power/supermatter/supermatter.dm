@@ -699,8 +699,8 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/broken_sm/Initialize(mapload)
-	. = ..()
+/// Declared setup: announce broken shard, after the complete parent chain.
+/obj/item/broken_sm/proc/announce_broken_shard()
 	message_admins("Broken SM shard created at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 
 /obj/item/broken_sm/proc/radiate()
@@ -766,3 +766,6 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 #undef SUPERMATTER_COUNTDOWN_TIME
 #undef SUPERMATTER_ACCENT_SOUND_COOLDOWN
+
+CAPABILITIES(/obj/item/broken_sm)
+	setup(PROC_REF(announce_broken_shard))

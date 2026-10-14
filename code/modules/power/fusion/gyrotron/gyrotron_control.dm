@@ -12,6 +12,7 @@
 
 // Its window is its monitor's (a hand on a working console opens it); a multitool sets the ident tag the monitor looks for.
 CAPABILITIES(/obj/machinery/computer/gyrotron_control)
+	setup(PROC_REF(prepare_gyrotron_monitor))
 	configure(light_glow(color = COLOR_BLUE))
 	op("use", hand(), when(req_empty_hand()), label("Use"), wait(0), needs(req_operable()), then(PROC_REF(open_monitor)))
 	op("set_tag", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
@@ -19,8 +20,8 @@ CAPABILITIES(/obj/machinery/computer/gyrotron_control)
 		then(PROC_REF(tag_entered)))
 	owns_one(nameof(monitor), starts = /datum/tgui_module/gyrotron_control)
 
-/obj/machinery/computer/gyrotron_control/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare gyrotron monitor, after the complete parent chain.
+/obj/machinery/computer/gyrotron_control/proc/prepare_gyrotron_monitor()
 	monitor.gyro_tag = id_tag
 	monitor.scan_range = scan_range
 

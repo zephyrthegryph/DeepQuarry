@@ -27,13 +27,14 @@
 
 // The sensor samples its network every record_interval (sensor_step()); the power monitors read its history.
 CAPABILITIES(/obj/machinery/power/sensor)
+	setup(PROC_REF(prepare_sensor_history))
 	every(PROC_REF(record_delay), then(PROC_REF(sensor_step)))
 
 // Proc: Initialize(mapload)
 // Parameters: None
 // Description: Automatically assigns name according to ID tag.
-/obj/machinery/power/sensor/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare sensor history, after the complete parent chain.
+/obj/machinery/power/sensor/proc/prepare_sensor_history()
 	if(name_tag == "#UNKN#")
 		name_tag = "Grid [z]-[x]-[y]"
 	auto_set_name()

@@ -84,9 +84,8 @@
 	RCon = FALSE
 	input_attempt = TRUE
 
-// ALLOW(init/INSTANCE_STATE): a point of interest's unit starts full and at its coils' caps, numbers its coils decide when it is made
-/obj/machinery/power/smes/buildable/point_of_interest/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare poi charge, after the complete parent chain.
+/obj/machinery/power/smes/buildable/point_of_interest/proc/prepare_poi_charge()
 	set_stored_charge(capacity) // Should be enough for an individual POI.
 	set_input_level(input_level_max)
 	set_output_level(output_level_max)
@@ -436,3 +435,6 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 	if(safeties_enabled)
 		set_safeties_enabled(FALSE)
 		after(src, 1 SECOND, PROC_REF(set_safeties_enabled), key = "failsafe_pulse", with = list(TRUE))
+
+CAPABILITIES(/obj/machinery/power/smes/buildable/point_of_interest)
+	setup(PROC_REF(prepare_poi_charge))
