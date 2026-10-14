@@ -21,8 +21,10 @@ cap_keys(CAP_QUICKDRAW, DRAWS = MSG(quickdraw/is_off))
 
 /datum/capability/lib/quickdraw/entries()
 	return list(
-		op("draw", hand(), priority(above("storage.open")), when(CAP_PROC(draws_by_hand)), label("Draw"), then(CAP_PROC(draw_or_open))),
-		op("switch_alt", hand(), answers(INTENT_TOGGLE), priority(above("storage.toggle_open")), when(CAP_PROC(carried_by_actor)), label("Switch quickdraw mode"), then(CAP_PROC(alt_switch))),
+		click_order(BIND_HAND, "quickdraw.draw", "storage.open"),
+		click_order(BIND_HAND, "quickdraw.switch_alt", "storage.toggle_open"),
+		op("draw", hand(), when(CAP_PROC(draws_by_hand)), label("Draw"), then(CAP_PROC(draw_or_open))),
+		op("switch_alt", hand(), answers(INTENT_TOGGLE), when(CAP_PROC(carried_by_actor)), label("Switch quickdraw mode"), then(CAP_PROC(alt_switch))),
 		op("switch", menu(), label("Switch Quickdraw Mode"), needs(carried()), toggles(QUICKDRAW_DRAWS), says(CAP_PROC(switched_message))))
 
 /// A case that starts in quickdraw mode is in it from the moment its holder initializes.

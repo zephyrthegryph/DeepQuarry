@@ -1406,10 +1406,12 @@ CAPABILITIES(/obj/machinery/light/small/torch)
 /// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
 /// it too (it has no emergency lighting of its own to toggle).
 CAPABILITIES(/obj/machinery/light/flamp)
+	click_order(BIND_HAND, "toggle", "remove")
+	click_order(TOOL_SCREWDRIVER, "remove_shade", "open_casing")
 	anchor()
 	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
-	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off)))
-	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0),
+	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), wait(0), then(PROC_REF(shade_off)))
+	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), wait(0),
 		needs(req(PROC_REF(has_light_in_fitting))), then(PROC_REF(toggle_lamp)))
 	extend("open_casing", when(cond_not(nameof(lamp_shade))))
 

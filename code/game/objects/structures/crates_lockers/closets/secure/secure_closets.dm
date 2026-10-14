@@ -24,10 +24,11 @@ MSG_DEF_SELF(secure_closet/inside, "You can't reach the lock from inside.")
 // ID has the access) and a lock that can be broken for good (an emag, a blade, a break-out): a broken lock stays open. The hand opens a locker that is unlocked,
 // and works the lock of one that is locked; only a shut locker has a lock to reach, and not from inside.
 CAPABILITIES(/obj/structure/closet/secure_closet)
+	click_order(BIND_HAND, "door", "lock.toggle_worn")
 	lock(starts_locked = nameof(locked))
 	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(secure_closet/close_first)), req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), plays(SFX_MACHINES_CLICK))
 	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
-	extend("door", when(cond_not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
+	extend("door", when(cond_not(LOCK_LOCKED)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	extend("emag.use", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
 	extend("emag.subvert", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))

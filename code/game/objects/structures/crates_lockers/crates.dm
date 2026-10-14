@@ -137,10 +137,11 @@ MSG_DEF_SELF(crate/inside, "You can't reach the lock from inside.")
 // A secure crate is a crate with the same ID lock and breakable lock as a locker. A blade or an emag breaks it for good; any item in the hand of somebody whose own ID
 // has the access works the lock of a shut one, as a card does. It holds somebody in only while it is both locked and sealed.
 CAPABILITIES(/obj/structure/closet/crate/secure)
+	click_order(BIND_HAND, "door", "lock.toggle_worn")
 	lock(starts_locked = nameof(locked))
 	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(crate/close_first)), req_is(nameof(broken), FALSE, because = MSG(crate/broken)), req(PROC_REF(actor_outside), because = MSG(crate/inside))))
 	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
-	extend("door", when(cond_not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
+	extend("door", when(cond_not(LOCK_LOCKED)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	extend("emag.use", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
 	extend("emag.subvert", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))

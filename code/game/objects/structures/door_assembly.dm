@@ -174,6 +174,7 @@ MSG_DEF_SELF(door_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(door_assembly/plated, "Take the plating off first.")
 
 CAPABILITIES(/obj/structure/door_assembly)
+	click_order(TOOL_WELDER, "unplate", "construction.dismantle")
 	after_init(0, then(PROC_REF(init_update_state)))
 	construction(start(STAGE_DOOR_ASSEMBLY_FRAME),
 		stage(STAGE_DOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
@@ -187,7 +188,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 	op("plate_glass", stack(/obj/item/stack/material/glass/reinforced, 1), label("Install windows"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(glass_in)))
 	op("plate", inputs(stack(/obj/item/stack/material/gold, 2), stack(/obj/item/stack/material/silver, 2), stack(/obj/item/stack/material/diamond, 2), stack(/obj/item/stack/material/uranium, 2), stack(/obj/item/stack/material/phoron, 2), stack(/obj/item/stack/material/sandstone, 2)), label("Install plating"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(plated_in)))
 	op("plate_bad", item(/obj/item/stack/material), label("Install plating"), when(PROC_REF(unplated)), when(cond_not(req(/obj/item/stack/material/glass/reinforced))), when(cond_not(req(/obj/item/stack/material/gold))), when(cond_not(req(/obj/item/stack/material/silver))), when(cond_not(req(/obj/item/stack/material/diamond))), when(cond_not(req(/obj/item/stack/material/uranium))), when(cond_not(req(/obj/item/stack/material/phoron))), when(cond_not(req(/obj/item/stack/material/sandstone))), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(plating_refused)))
-	op("unplate", tool(TOOL_WELDER), label("Take the plating off"), when(PROC_REF(plated)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(plating_off)))
+	op("unplate", tool(TOOL_WELDER), label("Take the plating off"), when(PROC_REF(plated)), wait(4 SECONDS), then(PROC_REF(plating_off)))
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_DOOR_ASSEMBLY_SECURED, because = MSG(door_assembly/bolted_down)), because = MSG(door_assembly/bolted_down))))
 
 /// Neither windows nor plating are fitted, and the type takes them (glass is -1 for the ones that do not).

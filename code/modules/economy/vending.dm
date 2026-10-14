@@ -117,6 +117,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	click_order(BIND_HAND, "ui_open", "check_logs")
 	configure(uses_power(idle = 10))
 	machine_basics(repair = NONE)
 	panel()
@@ -169,7 +170,7 @@ CAPABILITIES(/obj/machinery/vending)
 	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
 	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
 	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
-	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")),
+	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"),
 		needs(req(PROC_REF(log_access_ok))), then(PROC_REF(check_logs_op)))
 
 /// The timed work is wanted (with the vendor working): it is switched on, and is shooting its stock or has slogans to pitch.
