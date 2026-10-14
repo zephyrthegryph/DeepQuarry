@@ -20,8 +20,7 @@ bracelet, material ring, ranger gloves and ranger boots. Current master's own-
 constructor tracking exemption means these do not introduce new tracked-write
 sites. No init baseline or ALLOW was added.
 
-The protected analyzer read-walk and tracked-lint files match master. Only the
-unowned declaration generator was extended for declared relation storage.
+The analyzer tracked-lint file matches master. The read-walk includes the explicitly approved receiver/declaration-scoped writer proof described below; the unowned declaration generator was extended for declared relation storage.
 
 Native request outcome constants such as REQ_CANCELLED remain request protocol
 values. They are not renamed to obtain a lexical REQ_ count of zero. The retired
@@ -39,7 +38,7 @@ Correction to the 4c2262dd6e result: its empty committed look-key record exposed
 
 The approved scoped writer proof regenerated cleanly and the failed-lint check passed: draw_untracked fell from 342 to 339; stat_input_untracked remains 101 and leaf_untracked remains zero. The baseline update removed three stale rows only. A fresh complete gate remains required.
 
-Complete gate 17829fb399 passed both actual appearance pins (8,359 type fixtures), all acceptance cases, production compile/DreamChecker, analyzer tests and ratchets. It refused the stamp on one fixture leak: dx_menu_order left two temporary explosion particles that had drifted off its single cleanup turf. The fixture now tracks those visuals throughout its own block through own(); no menu golden, production effect lifecycle or live index is changed. Failure-only verification and a new exact-commit gate remain required.
+Complete gate 17829fb399 passed both actual appearance pins (8,359 type fixtures), all acceptance cases, production compile/DreamChecker, analyzer tests and ratchets. It refused the stamp on one fixture leak: dx_menu_order observed two temporary explosion particles outside its single cleanup turf. Later audit traced a possible producer to delayed explosion work from preceding appearance fixtures; their origin was not proven to be the menu scenarios. The fixture now tracks those visuals throughout its own block through own(); no menu golden, production effect lifecycle or live index is changed. Failure-only verification and a new exact-commit gate remain required.
 
 Failure-only verification of bf8dc0c605 passed dx_menu_order (1 passed, zero failed; data/test-runs/20261014T034435_bf8dc0c605.json). This is a repair result, not a recovered stamp. A fresh lane-ready run follows on the next merged commit.
 
