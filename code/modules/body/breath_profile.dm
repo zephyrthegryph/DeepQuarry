@@ -18,6 +18,7 @@
 		instances[profile_type] = P
 	return P
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 /datum/breath_profile
 	var/name = "lungs"
 	/// Breathes through lungs. FALSE: through the skin (no lung organ; masks don't filter).

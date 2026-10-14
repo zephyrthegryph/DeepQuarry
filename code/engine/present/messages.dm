@@ -11,6 +11,7 @@ GLOBAL_LIST_EMPTY(msg_defs)
  * Each is wrapped in `span_class` when shown ("notice" -> span_notice); null leaves it raw.
  * Subtypes whose wording depends on the call override texts().
  */
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/msg)
 /datum/msg
 	var/self
 	var/others

@@ -97,6 +97,7 @@
 #define REGISTRY_GENERATED_STATION_RUNTIMES "generated_station_runtimes"
 #define REGISTRY_GEIGER_COUNTERS "geiger_counters"
 #define REGISTRY_GHOST_PODS "active_ghost_pods"
+#define REGISTRY_FAKE_SUNS "fake_suns"
 #define REGISTRY_GPS "GPS_list"
 #define REGISTRY_GROWING_PLANTS "growing_plants"
 #define REGISTRY_GYROTRONS "gyrotrons"

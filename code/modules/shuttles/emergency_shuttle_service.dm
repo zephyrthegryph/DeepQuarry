@@ -34,6 +34,7 @@ SYSTEM_DEF(emergency_shuttle)
 	VAR_PRIVATE/shuttle_resuming = FALSE
 
 CAPABILITIES(/datum/system/emergency_shuttle)
+	ref_many(nameof(escape_pods), /datum/shuttle/autodock/ferry/escape_pod)
 	owns_one(nameof(emergency_shuttle_called), /datum/announcement/priority)
 	owns_one(nameof(emergency_shuttle_docked), /datum/announcement/priority)
 	owns_one(nameof(emergency_shuttle_recalled), /datum/announcement/priority)

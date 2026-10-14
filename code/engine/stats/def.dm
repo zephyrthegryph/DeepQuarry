@@ -13,6 +13,7 @@
 /datum/stat_decl/proc/spec()
 	return null
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_def)
 /// One declared stat. Immutable once built.
 /datum/stat_def
 	var/id
