@@ -146,6 +146,9 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 /datum/tgui_state/default/must_hack
 	var/obj/item/multitool/hacktool/hacktool
 
+CAPABILITIES(/datum/tgui_state/default/must_hack)
+	ref_one(nameof(hacktool), /obj/item/multitool/hacktool)
+
 /datum/tgui_state/default/must_hack/New(hacktool)
 	rel_set(src, nameof(hacktool), hacktool)
 	..()

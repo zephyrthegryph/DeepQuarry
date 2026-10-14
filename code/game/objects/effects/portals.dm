@@ -9,12 +9,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	density = TRUE
 	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 5
-	var/obj/item/target
+	/// Where it leads: a turf, a landmark, a beacon or a belly, not only an item.
+	var/atom/target
 	var/creator = null
 	anchored = TRUE
 	var/event = FALSE
 
 CAPABILITIES(/obj/effect/portal)
+	ref_one(nameof(target))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("enter_portal", hand(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_enter_portal)))
 	op("ghost_follow", observer(), label("Go through"), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(portal_ghost_follow)))
@@ -84,5 +86,5 @@ CAPABILITIES(/obj/effect/portal)
 			do_teleport(M, target_ref(), 1) ///You will appear adjacent to the beacon
 
 /// Relation view: target (reads null once it is gone).
-/obj/effect/portal/proc/target_ref() as /obj/item
+/obj/effect/portal/proc/target_ref() as /atom
 	return target

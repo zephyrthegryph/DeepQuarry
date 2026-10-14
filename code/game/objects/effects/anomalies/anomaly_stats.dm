@@ -28,6 +28,8 @@ TRACKED(/datum/anomaly_stats, stability)
 
 CAPABILITIES(/datum/anomaly_stats)
 	owns_one(nameof(modifier), /datum/anomaly_modifiers)
+	ref_one(nameof(attached_anomaly))
+	ref_one(nameof(attached_harvester))
 
 /datum/anomaly_stats/New()
 	randomize_particle_types()

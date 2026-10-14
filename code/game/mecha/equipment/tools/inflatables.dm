@@ -17,6 +17,7 @@
 	rel_set(src, nameof(my_deployer), my_tool)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables)
+	ref_one(nameof(my_deployer))
 	op("toggle_deployable_mode", topic("toggle_deployable_mode"), then(PROC_REF(topic_toggle_deployable_mode)))
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/topic_toggle_deployable_mode(datum/act/op/A)

@@ -140,6 +140,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
 	interface("EyeBuddy", title = "Eye Buddy", state = nameof(GLOB.tgui_default_state))
 	op("set_channel", ui_act("set_channel"), then(PROC_REF(ui_act_set_channel)))
+	ref_one(nameof(showing), /atom)
 
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 

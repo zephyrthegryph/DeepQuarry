@@ -184,6 +184,7 @@ TRACKED(/obj/item/mail, postmark_roll)
 		look.overlay(look_overlay_image(icon, "postmark", pixel_x = stamp_offset_x + postmark_dx, pixel_y = stamp_offset_y + low + round(postmark_roll * (1 - low)), appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/mail)
+	ref_one(nameof(addressee))
 	configure(item_worn(flags = NOBLUDGEON))
 	rolls(nameof(stamps), PROC_REF(roll_stamps), when = nameof(stamped))
 	rolls(nameof(postmark_dx), range_of(-4, 0))
@@ -445,6 +446,7 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 	var/obj/item/mail/saved
 
 CAPABILITIES(/obj/item/mail_scanner)
+	ref_one(nameof(saved))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))

@@ -252,6 +252,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 
 
 CAPABILITIES(/obj/structure/bedsheetbin)
+	ref_one(nameof(hidden))
 	op("bedsheetbin_item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("bedsheetbin_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("take_sheet", tk(), label("Take sheet"), then(PROC_REF(interaction_tk)))

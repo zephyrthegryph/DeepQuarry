@@ -19,6 +19,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 	owns_one(nameof(program), /datum/embedded_program, starts = PROC_REF(make_docking_program))
 	owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	ref_one(nameof(docking_program), /datum/embedded_program/docking/airlock)
 
 // ALLOW(init/INSTANCE_STATE): its docking program is made from the program tag and name the map set
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)

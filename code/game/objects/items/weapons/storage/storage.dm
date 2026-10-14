@@ -598,6 +598,7 @@ CAPABILITIES(/datum/storage_hud)
 	owns_many(nameof(backdrop))
 	owns_many(nameof(catchers))
 	ref_many(nameof(shown), /obj/item)
+	ref_one(nameof(storage), /obj/item/storage)
 
 GLOBAL_VAR_INIT(storage_hud_count, 0)
 
@@ -795,6 +796,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 CAPABILITIES(/atom/movable/storage_slot)
 	param(nameof(held_item), pos = 1, apply = PROC_REF(name_for))
 	click_on(PROC_REF(slot_click))
+	ref_one(nameof(held_item), /obj/item)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The slot is named for the item it holds.
 /atom/movable/storage_slot/proc/name_for(obj/item/item)

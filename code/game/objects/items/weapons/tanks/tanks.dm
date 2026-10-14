@@ -676,6 +676,8 @@ CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
 
 CAPABILITIES(/obj/item/tankassemblyproxy)
 	configure(item_worn(flags = ABSTRACT))
+	ref_one(nameof(tank), /obj/item/tank)
+	ref_one(nameof(assembly), /obj/item/assembly_holder)
 
 /obj/item/tankassemblyproxy/receive_signal()	//This is mainly called by the sensor through sense() to the holder, and from the holder to here.
 	tank.ignite()	//boom (or not boom if you made shijwtty mix)

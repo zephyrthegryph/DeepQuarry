@@ -660,6 +660,9 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 	eye_safety_modifier = 2
 	always_process = TRUE
 
+CAPABILITIES(/obj/item/weldingtool/electric/mounted/exosuit)
+	ref_one(nameof(equip_mount), /obj/item/mecha_parts/mecha_equipment)
+
 /obj/item/weldingtool/electric/mounted/exosuit/Initialize(mapload)
 	. = ..()
 

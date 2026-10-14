@@ -81,6 +81,8 @@ TRACKED(/obj/item/implant, malfunction)
 CAPABILITIES(/obj/item/implant)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("load_implanter", item(/obj/item/implanter), passes(), label("Load implanter"), then(PROC_REF(load_implanter)))
+	ref_one(nameof(imp_in), /mob)
+	ref_one(nameof(part), /obj/item/organ/external)
 
 /// An implanter takes the implant (when it is empty); the click goes on.
 /obj/item/implant/proc/load_implanter(datum/act/op/A)
@@ -635,6 +637,9 @@ CAPABILITIES(/obj/item/implant/death_alarm)
 	var/activation_emote = "sigh"
 	var/obj/item/scanned
 
+CAPABILITIES(/obj/item/implant/compressed)
+	ref_one(nameof(scanned), /obj/item)
+
 /obj/item/implant/compressed/get_data()
 	var/dat = {"
 "} + span_bold("Implant Specifications:") + {"<BR>
@@ -815,6 +820,7 @@ CAPABILITIES(/datum/prompt/choice/implant_emote)
 
 CAPABILITIES(/obj/item/implant/sizecontrol)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(sizecontrol_emp))))
+	ref_one(nameof(owner), /mob)
 /// An EMP resizes the implantee at random.
 /obj/item/implant/sizecontrol/proc/sizecontrol_emp(datum/act/hit/emp/A)
 	if(isliving(imp_in()))

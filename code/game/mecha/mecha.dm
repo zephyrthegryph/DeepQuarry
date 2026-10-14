@@ -205,6 +205,11 @@ CAPABILITIES(/obj/mecha)
 	ref_many(nameof(universal_equipment), /obj/item/mecha_parts/mecha_equipment)
 	ref_many(nameof(special_equipment), /obj/item/mecha_parts/mecha_equipment)
 	owns_one(nameof(minihud), /datum/mini_hud/mech)
+	ref_one(nameof(selected))
+	ref_one(nameof(active_jetpack))
+	ref_one(nameof(energy_relay))
+	ref_one(nameof(connected_port))
+	ref_one(nameof(active_id_card))
 	owns_many(nameof(internal_components))
 	ref_many(nameof(cargo), /obj)
 	owns_one(nameof(radio), /obj/item/radio)
@@ -231,7 +236,6 @@ CAPABILITIES(/obj/mecha)
 	op("detach_equipment", ui_act("detach_equipment", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_detach_equipment)))
 	op("equip_interact", ui_act("equip_interact", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_equip_interact)))
 	op("view_main", ui_act("view_main"), then(PROC_REF(ui_act_view_main)))
-	op("ai_use_equipment", ui_act("ai_use_equipment", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_ai_use_equipment)))
 	op("access_add", ui_act("access_add", arg("id", num())), then(PROC_REF(ui_act_access_add)))
 	op("access_del", ui_act("access_del", arg("id", num())), then(PROC_REF(ui_act_access_del)))
 	op("access_finish", ui_act("access_finish"), then(PROC_REF(ui_act_access_finish)))
@@ -1986,17 +1990,15 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 ///// Rendering stats window ///////
 ////////////////////////////////////
 
-// fully-structured TGUI for all five views (main + log +
-// attack_ai + access + maint). One MechaInterface.tsx renders all five
-// via the `view` data field; the legacy four browse() sub-UIs are gone.
+// fully-structured TGUI for the four views (main + log +
+// access + maint). One MechaInterface.tsx renders them
+// via the `view` data field; the legacy browse() sub-UIs are gone.
 /obj/mecha
 	var/tgui_subview = "main"
 	// Refs kept alive across sub-view interactions so tgui_data can
 	// re-render structured data on update without losing the caller/card.
 	/// Relation view: the id card the open access/maintenance dialog acts for.
 	var/obj/item/card/id/active_id_card
-	var/atom/active_caller
-	var/active_attack_target_name = ""
 
 /obj/mecha/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -2015,18 +2017,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	switch(tgui_subview)
 		if("log")
 			data["log_entries"] = get_log_tgui()
-			return data
-		if("attack_ai")
-			data["ai_target_name"] = active_attack_target_name || ""
-			var/list/targets = list()
-			for(var/obj/item/mecha_parts/mecha_equipment/W in equipment)
-				targets += list(list(
-					"ref" = "\ref[W]",
-					"name" = W.name,
-					"kind" = "",
-					"info_lines" = list(),
-				))
-			data["ai_targets"] = targets
 			return data
 		if("access")
 			var/obj/item/card/id/id_card = active_id_card
@@ -2197,20 +2187,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/ui_act_view_main(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	tgui_subview = "main"
-	return TRUE
-// Attack-AI sub-view
-
-/obj/mecha/proc/ui_act_ai_use_equipment(datum/act/op/A, ref)
-	var/mob/user = A.actor
-	if(!ui_gate(A))
-		return FALSE
-	if(isnull(ref))
-		return FALSE
-	var/obj/item/mecha_parts/mecha_equipment/W = ref
-	var/atom/target = active_caller
-	if(W && (W in equipment))
-		W.action(target, null, user)
 	tgui_subview = "main"
 	return TRUE
 // Access sub-view

@@ -38,6 +38,7 @@ CAPABILITIES(/obj/machinery/meter)
 		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(id_entered)))
 	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(cond_not(nameof(open))), needs(req(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
+	ref_one(nameof(target))
 
 /obj/machinery/meter/Initialize(mapload)
 	. = ..()

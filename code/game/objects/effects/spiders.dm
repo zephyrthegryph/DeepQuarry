@@ -178,6 +178,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 	return amount_grown
 
 CAPABILITIES(/obj/effect/spider/spiderling)
+	ref_one(nameof(entry_vent))
 	every(2 SECONDS, then(PROC_REF(spiderling_step)))
 	op("stomp", hand(), label("Stomp"), then(PROC_REF(interaction_stomp_spiderling)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(6))

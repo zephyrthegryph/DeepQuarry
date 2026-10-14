@@ -4,6 +4,9 @@
 	var/value
 	var/obj/effect/anomaly/attached_anomaly
 
+CAPABILITIES(/datum/anomaly_modifiers)
+	ref_one(nameof(attached_anomaly))
+
 /datum/anomaly_modifiers/proc/get_description()
 	return description
 
@@ -16,8 +19,8 @@
 		return FALSE
 	return TRUE
 
+/// The subtypes undo their effect on the anomaly the modifier was added to; the binding stays until the stats delete the modifier (which clears it).
 /datum/anomaly_modifiers/proc/on_remove(obj/effect/anomaly/anomaly)
-	rel_set(src, nameof(attached_anomaly), anomaly)
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
