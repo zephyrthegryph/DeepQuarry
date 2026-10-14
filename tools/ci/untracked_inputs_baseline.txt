@@ -231,9 +231,6 @@ draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) +
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/game/turfs/unsimulated.dm	look.state("[((x + y) ^ ~(x * y) + z) % 25]")
 draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
-draw_untracked	code/modules/artifice/telecube.dm	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
-draw_untracked	code/modules/clothing/clothing.dm	look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
-draw_untracked	code/modules/clothing/accessories/accessory.dm	var/mob/living/carbon/human/H = wearer
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(LAZYACCESS(acc.on_rolled, "down") && C.rolled_down > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	else if(LAZYACCESS(acc.on_rolled, "rolled") && C.rolled_sleeves > 0)
 draw_untracked	code/modules/clothing/clothing_appearance_handler.dm	if(acc.color)
