@@ -11,6 +11,8 @@ mod structural;
 pub(crate) use structural::StructuralMetadata;
 #[path = "metadata_adjacency.rs"]
 mod adjacency;
+#[path = "metadata_splice.rs"]
+pub(crate) mod splice;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Shape {

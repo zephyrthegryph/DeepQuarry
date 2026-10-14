@@ -74,7 +74,7 @@ fn routed_dirty_candidates_preserve_store_order_and_exclude_unrelated_roster() {
     }
     store.enable_incidence();
     let expected: Vec<_> = {
-        let state = store.state.lock().unwrap();
+        let state = store.state.write().unwrap();
         state
             .buckets
             .values()
@@ -86,7 +86,7 @@ fn routed_dirty_candidates_preserve_store_order_and_exclude_unrelated_roster() {
     let mut actual = Vec::new();
     store.visit_affected(&[7, 7, 99], |_, value| actual.push(**value));
     assert_eq!(actual, expected);
-    let state = store.state.lock().unwrap();
+    let state = store.state.write().unwrap();
     let index = state.incidence.as_ref().unwrap();
     let buckets = index.affected_buckets(&index.affected([&7]));
     assert_eq!(buckets.len(), 5);
@@ -139,7 +139,7 @@ fn direct_candidate_routing_still_checks_full_key_inside_collision_bucket() {
     let target = xxhash_rust::xxh3::xxh3_128(&[1]);
     let other = xxhash_rust::xxh3::xxh3_128(&[2]);
     {
-        let mut state = store.state.lock().unwrap();
+        let mut state = store.state.write().unwrap();
         let collision = state.buckets.remove(&other).unwrap();
         state.buckets.get_mut(&target).unwrap().extend(collision);
     }
@@ -164,7 +164,7 @@ fn fresh_incidence_variants_skip_removal_walk_and_replacement_keeps_exact_edges(
         );
     }
     {
-        let state = store.state.lock().unwrap();
+        let state = store.state.write().unwrap();
         assert_eq!(
             state.incidence.as_ref().unwrap().removal_visits,
             0,
@@ -178,7 +178,7 @@ fn fresh_incidence_variants_skip_removal_walk_and_replacement_keeps_exact_edges(
     assert!(
         store
             .state
-            .lock()
+            .write()
             .unwrap()
             .incidence
             .as_ref()

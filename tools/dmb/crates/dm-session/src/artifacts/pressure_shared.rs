@@ -64,7 +64,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         ) -> Option<Vec<PressureAllocation>>,
     ) -> PressurePrune {
         let snapshot: Vec<_> = {
-            let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+            let state = self.state.write().unwrap_or_else(|e| e.into_inner());
             state
                 .buckets
                 .iter()
@@ -83,7 +83,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         let mut evicted = 0usize;
         for (hash, weak) in &snapshot {
             let candidate = {
-                let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+                let state = self.state.write().unwrap_or_else(|e| e.into_inner());
                 state
                     .buckets
                     .get(hash)
@@ -121,7 +121,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                 None
             };
             let detached = {
-                let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+                let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
                 let position = state.buckets.get(hash).and_then(|bucket| {
                     bucket
                         .iter()
@@ -184,7 +184,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         // every wave transfers charges to the next actual survivor naturally.
         loop {
             let (victims, complete) = {
-                let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+                let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
                 let mut ledger = BTreeMap::new();
                 let mut charged_buckets = std::collections::BTreeSet::new();
                 let mut report = PressurePrune {
@@ -253,7 +253,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
             }
             for (hash, weak) in victims {
                 let detached = {
-                    let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
                     detach_weak(&mut state, hash, &weak)
                 };
                 if detached.is_some() {
@@ -262,7 +262,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                 drop(detached);
             }
             // No allocation address from a detached owner remains authoritative.
-            let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+            let state = self.state.write().unwrap_or_else(|e| e.into_inner());
             let current: std::collections::BTreeSet<_> = state
                 .buckets
                 .values()

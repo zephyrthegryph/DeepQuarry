@@ -60,7 +60,7 @@ fn colliding_or_forged_locator_never_validates_or_claims_an_inexact_key() {
     // cannot authenticate this unrelated immutable key or its answer ledger.
     store
         .state
-        .lock()
+        .write()
         .unwrap()
         .buckets
         .get_mut(&digest)
@@ -128,7 +128,7 @@ fn borrowed_claim_reattaches_the_same_stored_key_after_origin_lease_drops() {
         .0
         .unwrap();
     assert!(Arc::ptr_eq(&accepted.value, &value));
-    let state = store.state.lock().unwrap();
+    let state = store.state.write().unwrap();
     let entry = &state.buckets[&digest][0];
     assert!(Arc::ptr_eq(&entry.key, &key));
     assert_eq!(state.bytes, 5);

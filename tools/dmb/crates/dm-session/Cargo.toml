@@ -6,5 +6,6 @@ license = "GPL-3.0-only"
 description = "Shared immutable semantic artifacts and exact recorded-read reuse"
 
 [dependencies]
+dm-profile = { path = "../dm-profile" }
 dm-ir = { path = "../dm-ir" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }

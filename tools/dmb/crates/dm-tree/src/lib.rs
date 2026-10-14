@@ -141,6 +141,9 @@ pub struct SemanticTree {
     owner_variable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>>,
     owner_certificate_issuer: Option<Arc<owner_metadata::RetainedMetadata>>,
     selection_publication_deferred: bool,
+    /// Set by a clean change-set carry (no type removed): publication may skip
+    /// the demand-store sweep. Never set on a full construction.
+    selection_prune_skippable: bool,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -602,6 +605,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         owner_variable_selections: Arc::new(Default::default()),
         owner_certificate_issuer: None,
         selection_publication_deferred,
+        selection_prune_skippable: false,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),

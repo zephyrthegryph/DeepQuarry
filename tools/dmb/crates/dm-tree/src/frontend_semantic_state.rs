@@ -13,6 +13,9 @@ pub struct RetainedSemanticTree {
     rebuilds: u64,
     metadata_updates: u64,
     symbol_only_rebinds: u64,
+    /// Tests of the full structural path turn the change-set splice off.
+    splice_disabled: bool,
+    splices: u64,
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -220,6 +223,15 @@ impl RetainedSemanticTree {
     pub fn new() -> Self {
         Self::default()
     }
+    /// Keep structural member edits on the full constructor (path tests).
+    #[cfg(test)]
+    pub(crate) fn disable_splice(&mut self) {
+        self.splice_disabled = true;
+    }
+    /// Structural member edits applied by the change-set splice.
+    pub fn splices(&self) -> u64 {
+        self.splices
+    }
     pub fn with_shared_normalized(
         owner: Arc<crate::owner_normalization::SharedNormalizedDeclarations>,
     ) -> Self {
@@ -347,11 +359,63 @@ impl RetainedSemanticTree {
             )
         });
         drop(update_timer);
+        // Structural member edits: splice into the retained tree (change set).
+        let mut spliced_dependencies = false;
+        let mut verify_splice = None;
+        let updated = match updated {
+            Some(tree) => Some(tree),
+            None => {
+                let splice_timer = std::time::Instant::now();
+                let attempt = match (self.entry.as_ref(), index.as_ref()) {
+                    _ if self.splice_disabled => Err("splice disabled"),
+                    (Some(entry), Some(current)) if same_engine(entry.engine.as_ref(), engine) => {
+                        match entry.metadata_dependencies.as_ref() {
+                            Some(graph) => graph.splice(
+                                &entry.tree,
+                                &entry.index,
+                                current,
+                                adapted.symbols.clone(),
+                                executor,
+                            ),
+                            None => Err("no retained dependency graph"),
+                        }
+                    }
+                    (Some(_), _) => Err("engine or declaration index changed"),
+                    (None, _) => Err("no retained tree"),
+                };
+                let elapsed = splice_timer.elapsed().as_secs_f64();
+                match attempt {
+                    Ok(spliced) => {
+                        crate::change_set::record_outcome(format!(
+                            "tree splice dirty={} in {elapsed:.3}s",
+                            spliced.dirty
+                        ));
+                        if crate::metadata_update::splice::verify_enabled() {
+                            verify_splice = Some(spliced.tree);
+                            None
+                        } else {
+                            spliced_dependencies = true;
+                            self.splices += 1;
+                            Some(spliced.tree)
+                        }
+                    }
+                    Err(reason) => {
+                        if self.entry.is_some() && !unchanged_declarations {
+                            crate::change_set::record_outcome(format!(
+                                "tree full ({reason}) after {elapsed:.3}s"
+                            ));
+                        }
+                        None
+                    }
+                }
+            }
+        };
         let _full_timer = updated
             .is_none()
             .then(|| dm_profile::detail_timer("tree.full_resolution_total"));
         if let Some(mut tree) = updated {
             tree.selection_publication_deferred = true;
+            let identity_timer = dm_profile::detail_timer("tree.update.identity_refresh");
             if !unchanged_declarations {
                 let (identity, hierarchy) = crate::adapter::projected_identity_indexed(
                     index
@@ -366,10 +430,12 @@ impl RetainedSemanticTree {
                 })?;
                 tree.refresh_metadata_identity(identity, hierarchy);
             }
+            drop(identity_timer);
             let prior_index = self
                 .entry
                 .as_ref()
                 .expect("metadata update has retained entry");
+            let occurrence_timer = dm_profile::detail_timer("tree.update.occurrences");
             let occurrences = crate::OccurrenceTable::build_with_index(
                 &tree,
                 origins,
@@ -380,11 +446,13 @@ impl RetainedSemanticTree {
                 on_error(&error, &adapted.skeletons.to_vec(), &[]);
                 error
             })?;
+            drop(occurrence_timer);
+            let _carry_timer = dm_profile::detail_timer("tree.update.carry_and_publish");
             if !unchanged_declarations {
                 carry_demands(
                     &prior_index.tree,
                     &prior_index.index,
-                    &tree,
+                    &mut tree,
                     index.as_ref().expect("updated tree has its index"),
                     "update",
                 );
@@ -398,6 +466,14 @@ impl RetainedSemanticTree {
             entry.occurrence_index = occurrences.target_index();
             entry.tree = Arc::clone(&tree);
             entry.index = index.expect("updated tree has its exact contribution index");
+            let _capture_timer = dm_profile::detail_timer("tree.update.capture_dependencies");
+            if spliced_dependencies {
+                // Dense IDs moved: reissue the stable-key graph for the next edit.
+                let previous = entry.metadata_dependencies.take();
+                entry.metadata_dependencies =
+                    crate::metadata_update::MetadataDependencies::capture(&tree, &entry.index);
+                drop(previous);
+            }
             entry.symbol_catalog = adapted.symbol_catalog.clone();
             entry.symbols = symbol_owner;
             // Body indexing follows this return and may fail. Do not keep the
@@ -417,7 +493,7 @@ impl RetainedSemanticTree {
 
         let symbol_catalog = adapted.symbol_catalog.clone();
         adapted.origins = origins.into();
-        let snapshot = adapted.finish_with_engine_normalization(
+        let mut snapshot = adapted.finish_with_engine_normalization(
             engine,
             on_error,
             executor,
@@ -435,9 +511,33 @@ impl RetainedSemanticTree {
                     })
                 }),
         )?;
+        if let Some(spliced) = &verify_splice {
+            let mut candidate = spliced.clone();
+            if let Some(index) = index.as_ref() {
+                if let Ok((identity, hierarchy)) =
+                    crate::adapter::projected_identity_indexed(index, engine)
+                {
+                    candidate.refresh_metadata_identity(identity, hierarchy);
+                }
+            }
+            match crate::metadata_update::splice::first_difference(&candidate, &snapshot.tree) {
+                None => crate::change_set::record_outcome("tree splice verified equal".into()),
+                Some(difference) => {
+                    eprintln!("dm-tree splice mismatch: {difference}");
+                    crate::change_set::record_outcome(format!(
+                        "tree splice MISMATCH: {difference}"
+                    ));
+                }
+            }
+        }
         match (self.entry.as_ref(), index.as_ref()) {
             (Some(entry), Some(current)) if same_engine(entry.engine.as_ref(), engine) => {
-                carry_demands(&entry.tree, &entry.index, &snapshot.tree, current, "rebuild")
+                match Arc::get_mut(&mut snapshot.tree) {
+                    Some(tree) => carry_demands(&entry.tree, &entry.index, tree, current, "rebuild"),
+                    None => crate::change_set::record_outcome(
+                        "demand tokens full (rebuilt tree already shared)".into(),
+                    ),
+                }
             }
             (Some(_), _) => crate::change_set::record_outcome(
                 "demand tokens full (engine or declaration index changed)".into(),
@@ -477,7 +577,7 @@ impl RetainedSemanticTree {
 fn carry_demands(
     previous_tree: &crate::SemanticTree,
     previous: &crate::declaration_contributions::KeyedDeclarations,
-    current_tree: &crate::SemanticTree,
+    current_tree: &mut crate::SemanticTree,
     current: &crate::declaration_contributions::KeyedDeclarations,
     path: &str,
 ) {

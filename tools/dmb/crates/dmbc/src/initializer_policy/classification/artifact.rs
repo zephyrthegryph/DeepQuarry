@@ -606,6 +606,12 @@ pub(super) fn classify_one_keyed_grouped_in(
     tokens: Option<&super::token_owner::RequestTokens>,
     admission: Option<&super::super::current_admission::Admission<'_, '_>>,
 ) -> Result<PendingWrite, ClassificationFailure> {
+    static ITEM: dm_profile::Accumulator = dm_profile::Accumulator::new("init.value.item");
+    static VISIT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.value.visit");
+    static BIND: dm_profile::Accumulator = dm_profile::Accumulator::new("init.value.bind");
+    static INPUT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.value.input");
+    let _item = ITEM.time();
+    let input_timer = INPUT.time();
     let Some(factory_policy) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         let mut local = 0;
@@ -634,6 +640,7 @@ pub(super) fn classify_one_keyed_grouped_in(
     if input.write.as_ref() != write {
         return Err("classification shared input differs from current write".into());
     }
+    drop(input_timer);
     let host = ResolverView(reuse.resolver);
     let recorder = crate::lowering_memo::RecordingResolver::new(&host);
     let mut result = None;
@@ -646,15 +653,18 @@ pub(super) fn classify_one_keyed_grouped_in(
                     result.is_none(),
                     "initializer recording factory invoked twice"
                 );
-                if let Some(value) = super::super::current_admission::visit(
+                let visit_timer = VISIT.time();
+                let visited = super::super::current_admission::visit(
                     &reuse.store.values,
                     key,
                     &host,
                     admission,
                     &mut |value| value.input.as_ref() == Some(&input),
                 )
-                .0
-                {
+                .0;
+                drop(visit_timer);
+                if let Some(value) = visited {
+                    let _bind = BIND.time();
                     if let Some(mut current) = value.bind(write, symbols, ordinal) {
                         current.accepted = Some(Arc::clone(&value));
                         hit = true;

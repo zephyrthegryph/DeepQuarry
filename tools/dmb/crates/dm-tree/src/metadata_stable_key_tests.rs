@@ -295,6 +295,8 @@ fn inherited_typed_array_metadata_structural_edit_matches_fresh() {
     let before = "/datum/item_a\n/datum/item_b\n/datum/base\n    var/unaffected=11\n    var/datum/item_a/value = null\n    var/list/datum/item_a/values[2]\n/datum/child\n    parent_type=/datum/base\n    value=null\n    values=list(1)\n/datum/grandchild\n    parent_type=/datum/child\n    value=null\n    values=list(2)\n";
     let after = "/datum/item_a\n/datum/item_b\n/datum/base\n    var/unaffected=11\n    var/unrelated=7\n    var/datum/item_b/value = null\n    var/list/datum/item_b/values[4]\n/datum/child\n    parent_type=/datum/base\n    value=null\n    values=list(1)\n/datum/grandchild\n    parent_type=/datum/child\n    value=null\n    values=list(2)\n";
     let mut state = RetainedSemanticTree::new();
+    // Counts the full structural constructor's dirty cone, not the splice.
+    state.disable_splice();
     let old = frontend(&mut state, before);
     let old_stats = state.metadata_resolution_stats();
     let actual = frontend(&mut state, after);

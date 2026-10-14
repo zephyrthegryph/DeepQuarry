@@ -71,7 +71,8 @@ struct Resident<T, Q, A, D> {
     bytes: usize,
     leases: BTreeMap<u64, BTreeMap<Arc<[u8]>, usize>>,
     next_lease: u64,
-    claims: BTreeMap<usize, (u128, usize)>,
+    /// Atomic so an existing claim can be counted under the shared read lock.
+    claims: BTreeMap<usize, (u128, std::sync::atomic::AtomicUsize)>,
     incidence: Option<incidence::Incidence<Q, A, D>>,
 }
 
@@ -79,7 +80,7 @@ struct Resident<T, Q, A, D> {
 /// reuse. Budgeted stores evict insertion-ordered variants; current-revision
 /// stores keep one answer per exact key and prune against the caller's roster.
 pub struct ObservedArtifactStore<T, Q, A, D> {
-    state: Mutex<Resident<T, Q, A, D>>,
+    state: std::sync::RwLock<Resident<T, Q, A, D>>,
     retention: Retention,
 }
 #[derive(Clone, Copy)]
@@ -104,7 +105,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         &self,
         mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),
     ) {
-        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let state = self.state.write().unwrap_or_else(|error| error.into_inner());
         visit(ObservedArtifactStorageView::Store {
             buckets: state.buckets.len(),
             entries: state.buckets.values().map(Vec::len).sum(),
@@ -137,7 +138,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         keys: impl IntoIterator<Item = K>,
         mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),
     ) {
-        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let state = self.state.write().unwrap_or_else(|error| error.into_inner());
         for key in keys {
             let key = key.as_ref();
             let hash = xxhash_rust::xxh3::xxh3_128(key);
@@ -159,14 +160,14 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         &self,
         mut visit: impl FnMut(&Arc<[Observation<Q, A, D>]>),
     ) -> Option<(usize, usize, usize, usize)> {
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let state = self.state.write().unwrap_or_else(|e| e.into_inner());
         let index = state.incidence.as_ref()?;
         index.visit_storage(&mut visit);
         Some(index.counts())
     }
     pub fn with_limit(limit: usize) -> Self {
         Self {
-            state: Mutex::new(Resident {
+            state: std::sync::RwLock::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
                 leases: BTreeMap::new(),
@@ -179,7 +180,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     }
     pub fn current_revision() -> Self {
         Self {
-            state: Mutex::new(Resident {
+            state: std::sync::RwLock::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
                 leases: BTreeMap::new(),
@@ -206,7 +207,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         if !matches!(self.retention, Retention::RetainedCurrentRevision) {
             return;
         }
-        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
         let mut removed_ids = Vec::new();
         state.buckets.retain(|_, bucket| {
             bucket.retain(|entry| {
@@ -233,14 +234,14 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     /// Advisory membership only; callers still perform ordinary exact admission.
     pub fn is_empty(&self) -> bool {
         self.state
-            .lock()
+            .write()
             .unwrap_or_else(|error| error.into_inner())
             .buckets
             .is_empty()
     }
     pub fn admitted_bytes(&self) -> usize {
         self.state
-            .lock()
+            .write()
             .unwrap_or_else(|error| error.into_inner())
             .bytes
     }
@@ -260,7 +261,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     /// Enable optional scheduling incidence once on the retained store owner.
     /// Existing entries are indexed once; future lifecycle changes update it.
     pub fn enable_incidence(&self) {
-        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());
         if state.incidence.is_some() {
             return;
         }
@@ -280,7 +281,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     /// Borrow dirty candidates under the store lock. This is scheduling only:
     /// exact key/current inputs and receipt admission remain mandatory.
     pub fn visit_affected(&self, domains: &[D], mut visit: impl FnMut(&Arc<[u8]>, &Arc<T>)) {
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let state = self.state.write().unwrap_or_else(|e| e.into_inner());
         let Some(index) = &state.incidence else {
             return;
         };
@@ -436,7 +437,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
-        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
         let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
         let incidence_versions = Arc::clone(&versions);
         // Resident storage evicts before admitting a new value. Results are
@@ -758,7 +759,7 @@ mod tests {
         assert_eq!(
             store
                 .state
-                .lock()
+                .write()
                 .unwrap()
                 .buckets
                 .values()
@@ -781,7 +782,7 @@ mod tests {
         // Force the bucket collision independently of the hashing implementation.
         store
             .state
-            .lock()
+            .write()
             .unwrap()
             .buckets
             .get_mut(&hash)
@@ -793,9 +794,9 @@ mod tests {
                 value: Arc::new(9),
                 weight: 3,
             });
-        store.state.lock().unwrap().bytes += 3;
+        store.state.write().unwrap().bytes += 3;
         store.insert_with(key, vec![], vec![], 2, || 2u32);
-        let state = store.state.lock().unwrap();
+        let state = store.state.write().unwrap();
         assert_eq!(state.bytes, 5);
         let bucket = &state.buckets[&hash];
         assert_eq!(bucket.len(), 2);
@@ -898,7 +899,7 @@ mod tests {
         let (accepted, changed) = store.visit_receipted(b"a", &Host, &mut |_| true);
         assert!(changed.is_none());
         let accepted = accepted.unwrap();
-        let state = store.state.lock().unwrap();
+        let state = store.state.write().unwrap();
         let original = &state.buckets[&xxhash_rust::xxh3::xxh3_128(b"a")][0];
         assert!(Arc::ptr_eq(
             accepted.reads.flat().unwrap(),
@@ -920,7 +921,7 @@ mod tests {
         let store = ArtifactStore::with_limit(10);
         store.insert_with(Arc::from(b"a".as_slice()), vec![], vec![], 1, || 7u32);
         // Force a collision structurally instead of assuming real hash behavior.
-        let mut state = store.state.lock().unwrap();
+        let mut state = store.state.write().unwrap();
         let variant = state
             .buckets
             .remove(&xxhash_rust::xxh3::xxh3_128(b"a"))

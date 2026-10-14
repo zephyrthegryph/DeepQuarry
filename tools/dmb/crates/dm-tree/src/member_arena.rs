@@ -49,6 +49,43 @@ impl MemberArena {
         self.chunks.capacity()
     }
 }
+impl MemberArena {
+    /// Arena from `nodes` that shares the previous arena's longest prefix of
+    /// equal chunks (same boundaries and nodes), then fixed-size chunks.
+    /// Dense IDs shift after the first inserted or removed member, so only the
+    /// prefix can be shared; this keeps snapshot copy-on-write for it.
+    pub(crate) fn from_reusing(nodes: Vec<MemberNode>, previous: &MemberArena) -> Self {
+        let mut chunks = Vec::new();
+        let mut offsets = Vec::new();
+        let mut position = 0;
+        for (index, old) in previous.chunks.iter().enumerate() {
+            let start = previous.offsets[index];
+            let end = start + old.len();
+            if start != position || end > nodes.len() || nodes[start..end] != old[..] {
+                break;
+            }
+            chunks.push(Arc::clone(old));
+            offsets.push(start);
+            position = end;
+        }
+        let len = nodes.len();
+        let mut rest = nodes.into_iter().skip(position).peekable();
+        while rest.peek().is_some() {
+            let chunk: Vec<_> = rest.by_ref().take(CHUNK).collect();
+            offsets.push(position);
+            position += chunk.len();
+            chunks.push(chunk.into());
+        }
+        let fixed = offsets.iter().enumerate().all(|(index, &start)| start == index * CHUNK)
+            && chunks.iter().rev().skip(1).all(|chunk| chunk.len() == CHUNK);
+        Self {
+            chunks,
+            len,
+            offsets: offsets.into(),
+            fixed,
+        }
+    }
+}
 impl From<Vec<MemberNode>> for MemberArena {
     fn from(nodes: Vec<MemberNode>) -> Self {
         let len = nodes.len();

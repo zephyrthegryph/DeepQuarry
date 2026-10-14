@@ -49,6 +49,9 @@ fn storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps() {
         .unwrap();
     let sibling = b.visit_explained(&key, &Host(1), &mut |_| true).0.unwrap();
     assert!(Arc::ptr_eq(&first, &sibling));
+    // A hit on a claimed variant counts at once; its roster key is deferred
+    // until the lease next reads or mutates its roster (here: accounting).
+    let _ = b.storage_accounting();
     assert_eq!(counts(store.storage_accounting()), (1, 1, 3, 2, 1, 2));
     assert_eq!(a.storage_accounting(), store.storage_accounting());
 

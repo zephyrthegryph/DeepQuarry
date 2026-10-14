@@ -242,6 +242,8 @@ fn invalid_current_declaration_reports_current_origin_without_poisoning_retained
 #[test]
 fn keyed_retained_owners_share_across_metadata_and_structural_rebuilds() {
     let mut state = RetainedSemanticTree::new();
+    // Exercises the full structural constructor's reuse, not the splice.
+    state.disable_splice();
     build(
         &mut state,
         "/datum/a\n    var/value = 1\n/datum/b\n    var/other = 2\n",
@@ -331,6 +333,8 @@ fn metadata_update_copies_only_dirty_member_chunks_and_preserves_old_snapshot() 
 #[test]
 fn structural_projection_reuses_unaffected_owner_normalization_and_matches_fresh() {
     let mut state = RetainedSemanticTree::new();
+    // Exercises the full structural constructor's reuse, not the splice.
+    state.disable_splice();
     build(
         &mut state,
         "/datum/a\n    var/x = 1\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n",
@@ -364,6 +368,8 @@ fn structural_projection_reuses_unaffected_owner_normalization_and_matches_fresh
 #[test]
 fn structural_metadata_reuses_unaffected_owners_and_invalidates_inherited_flags() {
     let mut state = RetainedSemanticTree::new();
+    // Exercises the full structural constructor's reuse, not the splice.
+    state.disable_splice();
     let before =
         "/datum/a\n    var/static/x = 1\n/datum/a/child\n    x = 2\n/datum/b\n    var/y = 3\n";
     build(&mut state, before);
@@ -406,6 +412,8 @@ fn structural_metadata_reuses_unaffected_owners_and_invalidates_inherited_flags(
 #[test]
 fn structural_edits_reuse_local_shapes_and_preserve_formal_before_implicit_order() {
     let mut state = RetainedSemanticTree::new();
+    // Exercises the full structural constructor's reuse, not the splice.
+    state.disable_splice();
     build(&mut state,"/datum/a\n    var/x = 1\n    callback()\n        return 1\n    proc/callback()\n        return 2\n/datum/b\n    var/y = 3\n");
     let source="/datum/a\n    var/x = 1\n    var/added = 4\n    callback()\n        return 1\n    proc/callback()\n        return 2\n/datum/b\n    var/y = 3\n";
     let actual = build(&mut state, source);

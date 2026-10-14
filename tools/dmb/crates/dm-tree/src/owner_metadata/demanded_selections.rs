@@ -280,6 +280,16 @@ impl RetainedMetadata {
         {
             return;
         }
+        // Pruning only bounds memory: lookups validate exact inputs. When the
+        // change set removed no type, skip the full-store sweep (bounded by a
+        // periodic full pass) and just move the current owner.
+        static SKIPPED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        if tree.selection_prune_skippable
+            && SKIPPED.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % 32 != 31
+        {
+            *current = Arc::downgrade(&tree.owner_callable_demands);
+            return;
+        }
         let retained = current.upgrade().map_or_else(Vec::new, |current| {
             current
                 .tokens

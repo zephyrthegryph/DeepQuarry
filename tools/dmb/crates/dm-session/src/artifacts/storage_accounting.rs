@@ -75,7 +75,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     /// A separate `visit_storage` call takes a separate lock; callers requiring
     /// consistent combined diagnostics must inspect a quiescent retained core.
     pub fn storage_accounting(&self) -> ArtifactStorageAccounting {
-        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let state = self.state.write().unwrap_or_else(|error| error.into_inner());
         ArtifactStorageAccounting {
             core_address: self as *const Self as usize,
             coverage: ArtifactStorageCoverage::Partial,
@@ -85,7 +85,11 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             leases: state.leases.len(),
             roster_keys: state.leases.values().map(BTreeMap::len).sum(),
             claimed_variants: state.claims.len(),
-            claims: state.claims.values().map(|(_, claims)| claims).sum(),
+            claims: state
+                .claims
+                .values()
+                .map(|(_, claims)| claims.load(std::sync::atomic::Ordering::Acquire))
+                .sum(),
             incidence: state.incidence.as_ref().map(|index| {
                 let (leaves, variants, domains, subscriptions) = index.counts();
                 ArtifactIncidenceCounts {

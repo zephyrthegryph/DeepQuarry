@@ -13,8 +13,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)>, Option<Q>) {
+        static LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("store.lookup_locked");
         let candidates = {
-            let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            let _lookup = LOOKUP.time();
+            let state = self.state.read().unwrap_or_else(|error| error.into_inner());
             state
                 .buckets
                 .get(&digest)

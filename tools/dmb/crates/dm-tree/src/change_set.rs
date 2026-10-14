@@ -143,7 +143,7 @@ impl SemanticTree {
     /// every selection the change set leaves clean. Both trees must share the
     /// same certificate issuer (the token store) and intrinsic inventory.
     pub(crate) fn inherit_demand_tokens(
-        &self,
+        &mut self,
         previous: &SemanticTree,
         change: &StructuralChangeSet,
     ) -> Result<(usize, usize), &'static str> {
@@ -169,6 +169,7 @@ impl SemanticTree {
         }
         let carried = kept.len();
         self.owner_callable_demands.seed(kept);
+        self.selection_prune_skippable = change.hierarchy.is_empty();
         Ok((carried, dropped))
     }
 }

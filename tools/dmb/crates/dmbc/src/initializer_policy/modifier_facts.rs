@@ -327,20 +327,28 @@ pub(super) fn modifier_facts_reused_in<'a>(
     keys: &[ModifierKey],
     admission: Option<&super::current_admission::Admission<'_, '_>>,
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
+    static ITEM: dm_profile::Accumulator = dm_profile::Accumulator::new("init.modifier.item");
+    static VISIT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.modifier.visit");
+    static INPUT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.modifier.input_eq");
     let host = Host(reuse.resolver);
     collect(writes, Some(ordinals), |write, ordinal| {
+        let _item = ITEM.time();
+        let input_timer = INPUT.time();
         if keys[ordinal].input.as_ref() != write {
             return capture(write, symbols, evaluator, ordinal);
         }
-        if let Some(value) = super::current_admission::visit(
+        drop(input_timer);
+        let visit_timer = VISIT.time();
+        let visited = super::current_admission::visit(
             &reuse.store.modifiers.values,
             &keys[ordinal].bytes,
             &host,
             admission,
             &mut |value| value.input.as_ref() == write,
         )
-        .0
-        {
+        .0;
+        drop(visit_timer);
+        if let Some(value) = visited {
             let _ = keys[ordinal].admitted.set(Arc::clone(&value.input));
             reuse.store.modifiers.hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value.fact);

@@ -80,15 +80,18 @@ fn replacing_one_host_variant_updates_only_its_claim_and_bytes() {
     a.insert_with(Arc::clone(&key), reads(2), vec![], 5, || 2);
     assert_eq!(store.admitted_bytes(), 8);
     {
-        let state = store.state.lock().unwrap();
+        let state = store.state.write().unwrap();
         assert_eq!(state.claims.len(), 2);
-        assert!(state.claims.values().all(|(_, count)| *count == 1));
+        assert!(state
+            .claims
+            .values()
+            .all(|(_, count)| count.load(std::sync::atomic::Ordering::Acquire) == 1));
     }
     b.retain_current_keys(std::iter::empty());
     assert_eq!(store.admitted_bytes(), 5);
     drop(a);
     assert_eq!(store.admitted_bytes(), 0);
-    assert!(store.state.lock().unwrap().claims.is_empty());
+    assert!(store.state.write().unwrap().claims.is_empty());
 }
 struct DropProbe {
     store: std::sync::Weak<ObservedArtifactStore<DropProbe, u8, u32, u8>>,
@@ -98,7 +101,7 @@ impl Drop for DropProbe {
     fn drop(&mut self) {
         if let Some(store) = self.store.upgrade() {
             self.unlocked.store(
-                store.state.try_lock().is_ok(),
+                store.state.try_write().is_ok(),
                 std::sync::atomic::Ordering::SeqCst,
             );
         }

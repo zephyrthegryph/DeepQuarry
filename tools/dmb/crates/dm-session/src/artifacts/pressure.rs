@@ -140,7 +140,7 @@ mod tests {
             );
         }
         let limit = {
-            let state = store.state.lock().unwrap();
+            let state = store.state.write().unwrap();
             let hash = *state.buckets.keys().next().unwrap();
             entry_index_charge(&state, hash, 0) + 8
         };
@@ -188,7 +188,7 @@ mod tests {
             })
             .unwrap();
         let detached = {
-            let mut state = store.state.lock().unwrap();
+            let mut state = store.state.write().unwrap();
             let wave = reconcile(&mut state, &retained, usize::MAX, 0);
             assert!(wave.complete.is_none());
             assert_eq!(wave.victims.len(), 1);
@@ -197,7 +197,7 @@ mod tests {
         };
         assert!(Arc::ptr_eq(&detached.value, &late));
         drop(detached);
-        let mut state = store.state.lock().unwrap();
+        let mut state = store.state.write().unwrap();
         let wave = reconcile(&mut state, &retained, usize::MAX, 1);
         let report = wave.complete.unwrap();
         assert!(wave.victims.is_empty());
@@ -228,7 +228,7 @@ mod tests {
         assert!(accepted.is_some());
         assert!(changed.is_none());
         let detached = {
-            let mut state = store.state.lock().unwrap();
+            let mut state = store.state.write().unwrap();
             let wave = reconcile(&mut state, &retained, original.charged_bytes, 0);
             assert!(wave.complete.is_none());
             let (hash, weak) = &wave.victims[0];
@@ -254,7 +254,7 @@ mod tests {
                 || vec![1],
             )
             .unwrap();
-        let mut state = store.state.lock().unwrap();
+        let mut state = store.state.write().unwrap();
         let wave = reconcile(&mut state, &BTreeMap::new(), 0, 0);
         let (hash, weak) = &wave.victims[0];
         // Simulate replacement between the locked wave and exact detachment.
@@ -284,7 +284,7 @@ mod tests {
             }
         }
         let wave = {
-            let mut state = store.state.lock().unwrap();
+            let mut state = store.state.write().unwrap();
             reconcile(&mut state, &retained, usize::MAX, 0)
         };
         assert_eq!(wave.visits, 128);
@@ -292,13 +292,13 @@ mod tests {
         assert!(wave.complete.is_none());
         for (hash, weak) in wave.victims {
             let detached = {
-                let mut state = store.state.lock().unwrap();
+                let mut state = store.state.write().unwrap();
                 detach_weak(&mut state, hash, &weak)
             };
             assert!(detached.is_some());
             drop(detached);
         }
-        let mut state = store.state.lock().unwrap();
+        let mut state = store.state.write().unwrap();
         let wave = reconcile(&mut state, &retained, usize::MAX, 64);
         assert_eq!(wave.visits, 64);
         let report = wave.complete.unwrap();
@@ -366,7 +366,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         // This scalar roster is the only whole-store temporary allocation; receipt
         // and payload owners are borrowed one candidate at a time.
         let snapshot: Vec<_> = {
-            let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+            let state = self.state.write().unwrap_or_else(|error| error.into_inner());
             state
                 .buckets
                 .iter()
@@ -383,7 +383,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         for (hash, weak) in &snapshot {
             let pointer = weak.as_ptr() as usize;
             let candidate = {
-                let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                let state = self.state.write().unwrap_or_else(|error| error.into_inner());
                 state
                     .buckets
                     .get(hash)
@@ -412,7 +412,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                 charge(&key, &reads, &versions, &value, allowance.unwrap_or(0))
             };
             let detached = {
-                let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
                 let position = state.buckets.get(hash).and_then(|bucket| {
                     bucket
                         .iter()
@@ -458,7 +458,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         };
         loop {
             let (done, detached) = {
-                let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
                 let hash = match cursor {
                     None => state.buckets.keys().next().copied(),
                     Some(hash) => state.buckets.range(hash..).next().map(|(hash, _)| *hash),
@@ -519,7 +519,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
         // rechecks all current claims and rows before committing accounting.
         loop {
             let wave = {
-                let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
                 reconcile(&mut state, &retained, limit, report.evicted_entries)
             };
             if let Some(complete) = wave.complete {
@@ -527,7 +527,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
             }
             for (hash, weak) in wave.victims {
                 let detached = {
-                    let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                    let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
                     detach_weak(&mut state, hash, &weak)
                 };
                 if detached.is_some() {
@@ -655,6 +655,7 @@ fn entry_index_charge<T, Q, A, D: Copy + Ord>(
         .saturating_mul(std::mem::size_of::<Variant<T, Q, A, D>>())
         .saturating_add(scalar_slot::<u128, Vec<Variant<T, Q, A, D>>>());
     if let Some((_, claims)) = state.claims.get(&pointer) {
+        let claims = claims.load(std::sync::atomic::Ordering::Acquire);
         bytes = bytes
             .saturating_add(
                 claims.saturating_mul(

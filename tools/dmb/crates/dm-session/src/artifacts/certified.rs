@@ -125,7 +125,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let detail = std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1");
         let started = std::time::Instant::now();
         let domains = {
-            let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+            let state = self.state.write().unwrap_or_else(|e| e.into_inner());
             let Some(index) = &state.incidence else {
                 return Vec::new();
             };
@@ -135,7 +135,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let after_domains = started.elapsed();
         let current = current_versions(domains);
         let after_versions = started.elapsed();
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let state = self.state.write().unwrap_or_else(|e| e.into_inner());
         let Some(index) = &state.incidence else {
             return Vec::new();
         };
@@ -306,7 +306,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         D: std::fmt::Debug,
     {
         let domains = {
-            let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+            let state = self.state.write().unwrap_or_else(|e| e.into_inner());
             let Some(index) = &state.incidence else {
                 return Vec::new();
             };
@@ -319,7 +319,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 (domain, version)
             })
             .collect();
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let state = self.state.write().unwrap_or_else(|e| e.into_inner());
         let Some(index) = &state.incidence else {
             return Vec::new();
         };

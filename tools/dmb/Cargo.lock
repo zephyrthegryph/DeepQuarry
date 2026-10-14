@@ -278,6 +278,7 @@ name = "dm-session"
 version = "0.1.0"
 dependencies = [
  "dm-ir",
+ "dm-profile",
  "xxhash-rust",
 ]
 

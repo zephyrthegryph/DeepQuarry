@@ -1020,3 +1020,66 @@ pub fn request_mark(label: &'static str) {
         }
     }
 }
+
+/// Summed CPU time across worker threads for one named slot, reported per
+/// request by [`take_accumulated`] when `DMB_TIMINGS_DETAIL=1`. Free otherwise.
+pub struct Accumulator {
+    pub label: &'static str,
+    nanos: std::sync::atomic::AtomicU64,
+    calls: std::sync::atomic::AtomicU64,
+    registered: std::sync::atomic::AtomicBool,
+}
+impl Accumulator {
+    pub const fn new(label: &'static str) -> Self {
+        Self {
+            label,
+            nanos: std::sync::atomic::AtomicU64::new(0),
+            calls: std::sync::atomic::AtomicU64::new(0),
+            registered: std::sync::atomic::AtomicBool::new(false),
+        }
+    }
+    /// Start timing; the guard adds its elapsed time when dropped.
+    pub fn time(&'static self) -> AccumulatorGuard {
+        AccumulatorGuard {
+            slot: self,
+            started: detail_enabled().then(Instant::now),
+        }
+    }
+}
+pub struct AccumulatorGuard {
+    slot: &'static Accumulator,
+    started: Option<Instant>,
+}
+impl Drop for AccumulatorGuard {
+    fn drop(&mut self) {
+        if let Some(started) = self.started {
+            use std::sync::atomic::Ordering::Relaxed;
+            self.slot.nanos.fetch_add(started.elapsed().as_nanos() as u64, Relaxed);
+            self.slot.calls.fetch_add(1, Relaxed);
+            if !self.slot.registered.swap(true, Relaxed) {
+                ACCUMULATORS
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push(self.slot);
+            }
+        }
+    }
+}
+static ACCUMULATORS: std::sync::Mutex<Vec<&'static Accumulator>> = std::sync::Mutex::new(Vec::new());
+/// `label=<cpu seconds>/<calls>` for every slot used since the last call; resets them.
+pub fn take_accumulated() -> String {
+    use std::sync::atomic::Ordering::Relaxed;
+    let registry = ACCUMULATORS.lock().unwrap_or_else(|e| e.into_inner());
+    registry
+        .iter()
+        .map(|slot| {
+            format!(
+                "{}={:.3}s/{}",
+                slot.label,
+                slot.nanos.swap(0, Relaxed) as f64 / 1e9,
+                slot.calls.swap(0, Relaxed)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}

@@ -2,7 +2,7 @@
 use super::{Observation, ObservationHost, Receipt, ReceiptStorageView};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 
 struct Verdict<Q, A, D> {
@@ -32,7 +32,18 @@ impl<Q, A: Eq, D, H: ObservationHost<Q, A, D>> AdmittedLeaf<'_, Q, A, D, H> {
 pub struct ReceiptAdmission<'host, Q, A, D, H> {
     host: &'host H,
     leaves: Mutex<BTreeMap<(usize, usize), Verdict<Q, A, D>>>,
-    versions: Mutex<BTreeMap<D, Arc<OnceLock<Option<u128>>>>>,
+    /// Read-mostly: every receipt check reads here from all workers at once.
+    versions: RwLock<BTreeMap<D, Arc<OnceLock<Option<u128>>>>>,
+    /// Per-thread first-level copies of issued versions (shard = thread), so
+    /// workers do not contend on the shared map's lock word for hits.
+    local: Box<[Mutex<BTreeMap<D, Option<u128>>>]>,
+}
+const LOCAL_SHARDS: usize = 64;
+fn local_shard() -> usize {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    std::thread::current().id().hash(&mut hasher);
+    (hasher.finish() as usize) % LOCAL_SHARDS
 }
 impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
@@ -44,7 +55,8 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         Self {
             host,
             leaves: Mutex::new(BTreeMap::new()),
-            versions: Mutex::new(BTreeMap::new()),
+            versions: RwLock::new(BTreeMap::new()),
+            local: (0..LOCAL_SHARDS).map(|_| Mutex::new(BTreeMap::new())).collect(),
         }
     }
     /// Memoize only the immutable host's current certificate, not a candidate's
@@ -62,9 +74,31 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     where
         D: Clone,
     {
+        let local = &self.local[local_shard()];
+        if let Some(version) = local
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(domain)
+            .copied()
+        {
+            return version;
+        }
+        let known = self
+            .versions
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(domain)
+            .and_then(|cell| cell.get().copied());
+        if let Some(version) = known {
+            local
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .insert(domain.clone(), version);
+            return version;
+        }
         let cell = self
             .versions
-            .lock()
+            .write()
             .unwrap_or_else(|e| e.into_inner())
             .entry(domain.clone())
             .or_insert_with(|| Arc::new(OnceLock::new()))
@@ -130,13 +164,19 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     where
         D: Clone,
     {
+        static CERTIFY: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.certify");
+        static ITERATE: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.iterate");
+        static DELIVER: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.deliver");
+        let certify_timer = CERTIFY.time();
         let certified = self.certified_domains(versions);
+        drop(certify_timer);
         let mut changed = None;
         receipt.visit_storage(|view| {
             if changed.is_some() {
                 return;
             }
             if let ReceiptStorageView::Flat(leaf) = view {
+                let iterate_timer = ITERATE.time();
                 changed = super::first_changed_iter(
                     leaf.iter(),
                     &certified,
@@ -144,7 +184,9 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
                     |current, previous| self.host.equivalent(current, previous),
                 )
                 .cloned();
+                drop(iterate_timer);
                 if changed.is_none() {
+                    let _deliver = DELIVER.time();
                     AdmittedLeaf {
                         host: self.host,
                         owner: leaf,
