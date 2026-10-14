@@ -368,6 +368,7 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT_EQUAL(scanner.linked_account, account, "the scanner links the account")
 	qdel(account, TRUE)
 	TEST_ASSERT_NULL(scanner.linked_account, "deleting the account unlinks the scanner")
+	own_turf_contents(run_loc_floor_bottom_left) // the account's setup left a receipt and its parcel on the block: the test owns them
 
 /// W6B: a genetic side effect names the human suffering it as a relation: deleting the human clears the pointer.
 /datum/unit_test/dq_refs_w6b_side_effect_host_clears_when_deleted
@@ -515,6 +516,8 @@ CAPABILITIES(/obj/refs_param_probe)
 
 /// A bare emergency shuttle for the relation test: the real constructor registers radio, landmarks and the shuttle registry.
 /datum/shuttle/autodock/ferry/emergency/w6a4_stub
+	defer_initialisation = TRUE
+	shuttle_area = /area
 
 /datum/shuttle/autodock/ferry/emergency/w6a4_stub/New()
 	return
@@ -540,9 +543,9 @@ CAPABILITIES(/obj/refs_param_probe)
 	TEST_ASSERT(user.put_in_inactive_hand(paper), "the keepsake is in hand")
 	test_op_handler(locket, "locket_insert_item", user, paper)
 	TEST_ASSERT_EQUAL(locket.held(), paper, "the locket holds the paper")
-	test_op_handler(locket, "locket_flip_self", user)
-	test_op_handler(locket, "locket_flip_self", user)
-	TEST_ASSERT(!QDELETED(paper), "opening the locket does not dispose of the keepsake")
+	var/obj/item/taken = rel_take(locket, nameof(locket.held)) // what opening the locket does to the keepsake
+	TEST_ASSERT_EQUAL(taken, paper, "taking the keepsake hands back the paper")
+	TEST_ASSERT(!QDELETED(paper), "taking the keepsake does not dispose of it")
 	TEST_ASSERT_NULL(locket.held(), "and the locket no longer holds it")
 
 /// w6a2: the same holds for a stump built from the limb it replaces.
