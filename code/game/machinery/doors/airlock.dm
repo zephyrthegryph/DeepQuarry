@@ -132,6 +132,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	setup(PROC_REF(join_close_group))
 	name_prefix("\improper")
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
@@ -1092,7 +1093,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
 	. = ..()
-	join_close_group()
 
 /// The airlocks of each closeOtherId, so a door joins its group at init without a scan of every machine (an airlock is keyed by its id_tag
 /// already, and a type has one key var: this index is the second key).

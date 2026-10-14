@@ -26,6 +26,7 @@
 
 
 CAPABILITIES(/obj/machinery/computer/cloning)
+	setup(PROC_REF(prepare_scan_modules))
 	configure(light_glow(color = "#315ab4"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(autoprocess), wakes_on = list(nameof(autoprocess)))
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
@@ -63,8 +64,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	. = ..()
 	. += rel_many(nameof(pods), back = nameof(/obj/machinery/clonepod::connected))
 
-/obj/machinery/computer/cloning/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/cloning/proc/prepare_scan_modules()
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 

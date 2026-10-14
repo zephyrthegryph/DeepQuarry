@@ -45,11 +45,6 @@
 	// type -> /datum/category_item/partslathe/
 	var/static/list/partslathe_recipies
 
-// ALLOW(init/INSTANCE_STATE): takes its built parts and lists what they can make
-/obj/machinery/partslathe/Initialize(mapload)
-	. = ..()
-	update_recipe_list()
-
 /obj/machinery/partslathe/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 	storage_capacity[MAT_STEEL] = mb_rating  * 16000
@@ -218,6 +213,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/partslathe)
+	setup(PROC_REF(update_recipe_list))
 	configure(uses_power(idle = 30, active = 5000))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))

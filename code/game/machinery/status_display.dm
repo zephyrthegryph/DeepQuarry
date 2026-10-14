@@ -66,8 +66,7 @@
 	return TRUE
 
 // register for radio system
-/obj/machinery/status_display/Initialize(mapload)
-	. = ..()
+/obj/machinery/status_display/proc/connect_display_radio()
 	if(SSradio)
 		SSradio.add_object(src, frequency)
 	refresh()
@@ -162,6 +161,7 @@
 		refresh()
 
 CAPABILITIES(/obj/machinery/status_display)
+	setup(PROC_REF(connect_display_radio))
 	configure(uses_power(idle = 10))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))

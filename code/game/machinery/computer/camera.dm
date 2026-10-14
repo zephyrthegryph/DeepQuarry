@@ -92,31 +92,22 @@ CAPABILITIES(/obj/machinery/computer/security)
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, REGISTRY_ENTERTAINMENT_SCREENS)
 
 CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
+	setup(PROC_REF(create_screen_pinboard))
+	setup(PROC_REF(configure_screen_radio))
 	configure(light_glow(color = "#FFEEDB"))
 	owns_one(nameof(radio), starts = /obj/item/radio)
 	click_on(PROC_REF(click_input))
 	ref_one(nameof(pinboard), /obj/effect/overlay/vis)
 	ref_one(nameof(showing), /atom)
 
-/obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
-
+/obj/machinery/computer/security/telescreen/entertainment/proc/create_screen_pinboard()
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 
 	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-	/*
-	pinboard = new()
-	pinboard.icon = icon
-	pinboard.icon_state = "pinboard"
-	pinboard.layer = 0.1
-	pinboard.vis_flags = VIS_UNDERLAY|VIS_INHERIT_ID|VIS_INHERIT_PLANE
-	pinboard.appearance_flags = KEEP_TOGETHER
-	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-	vis_contents += pinboard
-	*/
 
-	. = ..()
-
+/// Connect the screen radio after its declared radio child exists.
+/obj/machinery/computer/security/telescreen/entertainment/proc/configure_screen_radio()
 	radio.listening = TRUE
 	radio.broadcasting = FALSE
 	radio.set_frequency(ENT_FREQ)

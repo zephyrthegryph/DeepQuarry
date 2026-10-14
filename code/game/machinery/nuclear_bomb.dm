@@ -31,10 +31,7 @@ GLOBAL_VAR(bomb_set)
 	var/wire_view = FALSE
 	use_power = USE_POWER_OFF
 
-// ALLOW(init/INSTANCE_STATE): rolls its code and its wire layout for each bomb
-/obj/machinery/nuclearbomb/Initialize(mapload)
-	. = ..()
-	r_code = "[rand(10000, 99999.0)]"//Creates a random code upon object spawn.
+/obj/machinery/nuclearbomb/proc/seed_wire_states()
 	LAZYSET(wires_list, "Red", 0)
 	LAZYSET(wires_list, "Blue", 0)
 	LAZYSET(wires_list, "Green", 0)
@@ -42,13 +39,18 @@ GLOBAL_VAR(bomb_set)
 	LAZYSET(wires_list, "Fuschia", 0)
 	LAZYSET(wires_list, "Black", 0)
 	LAZYSET(wires_list, "Pearl", 0)
-	var/list/w = list("Red","Blue","Green","Marigold","Black","Fuschia","Pearl")
-	light_wire = pick(w)
-	w -= light_wire
-	timing_wire = pick(w)
-	w -= timing_wire
-	safety_wire = pick(w)
-	w -= safety_wire
+
+/obj/machinery/nuclearbomb/proc/roll_initial_code(datum/roller/R)
+	return "[R.number(10000, 99999)]"
+
+/obj/machinery/nuclearbomb/proc/roll_initial_light_wire(datum/roller/R)
+	return R.choose(list("Red", "Blue", "Green", "Marigold", "Black", "Fuschia", "Pearl"))
+
+/obj/machinery/nuclearbomb/proc/roll_initial_timing_wire(datum/roller/R)
+	return R.choose(list("Red", "Blue", "Green", "Marigold", "Black", "Fuschia", "Pearl") - light_wire)
+
+/obj/machinery/nuclearbomb/proc/roll_initial_safety_wire(datum/roller/R)
+	return R.choose(list("Red", "Blue", "Green", "Marigold", "Black", "Fuschia", "Pearl") - light_wire - timing_wire)
 
 /obj/machinery/nuclearbomb/proc/work_step(datum/act/timer/A)
 	if(timing)
@@ -167,6 +169,11 @@ GLOBAL_VAR(bomb_set)
 
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
+	rolls(nameof(r_code), PROC_REF(roll_initial_code))
+	rolls(nameof(light_wire), PROC_REF(roll_initial_light_wire))
+	rolls(nameof(timing_wire), PROC_REF(roll_initial_timing_wire), from = nameof(light_wire))
+	rolls(nameof(safety_wire), PROC_REF(roll_initial_safety_wire), from = list(nameof(light_wire), nameof(timing_wire)))
+	setup(PROC_REF(seed_wire_states))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("NuclearBomb", title = "Nuclear Fission Explosive")
 	op("auth", ui_act("auth"), then(PROC_REF(ui_act_auth)))

@@ -84,6 +84,7 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/button/doorbell)
+	setup(PROC_REF(assign_initial_id))
 	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
 	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))
 	extend("button_press", priority(OP_PRIORITY_DEFAULT - 3))
@@ -104,6 +105,9 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -32 : 32)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
+
+/// A mapped or constructed bell without a shared id receives its unique identity.
+/obj/machinery/button/doorbell/proc/assign_initial_id()
 	if (!id)
 		assign_uid()
 		set_id(num2text(uid))

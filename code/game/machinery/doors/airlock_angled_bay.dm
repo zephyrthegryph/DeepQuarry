@@ -435,8 +435,7 @@
 	icon_state = "preview_color"
 	fill_type = FILL_COLOR
 
-/obj/machinery/door/airlock/angled_bay/double/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/airlock/angled_bay/double/proc/configure_double_bounds()
 	SetBounds()
 	apply_opacity_to_my_turfs(opacity)
 
@@ -465,3 +464,6 @@
 #undef FILL_METAL
 #undef FILL_GLASS
 #undef FILL_COLOR
+
+CAPABILITIES(/obj/machinery/door/airlock/angled_bay/double)
+	setup(PROC_REF(configure_double_bounds))

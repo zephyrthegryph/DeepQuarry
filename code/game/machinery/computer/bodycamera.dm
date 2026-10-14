@@ -22,6 +22,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
 CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	setup(PROC_REF(create_screen_pinboard))
+	setup(PROC_REF(configure_screen_radio))
 	configure(light_glow(color = "#FFEEDB"))
 	ref_one(nameof(showing), /atom)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
@@ -30,16 +32,15 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	ref_one(nameof(bpinboard), /obj/effect/overlay/vis)
 	ref_one(nameof(the_camera), /obj/item/clothing/accessory/bodycam)
 
-/obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
-
+/obj/machinery/computer/security/telescreen/bodycamera/proc/create_screen_pinboard()
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 
 	rel_set(src, nameof(bpinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	vis_contents += bpinboard
 
-	. = ..()
-
+/// Connect the screen radio after its declared radio child exists.
+/obj/machinery/computer/security/telescreen/bodycamera/proc/configure_screen_radio()
 	bradio.listening = TRUE
 	bradio.broadcasting = FALSE
 	bradio.set_frequency(BDCM_FREQ)

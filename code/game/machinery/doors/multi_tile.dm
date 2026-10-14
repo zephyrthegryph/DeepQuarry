@@ -6,8 +6,7 @@
 	close_sound_powered = 'sound/machines/door/WideClose.ogg'
 	update_adjacent_tiles = FALSE
 
-/obj/machinery/door/airlock/multi_tile/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/airlock/multi_tile/proc/configure_multitile_bounds()
 	SetBounds()
 	apply_opacity_to_my_turfs(opacity)
 
@@ -49,3 +48,6 @@
 	name = "Electrochromic Glass Airlock"
 	icon_tinted = 'icons/obj/doors/Door2x1tinted_vr.dmi'
 
+
+CAPABILITIES(/obj/machinery/door/airlock/multi_tile)
+	setup(PROC_REF(configure_multitile_bounds))

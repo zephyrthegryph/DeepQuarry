@@ -124,6 +124,8 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
+	rolls(nameof(name), PROC_REF(roll_alarm_name), when = PROC_REF(default_alarm_name))
+	setup(PROC_REF(register_initial_alarm))
 	configure(light_glow(power = 0.25))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 80, active = 1000, channel = ENVIRON))
@@ -241,12 +243,9 @@ CAPABILITIES(/obj/machinery/alarm)
 	.["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
 	.["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
 
-/obj/machinery/alarm/Initialize(mapload)
-	. = ..()
+/obj/machinery/alarm/proc/register_initial_alarm()
 	rel_set(src, nameof(alarm_area), get_area(src)) // paired: the area's air_alarms lists it
 	area_uid = alarm_area?.air_uid()
-	if(name == "alarm")
-		name = "[alarm_area?.name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
 	set_frequency(frequency)
 	TLV = default_TLV()
 	if(!alarm_area?.main_air_alarm_is_operating()) // select main alarm
@@ -911,3 +910,10 @@ CAPABILITIES(/datum/air_alarm_remote)
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	return list(pixel_x, pixel_y)
+
+/obj/machinery/alarm/proc/roll_alarm_name(datum/roller/R)
+	var/area/A = get_area(src)
+	return "[A?.name] Air Alarm \[[R.number(1, 9999)]\]"
+
+/obj/machinery/alarm/proc/default_alarm_name()
+	return name == "alarm"

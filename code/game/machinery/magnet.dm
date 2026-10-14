@@ -28,8 +28,7 @@
 /// Pulls things toward its center every magnet_delay() while switched on.
 
 
-/obj/machinery/magnetic_module/Initialize(mapload)
-	. = ..()
+/obj/machinery/magnetic_module/proc/place_magnetic_module()
 	var/turf/T = loc
 	hide(!T.is_plating())
 	rel_set(src, nameof(center), T)
@@ -110,6 +109,7 @@
 /// every power or break change.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/magnetic_module)
+	setup(PROC_REF(place_magnetic_module))
 	configure(uses_power(idle = 50))
 	every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
@@ -188,7 +188,6 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
-
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)

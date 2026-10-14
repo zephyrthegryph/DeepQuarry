@@ -139,6 +139,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 
 
 /obj/structure/barricade/cutout
+	color = null
 	name = "stand-up figure"
 	desc = "Some sort of wooden stand-up figure..."
 	icon = 'icons/obj/cardboard_cutout.dmi'
@@ -157,9 +158,6 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	var/list/cutout_types
 	resistance_flags = FLAMMABLE
 
-/obj/structure/barricade/cutout/Initialize(mapload)
-	. = ..()
-	color = null
 
 /// A cutout of a person gets a random name.
 /obj/structure/barricade/cutout/proc/roll_fake_name(datum/roller/R)

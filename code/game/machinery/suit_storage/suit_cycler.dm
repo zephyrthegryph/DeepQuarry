@@ -62,9 +62,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 	slot_id = OCCUPANT_SLOT_SUIT_CYCLER
 	name = "suit cycler"
 
-/obj/machinery/suit_cycler/Initialize(mapload)
-	. = ..()
-
+/obj/machinery/suit_cycler/proc/compile_cycler_choices()
 	departments = load_departments()
 	species = load_species()
 	emagged_departments = load_emagged()
@@ -75,7 +73,6 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 
 	if(!target_department() || !target_species())
 		atom_break()
-
 
 /obj/machinery/suit_cycler/proc/load_departments()
 	var/list/typecache = GLOB.suit_cycler_typecache[type]
@@ -295,6 +292,7 @@ MSG_DEF_SELF(suit_cycler/needs_helmet, "needs a void helmet")
 MSG_DEF_SELF(suit_cycler/needs_suit, "needs a voidsuit")
 
 CAPABILITIES(/obj/machinery/suit_cycler)
+	setup(PROC_REF(compile_cycler_choices))
 	op("cycler_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(/obj/item/grab, because = MSG(suit_cycler/needs_grab)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_grabbed))), starts(PROC_REF(insertion_shock)), begins(PROC_REF(insertion_message)), wait(2 SECONDS), then(PROC_REF(interaction_insert_grab)))
 	op("cycler_insert_helmet", inputs(item(/obj/item/clothing/head/helmet/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(/obj/item/clothing/head/helmet/space/void, because = MSG(suit_cycler/needs_helmet)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_helmet))), then(PROC_REF(interaction_insert_helmet)))
 	op("cycler_insert_suit", inputs(item(/obj/item/clothing/suit/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(/obj/item/clothing/suit/space/void, because = MSG(suit_cycler/needs_suit)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_suit))), then(PROC_REF(interaction_insert_suit)))

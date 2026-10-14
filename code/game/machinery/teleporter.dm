@@ -16,6 +16,8 @@ MSG_DEF_SELF(teleporter/data_card_required, "needs a data card")
 	var/datum/tgui_module/teleport_control/teleport_control
 
 CAPABILITIES(/obj/machinery/computer/teleporter)
+	setup(PROC_REF(draw_console_wiring))
+	setup(PROC_REF(link_adjacent_teleporter))
 	rolls(nameof(id), PROC_REF(roll_id))
 	op("teleporter_computer_insert_card", inputs(item(/obj/item/card/data), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert data card"), needs(req(/obj/item/card/data, because = MSG(teleporter/data_card_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_card)))
 	op("teleporter_computer_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
@@ -23,10 +25,11 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	op("teleporter_computer_set_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set teleporter ID"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("title" = "Set teleporter ID", "question" = "ID Tag:", "timeout" = 0), when = PROC_REF(teleporter_can_set_id)), then(PROC_REF(teleporter_id_entered)))
 	owns_one(nameof(teleport_control), /datum/tgui_module/teleport_control, starts = /datum/tgui_module/teleport_control)
 
-/obj/machinery/computer/teleporter/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/teleporter/proc/draw_console_wiring()
 	underlays.Cut()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "telecomp-wires")
+
+/obj/machinery/computer/teleporter/proc/link_adjacent_teleporter()
 	var/obj/machinery/teleport/station/station = null
 	var/obj/machinery/teleport/hub/hub = null
 
@@ -139,14 +142,13 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	circuit = /obj/item/circuitboard/teleporter_hub
 	var/obj/machinery/computer/teleporter/com
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
-/obj/machinery/teleport/hub/Initialize(mapload)
-	. = ..()
+/obj/machinery/teleport/hub/proc/draw_hub_wiring()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
 
 // the teleporter console forgets its hub.
 
 CAPABILITIES(/obj/machinery/teleport/hub)
+	setup(PROC_REF(draw_hub_wiring))
 	default_parts()
 	configure(uses_power(idle = 10, active = 2000))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

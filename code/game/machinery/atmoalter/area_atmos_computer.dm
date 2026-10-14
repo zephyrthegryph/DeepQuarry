@@ -16,6 +16,7 @@
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
 CAPABILITIES(/obj/machinery/computer/area_atmos)
+	setup(PROC_REF(scanscrubbers))
 	configure(light_glow(color = "#e6ffff"))
 	op("allon", ui_act("allon"), then(PROC_REF(ui_act_allon)))
 	op("alloff", ui_act("alloff"), then(PROC_REF(ui_act_alloff)))
@@ -30,10 +31,6 @@ CAPABILITIES(/obj/machinery/computer/area_atmos)
 		if("[S.id]" == "[scrub_id]")
 			return S
 	return null
-
-/obj/machinery/computer/area_atmos/Initialize(mapload)
-	. = ..()
-	scanscrubbers()
 
 /obj/machinery/computer/area_atmos/ui_data(datum/act/eval/A)
 	var/list/working = list()

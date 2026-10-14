@@ -15,6 +15,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/pda_multicaster)
+	setup(PROC_REF(update_power))
 	// one PDA per department it mirrors messages to
 	initial_contents(/obj/item/pda/multicaster/command)
 	initial_contents(/obj/item/pda/multicaster/security)
@@ -31,9 +32,6 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
-/obj/machinery/pda_multicaster/Initialize(mapload)
-	. = ..()
-	update_power()
 
 CAPABILITIES(/obj/machinery/pda_multicaster/prebuilt)
 	default_parts()

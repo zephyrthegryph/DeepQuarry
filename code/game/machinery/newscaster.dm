@@ -156,6 +156,7 @@ CAPABILITIES(/datum/feed_network)
 	var/list/temp = null
 
 CAPABILITIES(/obj/machinery/newscaster)
+	setup(PROC_REF(allocate_unit_number))
 	after_init(0, then(PROC_REF(connect_exonet)))
 	after_init(0, then(PROC_REF(follow_wanted)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
@@ -190,9 +191,7 @@ CAPABILITIES(/obj/machinery/newscaster)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 
-// ALLOW(init/INSTANCE_STATE): numbers each unit as it is made and fills its paper tray
-/obj/machinery/newscaster/Initialize(mapload)
-	. = ..()
+/obj/machinery/newscaster/proc/allocate_unit_number()
 	unit_no = ++unit_no_cur
 
 /// Joins the exonet node, once the map around it exists.

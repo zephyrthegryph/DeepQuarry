@@ -405,12 +405,14 @@ CAPABILITIES(/obj/machinery/sleeper)
 /obj/machinery/sleeper/survival_pod
 	stasis_rate = 0.01 //Just one setting: complete stasis
 
-// ALLOW(init/INSTANCE_STATE): sizes itself from the parts this pod was built with
-/obj/machinery/sleeper/survival_pod/Initialize(mapload)
-	. = ..()
+/obj/machinery/sleeper/survival_pod/proc/calibrate_survival_parts()
 	RefreshParts(1)
 
 #undef SLEEPER_DIALYSIS_UNITS
 #undef SLEEPER_PUMP_UNITS
 #undef SLEEPER_OVERDOSE_CAUTION
 #undef SLEEPER_TEMPERATURE_BAR_MAX
+
+
+CAPABILITIES(/obj/machinery/sleeper/survival_pod)
+	setup(PROC_REF(calibrate_survival_parts))

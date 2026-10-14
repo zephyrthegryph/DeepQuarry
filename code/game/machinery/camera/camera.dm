@@ -46,6 +46,8 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	setup(PROC_REF(install_viewer_hud))
+	setup(PROC_REF(configure_initial_upgrades))
 	rolls(nameof(c_tag), PROC_REF(roll_c_tag))
 	ref_many(nameof(motionTargets), /mob)
 	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))
@@ -77,7 +79,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
-	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
 	if(!src.network || src.network.len < 1)
 		if(loc)
@@ -90,6 +91,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 	. = ..()
 
+/// Configure the mapped facing and installed camera upgrades after initialization.
+/obj/machinery/camera/proc/configure_initial_upgrades()
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER
 
@@ -642,3 +645,6 @@ SETTER(/obj/machinery/camera, status)
 
 /obj/machinery/camera/proc/alarm_wire_pulsed(datum/act/A)
 	visible_message("[icon2html(src, viewers(src))] *beep*", "[icon2html(src, viewers(src))] *beep*")
+
+/obj/machinery/camera/proc/install_viewer_hud()
+	LAZYOR(client_huds, GLOB.global_hud.whitense)

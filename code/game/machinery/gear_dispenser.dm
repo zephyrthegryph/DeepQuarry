@@ -159,6 +159,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 
 CAPABILITIES(/obj/machinery/gear_dispenser)
+	setup(PROC_REF(register_distribution_bucket))
 	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))
 	op("gear_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/gear_dispenser, fields = list("title" = "Equipment Dispenser", "question" = "Select equipment to dispense.", "timeout" = 0), when = PROC_REF(gear_has_selection)), then(PROC_REF(interaction_use)))
 	owns_one(nameof(one_setting), /datum/gear_disp, starts = nameof(one_setting), starts_args = NO_LOC)
@@ -170,8 +171,6 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 
 /obj/machinery/gear_dispenser/Initialize(mapload)
 	. = ..()
-	if(!GLOB.gear_distributed_to["[type]"] && (dispenser_flags & GD_NOGREED))
-		GLOB.gear_distributed_to["[type]"] = list()
 	var/list/real_gear_list = list()
 	for(var/gear in dispenses)
 		var/datum/gear_disp/S = new gear
@@ -309,8 +308,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	var/datum/gear_disp/held_gear_disp
 	var/special_frame
 
-/obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
-	. = ..()
+/obj/machinery/gear_dispenser/suit_fancy/proc/create_display_door()
 	rel_set(src, nameof(door), add_vis_overlay("closed", layer = 4, unique = TRUE)) // the vis overlay service owns it
 
 
@@ -332,6 +330,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 			look.overlay("light2")
 
 CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
+	setup(PROC_REF(create_display_door))
 	op("take", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Take"), then(PROC_REF(interaction_take)))
 	ref_one(nameof(door), /obj/effect/overlay/vis)
 	ref_one(nameof(held_gear_disp), /datum/gear_disp)
@@ -980,3 +979,7 @@ CAPABILITIES(/datum/prompt/choice/gear_dispenser)
 		"gearlist": ["/obj/random/trash"]
 	}
 ]"}
+
+/obj/machinery/gear_dispenser/proc/register_distribution_bucket()
+	if(!GLOB.gear_distributed_to["[type]"] && (dispenser_flags & GD_NOGREED))
+		GLOB.gear_distributed_to["[type]"] = list()

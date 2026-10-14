@@ -17,10 +17,7 @@
 	var/otherarea = null
 	var/image/overlay
 
-// ALLOW(init/INSTANCE_STATE): binds to the area it is placed in, or the one the map names, and takes its state
-/obj/machinery/light_switch/Initialize(mapload)
-	. = ..()
-
+/obj/machinery/light_switch/proc/resolve_switch_area()
 	area = get_area(src) // a location: a plain var
 
 	if(otherarea)
@@ -36,6 +33,7 @@
 // electromagnetic pulse makes it read its power again. What the machine core keeps until the machine track (phase 4): the NOPOWER bit and
 // the power_change() dispatch (an area calls it on every channel change and on every switch use).
 CAPABILITIES(/obj/machinery/light_switch)
+	setup(PROC_REF(resolve_switch_area))
 	configure(uses_power(idle = 10, channel = LIGHT))
 	powered(POWER_CHANNEL_LIGHTING)
 	op("toggle", hand(), when(req_empty_hand()), label("Toggle"), wait(0), then(PROC_REF(toggle_lights)))

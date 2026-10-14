@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declared machinery setup jobs and native bomb/alarm rolls while retaining constructor-dependent initialization."

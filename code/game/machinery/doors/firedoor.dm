@@ -75,6 +75,7 @@
 			log_mapping("Duplicate firedoors at [x],[y],[z]")
 			return INITIALIZE_HINT_QDEL
 
+/obj/machinery/door/firedoor/proc/register_boundary_areas()
 	var/area/A = get_area(src)
 	ASSERT(istype(A))
 
@@ -159,6 +160,7 @@ MSG_DEF_SELF(firedoor/need_wield, "You need to be wielding that to do that.")
 MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 
 CAPABILITIES(/obj/machinery/door/firedoor)
+	setup(PROC_REF(register_boundary_areas))
 	configure(uses_power(channel = ENVIRON, idle = 5))
 	owns_many(nameof(air_watches), /datum/native_watch/gas)
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)

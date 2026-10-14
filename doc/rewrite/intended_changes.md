@@ -4894,3 +4894,7 @@ Affected requirement-pin classes:
 * **`dq_loot_search_pin` is now independent of test order**: it fixes the `rolls()` round seed and creation serial per run (`rolls_fix_seed`).
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
+# A4 machinery initialization (2026-10-14)
+
+- `/obj/machinery/nuclearbomb`: native `rolls()` supplies the same five-digit code range and distinct three-of-seven wire choices. The realization comes from the existing deterministic instance stream rather than world RNG; explicit map values follow the framework's existing override rule. Wire-state lists remain separate mutable lists for each bomb.
+- `/obj/machinery/alarm`: the default alarm name still uses its area's name and an ID in 1..9999. Native rolls choose that ID from the existing deterministic instance stream; custom map names remain unchanged. Area registration and frequency/TLV setup retain their order after normal initialization.

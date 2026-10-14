@@ -83,6 +83,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 
 
 CAPABILITIES(/obj/machinery/recharger)
+	setup(PROC_REF(settle_power))
 	configure(uses_power(idle = 4, active = 40000))
 	default_parts()
 	machine_basics(repair = NONE)
@@ -122,10 +123,6 @@ CAPABILITIES(/obj/machinery/recharger)
 CAPABILITIES(/obj/machinery/recharger/wallcharger)
 	configure(uses_power(active = 60000))
 	without(CAP_ANCHOR)
-
-/obj/machinery/recharger/Initialize(mapload)
-	. = ..()
-	settle_power()
 
 /obj/machinery/recharger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)

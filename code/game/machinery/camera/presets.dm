@@ -168,12 +168,10 @@ TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 	/// Area name -> how many autonamed cameras have been numbered there (numbers only, no camera refs).
 	var/static/list/by_area
 
-// ALLOW(init/INSTANCE_STATE): its camera tag numbers it within the area it is placed in
-/obj/machinery/camera/autoname/Initialize(mapload)
-	. = ..()
+/obj/machinery/camera/autoname/proc/allocate_area_camera_number()
 	var/area/A = get_area(src)
 	if(!A)
-		return .
+		return
 	if(!by_area)
 		by_area = list()
 	var/number = by_area[A.name] + 1
@@ -230,3 +228,6 @@ TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 	if (isMotion())
 		mult++
 	update_active_power_usage(mult * power_of_type(type).active)
+
+CAPABILITIES(/obj/machinery/camera/autoname)
+	setup(PROC_REF(allocate_area_camera_number))
